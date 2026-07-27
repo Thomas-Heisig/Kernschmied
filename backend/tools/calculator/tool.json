@@ -1,0 +1,9 @@
+{
+  "id": "calculator",
+  "name": "Rechner",
+  "tool_type": "calculator",
+  "version": "1.0.0",
+  "enabled": true,
+  "permissions": [],
+  "requires_confirmation": false
+}

@@ -1,0 +1,1963 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kernschmied",
+    "description": "Modulare, schema-gesteuerte Chat-Anwendung mit versionierten API-Verträgen.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": [
+          "System / Health"
+        ],
+        "summary": "Health Check",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bootstrap": {
+      "get": {
+        "tags": [
+          "System / Bootstrap"
+        ],
+        "summary": "Frontend-Bootstrap laden",
+        "description": "Liefert die initialen, nicht sensiblen Laufzeitinformationen für das schema-gesteuerte Frontend. Der Bootstrap ersetzt keine serverseitige Autorisierung.",
+        "operationId": "bootstrap_api_v1_bootstrap_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BootstrapResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ui/schema": {
+      "get": {
+        "tags": [
+          "UI / Schema"
+        ],
+        "summary": "UI-Schema laden",
+        "description": "Liefert den versionierten, schema-gesteuerten UI-Vertrag. Das Frontend darf ausschließlich bekannte Komponenten- und Aktionstypen aus seinen festen Registries ausführen.",
+        "operationId": "ui_schema_api_v1_ui_schema_get",
+        "parameters": [
+          {
+            "name": "include_disabled",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Deaktivierte Schemaelemente mit ausgeben. Für administrative Ansichten vorgesehen.",
+              "default": false,
+              "title": "Include Disabled"
+            },
+            "description": "Deaktivierte Schemaelemente mit ausgeben. Für administrative Ansichten vorgesehen."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Das UI-Schema wurde erfolgreich erzeugt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UISchemaResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Das erzeugte UI-Schema ist ungültig."
+          },
+          "503": {
+            "description": "Der UI-Schema-Builder ist nicht verfügbar."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hierarchy": {
+      "get": {
+        "tags": [
+          "Hierarchy"
+        ],
+        "summary": "Health Check",
+        "operationId": "health_api_v1_hierarchy_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models": {
+      "get": {
+        "tags": [
+          "Registry / Models"
+        ],
+        "summary": "Verfügbare Modelle auflisten",
+        "description": "Liefert die serverseitig registrierten und für das Frontend sichtbaren Modelle. Die Sichtbarkeit ersetzt keine Autorisierung bei einer späteren Modellauswahl.",
+        "operationId": "models_api_v1_models_get",
+        "parameters": [
+          {
+            "name": "include_disabled",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Deaktivierte Modelle mit ausgeben. Für Admin-Oberflächen vorgesehen.",
+              "default": false,
+              "title": "Include Disabled"
+            },
+            "description": "Deaktivierte Modelle mit ausgeben. Für Admin-Oberflächen vorgesehen."
+          },
+          {
+            "name": "capability",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "chat",
+                    "streaming",
+                    "tool_calling",
+                    "vision",
+                    "embeddings",
+                    "structured_output"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional nach einer Fähigkeit filtern.",
+              "title": "Capability"
+            },
+            "description": "Optional nach einer Fähigkeit filtern."
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional nach Provider filtern.",
+              "title": "Provider"
+            },
+            "description": "Optional nach Provider filtern."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Modellliste wurde geladen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ModelListResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Die Modellregistrierung ist nicht verfügbar."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/tools": {
+      "get": {
+        "tags": [
+          "Registry / Tools"
+        ],
+        "summary": "Verfügbare Tools auflisten",
+        "description": "Liefert die registrierten und für das Frontend sichtbaren Tools. Die Listung eines Tools stellt keine Ausführungsfreigabe dar.",
+        "operationId": "tools_api_v1_tools_get",
+        "parameters": [
+          {
+            "name": "include_disabled",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Deaktivierte Tools mit ausgeben. Für administrative Oberflächen vorgesehen.",
+              "default": false,
+              "title": "Include Disabled"
+            },
+            "description": "Deaktivierte Tools mit ausgeben. Für administrative Oberflächen vorgesehen."
+          },
+          {
+            "name": "include_unavailable",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Aktuell nicht verfügbare Tools mit ausgeben.",
+              "default": false,
+              "title": "Include Unavailable"
+            },
+            "description": "Aktuell nicht verfügbare Tools mit ausgeben."
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional nach Tool-Kategorie filtern.",
+              "title": "Category"
+            },
+            "description": "Optional nach Tool-Kategorie filtern."
+          },
+          {
+            "name": "capability",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "streaming",
+                    "confirmation_required",
+                    "idempotent",
+                    "read_only",
+                    "supports_cancellation"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional nach einer Fähigkeit filtern.",
+              "title": "Capability"
+            },
+            "description": "Optional nach einer Fähigkeit filtern."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Tool-Liste wurde geladen.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ToolListResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Die Tool-Registry ist nicht verfügbar."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/chat/stream": {
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Chat-Antwort streamen",
+        "description": "Erzeugt eine Chat-Antwort als versionierten Server-Sent-Events-Datenstrom.",
+        "operationId": "stream_chat_api_v1_chat_stream_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "SSE-Datenstrom wurde gestartet.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              },
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Die Chat-Anfrage ist ungültig."
+          },
+          "503": {
+            "description": "Der produktive ChatService ist nicht verfügbar."
+          }
+        }
+      }
+    },
+    "/api/v1/config": {
+      "get": {
+        "tags": [
+          "Administration / Configuration"
+        ],
+        "summary": "Konfiguration auflisten",
+        "description": "Liefert die sichtbare Fachkonfiguration und die aktuelle Revision. Sensible Werte werden nicht ausgegeben.",
+        "operationId": "list_config_api_v1_config_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigListResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/config/{group}/{key}": {
+      "put": {
+        "tags": [
+          "Administration / Configuration"
+        ],
+        "summary": "Konfigurationswert ändern",
+        "description": "Ändert einen runtime-editierbaren Konfigurationswert. Die Änderung muss durch den ConfigService validiert, versioniert und protokolliert werden.",
+        "operationId": "update_config_api_v1_config__group___key__put",
+        "parameters": [
+          {
+            "name": "group",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Group"
+            }
+          },
+          {
+            "name": "key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Konfiguration wurde aktualisiert.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfigUpdateResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Keine Berechtigung für die Änderung."
+          },
+          "409": {
+            "description": "Die Konfiguration wurde zwischenzeitlich geändert."
+          },
+          "422": {
+            "description": "Gruppe, Schlüssel oder Wert ist ungültig."
+          }
+        }
+      }
+    },
+    "/": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Anwendungsstatus",
+        "operationId": "root__get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Root  Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "BootstrapApplication": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version"
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "intranet",
+              "internet"
+            ],
+            "title": "Environment"
+          },
+          "api_prefix": {
+            "type": "string",
+            "title": "Api Prefix"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "version",
+          "environment",
+          "api_prefix"
+        ],
+        "title": "BootstrapApplication",
+        "description": "Grundinformationen über die laufende Anwendung."
+      },
+      "BootstrapCapabilities": {
+        "properties": {
+          "hierarchy": {
+            "type": "boolean",
+            "title": "Hierarchy",
+            "default": false
+          },
+          "ui_schema": {
+            "type": "boolean",
+            "title": "Ui Schema",
+            "default": false
+          },
+          "chat_streaming": {
+            "type": "boolean",
+            "title": "Chat Streaming",
+            "default": false
+          },
+          "chat_persistence": {
+            "type": "boolean",
+            "title": "Chat Persistence",
+            "default": false
+          },
+          "model_registry": {
+            "type": "boolean",
+            "title": "Model Registry",
+            "default": false
+          },
+          "model_service": {
+            "type": "boolean",
+            "title": "Model Service",
+            "default": false
+          },
+          "tool_registry": {
+            "type": "boolean",
+            "title": "Tool Registry",
+            "default": false
+          },
+          "configuration": {
+            "type": "boolean",
+            "title": "Configuration",
+            "default": false
+          },
+          "configuration_admin": {
+            "type": "boolean",
+            "title": "Configuration Admin",
+            "default": false
+          },
+          "file_upload": {
+            "type": "boolean",
+            "title": "File Upload",
+            "default": false
+          },
+          "audit_log": {
+            "type": "boolean",
+            "title": "Audit Log",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BootstrapCapabilities",
+        "description": "Technische Verfügbarkeit von Modulen.\n\nDiese Werte sind keine Berechtigungsentscheidung. Jeder aufgerufene\nEndpunkt muss die jeweilige Benutzeraktion erneut serverseitig\nautorisieren."
+      },
+      "BootstrapEndpoints": {
+        "properties": {
+          "bootstrap": {
+            "type": "string",
+            "title": "Bootstrap"
+          },
+          "ui_schema": {
+            "type": "string",
+            "title": "Ui Schema"
+          },
+          "hierarchy": {
+            "type": "string",
+            "title": "Hierarchy"
+          },
+          "chat_stream": {
+            "type": "string",
+            "title": "Chat Stream"
+          },
+          "chats": {
+            "type": "string",
+            "title": "Chats"
+          },
+          "configuration": {
+            "type": "string",
+            "title": "Configuration"
+          },
+          "models": {
+            "type": "string",
+            "title": "Models"
+          },
+          "tools": {
+            "type": "string",
+            "title": "Tools"
+          },
+          "health_live": {
+            "type": "string",
+            "title": "Health Live"
+          },
+          "health_ready": {
+            "type": "string",
+            "title": "Health Ready"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "bootstrap",
+          "ui_schema",
+          "hierarchy",
+          "chat_stream",
+          "chats",
+          "configuration",
+          "models",
+          "tools",
+          "health_live",
+          "health_ready"
+        ],
+        "title": "BootstrapEndpoints",
+        "description": "Zentrale API-Einstiegspunkte für das Frontend.\n\nDie Pfade werden aus dem tatsächlich konfigurierten API-Prefix\nerzeugt und nicht mehrfach im Frontend fest verdrahtet."
+      },
+      "BootstrapFeatures": {
+        "properties": {
+          "schema_driven_ui": {
+            "type": "boolean",
+            "title": "Schema Driven Ui",
+            "default": true
+          },
+          "recursive_hierarchy": {
+            "type": "boolean",
+            "title": "Recursive Hierarchy",
+            "default": true
+          },
+          "server_side_authorization": {
+            "type": "boolean",
+            "title": "Server Side Authorization",
+            "default": true
+          },
+          "streaming_transport": {
+            "type": "string",
+            "const": "sse",
+            "title": "Streaming Transport",
+            "default": "sse"
+          },
+          "dynamic_models": {
+            "type": "boolean",
+            "title": "Dynamic Models",
+            "default": false
+          },
+          "dynamic_tools": {
+            "type": "boolean",
+            "title": "Dynamic Tools",
+            "default": false
+          },
+          "runtime_configuration": {
+            "type": "boolean",
+            "title": "Runtime Configuration",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BootstrapFeatures",
+        "description": "Für das Frontend sichtbare technische Betriebsmerkmale."
+      },
+      "BootstrapResponse": {
+        "properties": {
+          "application": {
+            "$ref": "#/components/schemas/BootstrapApplication"
+          },
+          "environment": {
+            "type": "string",
+            "enum": [
+              "development",
+              "intranet",
+              "internet"
+            ],
+            "title": "Environment"
+          },
+          "user": {
+            "$ref": "#/components/schemas/BootstrapUser"
+          },
+          "security": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Security"
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/BootstrapCapabilities"
+          },
+          "features": {
+            "$ref": "#/components/schemas/BootstrapFeatures"
+          },
+          "versions": {
+            "$ref": "#/components/schemas/BootstrapVersions"
+          },
+          "endpoints": {
+            "$ref": "#/components/schemas/BootstrapEndpoints"
+          },
+          "revisions": {
+            "$ref": "#/components/schemas/BootstrapRevisions"
+          },
+          "config_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Config Revision"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "application",
+          "environment",
+          "user",
+          "security",
+          "capabilities",
+          "features",
+          "versions",
+          "endpoints",
+          "revisions",
+          "config_revision"
+        ],
+        "title": "BootstrapResponse",
+        "description": "Stabiler und versionierter Bootstrap-Vertrag."
+      },
+      "BootstrapRevisions": {
+        "properties": {
+          "configuration": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Configuration",
+            "default": 0
+          },
+          "model_registry": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Model Registry",
+            "default": 0
+          },
+          "tool_registry": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Tool Registry",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BootstrapRevisions",
+        "description": "Revisionsstände für Cache-Invalidierung und Diagnose."
+      },
+      "BootstrapUser": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "roles": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Roles"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Permissions"
+          },
+          "authenticated": {
+            "type": "boolean",
+            "title": "Authenticated",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "BootstrapUser",
+        "description": "Minimale, frontendfähige Darstellung des aktuellen Benutzers.\n\nEs werden keine Session-Tokens, Passwortdaten oder internen\nAuthentifizierungsinformationen ausgegeben."
+      },
+      "BootstrapVersions": {
+        "properties": {
+          "bootstrap_schema": {
+            "type": "string",
+            "title": "Bootstrap Schema",
+            "default": "1.1"
+          },
+          "ui_schema": {
+            "type": "string",
+            "title": "Ui Schema",
+            "default": "1.0"
+          },
+          "hierarchy_schema": {
+            "type": "string",
+            "title": "Hierarchy Schema",
+            "default": "1.0"
+          },
+          "chat_schema": {
+            "type": "string",
+            "title": "Chat Schema",
+            "default": "1.0"
+          },
+          "model_schema": {
+            "type": "string",
+            "title": "Model Schema",
+            "default": "1.0"
+          },
+          "tool_schema": {
+            "type": "string",
+            "title": "Tool Schema",
+            "default": "1.0"
+          },
+          "api": {
+            "type": "string",
+            "title": "Api",
+            "default": "v1"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BootstrapVersions",
+        "description": "Versionen der stabilen Backend- und Frontend-Verträge."
+      },
+      "ChatRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 32000,
+            "minLength": 1,
+            "title": "Message",
+            "description": "Nachricht des Benutzers."
+          },
+          "conversation_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Conversation Id",
+            "description": "Bestehende Unterhaltung, falls vorhanden."
+          },
+          "hierarchy_node_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hierarchy Node Id",
+            "description": "Aktiver generischer Hierarchieknoten."
+          },
+          "model_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Id",
+            "description": "Optional angefordertes Modell."
+          },
+          "tool_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "maxItems": 100,
+            "title": "Tool Ids",
+            "description": "Optional angeforderte Tool-IDs."
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Metadata",
+            "description": "Nicht sicherheitskritische Client-Metadaten."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "ChatRequest",
+        "description": "Eingabevertrag für eine Chat-Anfrage.\n\nModell- und Tool-IDs sind ausschließlich Benutzerwünsche. Auswahl,\nFreigabe und Autorisierung erfolgen serverseitig."
+      },
+      "ConfigEntryResponse": {
+        "properties": {
+          "group": {
+            "type": "string",
+            "title": "Group"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonValue"
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable",
+            "default": true
+          },
+          "sensitive": {
+            "type": "boolean",
+            "title": "Sensitive",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "group",
+          "key",
+          "value"
+        ],
+        "title": "ConfigEntryResponse"
+      },
+      "ConfigListResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1.1"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ConfigEntryResponse"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "revision",
+          "items"
+        ],
+        "title": "ConfigListResponse"
+      },
+      "ConfigUpdateRequest": {
+        "properties": {
+          "value": {
+            "$ref": "#/components/schemas/JsonValue"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision",
+            "description": "Vom Client zuletzt gelesene Konfigurationsrevision. Bei Abweichung wird die Änderung abgelehnt."
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "Optionale Begründung für das Audit-Log."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value"
+        ],
+        "title": "ConfigUpdateRequest",
+        "description": "Änderung eines einzelnen Konfigurationswertes.\n\n`expected_revision` schützt vor dem unbeabsichtigten Überschreiben\neiner zwischenzeitlich geänderten Konfiguration."
+      },
+      "ConfigUpdateResponse": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "const": "updated",
+            "title": "Status",
+            "default": "updated"
+          },
+          "group": {
+            "type": "string",
+            "title": "Group"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "group",
+          "key",
+          "revision"
+        ],
+        "title": "ConfigUpdateResponse"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HealthResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "api_version": {
+            "type": "string",
+            "title": "Api Version",
+            "default": "v1"
+          },
+          "status": {
+            "type": "string",
+            "const": "ok",
+            "title": "Status",
+            "default": "ok"
+          },
+          "environment": {
+            "type": "string",
+            "title": "Environment"
+          },
+          "config_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Config Revision"
+          },
+          "security_profile": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Security Profile"
+          },
+          "services": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ServiceStatus"
+            },
+            "type": "object",
+            "title": "Services"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "environment",
+          "config_revision",
+          "security_profile",
+          "services"
+        ],
+        "title": "HealthResponse"
+      },
+      "JsonValue": {},
+      "ModelCapability": {
+        "properties": {
+          "chat": {
+            "type": "boolean",
+            "title": "Chat",
+            "default": false
+          },
+          "streaming": {
+            "type": "boolean",
+            "title": "Streaming",
+            "default": false
+          },
+          "tool_calling": {
+            "type": "boolean",
+            "title": "Tool Calling",
+            "default": false
+          },
+          "vision": {
+            "type": "boolean",
+            "title": "Vision",
+            "default": false
+          },
+          "embeddings": {
+            "type": "boolean",
+            "title": "Embeddings",
+            "default": false
+          },
+          "structured_output": {
+            "type": "boolean",
+            "title": "Structured Output",
+            "default": false
+          },
+          "additional": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Additional"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ModelCapability",
+        "description": "Bekannte technische Fähigkeiten eines Modells.\n\nUnbekannte Fähigkeiten können zusätzlich über `additional`\nübertragen werden, ohne den stabilen Vertrag zu brechen."
+      },
+      "ModelEntry": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider"
+          },
+          "backend": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Backend"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "default": true
+          },
+          "selectable": {
+            "type": "boolean",
+            "title": "Selectable",
+            "default": true
+          },
+          "default": {
+            "type": "boolean",
+            "title": "Default",
+            "default": false
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/ModelCapability"
+          },
+          "limits": {
+            "$ref": "#/components/schemas/ModelLimits"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name",
+          "provider"
+        ],
+        "title": "ModelEntry",
+        "description": "Öffentlicher, frontendfähiger Modelleintrag.\n\nInterne Dateipfade, Zugangsdaten und Provider-Secrets werden nicht\nan das Frontend weitergegeben."
+      },
+      "ModelLimits": {
+        "properties": {
+          "context_window": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context Window"
+          },
+          "max_output_tokens": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Output Tokens"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ModelLimits"
+      },
+      "ModelListResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "registry_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Registry Revision",
+            "default": 0
+          },
+          "config_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Config Revision",
+            "default": 0
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ModelEntry"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ModelListResponse"
+      },
+      "ServiceStatus": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "up",
+              "down",
+              "unknown"
+            ],
+            "title": "Status"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "ServiceStatus"
+      },
+      "ToolCapabilities": {
+        "properties": {
+          "streaming": {
+            "type": "boolean",
+            "title": "Streaming",
+            "default": false
+          },
+          "confirmation_required": {
+            "type": "boolean",
+            "title": "Confirmation Required",
+            "default": false
+          },
+          "idempotent": {
+            "type": "boolean",
+            "title": "Idempotent",
+            "default": false
+          },
+          "read_only": {
+            "type": "boolean",
+            "title": "Read Only",
+            "default": false
+          },
+          "supports_cancellation": {
+            "type": "boolean",
+            "title": "Supports Cancellation",
+            "default": false
+          },
+          "additional": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Additional"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ToolCapabilities",
+        "description": "Technische Fähigkeiten eines Tools.\n\nDiese Angaben beschreiben lediglich die Tool-Schnittstelle.\nSie stellen keine Ausführungsberechtigung dar."
+      },
+      "ToolEntry": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "version": {
+            "type": "string",
+            "title": "Version",
+            "default": "1.0.0"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available",
+            "default": true
+          },
+          "selectable": {
+            "type": "boolean",
+            "title": "Selectable",
+            "default": true
+          },
+          "capabilities": {
+            "$ref": "#/components/schemas/ToolCapabilities"
+          },
+          "input_schema": {
+            "$ref": "#/components/schemas/ToolInputSchema"
+          },
+          "output_schema": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Output Schema"
+          },
+          "required_permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Permissions"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ToolEntry",
+        "description": "Öffentlicher, frontendfähiger Tool-Eintrag.\n\nInterne Python-Pfade, Importnamen, Zugangsdaten und ausführbare\nImplementierungsdetails werden nicht ausgegeben."
+      },
+      "ToolInputSchema": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "default": "object"
+          },
+          "properties": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Properties"
+          },
+          "required": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required"
+          },
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Additionalproperties"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "ToolInputSchema",
+        "description": "Öffentliche Beschreibung des Tool-Eingabeschemas.\n\nDas Schema bleibt JSON-Schema-artig, damit das Frontend daraus\ngenerische Formulare erzeugen kann."
+      },
+      "ToolListResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "registry_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Registry Revision",
+            "default": 0
+          },
+          "config_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Config Revision",
+            "default": 0
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ToolEntry"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "ToolListResponse"
+      },
+      "UIActionDefinition": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Label"
+          },
+          "icon": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Icon"
+          },
+          "endpoint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint"
+          },
+          "method": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "GET",
+                  "POST",
+                  "PUT",
+                  "PATCH",
+                  "DELETE"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method"
+          },
+          "required_permissions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Required Permissions"
+          },
+          "confirmation_required": {
+            "type": "boolean",
+            "title": "Confirmation Required",
+            "default": false
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "payload_schema": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Payload Schema"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "type"
+        ],
+        "title": "UIActionDefinition",
+        "description": "Beschreibung einer frontendseitig bekannten Aktion.\n\nEine deklarierte Aktion ersetzt niemals die serverseitige\nAutorisierung des zugehörigen API-Endpunkts."
+      },
+      "UIComponentDefinition": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "props": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Props"
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/UIComponentDefinition"
+            },
+            "type": "array",
+            "title": "Children"
+          },
+          "visible": {
+            "type": "boolean",
+            "title": "Visible",
+            "default": true
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "type"
+        ],
+        "title": "UIComponentDefinition",
+        "description": "Beschreibung einer bekannten generischen UI-Komponente.\n\nDer konkrete Komponententyp muss im Frontend in einer festen\nKomponenten-Registry vorhanden sein."
+      },
+      "UIFormDefinition": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "schema": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Schema"
+          },
+          "submit_action_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Submit Action Id"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "required": [
+          "id",
+          "schema"
+        ],
+        "title": "UIFormDefinition",
+        "description": "Dynamisch renderbares Formular.\n\n`form_schema` wird im öffentlichen JSON-Vertrag weiterhin unter\ndem Feldnamen `schema` ausgegeben."
+      },
+      "UISchemaDocument": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "components": {
+            "items": {
+              "$ref": "#/components/schemas/UIComponentDefinition"
+            },
+            "type": "array",
+            "title": "Components"
+          },
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/UIActionDefinition"
+            },
+            "type": "array",
+            "title": "Actions"
+          },
+          "forms": {
+            "items": {
+              "$ref": "#/components/schemas/UIFormDefinition"
+            },
+            "type": "array",
+            "title": "Forms"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "additionalProperties": true,
+        "type": "object",
+        "title": "UISchemaDocument",
+        "description": "Öffentlicher UI-Schema-Vertrag.\n\nZusätzliche Felder bleiben vorerst erlaubt, damit der bestehende\nSchema-Builder schrittweise auf diesen Vertrag migriert werden kann."
+      },
+      "UISchemaResponse": {
+        "properties": {
+          "api_schema_version": {
+            "type": "string",
+            "title": "Api Schema Version",
+            "default": "1.0"
+          },
+          "ui_schema_version": {
+            "type": "string",
+            "title": "Ui Schema Version"
+          },
+          "config_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Config Revision",
+            "default": 0
+          },
+          "schema": {
+            "$ref": "#/components/schemas/UISchemaDocument"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ui_schema_version",
+          "schema"
+        ],
+        "title": "UISchemaResponse",
+        "description": "Transportvertrag des API-Endpunkts.\n\n`ui_schema` wird im öffentlichen JSON-Vertrag weiterhin als\n`schema` serialisiert."
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

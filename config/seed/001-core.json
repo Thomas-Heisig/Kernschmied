@@ -1,0 +1,7 @@
+[
+  {"group":"uploads","key":"max_size_mb","value":10,"description":"Maximale Upload-Größe"},
+  {"group":"uploads","key":"allowed_types","value":["image/jpeg","image/png","application/pdf","text/plain"],"description":"Erlaubte MIME-Typen"},
+  {"group":"models","key":"default_model","value":"demo-model","description":"Standardmodell"},
+  {"group":"models","key":"ollama_host","value":"http://127.0.0.1:11434","description":"Ollama-Endpunkt"},
+  {"group":"security","key":"auth_mode","value":"none","description":"Authentifizierungsmodus"}
+]

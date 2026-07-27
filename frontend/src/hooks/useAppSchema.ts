@@ -1,0 +1,859 @@
+// F:\Kernschmied\frontend\src\hooks\useAppSchema.ts
+
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  ApiError,
+  apiGet,
+} from "../api/client";
+
+import {
+  isHierarchyTree,
+  type HierarchyNode,
+  type HierarchyTree,
+} from "../contracts/hierarchy";
+
+import {
+  isUISchema,
+  parseUISchema,
+  type UISchema,
+} from "../contracts/schema";
+
+const BOOTSTRAP_ENDPOINT = "/bootstrap";
+
+export type AppSchemaLoadStatus =
+  | "idle"
+  | "loading"
+  | "success"
+  | "error";
+
+export interface AppSchemaError {
+  code: string;
+  message: string;
+  details?: unknown;
+  requestId?: string;
+  status?: number;
+}
+
+export interface UseAppSchemaResult {
+  /**
+   * Geladenes und validiertes UI-Schema.
+   */
+  schema: UISchema | null;
+
+  /**
+   * Wurzelknoten der geladenen Hierarchie.
+   *
+   * Diese Eigenschaft bleibt mit bestehenden Aufrufern kompatibel.
+   */
+  hierarchy: HierarchyNode | null;
+
+  /**
+   * Vollständiger, versionierter Hierarchievertrag.
+   */
+  hierarchyTree: HierarchyTree | null;
+
+  /**
+   * Strukturierte Fehlerdaten.
+   *
+   * Bei einem fehlgeschlagenen Reload kann dieser Wert gesetzt sein,
+   * obwohl weiterhin gültige Daten verfügbar sind.
+   */
+  error: AppSchemaError | null;
+
+  /**
+   * Einfache Fehlermeldung für bestehende UI-Komponenten.
+   */
+  errorMessage: string | null;
+
+  status: AppSchemaLoadStatus;
+
+  /**
+   * `true` ausschließlich während des initialen Ladens.
+   */
+  isLoading: boolean;
+
+  /**
+   * `true`, wenn vorhandene Daten im Hintergrund neu geladen werden.
+   */
+  isRefreshing: boolean;
+
+  /**
+   * `true`, sobald ein verwendbares UI-Schema und eine Hierarchie
+   * verfügbar sind.
+   */
+  isReady: boolean;
+
+  /**
+   * Lädt Bootstrap, UI-Schema und Hierarchie erneut.
+   */
+  reload: () => Promise<void>;
+}
+
+/**
+ * Minimaler, von diesem Hook benötigter Teil des Bootstrap-Vertrags.
+ *
+ * Ein vollständiger Bootstrap-Vertrag sollte langfristig in
+ * `contracts/bootstrap.ts` liegen. Der Hook interpretiert bewusst nur
+ * die hier benötigten stabilen Felder.
+ */
+interface AppBootstrap {
+  schema_version: string;
+  endpoints: {
+    ui_schema: string;
+    hierarchy: string;
+  };
+  request_id?: string;
+}
+
+export function useAppSchema(): UseAppSchemaResult {
+  const [schema, setSchema] =
+    useState<UISchema | null>(null);
+
+  const [hierarchyTree, setHierarchyTree] =
+    useState<HierarchyTree | null>(null);
+
+  const [error, setError] =
+    useState<AppSchemaError | null>(null);
+
+  const [status, setStatus] =
+    useState<AppSchemaLoadStatus>("idle");
+
+  const [isRefreshing, setIsRefreshing] =
+    useState(false);
+
+  const activeRequestControllerRef =
+    useRef<AbortController | null>(null);
+
+  /**
+   * Verhindert, dass eine ältere Anfrage den Zustand einer neueren
+   * Anfrage überschreibt, selbst wenn ein Transport einen Abbruch
+   * nicht vollständig respektiert.
+   */
+  const requestGenerationRef =
+    useRef(0);
+
+  /**
+   * Wird als Ref geführt, damit `load` nicht von den geladenen Daten
+   * abhängt und dadurch im Effect keine ungewollte Ladeschleife
+   * entsteht.
+   */
+  const hasUsableDataRef =
+    useRef(false);
+
+  const load = useCallback(
+    async (): Promise<void> => {
+      activeRequestControllerRef.current?.abort();
+
+      const requestController =
+        new AbortController();
+
+      activeRequestControllerRef.current =
+        requestController;
+
+      const requestGeneration =
+        requestGenerationRef.current + 1;
+
+      requestGenerationRef.current =
+        requestGeneration;
+
+      const isInitialLoad =
+        !hasUsableDataRef.current;
+
+      if (isInitialLoad) {
+        setStatus("loading");
+      } else {
+        setIsRefreshing(true);
+      }
+
+      setError(null);
+
+      try {
+        const rawBootstrapResponse =
+          await apiGet<unknown>(
+            BOOTSTRAP_ENDPOINT,
+            {
+              signal:
+                requestController.signal,
+            },
+          );
+
+        assertRequestIsCurrent(
+          requestController,
+          requestGeneration,
+          requestGenerationRef,
+        );
+
+        const bootstrap =
+          normalizeBootstrapResponse(
+            rawBootstrapResponse,
+          );
+
+        const uiSchemaEndpoint =
+          normalizeBootstrapEndpoint(
+            bootstrap.endpoints.ui_schema,
+            "endpoints.ui_schema",
+          );
+
+        const hierarchyEndpoint =
+          normalizeBootstrapEndpoint(
+            bootstrap.endpoints.hierarchy,
+            "endpoints.hierarchy",
+          );
+
+        const [
+          rawSchemaResponse,
+          rawHierarchyResponse,
+        ] = await Promise.all([
+          apiGet<unknown>(
+            uiSchemaEndpoint,
+            {
+              signal:
+                requestController.signal,
+            },
+          ),
+
+          apiGet<unknown>(
+            hierarchyEndpoint,
+            {
+              signal:
+                requestController.signal,
+            },
+          ),
+        ]);
+
+        assertRequestIsCurrent(
+          requestController,
+          requestGeneration,
+          requestGenerationRef,
+        );
+
+        const normalizedSchema =
+          normalizeUISchemaResponse(
+            rawSchemaResponse,
+          );
+
+        const normalizedHierarchy =
+          normalizeHierarchyResponse(
+            rawHierarchyResponse,
+          );
+
+        assertRequestIsCurrent(
+          requestController,
+          requestGeneration,
+          requestGenerationRef,
+        );
+
+        setSchema(normalizedSchema);
+        setHierarchyTree(
+          normalizedHierarchy,
+        );
+
+        hasUsableDataRef.current = true;
+
+        setError(null);
+        setStatus("success");
+      } catch (caughtError) {
+        if (
+          requestController.signal.aborted ||
+          isAbortError(caughtError) ||
+          requestGeneration !==
+            requestGenerationRef.current
+        ) {
+          return;
+        }
+
+        const normalizedError =
+          normalizeAppSchemaError(
+            caughtError,
+          );
+
+        logDevelopmentError(
+          "Bootstrap, UI-Schema oder Hierarchie konnten nicht geladen werden.",
+          normalizedError,
+        );
+
+        setError(normalizedError);
+
+        /**
+         * Ein fehlgeschlagener Reload darf bereits erfolgreich geladene
+         * Daten nicht unbrauchbar machen.
+         */
+        if (hasUsableDataRef.current) {
+          setStatus("success");
+        } else {
+          setStatus("error");
+        }
+      } finally {
+        if (
+          requestGeneration ===
+          requestGenerationRef.current
+        ) {
+          setIsRefreshing(false);
+        }
+
+        if (
+          activeRequestControllerRef.current ===
+          requestController
+        ) {
+          activeRequestControllerRef.current =
+            null;
+        }
+      }
+    },
+    [],
+  );
+
+  useEffect(() => {
+    void load();
+
+    return () => {
+      requestGenerationRef.current += 1;
+
+      activeRequestControllerRef.current?.abort();
+
+      activeRequestControllerRef.current =
+        null;
+    };
+  }, [load]);
+
+  const isReady =
+    schema !== null &&
+    hierarchyTree !== null;
+
+  return {
+    schema,
+    hierarchy:
+      hierarchyTree?.root ?? null,
+    hierarchyTree,
+    error,
+    errorMessage:
+      error?.message ?? null,
+    status,
+    isLoading:
+      status === "loading" &&
+      !isReady,
+    isRefreshing,
+    isReady,
+    reload: load,
+  };
+}
+
+function normalizeBootstrapResponse(
+  value: unknown,
+): AppBootstrap {
+  const candidates =
+    getResponseCandidates(
+      value,
+      [
+        "data",
+        "bootstrap",
+        "result",
+      ],
+    );
+
+  for (const candidate of candidates) {
+    if (isAppBootstrap(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw createContractError(
+    "invalid_bootstrap_schema",
+    "Das Backend hat einen ungültigen Bootstrap-Vertrag geliefert.",
+    createContractErrorDetails(
+      value,
+      candidates,
+    ),
+  );
+}
+
+
+function normalizeUISchemaResponse(
+  value: unknown,
+): UISchema {
+  const candidates = getResponseCandidates(
+    value,
+    [
+      "data",
+      "schema",
+      "ui_schema",
+      "result",
+    ],
+  );
+
+  const validationAttempts: Array<{
+    candidateIndex: number;
+    candidateType: string;
+    issues: unknown;
+  }> = [];
+
+  for (
+    let index = 0;
+    index < candidates.length;
+    index += 1
+  ) {
+    const candidate = candidates[index];
+
+    const validation =
+      parseUISchema(candidate);
+
+    if (
+      validation.valid &&
+      validation.schema
+    ) {
+      return validation.schema;
+    }
+
+    validationAttempts.push({
+      candidateIndex: index,
+      candidateType:
+        describeValueType(candidate),
+      issues:
+        validation.issues,
+    });
+
+    /*
+     * Übergangs-Fallback:
+     *
+     * Ein strukturell gültiges Schema wird während der Migration
+     * weiterhin akzeptiert, selbst wenn die strengere semantische
+     * Prüfung noch Abweichungen meldet.
+     */
+    if (isUISchema(candidate)) {
+      if (import.meta.env.DEV) {
+        console.warn(
+          "Das UI-Schema ist strukturell gültig, erfüllt aber noch nicht alle semantischen Prüfungen.",
+          {
+            candidate,
+            issues:
+              validation.issues,
+          },
+        );
+      }
+
+      return candidate;
+    }
+  }
+
+  if (import.meta.env.DEV) {
+    console.error(
+      "UI-Schema vollständig abgelehnt.",
+      {
+        rawResponse: value,
+        candidates,
+        validationAttempts,
+      },
+    );
+  }
+
+  throw createContractError(
+    "invalid_ui_schema",
+    "Das Backend hat ein ungültiges oder nicht unterstütztes UI-Schema geliefert.",
+    {
+      received_type:
+        describeValueType(value),
+      validation_attempts:
+        validationAttempts,
+    },
+  );
+}
+
+function normalizeHierarchyResponse(
+  value: unknown,
+): HierarchyTree {
+  const candidates =
+    getResponseCandidates(
+      value,
+      [
+        "data",
+        "hierarchy",
+        "hierarchy_tree",
+        "tree",
+        "result",
+      ],
+    );
+
+  for (const candidate of candidates) {
+    if (isHierarchyTree(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw createContractError(
+    "invalid_hierarchy_schema",
+    "Das Backend hat eine ungültige Hierarchie geliefert.",
+    createContractErrorDetails(
+      value,
+      candidates,
+    ),
+  );
+}
+
+/**
+ * Bootstrap-Endpunkte müssen lokale absolute Pfade sein.
+ *
+ * Das Backend darf über den Bootstrap-Vertrag keine beliebigen externen
+ * Ziele oder protokollrelativen URLs in den API-Client einschleusen.
+ */
+function normalizeBootstrapEndpoint(
+  value: string,
+  fieldName: string,
+): string {
+  const normalizedValue =
+    value.trim();
+
+  if (
+    normalizedValue.length === 0
+  ) {
+    throw createContractError(
+      "invalid_bootstrap_endpoint",
+      `Der Bootstrap-Einstiegspunkt "${fieldName}" ist leer.`,
+      {
+        field: fieldName,
+        value,
+      },
+    );
+  }
+
+  if (
+    !normalizedValue.startsWith("/") ||
+    normalizedValue.startsWith("//") ||
+    normalizedValue.includes("\\") ||
+    hasUrlScheme(normalizedValue)
+  ) {
+    throw createContractError(
+      "unsafe_bootstrap_endpoint",
+      `Der Bootstrap-Einstiegspunkt "${fieldName}" ist nicht zulässig.`,
+      {
+        field: fieldName,
+        value,
+      },
+    );
+  }
+
+  return normalizedValue;
+}
+
+function hasUrlScheme(
+  value: string,
+): boolean {
+  return /^[a-z][a-z\d+.-]*:/i.test(
+    value,
+  );
+}
+
+/**
+ * Liefert die direkte Antwort sowie Inhalte aus fest bekannten
+ * Wrapper-Feldern.
+ *
+ * Es wird nicht rekursiv durch beliebige Antwortstrukturen gesucht.
+ */
+function getResponseCandidates(
+  value: unknown,
+  wrapperKeys: readonly string[],
+): unknown[] {
+  const candidates: unknown[] = [
+    value,
+  ];
+
+  if (!isRecord(value)) {
+    return candidates;
+  }
+
+  for (const key of wrapperKeys) {
+    if (
+      Object.prototype.hasOwnProperty.call(
+        value,
+        key,
+      )
+    ) {
+      candidates.push(
+        value[key],
+      );
+    }
+  }
+
+  return candidates;
+}
+
+function isAppBootstrap(
+  value: unknown,
+): value is AppBootstrap {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  if (!isRecord(value.endpoints)) {
+    return false;
+  }
+
+  return (
+    isNonEmptyString(
+      value.schema_version,
+    ) &&
+    isNonEmptyString(
+      value.endpoints.ui_schema,
+    ) &&
+    isNonEmptyString(
+      value.endpoints.hierarchy,
+    ) &&
+    (
+      value.request_id === undefined ||
+      isNonEmptyString(
+        value.request_id,
+      )
+    )
+  );
+}
+
+function assertRequestIsCurrent(
+  controller: AbortController,
+  requestGeneration: number,
+  requestGenerationRef: {
+    readonly current: number;
+  },
+): void {
+  if (
+    controller.signal.aborted ||
+    requestGeneration !==
+      requestGenerationRef.current
+  ) {
+    throw createAbortError();
+  }
+}
+
+function createAbortError(): Error {
+  if (
+    typeof DOMException !==
+    "undefined"
+  ) {
+    return new DOMException(
+      "Die Anfrage wurde abgebrochen.",
+      "AbortError",
+    );
+  }
+
+  const error =
+    new Error(
+      "Die Anfrage wurde abgebrochen.",
+    );
+
+  error.name = "AbortError";
+
+  return error;
+}
+
+function createContractErrorDetails(
+  rawValue: unknown,
+  candidates: readonly unknown[],
+): Record<string, unknown> {
+  return {
+    received_type:
+      describeValueType(rawValue),
+    candidate_count:
+      candidates.length,
+
+    /**
+     * Die vollständige API-Antwort wird absichtlich nicht in den
+     * Fehlerdetails abgelegt. Sie könnte vertrauliche oder sehr große
+     * Inhalte enthalten.
+     */
+    candidate_types:
+      candidates.map(
+        describeValueType,
+      ),
+  };
+}
+
+function createContractError(
+  code: string,
+  message: string,
+  details?: unknown,
+): AppSchemaError {
+  return {
+    code,
+    message,
+    details,
+  };
+}
+
+function normalizeAppSchemaError(
+  error: unknown,
+): AppSchemaError {
+  if (isAppSchemaError(error)) {
+    return error;
+  }
+
+  if (error instanceof ApiError) {
+    return {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      requestId: error.requestId,
+      status: error.status,
+    };
+  }
+
+  if (
+    typeof DOMException !==
+      "undefined" &&
+    error instanceof DOMException
+  ) {
+    if (error.name === "AbortError") {
+      return {
+        code: "request_aborted",
+        message:
+          "Die Anfrage wurde abgebrochen.",
+      };
+    }
+
+    return {
+      code: "browser_request_failed",
+      message: error.message,
+      details: {
+        name: error.name,
+      },
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      code: "app_schema_load_failed",
+      message: error.message,
+      details: {
+        name: error.name,
+      },
+    };
+  }
+
+  return {
+    code: "app_schema_load_failed",
+    message:
+      "Bootstrap, Schema und Hierarchie konnten nicht geladen werden.",
+    details: {
+      received_type:
+        describeValueType(error),
+    },
+  };
+}
+
+function isAppSchemaError(
+  value: unknown,
+): value is AppSchemaError {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    isNonEmptyString(value.code) &&
+    isNonEmptyString(value.message) &&
+    (
+      value.requestId === undefined ||
+      isNonEmptyString(
+        value.requestId,
+      )
+    ) &&
+    (
+      value.status === undefined ||
+      (
+        typeof value.status ===
+          "number" &&
+        Number.isFinite(
+          value.status,
+        ) &&
+        Number.isInteger(
+          value.status,
+        ) &&
+        value.status >= 100 &&
+        value.status <= 599
+      )
+    )
+  );
+}
+
+function isAbortError(
+  error: unknown,
+): boolean {
+  if (
+    typeof DOMException !==
+      "undefined" &&
+    error instanceof DOMException &&
+    error.name === "AbortError"
+  ) {
+    return true;
+  }
+
+  if (
+    error instanceof Error &&
+    error.name === "AbortError"
+  ) {
+    return true;
+  }
+
+  return (
+    error instanceof ApiError &&
+    error.code ===
+      "request_aborted"
+  );
+}
+
+function isRecord(
+  value: unknown,
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value)
+  );
+}
+
+function isNonEmptyString(
+  value: unknown,
+): value is string {
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0
+  );
+}
+
+function describeValueType(
+  value: unknown,
+): string {
+  if (value === null) {
+    return "null";
+  }
+
+  if (Array.isArray(value)) {
+    return "array";
+  }
+
+  return typeof value;
+}
+
+function logDevelopmentError(
+  message: string,
+  error: AppSchemaError,
+): void {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  console.error(
+    message,
+    {
+      code: error.code,
+      message: error.message,
+      status: error.status,
+      requestId:
+        error.requestId,
+      details:
+        error.details,
+    },
+  );
+}

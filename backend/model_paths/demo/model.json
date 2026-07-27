@@ -1,0 +1,43 @@
+{
+  "schema_version": "1.0",
+  "id": "demo-local",
+  "display_name": "Lokales Demo-Modell",
+  "description": "Lokales Demonstrationsmodell für die Kernschmied-Entwicklung.",
+  "status": "active",
+  "enabled": true,
+  "runtime": "local",
+  "provider": {
+    "type": "demo",
+    "config": {},
+    "secrets": {}
+  },
+  "capabilities": [
+    "chat",
+    "streaming",
+    "tools"
+  ],
+  "tags": [
+    "demo",
+    "local",
+    "development"
+  ],
+  "limits": {
+    "context_window": 8192,
+    "max_output_tokens": 2048,
+    "max_tool_calls": 10
+  },
+  "lifecycle": {
+    "eager_create": false,
+    "eager_load": false,
+    "unload_when_idle": false
+  },
+  "presentation": {
+    "category": "Lokale Modelle",
+    "sort_order": 100,
+    "hidden": false,
+    "badge": "Demo"
+  },
+  "metadata": {
+    "purpose": "development"
+  }
+}
