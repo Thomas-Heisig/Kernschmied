@@ -1,4 +1,4 @@
-# ADR-0003: Registry-Based Extension Architecture
+# ADR-0005: Versioned Contracts and Schema Evolution
 
 - **Status:** Accepted
 - **Date:** 2026-07-27
@@ -10,584 +10,463 @@
 
 # Context
 
-Kernschmied is designed as a configurable platform rather than a single-purpose business application.
+Kernschmied is designed as a long-lived platform whose frontend, backend, plugins, AI providers, tools, and configuration system evolve independently over time.
 
-The platform must support the addition of new capabilities throughout its lifetime without requiring extensive modifications to the existing codebase.
+The platform contains numerous contracts between subsystems, including:
 
-Examples include:
+- REST APIs
+- Server-Sent Events (SSE)
+- UI Schemas
+- Hierarchy Schemas
+- Configuration Schemas
+- Model Manifests
+- Tool Manifests
+- Plugin Manifests
+- Bootstrap Responses
+- Internal Service Contracts
 
-- AI model providers
-- AI models
-- backend tools
-- frontend components
-- frontend actions
-- hierarchy node types
-- prompt providers
-- authentication providers (future)
-- storage providers (future)
-- import/export formats
-- plugins
+These contracts must remain stable over many years while allowing the platform to introduce new capabilities.
 
-A central architectural challenge is ensuring that these extension points remain:
-
-- predictable
-- secure
-- testable
-- maintainable
-- discoverable
-
-The platform therefore requires a consistent mechanism for managing extensible functionality.
+Without explicit versioning, even small changes can unintentionally break existing clients, plugins, or integrations.
 
 ---
 
 # Problem
 
-Without a common extension mechanism, new functionality tends to be integrated directly into existing code.
+Software systems frequently evolve by modifying data structures directly.
 
-Typical examples include:
+Examples include:
 
-```python
-if provider == "ollama":
-    ...
+- Renaming properties
+- Changing data types
+- Removing fields
+- Altering event formats
+- Changing endpoint behavior
 
-elif provider == "openai":
-    ...
+While these modifications may appear harmless during development, they often introduce breaking changes into existing deployments.
 
-elif provider == "transformers":
-    ...
-```
+Typical consequences include:
 
-or
+- Older frontends no longer working with newer backends
+- Plugins becoming incompatible
+- Configuration files becoming unreadable
+- Failed deployments
+- Difficult rollback procedures
+- Hidden production failures
 
-```tsx
-if (component.type === "table") {
-    ...
-}
-
-if (component.type === "tree") {
-    ...
-}
-```
-
-As the application evolves, this approach creates several problems.
-
----
-
-## Growing Conditional Logic
-
-Every new implementation requires another conditional branch.
-
-Over time these become increasingly difficult to understand and maintain.
-
----
-
-## Tight Coupling
-
-Core application code becomes directly dependent upon every supported implementation.
-
-Adding one provider often requires modifying multiple files.
-
----
-
-## Limited Extensibility
-
-Third-party extensions become difficult because new functionality must be inserted into existing code rather than registered independently.
-
----
-
-## Increased Testing Complexity
-
-Every modification risks affecting unrelated implementations.
-
-Regression testing becomes progressively more expensive.
-
----
-
-## Violated Open/Closed Principle
-
-Core components remain in constant modification instead of being extended through composition.
+For a configurable platform such as Kernschmied, this risk is unacceptable.
 
 ---
 
 # Decision
 
-Kernschmied adopts a **registry-based extension architecture**.
+Kernschmied adopts **explicit versioning for every externally visible contract**.
 
-Every extensible subsystem is represented by an explicit registry responsible for:
+Every contract exchanged between independently evolving subsystems must define its own version.
 
-- registration
-- discovery
-- lookup
-- validation
-- lifecycle management
-- capability metadata
+Breaking changes require a new version.
 
-The application core communicates only with registries and never directly with individual implementations.
+Backward-compatible extensions should preserve the existing version whenever possible.
 
 ---
 
 # Architectural Principle
 
-> **Core systems depend on registries.  
-> Registries depend on implementations.  
-> Implementations never modify the core.**
+> **Contracts evolve deliberately, never accidentally.**
+
+Every breaking change must be intentional, documented, and versioned.
+
+---
+
+# Scope
+
+This decision applies to all stable contracts, including:
+
+- REST APIs
+- SSE Events
+- UI Schemas
+- Bootstrap Responses
+- Hierarchy Schemas
+- Configuration Schemas
+- Model Manifests
+- Tool Manifests
+- Plugin Manifests
+- Extension Interfaces
+
+Internal implementation details are not considered public contracts.
 
 ---
 
 # High-Level Architecture
 
 ```text
-                Application
+Producer
 
-                     │
+        │
 
-                     ▼
+        ▼
 
-              Registry Interface
+Versioned Contract
 
-                     │
+        │
 
-      ┌──────────────┼──────────────┐
-      │              │              │
-      ▼              ▼              ▼
+        ▼
 
- Implementation   Implementation   Implementation
-       A               B               C
+Validation
+
+        │
+
+        ▼
+
+Consumer
 ```
 
----
-
-# Why Registries?
-
-Registries provide several important architectural advantages.
-
-## Explicit Discovery
-
-Every supported implementation is registered intentionally.
-
-Nothing becomes available merely because code exists.
+Both producer and consumer understand exactly which contract version is being exchanged.
 
 ---
 
-## Stable Contracts
-
-The application communicates with interfaces instead of concrete implementations.
+# Contract Categories
 
 ---
 
-## Central Validation
+## API Contracts
 
-Registration can verify:
-
-- unique identifiers
-- supported versions
-- manifests
-- required capabilities
-
-before the implementation becomes available.
-
----
-
-## Runtime Introspection
-
-Administrative interfaces can inspect available extensions through the registry.
-
----
-
-## Consistent Lifecycle
-
-Every extension follows the same initialization process.
-
----
-
-# Registry Responsibilities
-
-Every registry should support the following responsibilities.
-
-## Registration
-
-New implementations register themselves during application startup.
-
----
-
-## Lookup
-
-Applications request implementations by identifier.
+Every REST endpoint returns data conforming to a defined contract.
 
 Example:
 
 ```text
-"ollama"
+GET /api/v1/bootstrap
 
 ↓
 
-Model Registry
-
-↓
-
-Ollama Provider
+BootstrapResponse v1
 ```
 
----
-
-## Validation
-
-Registries verify:
-
-- unique IDs
-- compatibility
-- manifest correctness
-- dependencies
+API versions remain stable for their supported lifecycle.
 
 ---
 
-## Metadata
+## UI Schemas
 
-Registries expose metadata for administration and diagnostics.
+Every UI schema contains an explicit schema version.
 
-Typical metadata includes:
+Example:
 
-- identifier
-- version
-- description
-- capabilities
-- supported features
+```json
+{
+  "schema_version": "1.0",
+  "layout": "...",
+  "sections": []
+}
+```
 
----
-
-## Lifecycle
-
-Registries control:
-
-- initialization
-- activation
-- shutdown
-- health status
+The frontend validates compatibility before rendering.
 
 ---
 
-# Registry Types
+## SSE Contracts
 
-Kernschmied contains several specialized registries.
+Streaming events follow a stable event contract.
+
+Example event types:
+
+- start
+- token
+- message
+- reasoning
+- tool_call
+- tool_result
+- usage
+- complete
+- error
+- heartbeat
+
+New event types may be introduced without breaking existing consumers, provided unknown events can be ignored safely.
 
 ---
 
-## Model Registry
+## Bootstrap Contract
 
-Responsible for:
+The bootstrap endpoint provides version information for the platform itself.
 
-- model providers
-- model manifests
-- model capabilities
-- inference configuration
+Example:
+
+```json
+{
+  "versions": {
+    "bootstrap": 1,
+    "ui_schema": 1,
+    "chat": 1,
+    "tool_registry": 1
+  }
+}
+```
+
+Clients can use this information during initialization.
+
+---
+
+## Configuration Schemas
+
+Configuration objects are versioned independently from application versions.
+
+Migration procedures may transform older configuration revisions into newer representations.
+
+---
+
+## Manifest Contracts
+
+Every manifest defines its own schema version.
 
 Examples:
 
-- Ollama
-- Transformers
-- llama.cpp
-- OpenAI-compatible APIs
+```text
+model.json
+
+tool.json
+
+plugin.json
+```
+
+The registry validates manifests before registration.
 
 ---
 
-## Tool Registry
+# Compatibility Model
 
-Responsible for backend tools.
+The platform distinguishes between two categories of changes.
 
-Examples:
+## Backward-Compatible Changes
 
-- calculator
-- filesystem
-- web search
-- email
-- OCR
-- SQL
+These changes preserve the current contract version.
 
-The registry validates every tool before activation.
+Examples include:
+
+- Adding optional fields
+- Adding optional capabilities
+- Adding new metadata
+- Improving documentation
+- Expanding enumerations where consumers tolerate unknown values
+
+Older consumers continue to function correctly.
 
 ---
 
-## Component Registry
+## Breaking Changes
 
-Frontend registry that maps schema component types to React components.
+Breaking changes require a new version.
+
+Examples include:
+
+- Removing fields
+- Renaming fields
+- Changing field types
+- Changing endpoint semantics
+- Removing event types
+- Altering validation rules incompatibly
+
+These changes must not silently replace existing contracts.
+
+---
+
+# Version Negotiation
+
+Where appropriate, producer and consumer may negotiate supported versions.
+
+Typical process:
+
+```text
+Consumer
+
+↓
+
+Supported Versions
+
+↓
+
+Producer
+
+↓
+
+Highest Compatible Version
+
+↓
+
+Communication
+```
+
+When negotiation is not supported, incompatible versions result in a controlled failure.
+
+---
+
+# Validation
+
+Every contract is validated before use.
+
+Validation occurs:
+
+- during application startup
+- when loading manifests
+- before rendering UI schemas
+- before processing configuration
+- before executing plugins
+
+Invalid contracts are rejected before entering the runtime.
+
+---
+
+# Unknown Fields
+
+Consumers should ignore unknown optional fields whenever possible.
+
+This allows newer producers to communicate with older consumers without introducing breaking changes.
+
+Example:
+
+```json
+{
+  "name": "Example",
+  "description": "...",
+  "future_property": "..."
+}
+```
+
+If `future_property` is optional, older consumers simply ignore it.
+
+---
+
+# Unknown Versions
+
+Unknown versions must never be processed blindly.
+
+Instead:
+
+```text
+Receive Contract
+
+↓
+
+Version Check
+
+↓
+
+Supported?
+
+↓
+
+Yes → Continue
+
+↓
+
+No → Reject Gracefully
+```
+
+This prevents undefined behavior.
+
+---
+
+# Deprecation
+
+Contracts may be deprecated before removal.
+
+A typical lifecycle is:
+
+```text
+Introduced
+
+↓
+
+Supported
+
+↓
+
+Deprecated
+
+↓
+
+Removal Announced
+
+↓
+
+Removed in Next Major Version
+```
+
+Deprecation periods provide consumers sufficient time to migrate.
+
+---
+
+# Migration
+
+Configuration and data migrations should be explicit.
 
 Example:
 
 ```text
-"text"
+Version 1
 
 ↓
 
-TextField
+Migration
+
+↓
+
+Version 2
 ```
 
----
-
-## Action Registry
-
-Maps schema actions to frontend action handlers.
-
-Example:
-
-```text
-"submit"
-
-↓
-
-Submit Handler
-```
-
----
-
-## Hierarchy Registry
-
-Responsible for supported hierarchy node types.
-
-Examples:
-
-- project
-- folder
-- workspace
-- configuration
-- prompt
-- model
-
----
-
-## Layout Registry
-
-Maps layout identifiers to layout implementations.
-
-Examples:
-
-- grid
-- tabs
-- accordion
-- split-view
-
----
-
-## Prompt Provider Registry
-
-Future registry responsible for prompt inheritance providers.
-
----
-
-# Registration Process
-
-Every registry follows the same lifecycle.
-
-```text
-Application Startup
-
-↓
-
-Load Manifest
-
-↓
-
-Validate
-
-↓
-
-Register
-
-↓
-
-Registry Ready
-```
-
-Invalid implementations are rejected before the application becomes operational.
-
----
-
-# Registration Requirements
-
-Every implementation should provide:
-
-- unique identifier
-- version
-- description
-- supported capabilities
-- manifest
-- implementation object
-
-Optional metadata may include:
-
-- documentation
-- author
-- homepage
-- deprecation information
-
----
-
-# Manifests
-
-Registries use manifests to describe implementations.
-
-Examples:
-
-- `model.json`
-- `tool.json`
-
-Manifests are declarative.
-
-They describe an implementation without executing it.
-
-This improves validation and security.
-
----
-
-# Lookup
-
-Registry lookup should be deterministic.
-
-```text
-Identifier
-
-↓
-
-Registry
-
-↓
-
-Implementation
-```
-
-Unknown identifiers return a controlled failure rather than causing application instability.
-
----
-
-# Duplicate Registration
-
-Identifiers must be globally unique within a registry.
-
-Example:
-
-```text
-calculator
-
-↓
-
-Implementation A
-
-↓
-
-Implementation B
-```
-
-Duplicate registrations are rejected during startup.
-
----
-
-# Version Compatibility
-
-Registries validate compatibility between:
-
-- application version
-- manifest version
-- schema version
-- implementation version
-
-Unsupported versions are rejected before activation.
-
----
-
-# Dependency Resolution
-
-Implementations may depend on other platform capabilities.
-
-Registries should validate these dependencies before registration.
-
-Example:
-
-```text
-Plugin
-
-↓
-
-Requires
-
-↓
-
-Tool Registry
-
-↓
-
-Calculator
-```
-
-If dependencies are unavailable, registration fails gracefully.
-
----
-
-# Runtime Discovery
-
-Administrative interfaces may query registries to display available functionality.
-
-Typical information includes:
-
-- installed implementations
-- versions
-- capabilities
-- health status
-- configuration state
+Migration logic should remain deterministic and testable.
 
 ---
 
 # Error Handling
 
-Registration failures should be isolated.
+Version mismatches should produce structured errors.
 
-```text
-Plugin
+Example:
 
-↓
-
-Validation Error
-
-↓
-
-Registration Failed
-
-↓
-
-Continue Startup
+```json
+{
+  "code": "unsupported_version",
+  "message": "UI Schema version 3 is not supported.",
+  "details": {
+    "supported_versions": [
+      "1",
+      "2"
+    ]
+  }
+}
 ```
 
-A faulty extension should not prevent unrelated extensions from functioning unless the failed extension is mandatory.
+Consumers receive actionable diagnostics instead of generic failures.
 
 ---
 
 # Security Considerations
 
-Registries follow a strict allow-list model.
+Version validation improves security by ensuring:
 
-Only validated implementations become available.
+- predictable parsing
+- known semantics
+- controlled upgrades
+- validated manifests
+- deterministic processing
 
-Registries must never:
-
-- execute arbitrary code during discovery
-- load implementations from untrusted locations
-- bypass validation
-- allow duplicate identifiers
-- expose unvalidated implementations
-
-Registration is explicit and deterministic.
+Unsupported contract versions must never bypass validation.
 
 ---
 
-# Performance Considerations
+# Operational Impact
 
-Registries should provide:
+Versioned contracts simplify:
 
-- constant-time lookup
-- cached metadata
-- immutable registration after startup
-- lightweight discovery
-- lazy initialization where appropriate
+- rolling upgrades
+- staged deployments
+- plugin compatibility
+- diagnostics
+- rollback procedures
+- long-term maintenance
 
-Lookup performance should remain effectively independent of registry size.
+Operations teams can identify incompatibilities before users encounter runtime failures.
 
 ---
 
@@ -595,100 +474,105 @@ Lookup performance should remain effectively independent of registry size.
 
 ## Positive
 
-### Open/Closed Architecture
+### Stable Integrations
 
-The platform grows through extension rather than modification.
-
----
-
-### Reduced Coupling
-
-Core services remain independent from concrete implementations.
+Clients evolve independently while maintaining compatibility.
 
 ---
 
-### Better Testing
+### Predictable Evolution
 
-Individual implementations can be tested independently of the registry.
-
----
-
-### Consistent Extension Model
-
-Every extensible subsystem follows the same architectural pattern.
+Breaking changes become explicit architectural decisions.
 
 ---
 
-### Improved Diagnostics
+### Better Diagnostics
 
-Registries expose implementation metadata for administration and troubleshooting.
+Version mismatches are detected immediately.
+
+---
+
+### Safer Deployments
+
+Rolling upgrades and rollback procedures become easier.
+
+---
+
+### Improved Plugin Support
+
+Plugins can declare supported contract versions before registration.
 
 ---
 
 ## Negative
 
-### Additional Infrastructure
+### Additional Maintenance
 
-Registries require:
+Every public contract requires:
 
-- interfaces
-- validation
-- lifecycle management
 - documentation
+- validation
+- compatibility testing
 
 ---
 
-### More Startup Work
+### Migration Logic
 
-Registration and validation increase startup complexity, although only once during initialization.
+Some contract changes require explicit migration code.
 
 ---
 
 # Alternatives Considered
 
-## Conditional Logic
+## Unversioned Contracts
+
+Advantages:
+
+- minimal implementation effort
+
+Disadvantages:
+
+- accidental breaking changes
+- poor compatibility
+- difficult maintenance
+
+Rejected.
+
+---
+
+## Application Version Only
+
+Using the application version as the only compatibility indicator.
 
 Advantages:
 
 - simple
-- familiar
 
 Disadvantages:
 
-- poor scalability
-- tight coupling
-- repeated modification
+- unrelated subsystems evolve independently
+- unnecessary coupling
+- coarse compatibility information
 
 Rejected.
 
 ---
 
-## Dynamic Reflection
+## Automatic Compatibility
 
-Automatically discovering implementations via unrestricted reflection.
+Attempting to infer compatibility dynamically.
 
 Advantages:
 
-- minimal registration effort
+- minimal manual version management
 
 Disadvantages:
 
 - unpredictable behavior
-- weaker validation
-- security concerns
-- reduced startup determinism
+- ambiguous semantics
+- difficult debugging
 
 Rejected.
-
----
-
-## Dependency Injection Alone
-
-Dependency injection manages object creation but does not provide discovery, metadata, validation, or runtime lookup.
-
-Dependency injection complements registries but does not replace them.
-
-Rejected as the sole extension mechanism.
 
 ---
 
@@ -696,34 +580,33 @@ Rejected as the sole extension mechanism.
 
 Potential risks include:
 
-- overly large registries
-- inconsistent registration APIs
-- missing validation
-- circular dependencies
-- undocumented capabilities
+- forgetting to version new contracts
+- inconsistent version numbering
+- undocumented compatibility rules
+- excessive parallel versions
 
 Mitigation strategies include:
 
-- common registry interfaces
-- strict manifest validation
-- startup diagnostics
-- automated testing
-- architectural reviews
+- architecture reviews
+- automated validation
+- CI compatibility tests
+- comprehensive documentation
+- clear deprecation policies
 
 ---
 
 # Implementation Notes
 
-All registries should provide:
+Every public contract should provide:
 
-- strongly typed interfaces
-- immutable registrations after initialization
+- explicit version identifier
+- schema validation
+- compatibility checks
 - structured error reporting
-- capability metadata
-- deterministic lookup
-- comprehensive unit tests
+- automated tests
+- migration strategy where required
 
-Registries should be registered using dependency injection rather than global mutable state.
+Breaking changes must never replace an existing contract silently.
 
 ---
 
@@ -731,8 +614,8 @@ Registries should be registered using dependency injection rather than global mu
 
 - [[ADR-0001-Schema-Driven-UI]]
 - [[ADR-0002-Bootstrap]]
-- [[ADR-0004-Versioned-Contracts]]
-- [[ADR-0005-Deny-by-Default-Security]]
+- [[ADR-0003-Registries]]
+- [[ADR-0004-Security-Profiles]]
 
 ---
 
@@ -741,43 +624,46 @@ Registries should be registered using dependency injection rather than global mu
 ## Architecture
 
 - [[Architecture]]
-- [[Registry-Architecture]]
+- [[Contract-Versioning]]
 - [[Manifest-System]]
-
----
-
-## Frontend
-
-- [[Component-Registry]]
-- [[Action-Registry]]
+- [[Bootstrap-Lifecycle]]
 
 ---
 
 ## Backend
 
-- [[Model-Registry]]
-- [[Tool-Registry]]
-- [[Hierarchy]]
+- [[Contracts]]
+- [[REST-API]]
+- [[Streaming]]
 - [[Configuration]]
+
+---
+
+## Frontend
+
+- [[UI-Schema]]
+- [[Schema-Renderer]]
+- [[API-Client]]
 
 ---
 
 ## Concepts
 
+- [[Semantic-Versioning]]
 - [[Plugin-System]]
-- [[Dependency-Injection]]
 - [[Runtime-Configuration]]
-- [[Contracts]]
 
 ---
 
 # Decision Summary
 
-Kernschmied adopts a **registry-based extension architecture** for every major extension point in the platform.
+Kernschmied adopts **explicit versioning for every public contract** exchanged between independently evolving parts of the platform.
 
-Rather than embedding implementation-specific logic into the application core, functionality is introduced through explicit registries that provide deterministic registration, validation, discovery, metadata, and lifecycle management.
+Each contract defines its own version, is validated before use, and evolves according to documented compatibility rules.
 
-This decision enables a modular, secure, and maintainable platform that can evolve over many years while preserving stable contracts and minimizing coupling between the application core and its extensions.
+Breaking changes always require a new contract version, while backward-compatible extensions preserve existing versions whenever possible.
+
+This decision provides a stable foundation for long-term evolution, plugin compatibility, rolling upgrades, and independent frontend/backend development while minimizing the risk of accidental breaking changes.
 
 ---
 
