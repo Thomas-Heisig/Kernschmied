@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Sicherheitsproblem melden
+    url: mailto:kontakt@heisig-naturstein.de
+    about: Sicherheitsprobleme bitte vertraulich und nicht als öffentliches Issue melden.

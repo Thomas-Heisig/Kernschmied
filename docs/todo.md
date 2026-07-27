@@ -35,8 +35,8 @@ Dabei gelten folgende Grundsätze:
 
 ## 1.1 Hierarchie-Endpunkt
 
-* [!] Prüfen, ob `GET /api/v1/hierarchy` im aktuellen OpenAPI-Dokument noch als `HealthResponse` beschrieben wird.
-* [ ] Falls weiterhin fehlerhaft: falsche Routerfunktion, falsches `response_model`, falschen Import oder kopierten Health-Handler korrigieren.
+* [x] Prüfen, ob `GET /api/v1/hierarchy` im aktuellen OpenAPI-Dokument noch als `HealthResponse` beschrieben wird. - Ursache: veraltetes OpenAPI-Artefakt - Laufzeit- und OpenAPI-Prüfung als erledigt
+* [x] Falls weiterhin fehlerhaft: falsche Routerfunktion, falsches `response_model`, falschen Import oder kopierten Health-Handler korrigieren. - Nicht erforderlich, da Endpunkt korrekt ist.
 * [-] Hierarchie-Vertragsmodelle und Normalisierung sind teilweise vorhanden.
 * [ ] Sicherstellen, dass der Endpunkt zur Laufzeit ausschließlich den vereinbarten Hierarchievertrag liefert.
 * [ ] OpenAPI nach der Korrektur neu erzeugen und prüfen.
