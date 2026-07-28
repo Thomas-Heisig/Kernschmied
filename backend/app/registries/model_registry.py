@@ -239,6 +239,12 @@ class ModelRegistry:
 
     Die Registry speichert nur validierte LoadedModelManifest-Objekte.
     Ungültige Dateien werden nicht als verwendbare Modelle registriert.
+
+    Zusätzlich kann ein explizites Standardmodell (default model) gesetzt
+    werden. Dieses wird von get_default() bevorzugt zurückgegeben, sofern
+    es registriert und aktiviert ist. Ist kein explizites Standardmodell
+    gesetzt oder nicht verfügbar, wird das erste aktivierte Modell als
+    Fallback verwendet.
     """
 
     def __init__(
@@ -248,6 +254,7 @@ class ModelRegistry:
         base_directories: Sequence[str | Path] | None = None,
         recursive: bool = DEFAULT_DISCOVERY_RECURSIVE,
         follow_symlinks: bool = DEFAULT_FOLLOW_SYMLINKS,
+        default_model_id: str | None = None,  # NEU: explizite Default-ID
     ) -> None:
         if base_directories is not None and base_dir is not None:
             raise ValueError(
@@ -293,6 +300,12 @@ class ModelRegistry:
             ModelDiscoveryReport | None
         ) = None
 
+        # NEU: explizite Default-Modell-ID (kann None sein)
+        self._default_model_id: str | None = None
+        if default_model_id is not None:
+            # Normalisierung und erste Validierung
+            self._default_model_id = self._normalize_model_id(default_model_id)
+
     # ========================================================
     # Eigenschaften
     # ========================================================
@@ -310,6 +323,70 @@ class ModelRegistry:
         self,
     ) -> ModelDiscoveryReport | None:
         return self._last_discovery_report
+
+    # ========================================================
+    # Default-Modell (NEU)
+    # ========================================================
+
+    async def set_default_model_id(self, model_id: str | None) -> None:
+        """
+        Setzt oder entfernt die explizite Default-Modell-ID.
+
+        Die ID wird normalisiert. Existiert das Modell nicht in der Registry,
+        wird ein ModelNotRegisteredError ausgelöst (optional könnte man auch
+        nur warnen, aber hier wird es als Fehler behandelt, weil der Aufrufer
+        eine gültige ID erwarten kann).
+        """
+        if model_id is None:
+            async with self._lock:
+                self._default_model_id = None
+            return
+
+        normalized = self._normalize_model_id(model_id)
+        async with self._lock:
+            # Prüfen, ob das Modell registriert ist
+            if normalized not in self._entries:
+                raise ModelNotRegisteredError(normalized)
+            self._default_model_id = normalized
+
+    async def get_default_model_id(self) -> str | None:
+        """
+        Gibt die explizit gesetzte Default-Modell-ID zurück (oder None).
+        """
+        async with self._lock:
+            return self._default_model_id
+
+    async def get_default(self) -> ModelRegistryEntry | None:
+        """
+        Liefert den Registry-Eintrag des Standardmodells.
+
+        Priorität:
+        1. Explizit gesetzte Default-ID (falls vorhanden und registriert)
+        2. Erstes aktiviertes Modell (enabled_only=True) als Fallback
+        3. None, wenn kein aktiviertes Modell existiert.
+
+        Diese Methode ist für den 503-Fehler bei model_id=null relevant.
+        """
+        async with self._lock:
+            # 1. Explizites Default
+            if self._default_model_id is not None:
+                entry = self._entries.get(self._default_model_id)
+                if entry is not None and entry.enabled:
+                    return entry
+                # Falls das explizite Default deaktiviert oder nicht existiert,
+                # loggen wir das und fallen auf den ersten aktiven zurück.
+                logger.warning(
+                    "Explizites Default-Modell %s ist nicht aktiv oder nicht registriert",
+                    self._default_model_id,
+                )
+
+            # 2. Fallback: erstes aktiviertes Modell
+            for entry in self._entries.values():
+                if entry.enabled:
+                    return entry
+
+            # 3. Kein aktiviertes Modell
+            return None
 
     # ========================================================
     # Discovery
@@ -599,6 +676,20 @@ class ModelRegistry:
                 loaded_manifest.manifest_path
             ] = model_id
 
+            # NEU: Wenn das Default-Modell deaktiviert oder nicht existiert,
+            # wird es nicht automatisch zurückgesetzt – der Aufrufer kann
+            # über set_default_model_id() nachsteuern.
+            # Wir geben nur eine Warnung, falls das Default nicht mehr aktiv ist.
+            if (
+                self._default_model_id is not None
+                and self._default_model_id == model_id
+                and not entry.enabled
+            ):
+                logger.warning(
+                    "Default-Modell %s wurde als deaktiviert registriert",
+                    model_id,
+                )
+
             return existing is not None
 
     async def register_file(
@@ -653,6 +744,17 @@ class ModelRegistry:
                 None,
             )
 
+            # NEU: Wenn das Default-Modell entfernt wurde, setzen wir es zurück.
+            if (
+                self._default_model_id is not None
+                and self._default_model_id == normalized
+            ):
+                self._default_model_id = None
+                logger.info(
+                    "Default-Modell %s wurde entfernt, Default zurückgesetzt",
+                    normalized,
+                )
+
             return True
 
     async def clear(self) -> None:
@@ -663,6 +765,8 @@ class ModelRegistry:
         async with self._lock:
             self._entries.clear()
             self._path_index.clear()
+            # NEU: Auch Default zurücksetzen
+            self._default_model_id = None
 
     async def _remove_missing_paths(
         self,
@@ -685,6 +789,17 @@ class ModelRegistry:
                     entry.manifest_path,
                     None,
                 )
+
+                # NEU: Wenn ein entferntes Modell das Default war, zurücksetzen
+                if (
+                    self._default_model_id is not None
+                    and self._default_model_id == model_id
+                ):
+                    self._default_model_id = None
+                    logger.info(
+                        "Default-Modell %s wurde wegen fehlender Manifestdatei entfernt",
+                        model_id,
+                    )
 
     # ========================================================
     # Zugriff
@@ -718,6 +833,13 @@ class ModelRegistry:
             )
 
         return entry
+
+    # NEU: Alias für get_entry, um die geforderte get(model_id)-Schnittstelle zu erfüllen
+    def get(self, model_id: str) -> ModelRegistryEntry:
+        """
+        Alias für get_entry – löst ein Modell anhand seiner ID auf.
+        """
+        return self.get_entry(model_id)
 
     def get_manifest(
         self,

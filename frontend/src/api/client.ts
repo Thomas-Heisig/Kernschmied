@@ -1,18 +1,46 @@
 // F:\Kernschmied\frontend\src\api\client.ts
 
-const DEFAULT_API_BASE_URL = "http://localhost:8000/api/v1";
-const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
-const FALLBACK_BROWSER_ORIGIN = "http://localhost";
+const SOURCE_FILE =
+  "frontend/src/api/client.ts";
 
-type QueryValue =
+const DEFAULT_API_BASE_URL =
+  "http://localhost:8000/api/v1";
+
+const DEFAULT_REQUEST_TIMEOUT_MS =
+  30_000;
+
+const DEFAULT_STREAM_CONNECT_TIMEOUT_MS =
+  30_000;
+
+const FALLBACK_BROWSER_ORIGIN =
+  "http://localhost";
+
+const CLIENT_REQUEST_ID_HEADER =
+  "X-Client-Request-ID";
+
+const SERVER_REQUEST_ID_HEADER =
+  "X-Request-ID";
+
+type QueryPrimitive =
   | string
   | number
-  | boolean
+  | boolean;
+
+type QueryValue =
+  | QueryPrimitive
   | null
   | undefined
-  | readonly (string | number | boolean)[];
+  | readonly QueryPrimitive[];
 
-export type ApiQueryParams = Record<string, QueryValue>;
+export type ApiQueryParams =
+  Record<string, QueryValue>;
+
+export type ApiResponseType =
+  | "auto"
+  | "json"
+  | "text"
+  | "blob"
+  | "void";
 
 export type ApiErrorResponse = {
   code?: string;
@@ -26,6 +54,7 @@ export type ApiRequestOptions = {
    * URL-Queryparameter.
    *
    * Arrays werden als mehrfach vorhandene Parameter übertragen:
+   *
    * ?status=open&status=closed
    */
   query?: ApiQueryParams;
@@ -50,8 +79,7 @@ export type ApiRequestOptions = {
   /**
    * Standardmäßig werden Cookies für gleiche Ursprünge übertragen.
    *
-   * Für Session-Authentifizierung kann global oder je Request
-   * `include` verwendet werden.
+   * Für Session-Authentifizierung kann `include` verwendet werden.
    */
   credentials?: RequestCredentials;
 
@@ -60,7 +88,14 @@ export type ApiRequestOptions = {
    *
    * Standardmäßig wird der Antworttyp anhand des Content-Type bestimmt.
    */
-  responseType?: "auto" | "json" | "text" | "blob" | "void";
+  responseType?: ApiResponseType;
+
+  /**
+   * Optional vorgegebene Client-Request-ID.
+   *
+   * Wird keine ID angegeben, erzeugt der Client eine UUID.
+   */
+  clientRequestId?: string;
 };
 
 export type ApiRequestWithBodyOptions<TBody> =
@@ -68,12 +103,64 @@ export type ApiRequestWithBodyOptions<TBody> =
     body?: TBody;
   };
 
+export type ApiStreamRequestOptions<TBody = unknown> =
+  Omit<
+    ApiRequestWithBodyOptions<TBody>,
+    "responseType"
+  > & {
+    /**
+     * Erwarteter MIME-Typ der Streaming-Antwort.
+     *
+     * Für SSE normalerweise `text/event-stream`.
+     */
+    expectedContentType?: string;
+  };
+
+export type ApiStreamHandle = {
+  response: Response;
+  clientRequestId: string;
+  requestId?: string;
+
+  /**
+   * Gibt Timeout, Listener und weitere Request-Ressourcen frei.
+   *
+   * Muss nach Abschluss oder Abbruch des Streams aufgerufen werden.
+   */
+  dispose: () => void;
+};
+
+type DeveloperLogLevel =
+  | "debug"
+  | "info"
+  | "warn"
+  | "error";
+
+type DeveloperLogContext =
+  Record<string, unknown>;
+
+type CombinedAbortSignal = {
+  signal: AbortSignal;
+  cleanup: () => void;
+};
+
+type PreparedApiRequest<TBody> = {
+  method: string;
+  url: string;
+  headers: Headers;
+  body: BodyInit | undefined;
+  signal: AbortSignal;
+  credentials: RequestCredentials;
+  clientRequestId: string;
+  cleanup: () => void;
+};
+
 export class ApiError extends Error {
   readonly status: number;
   readonly statusText: string;
   readonly code: string;
   readonly details: unknown;
   readonly requestId?: string;
+  readonly clientRequestId?: string;
   readonly url: string;
 
   constructor(params: {
@@ -83,6 +170,7 @@ export class ApiError extends Error {
     code?: string;
     details?: unknown;
     requestId?: string;
+    clientRequestId?: string;
     url: string;
     cause?: unknown;
   }) {
@@ -93,17 +181,99 @@ export class ApiError extends Error {
     this.name = "ApiError";
     this.status = params.status;
     this.statusText = params.statusText;
-    this.code = params.code ?? "api_error";
+    this.code =
+      params.code ?? "api_error";
     this.details = params.details;
-    this.requestId = params.requestId;
+    this.requestId =
+      params.requestId;
+    this.clientRequestId =
+      params.clientRequestId;
     this.url = params.url;
   }
 }
 
+function logDeveloperStep(
+  level: DeveloperLogLevel,
+  step: string,
+  context: DeveloperLogContext = {},
+): void {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  const entry = {
+    timestamp:
+      new Date().toISOString(),
+    source: SOURCE_FILE,
+    area: "api-client",
+    step,
+    ...context,
+  };
+
+  switch (level) {
+    case "error":
+      console.error(
+        "[Kernschmied][ApiClient]",
+        entry,
+      );
+      break;
+
+    case "warn":
+      console.warn(
+        "[Kernschmied][ApiClient]",
+        entry,
+      );
+      break;
+
+    case "info":
+      console.info(
+        "[Kernschmied][ApiClient]",
+        entry,
+      );
+      break;
+
+    default:
+      console.debug(
+        "[Kernschmied][ApiClient]",
+        entry,
+      );
+  }
+}
+
+function createRequestId(): string {
+  if (
+    typeof crypto !== "undefined" &&
+    typeof crypto.randomUUID ===
+      "function"
+  ) {
+    return crypto.randomUUID();
+  }
+
+  return [
+    "request",
+    Date.now().toString(36),
+    Math.random()
+      .toString(36)
+      .slice(2),
+  ].join("-");
+}
+
+function isRecord(
+  value: unknown,
+): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value)
+  );
+}
+
 function getBrowserOrigin(): string {
   if (
-    typeof globalThis.location !== "undefined" &&
-    typeof globalThis.location.origin === "string" &&
+    typeof globalThis.location !==
+      "undefined" &&
+    typeof globalThis.location.origin ===
+      "string" &&
     globalThis.location.origin.length > 0
   ) {
     return globalThis.location.origin;
@@ -112,11 +282,28 @@ function getBrowserOrigin(): string {
   return FALLBACK_BROWSER_ORIGIN;
 }
 
+function normalizeUrlPathname(
+  pathname: string,
+): string {
+  const normalized =
+    pathname.replace(/\/{2,}/g, "/");
+
+  if (normalized === "/") {
+    return "";
+  }
+
+  return normalized.replace(
+    /\/+$/,
+    "",
+  );
+}
+
 function normalizeBaseUrl(
   value: string | undefined,
 ): string {
   const configuredValue =
-    value?.trim() || DEFAULT_API_BASE_URL;
+    value?.trim() ||
+    DEFAULT_API_BASE_URL;
 
   const url = new URL(
     configuredValue,
@@ -133,43 +320,50 @@ function normalizeBaseUrl(
   }
 
   url.pathname =
-    normalizeUrlPathname(url.pathname) || "/";
+    normalizeUrlPathname(
+      url.pathname,
+    ) || "/";
 
   url.search = "";
   url.hash = "";
 
-  return url.toString().replace(/\/+$/, "");
+  return url
+    .toString()
+    .replace(/\/+$/, "");
 }
 
-export const API_BASE_URL = normalizeBaseUrl(
-  import.meta.env.VITE_API_URL,
-);
+export const API_BASE_URL =
+  normalizeBaseUrl(
+    import.meta.env.VITE_API_URL,
+  );
 
-const PARSED_API_BASE_URL = new URL(API_BASE_URL);
-const API_BASE_ORIGIN = PARSED_API_BASE_URL.origin;
+const PARSED_API_BASE_URL =
+  new URL(API_BASE_URL);
+
+const API_BASE_ORIGIN =
+  PARSED_API_BASE_URL.origin;
 
 const API_BASE_PATHNAME =
   normalizeUrlPathname(
     PARSED_API_BASE_URL.pathname,
   );
 
-function normalizeUrlPathname(
-  pathname: string,
-): string {
-  const normalized =
-    pathname.replace(/\/{2,}/g, "/");
-
-  if (normalized === "/") {
-    return "";
-  }
-
-  return normalized.replace(/\/+$/, "");
-}
+logDeveloperStep(
+  "info",
+  "api-client-initialized",
+  {
+    apiBaseOrigin:
+      API_BASE_ORIGIN,
+    apiBasePathname:
+      API_BASE_PATHNAME,
+  },
+);
 
 function normalizeRequestPath(
   path: string,
 ): string {
-  const normalized = path.trim();
+  const normalized =
+    path.trim();
 
   if (!normalized) {
     throw new Error(
@@ -177,13 +371,17 @@ function normalizeRequestPath(
     );
   }
 
-  if (normalized.startsWith("//")) {
+  if (
+    normalized.startsWith("//")
+  ) {
     throw new Error(
       `Protokollrelative API-URLs sind nicht erlaubt: ${normalized}`,
     );
   }
 
-  if (normalized.includes("\\")) {
+  if (
+    normalized.includes("\\")
+  ) {
     throw new Error(
       `API-Pfade dürfen keine Backslashes enthalten: ${normalized}`,
     );
@@ -195,23 +393,53 @@ function normalizeRequestPath(
 function hasExplicitUrlScheme(
   value: string,
 ): boolean {
-  return /^[a-z][a-z\d+.-]*:/i.test(value);
+  return /^[a-z][a-z\d+.-]*:/i.test(
+    value,
+  );
+}
+
+function joinUrlPathnames(
+  basePathname: string,
+  requestPathname: string,
+): string {
+  const normalizedBase =
+    normalizeUrlPathname(
+      basePathname,
+    );
+
+  const normalizedRequest =
+    normalizeUrlPathname(
+      requestPathname,
+    );
+
+  if (!normalizedBase) {
+    return (
+      normalizedRequest || "/"
+    );
+  }
+
+  if (!normalizedRequest) {
+    return normalizedBase;
+  }
+
+  return `${normalizedBase}/${normalizedRequest.replace(
+    /^\/+/,
+    "",
+  )}`;
 }
 
 /**
  * Löst einen API-Pfad gegen die konfigurierte API-Basis auf.
  *
- * Unterstützte Eingaben:
+ * Beispiele:
  *
  * `/bootstrap`
- *   wird relativ zur API-Basis aufgelöst.
+ * wird relativ zur API-Basis aufgelöst.
  *
  * `/api/v1/bootstrap`
- *   wird als bereits vollständiger lokaler API-Pfad behandelt.
+ * wird als bereits vollständiger lokaler API-Pfad behandelt.
  *
- * `http://localhost:8000/api/v1/bootstrap`
- *   ist nur zulässig, wenn der Ursprung mit der konfigurierten
- *   API-Basis übereinstimmt.
+ * Absolute URLs sind ausschließlich auf demselben Ursprung erlaubt.
  */
 export function resolveApiUrl(
   path: string,
@@ -219,13 +447,19 @@ export function resolveApiUrl(
   const normalizedPath =
     normalizeRequestPath(path);
 
-  if (hasExplicitUrlScheme(normalizedPath)) {
+  if (
+    hasExplicitUrlScheme(
+      normalizedPath,
+    )
+  ) {
     const absoluteUrl =
       new URL(normalizedPath);
 
     if (
-      absoluteUrl.protocol !== "http:" &&
-      absoluteUrl.protocol !== "https:"
+      absoluteUrl.protocol !==
+        "http:" &&
+      absoluteUrl.protocol !==
+        "https:"
     ) {
       throw new Error(
         `Nicht unterstütztes API-Protokoll: ${absoluteUrl.protocol}`,
@@ -246,10 +480,11 @@ export function resolveApiUrl(
     return absoluteUrl;
   }
 
-  const parsedPath = new URL(
-    normalizedPath,
-    API_BASE_ORIGIN,
-  );
+  const parsedPath =
+    new URL(
+      normalizedPath,
+      API_BASE_ORIGIN,
+    );
 
   const requestedPathname =
     normalizeUrlPathname(
@@ -258,7 +493,8 @@ export function resolveApiUrl(
 
   const alreadyContainsApiBasePath =
     API_BASE_PATHNAME.length === 0 ||
-    requestedPathname === API_BASE_PATHNAME ||
+    requestedPathname ===
+      API_BASE_PATHNAME ||
     requestedPathname.startsWith(
       `${API_BASE_PATHNAME}/`,
     );
@@ -283,48 +519,6 @@ export function resolveApiUrl(
   resolvedUrl.hash = "";
 
   return resolvedUrl;
-}
-
-function joinUrlPathnames(
-  basePathname: string,
-  requestPathname: string,
-): string {
-  const normalizedBase =
-    normalizeUrlPathname(basePathname);
-
-  const normalizedRequest =
-    normalizeUrlPathname(
-      requestPathname,
-    );
-
-  if (!normalizedBase) {
-    return normalizedRequest || "/";
-  }
-
-  if (!normalizedRequest) {
-    return normalizedBase;
-  }
-
-  return `${normalizedBase}/${normalizedRequest.replace(
-    /^\/+/,
-    "",
-  )}`;
-}
-
-function buildApiUrl(
-  path: string,
-  query?: ApiQueryParams,
-): string {
-  const url = resolveApiUrl(path);
-
-  if (query) {
-    appendQueryParams(
-      url,
-      query,
-    );
-  }
-
-  return url.toString();
 }
 
 function appendQueryParams(
@@ -353,6 +547,35 @@ function appendQueryParams(
         String(value),
       );
     }
+  }
+}
+
+function buildApiUrl(
+  path: string,
+  query?: ApiQueryParams,
+): string {
+  const url =
+    resolveApiUrl(path);
+
+  if (query) {
+    appendQueryParams(
+      url,
+      query,
+    );
+  }
+
+  return url.toString();
+}
+
+function getSafeLogUrl(
+  value: string,
+): string {
+  try {
+    const url = new URL(value);
+
+    return `${url.origin}${url.pathname}`;
+  } catch {
+    return value;
   }
 }
 
@@ -389,7 +612,8 @@ function isFormData(
   value: unknown,
 ): value is FormData {
   return (
-    typeof FormData !== "undefined" &&
+    typeof FormData !==
+      "undefined" &&
     value instanceof FormData
   );
 }
@@ -407,8 +631,19 @@ function isUrlSearchParams(
   value: unknown,
 ): value is URLSearchParams {
   return (
-    typeof URLSearchParams !== "undefined" &&
+    typeof URLSearchParams !==
+      "undefined" &&
     value instanceof URLSearchParams
+  );
+}
+
+function isReadableStream(
+  value: unknown,
+): value is ReadableStream {
+  return (
+    typeof ReadableStream !==
+      "undefined" &&
+    value instanceof ReadableStream
   );
 }
 
@@ -420,6 +655,7 @@ function isRequestBody(
     isFormData(value) ||
     isBlob(value) ||
     isUrlSearchParams(value) ||
+    isReadableStream(value) ||
     value instanceof ArrayBuffer ||
     ArrayBuffer.isView(value)
   );
@@ -440,14 +676,33 @@ function serializeRequestBody(
     return body;
   }
 
-  if (!headers.has("Content-Type")) {
+  if (
+    !headers.has(
+      "Content-Type",
+    )
+  ) {
     headers.set(
       "Content-Type",
       "application/json",
     );
   }
 
-  return JSON.stringify(body);
+  try {
+    return JSON.stringify(body);
+  } catch (error) {
+    throw new ApiError({
+      message:
+        "Der Request-Body konnte nicht als JSON serialisiert werden.",
+      status: 0,
+      statusText:
+        "Invalid request body",
+      code:
+        "request_body_serialization_failed",
+      details: null,
+      url: "",
+      cause: error,
+    });
+  }
 }
 
 function normalizeTimeoutMs(
@@ -458,24 +713,27 @@ function normalizeTimeoutMs(
   }
 
   if (
-    !Number.isFinite(timeoutMs) ||
+    !Number.isFinite(
+      timeoutMs,
+    ) ||
     timeoutMs <= 0
   ) {
     return null;
   }
 
-  return Math.floor(timeoutMs);
+  return Math.floor(
+    timeoutMs,
+  );
 }
 
 function createCombinedAbortSignal(params: {
   externalSignal?: AbortSignal;
   timeoutMs: number | null;
-}): {
-  signal: AbortSignal;
-  cleanup: () => void;
-} {
+}): CombinedAbortSignal {
   const controller =
     new AbortController();
+
+  let cleanedUp = false;
 
   let timeoutId:
     | ReturnType<typeof setTimeout>
@@ -483,8 +741,15 @@ function createCombinedAbortSignal(params: {
 
   const abortFromExternalSignal =
     (): void => {
+      if (
+        controller.signal.aborted
+      ) {
+        return;
+      }
+
       controller.abort(
-        params.externalSignal?.reason,
+        params.externalSignal
+          ?.reason,
       );
     };
 
@@ -494,13 +759,14 @@ function createCombinedAbortSignal(params: {
     ) {
       abortFromExternalSignal();
     } else {
-      params.externalSignal.addEventListener(
-        "abort",
-        abortFromExternalSignal,
-        {
-          once: true,
-        },
-      );
+      params.externalSignal
+        .addEventListener(
+          "abort",
+          abortFromExternalSignal,
+          {
+            once: true,
+          },
+        );
     }
   }
 
@@ -512,31 +778,174 @@ function createCombinedAbortSignal(params: {
   if (
     normalizedTimeoutMs !== null
   ) {
-    timeoutId = setTimeout(() => {
-      controller.abort(
-        new DOMException(
-          `API-Anfrage nach ${normalizedTimeoutMs} ms abgebrochen.`,
-          "TimeoutError",
-        ),
-      );
-    }, normalizedTimeoutMs);
+    timeoutId = setTimeout(
+      () => {
+        if (
+          controller.signal.aborted
+        ) {
+          return;
+        }
+
+        controller.abort(
+          new DOMException(
+            `API-Anfrage nach ${normalizedTimeoutMs} ms abgebrochen.`,
+            "TimeoutError",
+          ),
+        );
+      },
+      normalizedTimeoutMs,
+    );
   }
 
   return {
-    signal: controller.signal,
+    signal:
+      controller.signal,
 
     cleanup: () => {
+      if (cleanedUp) {
+        return;
+      }
+
+      cleanedUp = true;
+
       if (
         timeoutId !== undefined
       ) {
-        clearTimeout(timeoutId);
+        clearTimeout(
+          timeoutId,
+        );
       }
 
-      params.externalSignal?.removeEventListener(
-        "abort",
-        abortFromExternalSignal,
-      );
+      params.externalSignal
+        ?.removeEventListener(
+          "abort",
+          abortFromExternalSignal,
+        );
     },
+  };
+}
+
+function normalizeHttpMethod(
+  method: string,
+): string {
+  const normalized =
+    method.trim().toUpperCase();
+
+  if (!normalized) {
+    throw new ApiError({
+      message:
+        "Die HTTP-Methode darf nicht leer sein.",
+      status: 0,
+      statusText:
+        "Invalid request",
+      code:
+        "invalid_http_method",
+      details: null,
+      url: "",
+    });
+  }
+
+  if (
+    !/^[A-Z]+$/.test(
+      normalized,
+    )
+  ) {
+    throw new ApiError({
+      message:
+        `Die HTTP-Methode "${method}" ist ungültig.`,
+      status: 0,
+      statusText:
+        "Invalid request",
+      code:
+        "invalid_http_method",
+      details: {
+        method,
+      },
+      url: "",
+    });
+  }
+
+  return normalized;
+}
+
+function formatFastApiValidationDetails(
+  detail: unknown,
+): string | undefined {
+  if (
+    !Array.isArray(detail)
+  ) {
+    return undefined;
+  }
+
+  const entries =
+    detail.map((entry) => {
+      if (!isRecord(entry)) {
+        return String(entry);
+      }
+
+      const location =
+        Array.isArray(entry.loc)
+          ? entry.loc.join(".")
+          : "request";
+
+      const message =
+        typeof entry.msg ===
+        "string"
+          ? entry.msg
+          : "Ungültiger Wert";
+
+      return `${location}: ${message}`;
+    });
+
+  return entries.length > 0
+    ? entries.join("; ")
+    : undefined;
+}
+
+function normalizeErrorPayload(
+  payload: Record<string, unknown>,
+): ApiErrorResponse {
+  const structuredMessage =
+    typeof payload.message ===
+    "string"
+      ? payload.message
+      : undefined;
+
+  const detailMessage =
+    typeof payload.detail ===
+    "string"
+      ? payload.detail
+      : formatFastApiValidationDetails(
+          payload.detail,
+        );
+
+  const details =
+    payload.details !== undefined
+      ? payload.details
+      : payload.detail !== undefined &&
+          typeof payload.detail !==
+            "string"
+        ? payload.detail
+        : undefined;
+
+  return {
+    code:
+      typeof payload.code ===
+      "string"
+        ? payload.code
+        : undefined,
+
+    message:
+      structuredMessage ??
+      detailMessage,
+
+    details,
+
+    request_id:
+      typeof payload.request_id ===
+      "string"
+        ? payload.request_id
+        : undefined,
   };
 }
 
@@ -549,39 +958,36 @@ async function parseErrorResponse(
     );
 
   if (
-    isJsonContentType(contentType)
+    isJsonContentType(
+      contentType,
+    )
   ) {
+    const jsonResponse =
+      response.clone();
+
     try {
       const payload =
-        (await response.json()) as unknown;
+        (await jsonResponse.json()) as unknown;
 
       if (isRecord(payload)) {
-        return {
-          code:
-            typeof payload.code ===
-            "string"
-              ? payload.code
-              : undefined,
-
-          message:
-            typeof payload.message ===
-            "string"
-              ? payload.message
-              : undefined,
-
-          details:
-            payload.details,
-
-          request_id:
-            typeof payload.request_id ===
-            "string"
-              ? payload.request_id
-              : undefined,
-        };
+        return normalizeErrorPayload(
+          payload,
+        );
       }
-    } catch {
-      // Bei ungültigem JSON wird weiter unten eine generische
-      // Fehlerantwort erzeugt.
+    } catch (error) {
+      logDeveloperStep(
+        "warn",
+        "error-response-json-parse-failed",
+        {
+          status:
+            response.status,
+          contentType,
+          error:
+            error instanceof Error
+              ? error.message
+              : String(error),
+        },
+      );
     }
   }
 
@@ -591,11 +997,23 @@ async function parseErrorResponse(
 
     if (text.trim()) {
       return {
-        message: text.trim(),
+        message:
+          text.trim(),
       };
     }
-  } catch {
-    // Die generische Fehlermeldung bleibt als Fallback erhalten.
+  } catch (error) {
+    logDeveloperStep(
+      "warn",
+      "error-response-text-read-failed",
+      {
+        status:
+          response.status,
+        error:
+          error instanceof Error
+            ? error.message
+            : String(error),
+      },
+    );
   }
 
   return {};
@@ -603,8 +1021,7 @@ async function parseErrorResponse(
 
 async function parseSuccessResponse<T>(
   response: Response,
-  responseType:
-    ApiRequestOptions["responseType"],
+  responseType: ApiResponseType,
 ): Promise<T> {
   if (
     responseType === "void" ||
@@ -614,22 +1031,49 @@ async function parseSuccessResponse<T>(
     return undefined as T;
   }
 
-  if (responseType === "blob") {
+  if (
+    responseType === "blob"
+  ) {
     return (
       await response.blob()
     ) as T;
   }
 
-  if (responseType === "text") {
+  if (
+    responseType === "text"
+  ) {
     return (
       await response.text()
     ) as T;
   }
 
-  if (responseType === "json") {
-    return (
-      await response.json()
-    ) as T;
+  if (
+    responseType === "json"
+  ) {
+    try {
+      return (
+        await response.json()
+      ) as T;
+    } catch (error) {
+      throw new ApiError({
+        message:
+          "Die API-Antwort enthält kein gültiges JSON.",
+        status:
+          response.status,
+        statusText:
+          response.statusText,
+        code:
+          "invalid_json_response",
+        details: null,
+        requestId:
+          response.headers.get(
+            SERVER_REQUEST_ID_HEADER,
+          ) ?? undefined,
+        url:
+          response.url,
+        cause: error,
+      });
+    }
   }
 
   const contentType =
@@ -638,11 +1082,36 @@ async function parseSuccessResponse<T>(
     );
 
   if (
-    isJsonContentType(contentType)
+    isJsonContentType(
+      contentType,
+    )
   ) {
-    return (
-      await response.json()
-    ) as T;
+    try {
+      return (
+        await response.json()
+      ) as T;
+    } catch (error) {
+      throw new ApiError({
+        message:
+          "Die API-Antwort wurde als JSON angekündigt, enthält jedoch kein gültiges JSON.",
+        status:
+          response.status,
+        statusText:
+          response.statusText,
+        code:
+          "invalid_json_response",
+        details: {
+          contentType,
+        },
+        requestId:
+          response.headers.get(
+            SERVER_REQUEST_ID_HEADER,
+          ) ?? undefined,
+        url:
+          response.url,
+        cause: error,
+      });
+    }
   }
 
   return (
@@ -656,54 +1125,80 @@ function getAbortErrorDetails(
   code: string;
   message: string;
   statusText: string;
+  reason: unknown;
 } {
-  const reason = signal.reason;
+  const reason =
+    signal.reason;
 
   if (
     reason instanceof DOMException &&
-    reason.name === "TimeoutError"
+    reason.name ===
+      "TimeoutError"
   ) {
     return {
-      code: "request_timeout",
+      code:
+        "request_timeout",
       message:
         reason.message ||
         "Die API-Anfrage hat das Zeitlimit überschritten.",
-      statusText: "Request timeout",
+      statusText:
+        "Request timeout",
+      reason,
+    };
+  }
+
+  if (
+    reason instanceof Error &&
+    reason.name ===
+      "TimeoutError"
+  ) {
+    return {
+      code:
+        "request_timeout",
+      message:
+        reason.message ||
+        "Die API-Anfrage hat das Zeitlimit überschritten.",
+      statusText:
+        "Request timeout",
+      reason,
     };
   }
 
   return {
-    code: "request_aborted",
+    code:
+      "request_aborted",
     message:
       "Die API-Anfrage wurde abgebrochen.",
-    statusText: "Request aborted",
+    statusText:
+      "Request aborted",
+    reason,
   };
 }
 
-export async function apiRequest<
-  TResponse,
-  TBody = unknown,
->(
+function isAbortLikeError(
+  error: unknown,
+  signal: AbortSignal,
+): boolean {
+  if (signal.aborted) {
+    return true;
+  }
+
+  return (
+    error instanceof DOMException &&
+    error.name === "AbortError"
+  );
+}
+
+function prepareApiRequest<TBody>(
   method: string,
   path: string,
-  options: ApiRequestWithBodyOptions<TBody> = {},
-): Promise<TResponse> {
+  options: ApiRequestWithBodyOptions<TBody>,
+  defaultTimeoutMs: number | null,
+): PreparedApiRequest<TBody> {
   const normalizedMethod =
-    method.trim().toUpperCase();
-
-  if (!normalizedMethod) {
-    throw new ApiError({
-      message:
-        "Die HTTP-Methode darf nicht leer sein.",
-      status: 0,
-      statusText:
-        "Invalid request",
-      code:
-        "invalid_http_method",
-      details: null,
-      url: path,
-    });
-  }
+    normalizeHttpMethod(
+      method,
+    );
 
   let url: string;
 
@@ -731,158 +1226,725 @@ export async function apiRequest<
     });
   }
 
-  const headers =
-    new Headers(options.headers);
+  if (
+    !isBodyAllowed(
+      normalizedMethod,
+    ) &&
+    options.body !== undefined &&
+    options.body !== null
+  ) {
+    throw new ApiError({
+      message:
+        `Die HTTP-Methode ${normalizedMethod} darf in diesem Client keinen Request-Body enthalten.`,
+      status: 0,
+      statusText:
+        "Invalid request body",
+      code:
+        "body_not_allowed",
+      details: {
+        method:
+          normalizedMethod,
+      },
+      url,
+    });
+  }
 
-  if (!headers.has("Accept")) {
+  const headers =
+    new Headers(
+      options.headers,
+    );
+
+  const clientRequestId =
+    options.clientRequestId
+      ?.trim() ||
+    createRequestId();
+
+  if (
+    !headers.has(
+      CLIENT_REQUEST_ID_HEADER,
+    )
+  ) {
     headers.set(
-      "Accept",
-      "application/json",
+      CLIENT_REQUEST_ID_HEADER,
+      clientRequestId,
     );
   }
 
   const timeoutMs =
-    options.timeoutMs === undefined
-      ? DEFAULT_REQUEST_TIMEOUT_MS
+    options.timeoutMs ===
+    undefined
+      ? defaultTimeoutMs
       : options.timeoutMs;
 
   const {
     signal,
     cleanup,
-  } = createCombinedAbortSignal({
-    externalSignal:
-      options.signal,
-    timeoutMs,
-  });
+  } =
+    createCombinedAbortSignal({
+      externalSignal:
+        options.signal,
+      timeoutMs,
+    });
+
+  let body:
+    | BodyInit
+    | undefined;
 
   try {
-    const response =
-      await fetch(url, {
-        method:
-          normalizedMethod,
-
-        headers,
-
-        signal,
-
-        credentials:
-          options.credentials ??
-          "same-origin",
-
-        body:
-          isBodyAllowed(
-            normalizedMethod,
-          )
-            ? serializeRequestBody(
-                options.body,
-                headers,
-              )
-            : undefined,
-      });
-
-    if (!response.ok) {
-      const errorPayload =
-        await parseErrorResponse(
-          response,
-        );
-
-      const requestId =
-        errorPayload.request_id ??
-        response.headers.get(
-          "x-request-id",
-        ) ??
-        undefined;
-
-      throw new ApiError({
-        message:
-          errorPayload.message ??
-          `API-Anfrage fehlgeschlagen: ${response.status} ${response.statusText}`,
-
-        status:
-          response.status,
-
-        statusText:
-          response.statusText,
-
-        code:
-          errorPayload.code,
-
-        details:
-          errorPayload.details,
-
-        requestId,
-
-        url,
-      });
-    }
-
-    return await parseSuccessResponse<TResponse>(
-      response,
-      options.responseType ??
-        "auto",
-    );
+    body = isBodyAllowed(
+      normalizedMethod,
+    )
+      ? serializeRequestBody(
+          options.body,
+          headers,
+        )
+      : undefined;
   } catch (error) {
-    if (error instanceof ApiError) {
-      throw error;
-    }
+    cleanup();
 
     if (
-      signal.aborted ||
-      (
-        error instanceof DOMException &&
-        error.name === "AbortError"
-      )
+      error instanceof ApiError
     ) {
-      const abortError =
-        getAbortErrorDetails(
-          signal,
-        );
-
       throw new ApiError({
         message:
-          abortError.message,
-
-        status: 0,
-
+          error.message,
+        status:
+          error.status,
         statusText:
-          abortError.statusText,
-
+          error.statusText,
         code:
-          abortError.code,
-
-        details: {
-          reason:
-            signal.reason,
-        },
-
+          error.code,
+        details:
+          error.details,
+        requestId:
+          error.requestId,
+        clientRequestId,
         url,
-
         cause: error,
       });
     }
 
-    throw new ApiError({
+    throw error;
+  }
+
+  return {
+    method:
+      normalizedMethod,
+    url,
+    headers,
+    body,
+    signal,
+    credentials:
+      options.credentials ??
+      "same-origin",
+    clientRequestId,
+    cleanup,
+  };
+}
+
+async function createHttpError(
+  response: Response,
+  params: {
+    url: string;
+    clientRequestId: string;
+  },
+): Promise<ApiError> {
+  const errorPayload =
+    await parseErrorResponse(
+      response,
+    );
+
+  const requestId =
+    errorPayload.request_id ??
+    response.headers.get(
+      SERVER_REQUEST_ID_HEADER,
+    ) ??
+    undefined;
+
+  return new ApiError({
+    message:
+      errorPayload.message ??
+      `API-Anfrage fehlgeschlagen: ${response.status} ${response.statusText}`,
+
+    status:
+      response.status,
+
+    statusText:
+      response.statusText,
+
+    code:
+      errorPayload.code,
+
+    details:
+      errorPayload.details,
+
+    requestId,
+
+    clientRequestId:
+      params.clientRequestId,
+
+    url:
+      params.url,
+  });
+}
+
+function normalizeCaughtRequestError(
+  error: unknown,
+  params: {
+    signal: AbortSignal;
+    url: string;
+    clientRequestId: string;
+  },
+): ApiError {
+  if (
+    error instanceof ApiError
+  ) {
+    return error;
+  }
+
+  if (
+    isAbortLikeError(
+      error,
+      params.signal,
+    )
+  ) {
+    const abortError =
+      getAbortErrorDetails(
+        params.signal,
+      );
+
+    return new ApiError({
       message:
-        error instanceof Error
-          ? error.message
-          : "Die API ist nicht erreichbar.",
+        abortError.message,
 
       status: 0,
 
       statusText:
-        "Network error",
+        abortError.statusText,
 
       code:
-        "network_error",
+        abortError.code,
 
-      details: null,
+      details: {
+        reason:
+          abortError.reason,
+      },
 
-      url,
+      clientRequestId:
+        params.clientRequestId,
+
+      url:
+        params.url,
 
       cause: error,
     });
+  }
+
+  return new ApiError({
+    message:
+      error instanceof Error
+        ? error.message
+        : "Die API ist nicht erreichbar.",
+
+    status: 0,
+
+    statusText:
+      "Network error",
+
+    code:
+      "network_error",
+
+    details: null,
+
+    clientRequestId:
+      params.clientRequestId,
+
+    url:
+      params.url,
+
+    cause: error,
+  });
+}
+
+export async function apiRequest<
+  TResponse,
+  TBody = unknown,
+>(
+  method: string,
+  path: string,
+  options: ApiRequestWithBodyOptions<TBody> = {},
+): Promise<TResponse> {
+  const prepared =
+    prepareApiRequest(
+      method,
+      path,
+      options,
+      DEFAULT_REQUEST_TIMEOUT_MS,
+    );
+
+  const startedAt =
+    performance.now();
+
+  logDeveloperStep(
+    "info",
+    "request-started",
+    {
+      method:
+        prepared.method,
+      url:
+        getSafeLogUrl(
+          prepared.url,
+        ),
+      clientRequestId:
+        prepared.clientRequestId,
+      timeoutMs:
+        options.timeoutMs ===
+        undefined
+          ? DEFAULT_REQUEST_TIMEOUT_MS
+          : options.timeoutMs,
+      hasBody:
+        prepared.body !==
+        undefined,
+      credentials:
+        prepared.credentials,
+    },
+  );
+
+  try {
+    const response =
+      await fetch(
+        prepared.url,
+        {
+          method:
+            prepared.method,
+          headers:
+            prepared.headers,
+          signal:
+            prepared.signal,
+          credentials:
+            prepared.credentials,
+          body:
+            prepared.body,
+        },
+      );
+
+    const requestId =
+      response.headers.get(
+        SERVER_REQUEST_ID_HEADER,
+      ) ?? undefined;
+
+    logDeveloperStep(
+      response.ok
+        ? "info"
+        : "warn",
+      "response-headers-received",
+      {
+        method:
+          prepared.method,
+        url:
+          getSafeLogUrl(
+            prepared.url,
+          ),
+        status:
+          response.status,
+        statusText:
+          response.statusText,
+        ok:
+          response.ok,
+        contentType:
+          response.headers.get(
+            "content-type",
+          ),
+        requestId,
+        clientRequestId:
+          prepared.clientRequestId,
+        durationMs:
+          Math.round(
+            performance.now() -
+              startedAt,
+          ),
+      },
+    );
+
+    if (!response.ok) {
+      throw await createHttpError(
+        response,
+        {
+          url:
+            prepared.url,
+          clientRequestId:
+            prepared.clientRequestId,
+        },
+      );
+    }
+
+    const result =
+      await parseSuccessResponse<TResponse>(
+        response,
+        options.responseType ??
+          "auto",
+      );
+
+    logDeveloperStep(
+      "info",
+      "response-parsed",
+      {
+        method:
+          prepared.method,
+        url:
+          getSafeLogUrl(
+            prepared.url,
+          ),
+        status:
+          response.status,
+        responseType:
+          options.responseType ??
+          "auto",
+        requestId,
+        clientRequestId:
+          prepared.clientRequestId,
+        durationMs:
+          Math.round(
+            performance.now() -
+              startedAt,
+          ),
+      },
+    );
+
+    return result;
+  } catch (error) {
+    const normalizedError =
+      normalizeCaughtRequestError(
+        error,
+        {
+          signal:
+            prepared.signal,
+          url:
+            prepared.url,
+          clientRequestId:
+            prepared.clientRequestId,
+        },
+      );
+
+    logDeveloperStep(
+      normalizedError.code ===
+        "request_aborted"
+        ? "info"
+        : "error",
+      "request-failed",
+      {
+        method:
+          prepared.method,
+        url:
+          getSafeLogUrl(
+            prepared.url,
+          ),
+        status:
+          normalizedError.status,
+        statusText:
+          normalizedError.statusText,
+        code:
+          normalizedError.code,
+        message:
+          normalizedError.message,
+        requestId:
+          normalizedError.requestId,
+        clientRequestId:
+          normalizedError.clientRequestId,
+        durationMs:
+          Math.round(
+            performance.now() -
+              startedAt,
+          ),
+      },
+    );
+
+    throw normalizedError;
   } finally {
-    cleanup();
+    prepared.cleanup();
+
+    logDeveloperStep(
+      "debug",
+      "request-cleanup-completed",
+      {
+        method:
+          prepared.method,
+        url:
+          getSafeLogUrl(
+            prepared.url,
+          ),
+        clientRequestId:
+          prepared.clientRequestId,
+      },
+    );
+  }
+}
+
+/**
+ * Öffnet eine Streaming-Antwort.
+ *
+ * Im Unterschied zu `apiRequest()` wird der Response-Body nicht gelesen.
+ * Der Aufrufer muss den Stream verarbeiten und anschließend `dispose()`
+ * aufrufen.
+ */
+export async function apiStreamRequest<
+  TBody = unknown,
+>(
+  method: string,
+  path: string,
+  options: ApiStreamRequestOptions<TBody> = {},
+): Promise<ApiStreamHandle> {
+  const prepared =
+    prepareApiRequest(
+      method,
+      path,
+      options,
+      DEFAULT_STREAM_CONNECT_TIMEOUT_MS,
+    );
+
+  const expectedContentType =
+    options.expectedContentType
+      ?.trim()
+      .toLowerCase();
+
+  const startedAt =
+    performance.now();
+
+  logDeveloperStep(
+    "info",
+    "stream-request-started",
+    {
+      method:
+        prepared.method,
+      url:
+        getSafeLogUrl(
+          prepared.url,
+        ),
+      clientRequestId:
+        prepared.clientRequestId,
+      expectedContentType:
+        expectedContentType ??
+        null,
+      connectTimeoutMs:
+        options.timeoutMs ===
+        undefined
+          ? DEFAULT_STREAM_CONNECT_TIMEOUT_MS
+          : options.timeoutMs,
+    },
+  );
+
+  try {
+    const response =
+      await fetch(
+        prepared.url,
+        {
+          method:
+            prepared.method,
+          headers:
+            prepared.headers,
+          signal:
+            prepared.signal,
+          credentials:
+            prepared.credentials,
+          body:
+            prepared.body,
+        },
+      );
+
+    const requestId =
+      response.headers.get(
+        SERVER_REQUEST_ID_HEADER,
+      ) ?? undefined;
+
+    const contentType =
+      response.headers.get(
+        "content-type",
+      );
+
+    logDeveloperStep(
+      response.ok
+        ? "info"
+        : "warn",
+      "stream-response-headers-received",
+      {
+        method:
+          prepared.method,
+        url:
+          getSafeLogUrl(
+            prepared.url,
+          ),
+        status:
+          response.status,
+        statusText:
+          response.statusText,
+        contentType,
+        requestId,
+        clientRequestId:
+          prepared.clientRequestId,
+        durationMs:
+          Math.round(
+            performance.now() -
+              startedAt,
+          ),
+      },
+    );
+
+    if (!response.ok) {
+      throw await createHttpError(
+        response,
+        {
+          url:
+            prepared.url,
+          clientRequestId:
+            prepared.clientRequestId,
+        },
+      );
+    }
+
+    if (
+      expectedContentType &&
+      (
+        !contentType ||
+        !contentType
+          .toLowerCase()
+          .includes(
+            expectedContentType,
+          )
+      )
+    ) {
+      const error =
+        new ApiError({
+          message:
+            `Die API hat einen unerwarteten Antworttyp geliefert. Erwartet: ${expectedContentType}, erhalten: ${contentType ?? "unbekannt"}.`,
+          status:
+            response.status,
+          statusText:
+            response.statusText,
+          code:
+            "unexpected_content_type",
+          details: {
+            expectedContentType,
+            actualContentType:
+              contentType,
+          },
+          requestId,
+          clientRequestId:
+            prepared.clientRequestId,
+          url:
+            prepared.url,
+        });
+
+      try {
+        await response.body?.cancel();
+      } catch {
+        // Der Stream kann bereits geschlossen sein.
+      }
+
+      throw error;
+    }
+
+    if (!response.body) {
+      throw new ApiError({
+        message:
+          "Die API hat keinen lesbaren Antwortstream geliefert.",
+        status:
+          response.status,
+        statusText:
+          response.statusText,
+        code:
+          "missing_response_stream",
+        details: null,
+        requestId,
+        clientRequestId:
+          prepared.clientRequestId,
+        url:
+          prepared.url,
+      });
+    }
+
+    let disposed = false;
+
+    return {
+      response,
+      clientRequestId:
+        prepared.clientRequestId,
+      requestId,
+
+      dispose: () => {
+        if (disposed) {
+          return;
+        }
+
+        disposed = true;
+        prepared.cleanup();
+
+        logDeveloperStep(
+          "debug",
+          "stream-request-disposed",
+          {
+            method:
+              prepared.method,
+            url:
+              getSafeLogUrl(
+                prepared.url,
+              ),
+            requestId,
+            clientRequestId:
+              prepared.clientRequestId,
+          },
+        );
+      },
+    };
+  } catch (error) {
+    prepared.cleanup();
+
+    const normalizedError =
+      normalizeCaughtRequestError(
+        error,
+        {
+          signal:
+            prepared.signal,
+          url:
+            prepared.url,
+          clientRequestId:
+            prepared.clientRequestId,
+        },
+      );
+
+    logDeveloperStep(
+      normalizedError.code ===
+        "request_aborted"
+        ? "info"
+        : "error",
+      "stream-request-failed",
+      {
+        method:
+          prepared.method,
+        url:
+          getSafeLogUrl(
+            prepared.url,
+          ),
+        status:
+          normalizedError.status,
+        statusText:
+          normalizedError.statusText,
+        code:
+          normalizedError.code,
+        message:
+          normalizedError.message,
+        requestId:
+          normalizedError.requestId,
+        clientRequestId:
+          normalizedError.clientRequestId,
+        durationMs:
+          Math.round(
+            performance.now() -
+              startedAt,
+          ),
+      },
+    );
+
+    throw normalizedError;
   }
 }
 
@@ -973,12 +2035,22 @@ export function apiDelete<
   );
 }
 
-function isRecord(
-  value: unknown,
-): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
+export function apiPostStream<
+  TBody = unknown,
+>(
+  path: string,
+  body?: TBody,
+  options?: Omit<
+    ApiStreamRequestOptions<TBody>,
+    "body"
+  >,
+): Promise<ApiStreamHandle> {
+  return apiStreamRequest(
+    "POST",
+    path,
+    {
+      ...options,
+      body,
+    },
   );
 }

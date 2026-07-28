@@ -24,6 +24,15 @@ from app.registries.model_registry import ModelRegistry
 from app.registries.tool_registry import ToolRegistry
 from app.storage.database import init_database
 
+# ============================================================
+# Korrekter Import: ModelProviderRegistry
+# ============================================================
+from app.models.providers import ModelProviderRegistry
+from app.models.providers.ollama import create_ollama_backend
+from app.models.lifecycle import ModelLifecycleManager
+from app.models.service import ModelService
+from app.services.chat_service import ChatService, NullChatRepository
+
 
 logger = logging.getLogger(__name__)
 
@@ -221,6 +230,8 @@ class BootstrapResult:
     tool_registry: ToolRegistry
     hierarchy_repository: InMemoryHierarchyRepository
     hierarchy_service: MinimalHierarchyService
+    model_service: ModelService
+    chat_service: ChatService
 
 
 # ============================================================
@@ -260,6 +271,9 @@ async def bootstrap_application(
 
     hierarchy_repository: InMemoryHierarchyRepository | None = None
     hierarchy_service: MinimalHierarchyService | None = None
+
+    model_service: ModelService | None = None
+    chat_service: ChatService | None = None
 
     try:
         # ========================================================
@@ -317,7 +331,91 @@ async def bootstrap_application(
         )
 
         # ========================================================
-        # 6. Dienste atomar veröffentlichen
+        # 6. ModelService (Lifecycle-Manager)
+        # ========================================================
+
+        # Provider-Registry instanziieren und Ollama registrieren
+        provider_registry = ModelProviderRegistry()
+
+        logger.info("Registering Ollama provider...")
+        provider_registry.register(
+            provider_type="ollama",
+            factory=create_ollama_backend,
+        )
+
+        # Prüfen, ob die Registrierung erfolgreich war
+        if not provider_registry.has("ollama"):
+            raise RuntimeError(
+                "Ollama provider registration failed – provider not found in registry"
+            )
+
+        logger.info("Ollama provider registered successfully")
+
+        lifecycle = ModelLifecycleManager()
+
+        # Default-Modell-ID (muss mit der ID im Manifest übereinstimmen)
+        default_model_id = "ollama-qwen2.5-7b"
+
+        model_service = ModelService(
+            provider_registry=provider_registry,
+            lifecycle=lifecycle,
+            allowed_manifest_directories=["model_paths"],
+            default_model_id=default_model_id,
+        )
+
+        await _run_bootstrap_step(
+            step="models.start_service",
+            operation=model_service.start,
+        )
+
+        # ========================================================
+        # 7. Modelle in den Service laden (DISCOVERY)
+        # ========================================================
+
+        async def load_manifests() -> None:
+            logger.info("Starting model discovery and registration...")
+            report = await model_service.discover_and_register(
+                base_directories=["model_paths"],
+                replace=True,
+                continue_on_error=False,
+            )
+            logger.info(
+                "Model discovery completed: registered=%d, failed=%d, skipped=%d",
+                report.registered_count,
+                report.failed_count,
+                report.skipped_count,
+            )
+            # Prüfe, ob das Default-Modell tatsächlich registriert ist
+            if not model_service.has_model(default_model_id):
+                logger.error(
+                    "Default model '%s' not found in ModelService after discovery",
+                    default_model_id,
+                )
+                raise RuntimeError(
+                    f"Default model '{default_model_id}' could not be registered"
+                )
+
+            # Logge alle registrierten Modell-IDs
+            model_ids = model_service.list_model_ids()
+            logger.info("Models registered in ModelService: %s", model_ids)
+
+        await _run_bootstrap_step(
+            step="models.load_manifests",
+            operation=load_manifests,
+        )
+
+        # ========================================================
+        # 8. ChatService
+        # ========================================================
+
+        chat_service = ChatService(
+            model_service=model_service,
+            default_model_id=default_model_id,
+            repository=NullChatRepository(),
+        )
+
+        # ========================================================
+        # 9. Dienste atomar veröffentlichen
         # ========================================================
 
         result = BootstrapResult(
@@ -327,11 +425,21 @@ async def bootstrap_application(
             tool_registry=tool_registry,
             hierarchy_repository=hierarchy_repository,
             hierarchy_service=hierarchy_service,
+            model_service=model_service,
+            chat_service=chat_service,
         )
 
         _publish_services(
             app=app,
             result=result,
+        )
+
+        # Shutdown-Callbacks registrieren
+        _register_shutdown_callbacks(
+            app,
+            model_service,
+            chat_service,
+            hierarchy_service,
         )
 
         app.state.bootstrap_complete = True
@@ -352,6 +460,8 @@ async def bootstrap_application(
                     tool_registry,
                 ),
                 "hierarchy_service_available": True,
+                "model_service_available": True,
+                "chat_service_available": True,
             },
         )
 
@@ -372,6 +482,8 @@ async def bootstrap_application(
             model_registry=model_registry,
             config_service=config_service,
             session_factory=session_factory,
+            model_service=model_service,
+            chat_service=chat_service,
         )
 
         _clear_services(
@@ -429,6 +541,18 @@ async def shutdown_application(
         None,
     )
 
+    model_service: object = getattr(
+        app.state,
+        "model_service",
+        None,
+    )
+
+    chat_service: object = getattr(
+        app.state,
+        "chat_service",
+        None,
+    )
+
     session_factory_value: object = getattr(
         app.state,
         "session_factory",
@@ -437,6 +561,16 @@ async def shutdown_application(
 
     session_factory = _coerce_session_factory(
         session_factory_value,
+    )
+
+    await _safe_shutdown(
+        name="chat_service",
+        resource=chat_service,
+    )
+
+    await _safe_shutdown(
+        name="model_service",
+        resource=model_service,
     )
 
     await _safe_shutdown(
@@ -611,6 +745,42 @@ def get_hierarchy_service(
     )
 
 
+def get_model_service(
+    app: FastAPI,
+) -> ModelService:
+    """
+    Liefert den initialisierten ModelService.
+    """
+
+    service = _get_required_state_service(
+        app=app,
+        attribute="model_service",
+    )
+
+    return cast(
+        ModelService,
+        service,
+    )
+
+
+def get_chat_service(
+    app: FastAPI,
+) -> ChatService:
+    """
+    Liefert den initialisierten ChatService.
+    """
+
+    service = _get_required_state_service(
+        app=app,
+        attribute="chat_service",
+    )
+
+    return cast(
+        ChatService,
+        service,
+    )
+
+
 # ============================================================
 # Interne Bootstrap-Hilfsfunktionen
 # ============================================================
@@ -681,6 +851,9 @@ def _publish_services(
         result.hierarchy_service
     )
 
+    app.state.model_service = result.model_service
+    app.state.chat_service = result.chat_service
+
 
 def _clear_services(
     app: FastAPI,
@@ -690,6 +863,8 @@ def _clear_services(
     """
 
     for attribute in (
+        "chat_service",
+        "model_service",
         "hierarchy_service",
         "hierarchy_repository",
         "tool_registry",
@@ -707,16 +882,94 @@ def _clear_services(
             )
 
 
+def _register_shutdown_callbacks(
+    app: FastAPI,
+    model_service: ModelService,
+    chat_service: ChatService,
+    hierarchy_service: MinimalHierarchyService,
+) -> None:
+    """
+    Registriert Shutdown-Callbacks für Dienste, die sie unterstützen.
+    """
+
+    # ModelService.shutdown: Wrapper, der den Rückgabewert ignoriert
+    if hasattr(model_service, "shutdown") and callable(model_service.shutdown):
+
+        async def shutdown_model_service() -> None:
+            await model_service.shutdown(raise_on_error=False)
+
+        _register_shutdown_callback(
+            app,
+            shutdown_model_service,
+            "model_service.shutdown",
+        )
+
+    # ChatService hat aktuell keine shutdown-Methode – überspringen
+    # MinimalHierarchyService hat keine shutdown-Methode – überspringen
+
+
+def _register_shutdown_callback(
+    app: FastAPI,
+    callback: Callable[[], Awaitable[None] | None],
+    name: str,
+) -> None:
+    """
+    Registriert einen einzelnen Shutdown-Callback.
+    """
+
+    callbacks_value = getattr(
+        app.state,
+        "shutdown_callbacks",
+        None,
+    )
+
+    if callbacks_value is None:
+        callbacks: list[Callable[[], Awaitable[None] | None]] = []
+        app.state.shutdown_callbacks = callbacks
+    elif isinstance(
+        callbacks_value,
+        list,
+    ):
+        callbacks = cast(
+            list[Callable[[], Awaitable[None] | None]],
+            callbacks_value,
+        )
+    else:
+        logger.warning(
+            "app.state.shutdown_callbacks has invalid type, ignoring callback",
+            extra={"callback_name": name},
+        )
+        return
+
+    callbacks.append(callback)
+    logger.debug(
+        "Shutdown callback registered",
+        extra={"callback_name": name},
+    )
+
+
 async def _cleanup_partial_bootstrap(
     *,
     tool_registry: ToolRegistry | None,
     model_registry: ModelRegistry | None,
     config_service: ConfigService | None,
     session_factory: async_sessionmaker[AsyncSession] | None,
+    model_service: ModelService | None,
+    chat_service: ChatService | None,
 ) -> None:
     """
     Räumt Ressourcen nach einem fehlgeschlagenen Bootstrap auf.
     """
+
+    await _safe_shutdown(
+        name="chat_service",
+        resource=chat_service,
+    )
+
+    await _safe_shutdown(
+        name="model_service",
+        resource=model_service,
+    )
 
     await _safe_shutdown(
         name="tool_registry",
@@ -1012,4 +1265,3 @@ def _registry_item_count(
         return None
 
     return None
-

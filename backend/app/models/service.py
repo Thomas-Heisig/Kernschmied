@@ -430,6 +430,8 @@ class ModelService:
     Der Service besitzt keine globale Instanz. Er sollte im
     Application-Lifespan erzeugt und anschließend per Dependency
     Injection weitergegeben werden.
+
+    NEU: Unterstützung für ein Standardmodell (default model).
     """
 
     def __init__(
@@ -442,6 +444,7 @@ class ModelService:
         common_dependencies: Mapping[str, Any] | None = None,
         dependency_provider: DependencyProvider | None = None,
         allowed_manifest_directories: Sequence[str | Path] = (),
+        default_model_id: str | None = None,  # NEU: explizite Default-ID
     ) -> None:
         self._provider_registry = provider_registry
         self._lifecycle = lifecycle
@@ -476,6 +479,11 @@ class ModelService:
         self._started = False
         self._shutdown_requested = False
 
+        # NEU: Default-Modell-ID
+        self._default_model_id: str | None = None
+        if default_model_id is not None:
+            self._default_model_id = self._normalize_model_id(default_model_id)
+
     # ========================================================
     # Eigenschaften
     # ========================================================
@@ -499,6 +507,97 @@ class ModelService:
     @property
     def shutdown_requested(self) -> bool:
         return self._shutdown_requested
+
+    # ========================================================
+    # NEU: Default-Modell-Handling
+    # ========================================================
+
+    async def set_default_model_id(self, model_id: str | None) -> None:
+        """
+        Setzt oder entfernt die explizite Default-Modell-ID.
+
+        Die ID wird normalisiert. Existiert das Modell nicht in der Registry,
+        wird ein ModelNotRegisteredError ausgelöst.
+        """
+        if model_id is None:
+            async with self._registry_lock:
+                self._default_model_id = None
+            return
+
+        normalized = self._normalize_model_id(model_id)
+        async with self._registry_lock:
+            if normalized not in self._records:
+                raise ModelNotRegisteredError(normalized)
+            self._default_model_id = normalized
+
+    async def get_default_model_id(self) -> str | None:
+        """
+        Gibt die explizit gesetzte Default-Modell-ID zurück (oder None).
+        """
+        async with self._registry_lock:
+            return self._default_model_id
+
+    async def get_default(self) -> _ModelServiceRecord | None:
+        """
+        Liefert den Service-Eintrag des Standardmodells.
+
+        Priorität:
+        1. Explizit gesetzte Default-ID (falls vorhanden und aktiviert)
+        2. Erstes aktiviertes Modell (effectively_enabled) als Fallback
+        3. None, wenn kein aktiviertes Modell existiert.
+        """
+        async with self._registry_lock:
+            # 1. Explizites Default
+            if self._default_model_id is not None:
+                record = self._records.get(self._default_model_id)
+                if record is not None and record.effectively_enabled:
+                    return record
+                # Falls das explizite Default deaktiviert oder nicht existiert,
+                # loggen wir das und fallen auf den ersten aktiven zurück.
+                logger.warning(
+                    "Explizites Default-Modell %s ist nicht aktiv oder nicht registriert",
+                    self._default_model_id,
+                )
+
+            # 2. Fallback: erstes aktiviertes Modell
+            for record in self._records.values():
+                if record.effectively_enabled:
+                    return record
+
+            # 3. Kein aktiviertes Modell
+            return None
+
+    async def _resolve_model_id(
+        self,
+        model_id: str | None,
+        *,
+        must_be_enabled: bool = True,
+    ) -> str:
+        """
+        Hilfsmethode: Löst eine übergebene model_id auf.
+        Falls model_id None ist, wird das Default-Modell verwendet.
+
+        Raises:
+            ModelNotRegisteredError: wenn kein passendes Modell gefunden wird.
+            ModelDisabledError: wenn das aufgelöste Modell nicht aktiv ist (und must_be_enabled=True).
+        """
+        if model_id is not None:
+            normalized = self._normalize_model_id(model_id)
+            record = self._records.get(normalized)
+            if record is None:
+                raise ModelNotRegisteredError(normalized)
+            if must_be_enabled and not record.effectively_enabled:
+                raise ModelDisabledError(normalized)
+            return normalized
+
+        # model_id is None -> Default verwenden
+        default_record = await self.get_default()
+        if default_record is None:
+            raise ModelUnavailableError(
+                model_id="*",
+                reason="Kein Standardmodell verfügbar (keine aktivierten Modelle registriert).",
+            )
+        return default_record.model_id
 
     # ========================================================
     # Start und Shutdown
@@ -675,6 +774,18 @@ class ModelService:
 
             raise
 
+        # NEU: Falls die neue Modell-ID der Default-ID entspricht, aber deaktiviert ist,
+        # warnen wir nur, setzen aber nicht automatisch zurück.
+        if (
+            self._default_model_id is not None
+            and self._default_model_id == model_id
+            and not record.effectively_enabled
+        ):
+            logger.warning(
+                "Default-Modell %s wurde als deaktiviert registriert",
+                model_id,
+            )
+
         return ModelRegistrationResult(
             model_id=model_id,
             manifest_path=loaded_manifest.manifest_path,
@@ -849,6 +960,16 @@ class ModelService:
                 record.model_id,
                 None,
             )
+            # NEU: Wenn das Default-Modell entfernt wurde, zurücksetzen
+            if (
+                self._default_model_id is not None
+                and self._default_model_id == record.model_id
+            ):
+                self._default_model_id = None
+                logger.info(
+                    "Default-Modell %s wurde entfernt, Default zurückgesetzt",
+                    record.model_id,
+                )
 
         return removed
 
@@ -1084,7 +1205,7 @@ class ModelService:
 
     async def get_model_info(
         self,
-        model_id: str,
+        model_id: str | None = None,  # NEU: optional, Default wird verwendet
         *,
         include_provider_info: bool = False,
         access_context: ModelAccessContext | None = None,
@@ -1094,11 +1215,13 @@ class ModelService:
 
         include_provider_info=True kann ein Backend erzeugen und laden,
         abhängig von der Providerimplementierung.
+
+        Wenn model_id None ist, wird das Default-Modell verwendet.
         """
 
-        record = self._get_record(
-            model_id,
-        )
+        # NEU: Auflösung der model_id
+        resolved_id = await self._resolve_model_id(model_id, must_be_enabled=False)
+        record = self._get_record(resolved_id)
 
         await self._authorize(
             action=ModelServiceAction.READ,
@@ -1136,18 +1259,13 @@ class ModelService:
 
     async def load_model(
         self,
-        model_id: str,
+        model_id: str | None = None,
         *,
         access_context: ModelAccessContext | None = None,
     ) -> BaseModelBackend:
-        record = self._get_record(
-            model_id,
-        )
-
-        self._ensure_enabled(
-            record,
-            access_context=access_context,
-        )
+        # NEU: Auflösung der model_id
+        resolved_id = await self._resolve_model_id(model_id, must_be_enabled=True)
+        record = self._get_record(resolved_id)
 
         await self._authorize(
             action=ModelServiceAction.LOAD,
@@ -1189,29 +1307,27 @@ class ModelService:
         )
 
     # ========================================================
-    # Generierung
+    # Generierung – REIHENFOLGE GEÄNDERT: request zuerst
     # ========================================================
 
     async def generate(
         self,
-        model_id: str,
         request: GenerationRequest,
+        model_id: str | None = None,  # jetzt optional, aber nach request
         *,
         timeout_seconds: float | None = None,
         access_context: ModelAccessContext | None = None,
     ) -> StreamEvent:
         """
         Führt eine nicht streamende Modellgenerierung aus.
+
+        Wenn model_id None ist, wird das Default-Modell verwendet.
         """
 
-        record = self._get_record(
-            model_id,
-        )
+        # Auflösung der model_id
+        resolved_id = await self._resolve_model_id(model_id, must_be_enabled=True)
+        record = self._get_record(resolved_id)
 
-        self._ensure_enabled(
-            record,
-            access_context=access_context,
-        )
         self._validate_request_capabilities(
             record,
             request,
@@ -1255,24 +1371,22 @@ class ModelService:
 
     async def stream(
         self,
-        model_id: str,
         request: GenerationRequest,
+        model_id: str | None = None,  # jetzt optional, aber nach request
         *,
         idle_timeout_seconds: float | None = None,
         access_context: ModelAccessContext | None = None,
     ) -> AsyncIterator[StreamEvent]:
         """
         Führt eine streamende Modellgenerierung aus.
+
+        Wenn model_id None ist, wird das Default-Modell verwendet.
         """
 
-        record = self._get_record(
-            model_id,
-        )
+        # Auflösung der model_id
+        resolved_id = await self._resolve_model_id(model_id, must_be_enabled=True)
+        record = self._get_record(resolved_id)
 
-        self._ensure_enabled(
-            record,
-            access_context=access_context,
-        )
         self._require_capability(
             record,
             ModelManifestCapability.STREAMING.value,
@@ -1409,6 +1523,8 @@ class ModelService:
             "display_name",
             manifest.display_name,
         )
+        
+        provider_config["logical_model_id"] = manifest.id
 
         if manifest.limits.context_window is not None:
             provider_config.setdefault(

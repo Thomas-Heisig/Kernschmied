@@ -2,14 +2,20 @@
 
 export const UI_API_SCHEMA_VERSION = "1.0" as const;
 export const UI_SCHEMA_VERSION = "1.0" as const;
-
+export type NodeTypeDefinition = JsonObject;
 
 /**
  * Bekannte Aktionstypen, die das Frontend sicher ausführen darf.
  *
  * Unbekannte Aktionen werden ignoriert und nicht als Button dargestellt.
+ *
+ * Diese Liste muss mit den im Backend definierten Aktionen übereinstimmen.
+ * Die Aktionen werden im Frontend über die actionRegistry verwaltet.
  */
 export const KNOWN_ACTION_KINDS = [
+  // ============================================================
+  // Hierarchie- und Knotenaktionen
+  // ============================================================
   "create_child",
   "rename",
   "delete",
@@ -21,9 +27,41 @@ export const KNOWN_ACTION_KINDS = [
   "edit_prompt",
   "toggle_tools",
   "invoke_operation",
+
+  // ============================================================
+  // Chat-bezogene Aktionen
+  // ============================================================
+  "create_chat",        // Neuen Chat im aktuellen Kontext erstellen
+  "rename_chat",        // Chat umbenennen
+  "delete_chat",        // Chat löschen
+  "archive_chat",       // Chat archivieren
+  "export_chat",        // Chat exportieren (z.B. als JSON, PDF)
+
+  // ============================================================
+  // Workspace-/Projekt-bezogene Aktionen
+  // ============================================================
+  "create_workspace",
+  "rename_workspace",
+  "delete_workspace",
+  "create_project",
+  "rename_project",
+  "delete_project",
+
+  // ============================================================
+  // Allgemeine Aktionen
+  // ============================================================
+  "refresh",            // Aktuelle Ansicht neu laden
+  "settings",           // Einstellungen öffnen
+  "help",               // Hilfe anzeigen
+  "logout",             // Abmelden (wird über Auth behandelt)
 ] as const;
 
 export type KnownActionKind = typeof KNOWN_ACTION_KINDS[number];
+
+// ============================================================
+// JSON-Typen
+// ============================================================
+
 export type JsonScalar =
   | string
   | number
@@ -47,6 +85,10 @@ export type JsonValue =
  * Dies ist nicht rekursiv, da es nicht in `JsonValue` verwendet wird.
  */
 export type JsonObject = Record<string, JsonValue>;
+
+// ============================================================
+// UI-Komponenten-Verträge
+// ============================================================
 
 export interface UIComponentDefinition {
   id: string;
@@ -110,7 +152,7 @@ export interface UISchemaDocument {
   schema_name: string;
   schema_version: string;
 
-  node_types: JsonObject;
+  node_types: UISchemaRegistry;     // ← jetzt als Registry
   forms: UISchemaRegistry;
   components: UISchemaRegistry;
   actions: UISchemaRegistry;
@@ -138,6 +180,10 @@ export interface UISchemaResponse {
 
   request_id?: string | null;
 }
+
+// ============================================================
+// Validierungs- und Parse-Hilfen
+// ============================================================
 
 export interface SchemaValidationIssue {
   path: string;
@@ -179,6 +225,10 @@ export interface UISchemaResponseParseFailure {
 export type UISchemaResponseParseResult =
   | UISchemaResponseParseSuccess
   | UISchemaResponseParseFailure;
+
+// ============================================================
+// Laufzeit-Typprüfungen
+// ============================================================
 
 export function isRecord(
   value: unknown,

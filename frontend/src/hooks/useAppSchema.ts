@@ -90,9 +90,15 @@ export interface UseAppSchemaResult {
   isReady: boolean;
 
   /**
-   * Lädt Bootstrap, UI-Schema und Hierarchie erneut.
+   * Lädt Bootstrap, UI-Schema und Hierarchie erneut (Full reload).
    */
   reload: () => Promise<void>;
+
+  /**
+   * Lädt nur die Hierarchie neu – nützlich nach dem Erstellen von Chats oder
+   * anderen Änderungen am Baum, ohne das UI-Schema neu zu laden.
+   */
+  reloadHierarchy: () => Promise<void>;
 }
 
 /**
@@ -129,6 +135,9 @@ export function useAppSchema(): UseAppSchemaResult {
 
   const activeRequestControllerRef =
     useRef<AbortController | null>(null);
+
+  const hierarchyEndpointRef =
+    useRef<string | null>(null);
 
   /**
    * Verhindert, dass eine ältere Anfrage den Zustand einer neueren
@@ -205,6 +214,10 @@ export function useAppSchema(): UseAppSchemaResult {
             bootstrap.endpoints.hierarchy,
             "endpoints.hierarchy",
           );
+
+        // Hierarchie-Endpunkt für spätere Teil-Reloads speichern
+        hierarchyEndpointRef.current =
+          hierarchyEndpoint;
 
         const [
           rawSchemaResponse,
@@ -309,6 +322,117 @@ export function useAppSchema(): UseAppSchemaResult {
     [],
   );
 
+  /**
+   * Lädt nur die Hierarchie neu (ohne Bootstrap und UI-Schema).
+   * Nützlich nach dem Erstellen von Chats oder anderen Baumänderungen.
+   */
+  const loadHierarchy = useCallback(
+    async (): Promise<void> => {
+      // Falls noch kein Endpunkt bekannt ist, Full-Reload durchführen
+      if (!hierarchyEndpointRef.current) {
+        await load();
+        return;
+      }
+
+      const hierarchyEndpoint =
+        hierarchyEndpointRef.current;
+
+      // Eigene Abort-Controller für Hierarchie-Reload
+      const abortController =
+        new AbortController();
+
+      // Wenn schon ein aktiver Hierarchie-Reload läuft, abbrechen
+      // (vereinfacht: wir verwenden den gleichen Controller wie für Full-Reload,
+      // aber das würde den Full-Reload abbrechen – besser eigenen Controller)
+      // Für Einfachheit: wir nutzen einen separaten Controller, speichern ihn aber nicht global.
+      // Stattdessen lassen wir ihn einfach laufen und verhindern State-Updates nach Abort.
+
+      const requestGeneration =
+        requestGenerationRef.current + 1;
+
+      requestGenerationRef.current =
+        requestGeneration;
+
+      // Wir setzen isRefreshing auf true, damit UI Rückmeldung bekommt
+      setIsRefreshing(true);
+
+      try {
+        const rawHierarchyResponse =
+          await apiGet<unknown>(
+            hierarchyEndpoint,
+            {
+              signal:
+                abortController.signal,
+            },
+          );
+
+        // Prüfen, ob die Anfrage noch aktuell ist
+        if (
+          abortController.signal.aborted ||
+          requestGeneration !==
+            requestGenerationRef.current
+        ) {
+          return;
+        }
+
+        const normalizedHierarchy =
+          normalizeHierarchyResponse(
+            rawHierarchyResponse,
+          );
+
+        // Prüfen, ob die Anfrage noch aktuell ist (nach der Verarbeitung)
+        if (
+          abortController.signal.aborted ||
+          requestGeneration !==
+            requestGenerationRef.current
+        ) {
+          return;
+        }
+
+        setHierarchyTree(
+          normalizedHierarchy,
+        );
+
+        // Fehler zurücksetzen, da erfolgreich geladen
+        setError(null);
+        // Status bleibt "success", da wir bereits Daten haben
+        setStatus("success");
+      } catch (caughtError) {
+        // Abort ignorieren
+        if (
+          abortController.signal.aborted ||
+          isAbortError(caughtError) ||
+          requestGeneration !==
+            requestGenerationRef.current
+        ) {
+          return;
+        }
+
+        const normalizedError =
+          normalizeAppSchemaError(
+            caughtError,
+          );
+
+        logDevelopmentError(
+          "Hierarchie konnte nicht neu geladen werden.",
+          normalizedError,
+        );
+
+        // Fehler setzen, aber Status bleibt "success", da wir bereits Daten haben
+        setError(normalizedError);
+      } finally {
+        // isRefreshing zurücksetzen, aber nur wenn keine neuere Anfrage läuft
+        if (
+          requestGeneration ===
+          requestGenerationRef.current
+        ) {
+          setIsRefreshing(false);
+        }
+      }
+    },
+    [load],
+  );
+
   useEffect(() => {
     void load();
 
@@ -341,8 +465,13 @@ export function useAppSchema(): UseAppSchemaResult {
     isRefreshing,
     isReady,
     reload: load,
+    reloadHierarchy: loadHierarchy,
   };
 }
+
+// ============================================================
+// Normalisierungs- und Validierungs-Hilfen (unverändert)
+// ============================================================
 
 function normalizeBootstrapResponse(
   value: unknown,
@@ -372,7 +501,6 @@ function normalizeBootstrapResponse(
     ),
   );
 }
-
 
 function normalizeUISchemaResponse(
   value: unknown,

@@ -1,43 +1,41 @@
 {
   "schema_version": "1.0",
-  "id": "demo-local",
-  "display_name": "Lokales Demo-Modell",
-  "description": "Lokales Demonstrationsmodell für die Kernschmied-Entwicklung.",
+  "id": "ollama-qwen2.5-7b",
+  "display_name": "Qwen 2.5 7B (Ollama)",
+  "description": "Lokales Qwen 2.5 7B Modell über Ollama",
   "status": "active",
   "enabled": true,
-  "runtime": "local",
+  "runtime": "remote",
   "provider": {
-    "type": "demo",
-    "config": {},
+    "type": "ollama",
+    "config": {
+      "base_url": "http://127.0.0.1:11434",
+      "default_model": "qwen2.5:7b",
+      "timeout_seconds": 120
+    },
     "secrets": {}
   },
-  "capabilities": [
-    "chat",
-    "streaming",
-    "tools"
-  ],
-  "tags": [
-    "demo",
-    "local",
-    "development"
-  ],
+  "capabilities": ["chat", "streaming"],
+  "tags": ["ollama", "qwen", "local", "development"],
   "limits": {
     "context_window": 8192,
-    "max_output_tokens": 2048,
-    "max_tool_calls": 10
+    "max_output_tokens": 2048
   },
   "lifecycle": {
     "eager_create": false,
     "eager_load": false,
-    "unload_when_idle": false
+    "unload_when_idle": true,
+    "idle_unload_seconds": 300
   },
   "presentation": {
+    "icon": "🧠",
     "category": "Lokale Modelle",
-    "sort_order": 100,
+    "sort_order": 10,
     "hidden": false,
-    "badge": "Demo"
+    "badge": "Ollama"
   },
   "metadata": {
-    "purpose": "development"
+    "purpose": "development",
+    "provider_version": "0.1"
   }
 }

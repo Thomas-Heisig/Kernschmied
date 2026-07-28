@@ -62,10 +62,14 @@ class OllamaProvider(BaseModelBackend):
         self._default_model = (
             _read_optional_string(config, "default_model") or DEFAULT_MODEL
         )
-        models = _read_string_sequence(config, "models")
-        self._model_ids = tuple(dict.fromkeys(models or (self._default_model,)))
-        if self._default_model not in self._model_ids:
-            self._model_ids = (self._default_model, *self._model_ids)
+
+        # ------------------------------------------------------------
+        # Logische Modell-ID aus der Config lesen (vom ModelService gesetzt)
+        # Fallback auf default_model, damit es immer ein str ist.
+        # ------------------------------------------------------------
+        logical = _read_optional_string(config, "logical_model_id")
+        self._logical_model_id = logical if logical is not None else self._default_model
+
         self._timeout = _read_positive_float(
             config, "timeout_seconds", default=DEFAULT_TIMEOUT_SECONDS
         )
@@ -83,10 +87,11 @@ class OllamaProvider(BaseModelBackend):
             return False
 
     async def list_models(self) -> list[ModelInfo]:
-        return [self._create_model_info(model_id) for model_id in self._model_ids]
+        return [self._create_model_info(self._logical_model_id)]
 
     async def get_model(self, model_id: str) -> ModelInfo:
-        return self._create_model_info(self._resolve_model_id(model_id))
+        resolved_id = self._resolve_logical_model_id(model_id)
+        return self._create_model_info(resolved_id)
 
     def stream(self, request: GenerationRequest) -> AsyncIterator[StreamEvent]:
         return self._stream_request(request)
@@ -98,11 +103,11 @@ class OllamaProvider(BaseModelBackend):
             await client.aclose()
 
     async def _stream_request(self, request: GenerationRequest) -> AsyncIterator[StreamEvent]:
-        model_id = self._resolve_model_id(request.model)
+        ollama_model_name = self._get_ollama_model_name(request)
 
         yield StreamEvent.create(
             type=StreamEventType.START,
-            data={"backend": self.backend_name, "model": model_id},
+            data={"backend": self.backend_name, "model": ollama_model_name},
         )
 
         try:
@@ -113,7 +118,7 @@ class OllamaProvider(BaseModelBackend):
                 )
 
             payload: dict[str, object] = {
-                "model": model_id,
+                "model": ollama_model_name,
                 "messages": _convert_messages(request.messages),
                 "stream": True,
                 "options": {
@@ -188,7 +193,7 @@ class OllamaProvider(BaseModelBackend):
 
             data: dict[str, JsonValue] = {
                 "backend": self.backend_name,
-                "model": model_id,
+                "model": ollama_model_name,
             }
             if finish_reason is not None:
                 data["finish_reason"] = finish_reason
@@ -205,7 +210,7 @@ class OllamaProvider(BaseModelBackend):
                 content=str(exc),
                 data={
                     "backend": self.backend_name,
-                    "model": model_id,
+                    "model": ollama_model_name,
                     "retryable": True,
                     "error_type": type(exc).__name__,
                 },
@@ -217,7 +222,7 @@ class OllamaProvider(BaseModelBackend):
                 content=str(exc),
                 data={
                     "backend": self.backend_name,
-                    "model": model_id,
+                    "model": ollama_model_name,
                     "retryable": exc.response.status_code
                     in {408, 409, 429, 500, 502, 503, 504},
                     "status_code": exc.response.status_code,
@@ -231,7 +236,7 @@ class OllamaProvider(BaseModelBackend):
                 content=str(exc),
                 data={
                     "backend": self.backend_name,
-                    "model": model_id,
+                    "model": ollama_model_name,
                     "retryable": False,
                     "error_type": type(exc).__name__,
                 },
@@ -244,7 +249,7 @@ class OllamaProvider(BaseModelBackend):
                 content="Bei der Ollama-Anfrage ist ein unerwarteter Fehler aufgetreten.",
                 data={
                     "backend": self.backend_name,
-                    "model": model_id,
+                    "model": ollama_model_name,
                     "retryable": False,
                     "error_type": type(exc).__name__,
                 },
@@ -257,11 +262,20 @@ class OllamaProvider(BaseModelBackend):
             )
         return self._client
 
-    def _resolve_model_id(self, requested: str) -> str:
-        model_id = requested.strip() or self._default_model
-        if model_id not in self._model_ids:
+    def _get_ollama_model_name(self, request: GenerationRequest) -> str:
+        requested = request.model.strip()
+        if requested != self._logical_model_id:
             raise OllamaModelNotFoundError(
-                f"Das Ollama-Modell '{model_id}' ist nicht freigegeben."
+                f"Die angeforderte logische Modell-ID '{requested}' "
+                f"gehört nicht zu diesem Provider (erwartet: {self._logical_model_id})."
+            )
+        return self._default_model
+
+    def _resolve_logical_model_id(self, requested: str) -> str:
+        model_id = requested.strip()
+        if model_id != self._logical_model_id:
+            raise OllamaModelNotFoundError(
+                f"Das angeforderte Modell '{model_id}' ist nicht konfiguriert."
             )
         return model_id
 
@@ -269,7 +283,7 @@ class OllamaProvider(BaseModelBackend):
         return ModelInfo.create(
             id=model_id,
             backend=self.backend_name,
-            display_name=model_id,
+            display_name=self._default_model,
             provider="Ollama",
             capabilities={
                 ModelCapability.CHAT,
@@ -405,15 +419,6 @@ def _read_optional_string(config: JsonMapping, key: str) -> str | None:
         return None
     normalized = value.strip()
     return normalized or None
-
-
-def _read_string_sequence(config: JsonMapping, key: str) -> tuple[str, ...]:
-    value = config.get(key)
-    if not isinstance(value, list):
-        return ()
-    return tuple(
-        item.strip() for item in value if isinstance(item, str) and item.strip()
-    )
 
 
 def _read_positive_float(

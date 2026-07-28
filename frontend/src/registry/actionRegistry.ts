@@ -109,7 +109,25 @@ export type ActionRegistry = ReadonlyMap<
   Readonly<ActionDefinition>
 >;
 
+/**
+ * Hilfsfunktion für noch nicht implementierte Aktionen.
+ * Diese Aktionen werden deaktiviert, damit sie im UI nicht angezeigt werden.
+ */
+function unsupportedAction(
+  label: string,
+  icon?: string,
+): Omit<ActionDefinition, "kind"> {
+  return {
+    label,
+    icon,
+    enabled: false,
+  };
+}
+
 const actionDefinitions = [
+  // ============================================================
+  // Bestehende Aktionen (bereits implementiert oder unterstützt)
+  // ============================================================
   {
     kind: "create_child",
     label: "Unterelement erstellen",
@@ -177,6 +195,72 @@ const actionDefinitions = [
     label: "Aktion ausführen",
     icon: "Play",
     enabled: true,
+  },
+  {
+    kind: "create_chat",
+    label: "Neuer Chat",
+    icon: "MessageSquarePlus",
+    enabled: true,
+  },
+
+  // ============================================================
+  // Noch nicht implementierte Aktionen (deaktiviert)
+  // ============================================================
+  {
+    kind: "rename_chat",
+    ...unsupportedAction("Chat umbenennen", "Pencil"),
+  },
+  {
+    kind: "delete_chat",
+    ...unsupportedAction("Chat löschen", "Trash2"),
+  },
+  {
+    kind: "archive_chat",
+    ...unsupportedAction("Chat archivieren", "Archive"),
+  },
+  {
+    kind: "export_chat",
+    ...unsupportedAction("Chat exportieren", "FileOutput"),
+  },
+  {
+    kind: "create_workspace",
+    ...unsupportedAction("Workspace erstellen", "Plus"),
+  },
+  {
+    kind: "rename_workspace",
+    ...unsupportedAction("Workspace umbenennen", "Pencil"),
+  },
+  {
+    kind: "delete_workspace",
+    ...unsupportedAction("Workspace löschen", "Trash2"),
+  },
+  {
+    kind: "create_project",
+    ...unsupportedAction("Projekt erstellen", "Plus"),
+  },
+  {
+    kind: "rename_project",
+    ...unsupportedAction("Projekt umbenennen", "Pencil"),
+  },
+  {
+    kind: "delete_project",
+    ...unsupportedAction("Projekt löschen", "Trash2"),
+  },
+  {
+    kind: "refresh",
+    ...unsupportedAction("Aktualisieren", "RefreshCw"),
+  },
+  {
+    kind: "settings",
+    ...unsupportedAction("Einstellungen", "Settings"),
+  },
+  {
+    kind: "help",
+    ...unsupportedAction("Hilfe", "HelpCircle"),
+  },
+  {
+    kind: "logout",
+    ...unsupportedAction("Abmelden", "LogOut"),
   },
 ] satisfies readonly ActionDefinition[];
 

@@ -734,12 +734,11 @@ class ChatService:
 
         try:
             model_event = await self._model_service.generate(
-                model_id,
-                generation_request,
+                request=generation_request,  # jetzt GenerationRequest
+                model_id=model_id,
                 timeout_seconds=self._generation_timeout_seconds,
                 access_context=context.access,
             )
-
             response = self._build_chat_response(
                 model_event=model_event,
                 request_id=context.request_id,
@@ -905,8 +904,8 @@ class ChatService:
 
         try:
             async for model_event in self._model_service.stream(
-                model_id,
-                generation_request,
+                request=generation_request,  # erstes Argument: GenerationRequest
+                model_id=model_id,
                 idle_timeout_seconds=self._stream_idle_timeout_seconds,
                 access_context=context.access,
             ):

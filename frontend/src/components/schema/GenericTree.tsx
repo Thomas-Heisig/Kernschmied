@@ -55,6 +55,11 @@ export interface GenericTreeProps {
   ) => void;
 
   /**
+   * Wird aufgerufen, wenn für einen Projektknoten ein neuer Chat erstellt werden soll.
+   */
+  onCreateChat?: (parentNodeId: string) => void;
+
+  /**
    * Kontrollierte Menge aufgeklappter Knoten.
    *
    * Wird dieser Wert nicht übergeben, verwaltet GenericTree den
@@ -99,6 +104,7 @@ interface TreeNodeProps {
     action: string,
     node: HierarchyNode,
   ) => void;
+  onCreateChat?: (parentNodeId: string) => void;
   onToggleExpanded: (nodeId: string) => void;
   renderLabel?: (
     node: HierarchyNode,
@@ -159,6 +165,7 @@ function GenericTreeComponent({
   onSelect,
   selectedNodeId = null,
   onAction,
+  onCreateChat,
   expandedNodeIds,
   onExpandedNodeIdsChange,
   maxVisibleActions,
@@ -275,6 +282,7 @@ function GenericTreeComponent({
         }
         onSelect={onSelect}
         onAction={onAction}
+        onCreateChat={onCreateChat}
         onToggleExpanded={
           handleToggleExpanded
         }
@@ -293,6 +301,7 @@ function TreeNodeComponent({
   maxVisibleActions,
   onSelect,
   onAction,
+  onCreateChat,
   onToggleExpanded,
   renderLabel,
 }: TreeNodeProps) {
@@ -439,6 +448,9 @@ function TreeNodeComponent({
     ? nodeDefinition.color
     : undefined;
 
+  // Prüfen, ob der Knoten ein Projekt ist (für "Neuer Chat"-Button)
+  const isProject = node.type === "project";
+
   return (
     <div
       role="treeitem"
@@ -453,10 +465,11 @@ function TreeNodeComponent({
       <div
         className={joinClassNames(
           "group flex min-w-0 items-center gap-1 rounded-md",
-          "px-2 py-1 transition-colors",
+          "px-2 py-1 transition-colors duration-fast",
+          // Selektion
           isSelected
-            ? "bg-slate-200 text-slate-950"
-            : "text-slate-700 hover:bg-slate-100",
+            ? "bg-primary-soft text-text dark:bg-primary/20 dark:text-white"
+            : "text-text-soft hover:bg-surface-hover dark:text-gray-300 dark:hover:bg-slate-800/60",
         )}
         style={{
           paddingLeft:
@@ -465,16 +478,15 @@ function TreeNodeComponent({
               INDENT_SIZE_PX,
         }}
       >
+        {/* Toggle-Button (Pfeil) */}
         <button
           type="button"
           className={joinClassNames(
             "flex h-6 w-6 shrink-0 items-center justify-center",
-            "rounded text-slate-500",
-            "focus-visible:outline-none",
-            "focus-visible:ring-2",
-            "focus-visible:ring-slate-500",
+            "rounded text-text-muted dark:text-gray-500",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
             nodeHasChildren
-              ? "hover:bg-slate-200 hover:text-slate-900"
+              ? "hover:bg-surface-hover hover:text-text dark:hover:bg-slate-700/60 dark:hover:text-white"
               : "pointer-events-none opacity-0",
           )}
           onClick={handleToggle}
@@ -497,7 +509,7 @@ function TreeNodeComponent({
           <span
             aria-hidden="true"
             className={joinClassNames(
-              "text-xs transition-transform",
+              "text-xs transition-transform duration-fast",
               isExpanded &&
                 "rotate-90",
             )}
@@ -506,15 +518,13 @@ function TreeNodeComponent({
           </span>
         </button>
 
+        {/* Haupt-Button: Icon + Name */}
         <button
           type="button"
           className={joinClassNames(
             "flex min-w-0 flex-1 items-center gap-2",
             "rounded-sm text-left",
-            "focus-visible:outline-none",
-            "focus-visible:ring-2",
-            "focus-visible:ring-slate-500",
-            "focus-visible:ring-offset-1",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
           )}
           onClick={handleSelect}
           onKeyDown={
@@ -546,10 +556,13 @@ function TreeNodeComponent({
             <span
               className={joinClassNames(
                 "shrink-0 rounded",
-                "border border-amber-300",
-                "bg-amber-50 px-1.5 py-0.5",
+                "border border-warning/30",
+                "bg-warning-soft px-1.5 py-0.5",
                 "text-[10px] font-medium",
-                "text-amber-800",
+                "text-warning",
+                "dark:border-warning/20",
+                "dark:bg-warning/10",
+                "dark:text-warning",
               )}
               title={`Nicht unterstützter Knotentyp: ${node.type}`}
             >
@@ -558,12 +571,37 @@ function TreeNodeComponent({
           )}
         </button>
 
+        {/* "Neuer Chat"-Button für Projektknoten */}
+        {isProject && onCreateChat && (
+          <button
+            type="button"
+            className={joinClassNames(
+              "shrink-0 rounded",
+              "bg-primary px-2 py-1",
+              "text-xs font-medium text-white",
+              "transition-colors duration-fast",
+              "hover:bg-primary-hover",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
+              "dark:bg-primary/80 dark:hover:bg-primary",
+            )}
+            onClick={(event) => {
+              event.stopPropagation();
+              onCreateChat(node.id);
+            }}
+            aria-label={`Neuen Chat in ${node.name} erstellen`}
+            title={`Neuen Chat in ${node.name} erstellen`}
+          >
+            Neuer Chat
+          </button>
+        )}
+
+        {/* Aktionen-Buttons (nur bei Hover sichtbar) */}
         {knownActions.length >
           0 && (
           <div
             className={joinClassNames(
               "flex shrink-0 items-center gap-1",
-              "opacity-0 transition-opacity",
+              "opacity-0 transition-opacity duration-fast",
               "group-hover:opacity-100",
               "group-focus-within:opacity-100",
             )}
@@ -576,12 +614,10 @@ function TreeNodeComponent({
                   type="button"
                   className={joinClassNames(
                     "rounded px-1.5 py-1",
-                    "text-xs text-slate-500",
-                    "hover:bg-slate-200",
-                    "hover:text-slate-950",
-                    "focus-visible:outline-none",
-                    "focus-visible:ring-2",
-                    "focus-visible:ring-slate-500",
+                    "text-xs text-text-muted",
+                    "hover:bg-surface-hover hover:text-text",
+                    "dark:text-gray-400 dark:hover:bg-slate-700/60 dark:hover:text-white",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                   )}
                   title={action}
                   aria-label={`${action}: ${node.name}`}
@@ -604,6 +640,7 @@ function TreeNodeComponent({
         )}
       </div>
 
+      {/* Kinder (rekursiv) */}
       {nodeHasChildren &&
         isExpanded && (
           <div role="group">
@@ -630,6 +667,9 @@ function TreeNodeComponent({
                   }
                   onAction={
                     onAction
+                  }
+                  onCreateChat={
+                    onCreateChat
                   }
                   onToggleExpanded={
                     onToggleExpanded

@@ -637,3 +637,32 @@ function assertNever(value: never): never {
     `Unbekannte Store-Aktion: ${JSON.stringify(value)}`,
   );
 }
+
+export function selectSelectedNode(
+  state: AppStoreState,
+): HierarchyNode | null {
+  const { hierarchyTree, selectedNodeId } = state;
+  if (!hierarchyTree || !selectedNodeId) return null;
+  return findNodeById(hierarchyTree.root, selectedNodeId);
+}
+
+export function selectNodeById(
+  state: AppStoreState,
+  nodeId: string,
+): HierarchyNode | null {
+  const { hierarchyTree } = state;
+  if (!hierarchyTree) return null;
+  return findNodeById(hierarchyTree.root, nodeId);
+}
+
+function findNodeById(
+  root: HierarchyNode,
+  nodeId: string,
+): HierarchyNode | null {
+  if (root.id === nodeId) return root;
+  for (const child of root.children) {
+    const found = findNodeById(child, nodeId);
+    if (found) return found;
+  }
+  return null;
+}
