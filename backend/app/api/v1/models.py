@@ -19,9 +19,8 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    JsonValue,          # NEU: Pydantic's JsonValue
+    JsonValue,  # NEU: Pydantic's JsonValue
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -200,9 +199,7 @@ def get_model_registry(
             request=request,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="MODEL_REGISTRY_UNAVAILABLE",
-            message=(
-                "Die Modellregistrierung ist nicht verfügbar."
-            ),
+            message=("Die Modellregistrierung ist nicht verfügbar."),
         )
 
     return registry
@@ -546,10 +543,7 @@ def normalize_string_list(
             item,
         )
 
-        if (
-            normalized
-            and normalized not in result
-        ):
+        if normalized and normalized not in result:
             result.append(
                 normalized,
             )
@@ -805,10 +799,7 @@ def normalize_capabilities(
         raw,
     )
 
-    normalized_names: set[str] = {
-        item.casefold()
-        for item in names
-    }
+    normalized_names: set[str] = {item.casefold() for item in names}
 
     known_aliases: dict[str, set[str]] = {
         "chat": {
@@ -846,37 +837,15 @@ def normalize_capabilities(
             aliases,
         )
 
-    additional = [
-        item
-        for item in names
-        if item.casefold() not in all_known_aliases
-    ]
+    additional = [item for item in names if item.casefold() not in all_known_aliases]
 
     return ModelCapability(
-        chat=bool(
-            normalized_names
-            & known_aliases["chat"]
-        ),
-        streaming=bool(
-            normalized_names
-            & known_aliases["streaming"]
-        ),
-        tool_calling=bool(
-            normalized_names
-            & known_aliases["tool_calling"]
-        ),
-        vision=bool(
-            normalized_names
-            & known_aliases["vision"]
-        ),
-        embeddings=bool(
-            normalized_names
-            & known_aliases["embeddings"]
-        ),
-        structured_output=bool(
-            normalized_names
-            & known_aliases["structured_output"]
-        ),
+        chat=bool(normalized_names & known_aliases["chat"]),
+        streaming=bool(normalized_names & known_aliases["streaming"]),
+        tool_calling=bool(normalized_names & known_aliases["tool_calling"]),
+        vision=bool(normalized_names & known_aliases["vision"]),
+        embeddings=bool(normalized_names & known_aliases["embeddings"]),
+        structured_output=bool(normalized_names & known_aliases["structured_output"]),
         additional=additional,
     )
 
@@ -907,11 +876,7 @@ def normalize_positive_int(
             value,
         )
 
-        return (
-            normalized_float
-            if normalized_float > 0
-            else None
-        )
+        return normalized_float if normalized_float > 0 else None
 
     if isinstance(
         value,
@@ -929,11 +894,7 @@ def normalize_positive_int(
         except ValueError:
             return None
 
-        return (
-            normalized_int
-            if normalized_int > 0
-            else None
-        )
+        return normalized_int if normalized_int > 0 else None
 
     return None
 
@@ -992,9 +953,7 @@ def normalize_model_entry(
     )
 
     if not model_id:
-        raise ValueError(
-            "Ein Modell besitzt keine gültige ID."
-        )
+        raise ValueError("Ein Modell besitzt keine gültige ID.")
 
     name = normalize_string(
         read_value(
@@ -1106,9 +1065,7 @@ async def list_registry_models(
     if not callable(
         list_models,
     ):
-        raise RuntimeError(
-            "Die ModelRegistry implementiert list_models() nicht."
-        )
+        raise RuntimeError("Die ModelRegistry implementiert list_models() nicht.")
 
     raw_result: object = list_models()
 
@@ -1121,24 +1078,16 @@ async def list_registry_models(
     )
 
     if result_mapping is not None:
-        return [
-            item
-            for item in result_mapping.values()
-        ]
+        return [item for item in result_mapping.values()]
 
     result_sequence = as_object_sequence(
         result,
     )
 
     if result_sequence is not None:
-        return [
-            item
-            for item in result_sequence
-        ]
+        return [item for item in result_sequence]
 
-    raise RuntimeError(
-        "Die ModelRegistry hat ein ungültiges Ergebnis geliefert."
-    )
+    raise RuntimeError("Die ModelRegistry hat ein ungültiges Ergebnis geliefert.")
 
 
 def is_model_visible(
@@ -1148,17 +1097,10 @@ def is_model_visible(
     capability: str | None,
     provider: str | None,
 ) -> bool:
-    if (
-        not include_disabled
-        and not model.enabled
-    ):
+    if not include_disabled and not model.enabled:
         return False
 
-    if (
-        provider is not None
-        and model.provider.casefold()
-        != provider.casefold()
-    ):
+    if provider is not None and model.provider.casefold() != provider.casefold():
         return False
 
     if capability is None:
@@ -1172,9 +1114,7 @@ def is_model_visible(
         "tool_calling": model.capabilities.tool_calling,
         "vision": model.capabilities.vision,
         "embeddings": model.capabilities.embeddings,
-        "structured_output": (
-            model.capabilities.structured_output
-        ),
+        "structured_output": (model.capabilities.structured_output),
     }
 
     known_result = known_capabilities.get(
@@ -1185,8 +1125,7 @@ def is_model_visible(
         return known_result
 
     return normalized_capability in {
-        item.casefold()
-        for item in model.capabilities.additional
+        item.casefold() for item in model.capabilities.additional
     }
 
 
@@ -1202,14 +1141,10 @@ def is_model_visible(
     ),
     responses={
         status.HTTP_200_OK: {
-            "description": (
-                "Modellliste wurde geladen."
-            ),
+            "description": ("Modellliste wurde geladen."),
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
-            "description": (
-                "Die Modellregistrierung ist nicht verfügbar."
-            ),
+            "description": ("Die Modellregistrierung ist nicht verfügbar."),
         },
     },
 )
@@ -1219,31 +1154,28 @@ async def models(
     include_disabled: bool = Query(
         default=False,
         description=(
-            "Deaktivierte Modelle mit ausgeben. "
-            "Für Admin-Oberflächen vorgesehen."
+            "Deaktivierte Modelle mit ausgeben. Für Admin-Oberflächen vorgesehen."
         ),
     ),
-    capability: Literal[
-        "chat",
-        "streaming",
-        "tool_calling",
-        "vision",
-        "embeddings",
-        "structured_output",
-    ]
-    | None = Query(
+    capability: (
+        Literal[
+            "chat",
+            "streaming",
+            "tool_calling",
+            "vision",
+            "embeddings",
+            "structured_output",
+        ]
+        | None
+    ) = Query(
         default=None,
-        description=(
-            "Optional nach einer Fähigkeit filtern."
-        ),
+        description=("Optional nach einer Fähigkeit filtern."),
     ),
     provider: str | None = Query(
         default=None,
         min_length=1,
         max_length=100,
-        description=(
-            "Optional nach Provider filtern."
-        ),
+        description=("Optional nach Provider filtern."),
     ),
 ) -> ModelListResponse:
     registry = get_model_registry(
@@ -1269,9 +1201,7 @@ async def models(
             request=request,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="MODEL_REGISTRY_LIST_FAILED",
-            message=(
-                "Die Modellliste konnte nicht geladen werden."
-            ),
+            message=("Die Modellliste konnte nicht geladen werden."),
         ) from exc
 
     normalized_models: list[ModelEntry] = []
@@ -1326,13 +1256,9 @@ async def models(
         request,
     )
 
-    response.headers["Cache-Control"] = (
-        "no-store, private"
-    )
+    response.headers["Cache-Control"] = "no-store, private"
 
-    response.headers["X-Model-Schema-Version"] = (
-        MODEL_API_SCHEMA_VERSION
-    )
+    response.headers["X-Model-Schema-Version"] = MODEL_API_SCHEMA_VERSION
 
     response.headers["X-Model-Registry-Revision"] = str(
         registry_revision,

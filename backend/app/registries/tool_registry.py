@@ -36,7 +36,6 @@ from app.contracts.tool import (
     ToolRiskLevel,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -59,7 +58,6 @@ _JSON_VALUE_ADAPTER: Final[TypeAdapter[JsonValue]] = TypeAdapter(
 _STRING_LIST_ADAPTER: Final[TypeAdapter[list[str]]] = TypeAdapter(
     list[str],
 )
-
 
 
 def _create_empty_json_object() -> JsonObject:
@@ -155,6 +153,7 @@ _SECRET_KEY_FRAGMENTS: Final[tuple[str, ...]] = (
 # Fehler
 # ============================================================
 
+
 class ToolRegistryError(RuntimeError):
     code = "TOOL_REGISTRY_ERROR"
 
@@ -207,8 +206,7 @@ class DuplicateToolFactoryError(ToolRegistryError):
     def __init__(self, tool_type: str) -> None:
         self.tool_type = tool_type
         super().__init__(
-            f"Für den Tool-Typ '{tool_type}' ist bereits eine Factory "
-            "registriert.",
+            f"Für den Tool-Typ '{tool_type}' ist bereits eine Factory registriert.",
             details={"tool_type": tool_type},
         )
 
@@ -256,6 +254,7 @@ class ToolFactoryCreationError(ToolRegistryError):
 # ============================================================
 # Manifest
 # ============================================================
+
 
 class ToolManifestStatus(StrEnum):
     ACTIVE = "active"
@@ -376,6 +375,7 @@ class ToolFactoryRegistry:
 # Registry-Datenmodelle
 # ============================================================
 
+
 class ToolRegistrationStatus(StrEnum):
     REGISTERED = "registered"
     REPLACED = "replaced"
@@ -429,8 +429,10 @@ class ToolDiscoveryReport:
     @property
     def registered_count(self) -> int:
         return sum(
-            1 for r in self.results
-            if r.status in {ToolRegistrationStatus.REGISTERED, ToolRegistrationStatus.REPLACED}
+            1
+            for r in self.results
+            if r.status
+            in {ToolRegistrationStatus.REGISTERED, ToolRegistrationStatus.REPLACED}
         )
 
     @property
@@ -439,7 +441,9 @@ class ToolDiscoveryReport:
 
     @property
     def skipped_count(self) -> int:
-        return sum(1 for r in self.results if r.status == ToolRegistrationStatus.SKIPPED)
+        return sum(
+            1 for r in self.results if r.status == ToolRegistrationStatus.SKIPPED
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -465,6 +469,7 @@ class ToolRegistrySnapshot:
 # ============================================================
 # ToolRegistry
 # ============================================================
+
 
 class ToolRegistry:
     def __init__(
@@ -498,9 +503,7 @@ class ToolRegistry:
         self._follow_symlinks = follow_symlinks
 
         self._factory_registry = factory_registry or ToolFactoryRegistry()
-        self._common_dependencies: dict[str, object] = dict(
-            common_dependencies or {}
-        )
+        self._common_dependencies: dict[str, object] = dict(common_dependencies or {})
 
         self._tools: dict[str, ToolRegistryEntry] = {}
         self._path_index: dict[Path, str] = {}
@@ -558,7 +561,9 @@ class ToolRegistry:
                 ids_seen[manifest.tool_id] = manifest_path
                 loaded_manifests.append(manifest)
             except Exception as exc:
-                results.append(_create_error_result(manifest_path=manifest_path, error=exc))
+                results.append(
+                    _create_error_result(manifest_path=manifest_path, error=exc)
+                )
                 logger.warning(
                     "Tool manifest validation failed",
                     extra={"manifest_path": str(manifest_path), "error": exc},
@@ -577,11 +582,17 @@ class ToolRegistry:
             key=lambda m: (m.display_name.lower(), m.tool_id),
         ):
             try:
-                replaced = await self.register_manifest(manifest, replace=replace_existing)
+                replaced = await self.register_manifest(
+                    manifest, replace=replace_existing
+                )
                 results.append(
                     ToolRegistrationResult(
                         manifest_path=manifest.manifest_path,
-                        status=ToolRegistrationStatus.REPLACED if replaced else ToolRegistrationStatus.REGISTERED,
+                        status=(
+                            ToolRegistrationStatus.REPLACED
+                            if replaced
+                            else ToolRegistrationStatus.REGISTERED
+                        ),
                         tool_id=manifest.tool_id,
                         tool_type=manifest.tool_type,
                     )
@@ -747,7 +758,8 @@ class ToolRegistry:
     async def _remove_missing_paths(self, valid_paths: set[Path]) -> None:
         async with self._lock:
             to_remove = [
-                tid for tid, entry in self._tools.items()
+                tid
+                for tid, entry in self._tools.items()
                 if not str(entry.manifest.manifest_path).startswith("<builtin>")
                 and entry.manifest.manifest_path not in valid_paths
             ]
@@ -783,19 +795,28 @@ class ToolRegistry:
         risk_level: ToolRiskLevel | str | None = None,
         tags: Sequence[str] | None = None,
     ) -> tuple[ToolRegistryEntry, ...]:
-        normalized_tool_type = _normalize_tool_type(tool_type) if tool_type is not None else None
+        normalized_tool_type = (
+            _normalize_tool_type(tool_type) if tool_type is not None else None
+        )
         normalized_risk = (
-            risk_level.value if isinstance(risk_level, ToolRiskLevel)
-            else str(risk_level).strip().lower() if risk_level is not None
+            risk_level.value
+            if isinstance(risk_level, ToolRiskLevel)
+            else str(risk_level).strip().lower()
+            if risk_level is not None
             else None
         )
-        required_tags = frozenset(str(t).strip().lower() for t in (tags or ()) if str(t).strip())
+        required_tags = frozenset(
+            str(t).strip().lower() for t in (tags or ()) if str(t).strip()
+        )
 
         result: list[ToolRegistryEntry] = []
         for entry in self._tools.values():
             if enabled_only and not entry.enabled:
                 continue
-            if normalized_tool_type is not None and entry.tool_type != normalized_tool_type:
+            if (
+                normalized_tool_type is not None
+                and entry.tool_type != normalized_tool_type
+            ):
                 continue
             if required_tags and not required_tags.issubset(entry.manifest.tags):
                 continue
@@ -811,7 +832,9 @@ class ToolRegistry:
                     continue
             result.append(entry)
 
-        return tuple(sorted(result, key=lambda e: (e.manifest.display_name.lower(), e.tool_id)))
+        return tuple(
+            sorted(result, key=lambda e: (e.manifest.display_name.lower(), e.tool_id))
+        )
 
     def list_tools(self, *, enabled_only: bool = False) -> list[JsonObject]:
         return [
@@ -819,8 +842,13 @@ class ToolRegistry:
             for entry in self.list_entries(enabled_only=enabled_only)
         ]
 
-    def list_snapshots(self, *, enabled_only: bool = False) -> tuple[ToolRegistrySnapshot, ...]:
-        return tuple(self._create_snapshot(e) for e in self.list_entries(enabled_only=enabled_only))
+    def list_snapshots(
+        self, *, enabled_only: bool = False
+    ) -> tuple[ToolRegistrySnapshot, ...]:
+        return tuple(
+            self._create_snapshot(e)
+            for e in self.list_entries(enabled_only=enabled_only)
+        )
 
     def get_snapshot(self, tool_id: str) -> ToolRegistrySnapshot:
         return self._create_snapshot(self.get_entry(tool_id))
@@ -887,6 +915,7 @@ class ToolRegistry:
 # Manifest-Discovery und -Ladung
 # ============================================================
 
+
 def discover_tool_manifest_paths(
     base_directories: Sequence[str | Path],
     *,
@@ -898,7 +927,11 @@ def discover_tool_manifest_paths(
         base = Path(raw).expanduser().resolve()
         if not base.is_dir():
             continue
-        iterator = base.rglob(DEFAULT_TOOL_MANIFEST_FILENAME) if recursive else base.glob(DEFAULT_TOOL_MANIFEST_FILENAME)
+        iterator = (
+            base.rglob(DEFAULT_TOOL_MANIFEST_FILENAME)
+            if recursive
+            else base.glob(DEFAULT_TOOL_MANIFEST_FILENAME)
+        )
         for candidate in iterator:
             try:
                 if not candidate.is_file():
@@ -923,7 +956,9 @@ def load_tool_manifest(
     path = Path(manifest_path).expanduser().resolve()
 
     if not path.is_file():
-        raise InvalidToolManifestError("Das Tool-Manifest wurde nicht gefunden.", manifest_path=path)
+        raise InvalidToolManifestError(
+            "Das Tool-Manifest wurde nicht gefunden.", manifest_path=path
+        )
 
     if path.name.lower() != DEFAULT_TOOL_MANIFEST_FILENAME:
         raise InvalidToolManifestError(
@@ -983,14 +1018,18 @@ def _parse_tool_manifest(
 ) -> ToolManifest:
     _validate_forbidden_keys(raw_data, path="manifest", manifest_path=manifest_path)
 
-    schema_version = str(raw_data.get("schema_version", DEFAULT_TOOL_MANIFEST_VERSION)).strip()
+    schema_version = str(
+        raw_data.get("schema_version", DEFAULT_TOOL_MANIFEST_VERSION)
+    ).strip()
     if schema_version not in SUPPORTED_TOOL_MANIFEST_VERSIONS:
         raise InvalidToolManifestError(
             "Die Version des Tool-Manifests wird nicht unterstützt.",
             manifest_path=manifest_path,
             details={
                 "schema_version": schema_version,
-                "supported_versions": list(SUPPORTED_TOOL_MANIFEST_VERSIONS),  # in Liste umwandeln
+                "supported_versions": list(
+                    SUPPORTED_TOOL_MANIFEST_VERSIONS
+                ),  # in Liste umwandeln
             },
         )
 
@@ -1007,16 +1046,22 @@ def _parse_tool_manifest(
     raw_display_name = raw_data.get("display_name", raw_data.get("name", tool_id))
     display_name = str(raw_display_name).strip()
     if not display_name:
-        raise InvalidToolManifestError("display_name darf nicht leer sein.", manifest_path=manifest_path)
+        raise InvalidToolManifestError(
+            "display_name darf nicht leer sein.", manifest_path=manifest_path
+        )
     if len(display_name) > MAX_TOOL_NAME_LENGTH:
-        raise InvalidToolManifestError("display_name ist zu lang.", manifest_path=manifest_path)
+        raise InvalidToolManifestError(
+            "display_name ist zu lang.", manifest_path=manifest_path
+        )
 
     raw_description = raw_data.get("description")
     description = str(raw_description).strip() if raw_description is not None else None
     if description == "":
         description = None
     if description is not None and len(description) > MAX_TOOL_DESCRIPTION_LENGTH:
-        raise InvalidToolManifestError("description ist zu lang.", manifest_path=manifest_path)
+        raise InvalidToolManifestError(
+            "description ist zu lang.", manifest_path=manifest_path
+        )
 
     raw_status = raw_data.get("status", ToolManifestStatus.ACTIVE.value)
     try:
@@ -1041,13 +1086,17 @@ def _parse_tool_manifest(
         )
 
     raw_config = raw_data.get("config", {})
-    config = _require_json_object(raw_config, field_name="config", manifest_path=manifest_path)
+    config = _require_json_object(
+        raw_config, field_name="config", manifest_path=manifest_path
+    )
     _validate_no_secrets(config, path="config", manifest_path=manifest_path)
 
     tags = _normalize_tags(raw_data.get("tags", []), manifest_path=manifest_path)
 
     raw_metadata = raw_data.get("metadata", {})
-    metadata = _require_json_object(raw_metadata, field_name="metadata", manifest_path=manifest_path)
+    metadata = _require_json_object(
+        raw_metadata, field_name="metadata", manifest_path=manifest_path
+    )
     _validate_no_secrets(metadata, path="metadata", manifest_path=manifest_path)
 
     return ToolManifest(
@@ -1068,6 +1117,7 @@ def _parse_tool_manifest(
 # ============================================================
 # Validierungshilfen
 # ============================================================
+
 
 def _require_json_object(
     value: JsonValue,
@@ -1171,10 +1221,10 @@ def _is_relative_to(path: Path, parent: Path) -> bool:
 # Tool-Definitions-Zugriff und Serialisierung
 # ============================================================
 
+
 @runtime_checkable
 class SupportsModelDump(Protocol):
-    def model_dump(self, *, mode: str, exclude_none: bool) -> object:
-        ...
+    def model_dump(self, *, mode: str, exclude_none: bool) -> object: ...
 
 
 def _definition_value(definition: object, key: str) -> object | None:
@@ -1223,7 +1273,9 @@ def _validate_tool_definition(
     manifest: ToolManifest,
     definition: object,
 ) -> None:
-    definition_name = _definition_value(definition, "name") or _definition_value(definition, "id")
+    definition_name = _definition_value(definition, "name") or _definition_value(
+        definition, "id"
+    )
     if definition_name is None:
         raise ToolFactoryCreationError(
             tool_id=manifest.tool_id,
@@ -1247,6 +1299,7 @@ def _validate_tool_definition(
 # ============================================================
 # Verfügbarkeitsprüfung
 # ============================================================
+
 
 def _read_tool_availability(tool: BaseTool) -> ToolAvailability:
     availability_method = getattr(tool, "availability", None)
@@ -1272,7 +1325,11 @@ def _read_tool_availability(tool: BaseTool) -> ToolAvailability:
 
         if isinstance(result, bool):
             return ToolAvailability(
-                status=ToolAvailabilityStatus.AVAILABLE if result else ToolAvailabilityStatus.UNAVAILABLE,
+                status=(
+                    ToolAvailabilityStatus.AVAILABLE
+                    if result
+                    else ToolAvailabilityStatus.UNAVAILABLE
+                ),
                 reason=None,
             )
 
@@ -1291,6 +1348,7 @@ def _read_tool_availability(tool: BaseTool) -> ToolAvailability:
 # ============================================================
 # Normalisierung von IDs, Typen, Tags
 # ============================================================
+
 
 def _normalize_tool_id(value: object) -> str:
     if value is None:

@@ -10,17 +10,10 @@ import {
   type PropsWithChildren,
 } from "react";
 
-import type {
-  HierarchyNode,
-  HierarchyTree,
-} from "../contracts/hierarchy";
+import type { HierarchyNode, HierarchyTree } from "../contracts/hierarchy";
 import type { UISchema } from "../contracts/schema";
 
-export type AppStoreStatus =
-  | "idle"
-  | "loading"
-  | "ready"
-  | "error";
+export type AppStoreStatus = "idle" | "loading" | "ready" | "error";
 
 export interface AppStoreError {
   code: string;
@@ -138,10 +131,7 @@ export type AppStoreAction =
 export interface AppStoreCommands {
   beginLoading: () => void;
 
-  setLoadedData: (
-    schema: UISchema,
-    hierarchyTree: HierarchyTree,
-  ) => void;
+  setLoadedData: (schema: UISchema, hierarchyTree: HierarchyTree) => void;
 
   setError: (error: AppStoreError) => void;
   clearError: () => void;
@@ -153,9 +143,7 @@ export interface AppStoreCommands {
   selectHierarchyNode: (node: HierarchyNode | null) => void;
 
   toggleNodeExpanded: (nodeId: string) => void;
-  replaceExpandedNodeIds: (
-    nodeIds: ReadonlySet<string>,
-  ) => void;
+  replaceExpandedNodeIds: (nodeIds: ReadonlySet<string>) => void;
   collapseAllNodes: () => void;
 
   setNavigationOpen: (open: boolean) => void;
@@ -181,8 +169,7 @@ const INITIAL_STATE: AppStoreState = {
   isDetailsPanelOpen: true,
 };
 
-const AppStoreContext =
-  createContext<AppStoreValue | null>(null);
+const AppStoreContext = createContext<AppStoreValue | null>(null);
 
 export interface AppStoreProviderProps {
   initialState?: Partial<AppStoreState>;
@@ -205,10 +192,7 @@ export function AppStoreProvider({
   }, []);
 
   const setLoadedData = useCallback(
-    (
-      schema: UISchema,
-      hierarchyTree: HierarchyTree,
-    ) => {
+    (schema: UISchema, hierarchyTree: HierarchyTree) => {
       dispatch({
         type: "app/load_succeeded",
         payload: {
@@ -220,15 +204,12 @@ export function AppStoreProvider({
     [],
   );
 
-  const setError = useCallback(
-    (error: AppStoreError) => {
-      dispatch({
-        type: "app/load_failed",
-        payload: error,
-      });
-    },
-    [],
-  );
+  const setError = useCallback((error: AppStoreError) => {
+    dispatch({
+      type: "app/load_failed",
+      payload: error,
+    });
+  }, []);
 
   const clearError = useCallback(() => {
     dispatch({
@@ -236,73 +217,55 @@ export function AppStoreProvider({
     });
   }, []);
 
-  const replaceSchema = useCallback(
-    (schema: UISchema) => {
-      dispatch({
-        type: "schema/replaced",
-        payload: schema,
-      });
-    },
-    [],
-  );
+  const replaceSchema = useCallback((schema: UISchema) => {
+    dispatch({
+      type: "schema/replaced",
+      payload: schema,
+    });
+  }, []);
 
-  const replaceHierarchy = useCallback(
-    (hierarchyTree: HierarchyTree) => {
-      dispatch({
-        type: "hierarchy/replaced",
-        payload: hierarchyTree,
-      });
-    },
-    [],
-  );
+  const replaceHierarchy = useCallback((hierarchyTree: HierarchyTree) => {
+    dispatch({
+      type: "hierarchy/replaced",
+      payload: hierarchyTree,
+    });
+  }, []);
 
-  const selectNode = useCallback(
-    (nodeId: string | null) => {
-      dispatch({
-        type: "hierarchy/node_selected",
-        payload: {
-          nodeId,
-        },
-      });
-    },
-    [],
-  );
+  const selectNode = useCallback((nodeId: string | null) => {
+    dispatch({
+      type: "hierarchy/node_selected",
+      payload: {
+        nodeId,
+      },
+    });
+  }, []);
 
-  const selectHierarchyNode = useCallback(
-    (node: HierarchyNode | null) => {
-      dispatch({
-        type: "hierarchy/node_selected",
-        payload: {
-          nodeId: node?.id ?? null,
-        },
-      });
-    },
-    [],
-  );
+  const selectHierarchyNode = useCallback((node: HierarchyNode | null) => {
+    dispatch({
+      type: "hierarchy/node_selected",
+      payload: {
+        nodeId: node?.id ?? null,
+      },
+    });
+  }, []);
 
-  const toggleNodeExpanded = useCallback(
-    (nodeId: string) => {
-      dispatch({
-        type: "hierarchy/node_expansion_toggled",
-        payload: {
-          nodeId,
-        },
-      });
-    },
-    [],
-  );
+  const toggleNodeExpanded = useCallback((nodeId: string) => {
+    dispatch({
+      type: "hierarchy/node_expansion_toggled",
+      payload: {
+        nodeId,
+      },
+    });
+  }, []);
 
-  const replaceExpandedNodeIds = useCallback(
-    (nodeIds: ReadonlySet<string>) => {
-      dispatch({
-        type: "hierarchy/expanded_nodes_replaced",
-        payload: {
-          nodeIds,
-        },
-      });
-    },
-    [],
-  );
+  const replaceExpandedNodeIds = useCallback((nodeIds: ReadonlySet<string>) => {
+    dispatch({
+      type: "hierarchy/expanded_nodes_replaced",
+      payload: {
+        nodeIds,
+      },
+    });
+  }, []);
 
   const collapseAllNodes = useCallback(() => {
     dispatch({
@@ -310,29 +273,23 @@ export function AppStoreProvider({
     });
   }, []);
 
-  const setNavigationOpen = useCallback(
-    (open: boolean) => {
-      dispatch({
-        type: "ui/navigation_visibility_changed",
-        payload: {
-          open,
-        },
-      });
-    },
-    [],
-  );
+  const setNavigationOpen = useCallback((open: boolean) => {
+    dispatch({
+      type: "ui/navigation_visibility_changed",
+      payload: {
+        open,
+      },
+    });
+  }, []);
 
-  const setDetailsPanelOpen = useCallback(
-    (open: boolean) => {
-      dispatch({
-        type: "ui/details_panel_visibility_changed",
-        payload: {
-          open,
-        },
-      });
-    },
-    [],
-  );
+  const setDetailsPanelOpen = useCallback((open: boolean) => {
+    dispatch({
+      type: "ui/details_panel_visibility_changed",
+      payload: {
+        open,
+      },
+    });
+  }, []);
 
   const reset = useCallback(() => {
     dispatch({
@@ -437,10 +394,7 @@ export function appStoreReducer(
         ),
         expandedNodeIds:
           state.expandedNodeIds.size > 0
-            ? removeUnknownExpandedNodeIds(
-                hierarchyTree,
-                state.expandedNodeIds,
-              )
+            ? removeUnknownExpandedNodeIds(hierarchyTree, state.expandedNodeIds)
             : new Set([rootNodeId]),
         status: "ready",
         error: null,
@@ -458,10 +412,7 @@ export function appStoreReducer(
       return {
         ...state,
         error: null,
-        status:
-          state.schema && state.hierarchyTree
-            ? "ready"
-            : "idle",
+        status: state.schema && state.hierarchyTree ? "ready" : "idle",
       };
 
     case "schema/replaced":
@@ -491,9 +442,7 @@ export function appStoreReducer(
       };
 
     case "hierarchy/node_expansion_toggled": {
-      const nextExpandedNodeIds = new Set(
-        state.expandedNodeIds,
-      );
+      const nextExpandedNodeIds = new Set(state.expandedNodeIds);
 
       if (nextExpandedNodeIds.has(action.payload.nodeId)) {
         nextExpandedNodeIds.delete(action.payload.nodeId);
@@ -546,8 +495,7 @@ function createInitialState(
     ...INITIAL_STATE,
     ...initialState,
     expandedNodeIds: new Set(
-      initialState?.expandedNodeIds ??
-        INITIAL_STATE.expandedNodeIds,
+      initialState?.expandedNodeIds ?? INITIAL_STATE.expandedNodeIds,
     ),
   };
 }
@@ -556,10 +504,7 @@ function resolveSelectedNodeId(
   hierarchyTree: HierarchyTree,
   selectedNodeId: string | null,
 ): string | null {
-  if (
-    selectedNodeId &&
-    containsNodeId(hierarchyTree.root, selectedNodeId)
-  ) {
+  if (selectedNodeId && containsNodeId(hierarchyTree.root, selectedNodeId)) {
     return selectedNodeId;
   }
 
@@ -570,20 +515,14 @@ function removeUnknownExpandedNodeIds(
   hierarchyTree: HierarchyTree,
   expandedNodeIds: ReadonlySet<string>,
 ): ReadonlySet<string> {
-  const existingNodeIds = collectNodeIds(
-    hierarchyTree.root,
-  );
+  const existingNodeIds = collectNodeIds(hierarchyTree.root);
 
   return new Set(
-    [...expandedNodeIds].filter((nodeId) =>
-      existingNodeIds.has(nodeId),
-    ),
+    [...expandedNodeIds].filter((nodeId) => existingNodeIds.has(nodeId)),
   );
 }
 
-function collectNodeIds(
-  root: HierarchyNode,
-): Set<string> {
+function collectNodeIds(root: HierarchyNode): Set<string> {
   const nodeIds = new Set<string>();
   const stack: HierarchyNode[] = [root];
 
@@ -604,10 +543,7 @@ function collectNodeIds(
   return nodeIds;
 }
 
-function containsNodeId(
-  root: HierarchyNode,
-  nodeId: string,
-): boolean {
+function containsNodeId(root: HierarchyNode, nodeId: string): boolean {
   const stack: HierarchyNode[] = [root];
   const visitedNodeIds = new Set<string>();
 
@@ -633,14 +569,10 @@ function containsNodeId(
 }
 
 function assertNever(value: never): never {
-  throw new Error(
-    `Unbekannte Store-Aktion: ${JSON.stringify(value)}`,
-  );
+  throw new Error(`Unbekannte Store-Aktion: ${JSON.stringify(value)}`);
 }
 
-export function selectSelectedNode(
-  state: AppStoreState,
-): HierarchyNode | null {
+export function selectSelectedNode(state: AppStoreState): HierarchyNode | null {
   const { hierarchyTree, selectedNodeId } = state;
   if (!hierarchyTree || !selectedNodeId) return null;
   return findNodeById(hierarchyTree.root, selectedNodeId);

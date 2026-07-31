@@ -429,10 +429,7 @@ Example:
   "code": "unsupported_version",
   "message": "UI Schema version 3 is not supported.",
   "details": {
-    "supported_versions": [
-      "1",
-      "2"
-    ]
+    "supported_versions": ["1", "2"]
   }
 }
 ```

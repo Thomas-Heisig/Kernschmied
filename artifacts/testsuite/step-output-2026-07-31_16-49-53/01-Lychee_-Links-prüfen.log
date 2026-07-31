@@ -1,0 +1,19 @@
+COMMAND: lychee --no-progress F:\Kernschmied\CHANGELOG.md F:\Kernschmied\CODE_OF_CONDUCT.md F:\Kernschmied\CONTRIBUTING.md F:\Kernschmied\PULL_REQUEST_TEMPLATE.md F:\Kernschmied\README.md F:\Kernschmied\SECURITY.md F:\Kernschmied\SUPPORT.md F:\Kernschmied\docs\PROJECT_PROMPT.md F:\Kernschmied\frontend\public\selfhtml\heisig-naturstein-modern\AUDIT-HINWEISE.md F:\Kernschmied\wiki\_Footer.md F:\Kernschmied\wiki\_Sidebar.md F:\Kernschmied\wiki\Architecture.md F:\Kernschmied\wiki\FAQ.md F:\Kernschmied\wiki\Getting-Started.md F:\Kernschmied\wiki\Glossary.md F:\Kernschmied\wiki\Home.md F:\Kernschmied\wiki\Installation.md F:\Kernschmied\wiki\Project-Principles.md F:\Kernschmied\wiki\todo.md F:\Kernschmied\wiki\ADR\ADR-0001-Schema-Driven-UI.md
+WORKING DIRECTORY: F:\Kernschmied
+EXIT CODE: 2
+
+Issues found in 3 inputs. Find details below.
+
+[F:\Kernschmied\CONTRIBUTING.md]:
+[404] https://github.com/Thomas-Heisig/Kernschmied/compare/v0.1.0...HEAD (at 7:4) | Rejected status code: 404 Not Found
+[404] https://github.com/Thomas-Heisig/Kernschmied/releases/tag/v0.1.0 (at 33:4) | Rejected status code: 404 Not Found
+
+[F:\Kernschmied\wiki\FAQ.md]:
+[404] https://github.com/Thomas-Heisig/Kernschmied/discussions (at 430:2) | Rejected status code: 404 Not Found
+
+[F:\Kernschmied\wiki\Home.md]:
+[404] https://github.com/Thomas-Heisig/Kernschmied/discussions (at 245:2) | Rejected status code: 404 Not Found
+
+🔍 17 Total (in 1s 142ms) 🔗 10 Unique ✅ 13 OK 🚫 4 Errors
+
+Hint: You can configure accepted/rejected response codes with `-a` or `--accept`

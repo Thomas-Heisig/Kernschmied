@@ -127,9 +127,7 @@ export interface HierarchyTree {
  * IDs, korrekte `parent_id`-Werte oder Zyklen müssen beim Einlesen des
  * gesamten Baums separat geprüft werden.
  */
-export function isHierarchyNode(
-  value: unknown,
-): value is HierarchyNode {
+export function isHierarchyNode(value: unknown): value is HierarchyNode {
   if (!isRecord(value)) {
     return false;
   }
@@ -170,18 +168,12 @@ export function isHierarchyNode(
 /**
  * Prüft einen unbekannten Wert auf die Struktur eines Hierarchiebaums.
  */
-export function isHierarchyTree(
-  value: unknown,
-): value is HierarchyTree {
+export function isHierarchyTree(value: unknown): value is HierarchyTree {
   if (!isRecord(value)) {
     return false;
   }
 
-  const {
-    schema_version,
-    root,
-    revision,
-  } = value;
+  const { schema_version, root, revision } = value;
 
   return (
     isNonEmptyString(schema_version) &&
@@ -198,8 +190,7 @@ export function isSupportedHierarchyTree(
   value: unknown,
 ): value is HierarchyTree {
   return (
-    isHierarchyTree(value) &&
-    value.schema_version === HIERARCHY_SCHEMA_VERSION
+    isHierarchyTree(value) && value.schema_version === HIERARCHY_SCHEMA_VERSION
   );
 }
 
@@ -208,43 +199,24 @@ export function isSupportedHierarchyTree(
  *
  * Arrays werden absichtlich ausgeschlossen.
  */
-export function isRecord(
-  value: unknown,
-): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
-  );
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export function isNonEmptyString(
-  value: unknown,
-): value is string {
-  return (
-    typeof value === "string" &&
-    value.trim().length > 0
-  );
+export function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
 }
 
 export function isOptionalNullableNonEmptyString(
   value: unknown,
 ): value is string | null | undefined {
-  return (
-    value === undefined ||
-    value === null ||
-    isNonEmptyString(value)
-  );
+  return value === undefined || value === null || isNonEmptyString(value);
 }
 
 export function isOptionalNullableBoolean(
   value: unknown,
 ): value is boolean | null | undefined {
-  return (
-    value === undefined ||
-    value === null ||
-    typeof value === "boolean"
-  );
+  return value === undefined || value === null || typeof value === "boolean";
 }
 
 export function isOptionalNullableInteger(
@@ -253,11 +225,9 @@ export function isOptionalNullableInteger(
   return (
     value === undefined ||
     value === null ||
-    (
-      typeof value === "number" &&
+    (typeof value === "number" &&
       Number.isFinite(value) &&
-      Number.isInteger(value)
-    )
+      Number.isInteger(value))
   );
 }
 
@@ -267,21 +237,15 @@ export function isOptionalNullableNonNegativeInteger(
   return (
     value === undefined ||
     value === null ||
-    (
-      typeof value === "number" &&
+    (typeof value === "number" &&
       Number.isFinite(value) &&
       Number.isInteger(value) &&
-      value >= 0
-    )
+      value >= 0)
   );
 }
 
 export function isOptionalNullableRecord(
   value: unknown,
 ): value is Record<string, unknown> | null | undefined {
-  return (
-    value === undefined ||
-    value === null ||
-    isRecord(value)
-  );
+  return value === undefined || value === null || isRecord(value);
 }

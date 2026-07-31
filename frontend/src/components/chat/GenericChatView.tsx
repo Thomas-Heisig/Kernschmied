@@ -1,48 +1,50 @@
 // F:\Kernschmied\frontend\src\components\chat\GenericChatView.tsx
 
-/// <reference types="react" />
+import { useEffect, useRef, useState } from "react";
+import { MessageCircle, Send, Square } from "lucide-react";
 
-import React, {
-  FormEvent,
-  KeyboardEvent,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import type { FormEvent, KeyboardEvent } from "react";
 
-import { API_BASE_URL } from "../../api/client";
+import { ApiError, apiPostStream } from "../../api/client";
 
-const SOURCE_FILE =
-  "frontend/src/components/chat/GenericChatView.tsx";
+import type { ApiStreamHandle } from "../../api/client";
+
+const SOURCE_FILE = "frontend/src/components/chat/GenericChatView.tsx";
 
 const CHAT_STREAM_PATH = "/chat/stream";
-const CHAT_SCHEMA_VERSION = "1.0";
+
+const CHAT_STREAM_SCHEMA_VERSION = "1.0" as const;
+
 const MAX_MESSAGE_LENGTH = 50_000;
 
+const MAX_INPUT_HEIGHT = 192;
+
+/* ============================================================
+ * Komponentenverträge
+ * ============================================================ */
+
 type GenericChatViewProps = {
+  /**
+   * Der Titel wird nicht innerhalb der Chatansicht dargestellt.
+   *
+   * Die sichtbare Überschrift wird zentral durch das AppLayout
+   * beziehungsweise den Kontextkopf in App.tsx gerendert.
+   *
+   * Innerhalb dieser Komponente wird der Titel nur noch für
+   * Barrierefreiheit und Entwicklerprotokolle verwendet.
+   */
   title: string;
+
   hierarchyNodeId: string;
 };
 
-type ChatRole =
-  | "user"
-  | "assistant"
-  | "system";
+type ChatRole = "user" | "assistant" | "system";
 
 type ChatRequestStatus =
-  | "idle"
-  | "connecting"
-  | "streaming"
-  | "completed"
-  | "failed"
-  | "cancelled";
+  "idle" | "connecting" | "streaming" | "completed" | "failed" | "cancelled";
 
 type ChatMessageStatus =
-  | "pending"
-  | "streaming"
-  | "completed"
-  | "failed"
-  | "cancelled";
+  "pending" | "streaming" | "completed" | "failed" | "cancelled";
 
 type ChatMessage = {
   id: string;
@@ -56,7 +58,6 @@ type ChatMessage = {
 };
 
 type ChatRequestPayload = {
-  schema_version: string;
   message: string;
   conversation_id: string | null;
   hierarchy_node_id: string;
@@ -64,6 +65,10 @@ type ChatRequestPayload = {
   tool_ids: string[];
   metadata: Record<string, unknown>;
 };
+
+/* ============================================================
+ * SSE-Verträge
+ * ============================================================ */
 
 type RawSseEvent = {
   event: string;
@@ -80,7 +85,6 @@ type ChatStreamEventType =
   | "tool_result"
   | "usage"
   | "complete"
-  | "done"
   | "error"
   | "heartbeat";
 
@@ -92,55 +96,38 @@ type ChatStreamEnvelope = {
   conversation_id?: unknown;
   message_id?: unknown;
   data?: unknown;
-  content?: unknown;
-  message?: unknown;
-  detail?: unknown;
-  code?: unknown;
 };
 
 type ParsedChatStreamEvent = {
+  schemaVersion: string | null;
   type: string;
   sequence: number | null;
   requestId: string | null;
   conversationId: string | null;
   messageId: string | null;
   payload: unknown;
-  rawData: string;
 };
 
-type ApiErrorBody = {
-  code?: unknown;
-  message?: unknown;
-  detail?: unknown;
-  details?: unknown;
-  request_id?: unknown;
-};
+const KNOWN_STREAM_EVENT_TYPES = new Set<ChatStreamEventType>([
+  "start",
+  "token",
+  "message",
+  "reasoning",
+  "tool_call",
+  "tool_result",
+  "usage",
+  "complete",
+  "error",
+  "heartbeat",
+]);
 
-type DeveloperLogLevel =
-  | "debug"
-  | "info"
-  | "warn"
-  | "error";
+/* ============================================================
+ * Entwicklerinformationen
+ * ============================================================ */
 
-type DeveloperLogContext = Record<
-  string,
-  unknown
->;
+type DeveloperLogLevel = "debug" | "info" | "warn" | "error";
 
-const KNOWN_STREAM_EVENT_TYPES =
-  new Set<ChatStreamEventType>([
-    "start",
-    "token",
-    "message",
-    "reasoning",
-    "tool_call",
-    "tool_result",
-    "usage",
-    "complete",
-    "done",
-    "error",
-    "heartbeat",
-  ]);
+type DeveloperLogContext = Record<string, unknown>;
 
 function logDeveloperStep(
   level: DeveloperLogLevel,
@@ -161,33 +148,25 @@ function logDeveloperStep(
 
   switch (level) {
     case "error":
-      console.error(
-        "[Kernschmied][ChatPipeline]",
-        entry,
-      );
+      console.error("[Kernschmied][ChatPipeline]", entry);
       break;
 
     case "warn":
-      console.warn(
-        "[Kernschmied][ChatPipeline]",
-        entry,
-      );
+      console.warn("[Kernschmied][ChatPipeline]", entry);
       break;
 
     case "info":
-      console.info(
-        "[Kernschmied][ChatPipeline]",
-        entry,
-      );
+      console.info("[Kernschmied][ChatPipeline]", entry);
       break;
 
     default:
-      console.debug(
-        "[Kernschmied][ChatPipeline]",
-        entry,
-      );
+      console.debug("[Kernschmied][ChatPipeline]", entry);
   }
 }
+
+/* ============================================================
+ * Allgemeine Hilfsfunktionen
+ * ============================================================ */
 
 function createMessageId(): string {
   if (
@@ -204,18 +183,92 @@ function createMessageId(): string {
   ].join("-");
 }
 
-function normalizeSseBuffer(
-  value: string,
-): string {
-  return value
-    .replace(/\r\n/g, "\n")
-    .replace(/\r/g, "\n");
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function parseSseEvent(
-  chunk: string,
-): RawSseEvent | null {
+function asOptionalString(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const normalized = value.trim();
+
+  return normalized || null;
+}
+
+function asOptionalSequence(value: unknown): number | null {
+  let candidate: number;
+
+  if (typeof value === "number") {
+    candidate = value;
+  } else if (typeof value === "string" && value.trim() !== "") {
+    candidate = Number(value);
+  } else {
+    return null;
+  }
+
+  if (!Number.isSafeInteger(candidate) || candidate < 0) {
+    return null;
+  }
+
+  return candidate;
+}
+
+function normalizeSseBuffer(value: string): string {
+  return value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+}
+
+function isAbortError(error: unknown): boolean {
+  return error instanceof DOMException && error.name === "AbortError";
+}
+
+function validatePrompt(value: string): string {
+  const normalized = value.trim();
+
+  if (!normalized) {
+    throw new Error("Die Nachricht darf nicht leer sein.");
+  }
+
+  if (normalized.length > MAX_MESSAGE_LENGTH) {
+    throw new Error(
+      `Die Nachricht darf höchstens ${MAX_MESSAGE_LENGTH.toLocaleString(
+        "de-DE",
+      )} Zeichen enthalten.`,
+    );
+  }
+
+  return normalized;
+}
+
+function validateChatRequest(request: ChatRequestPayload): void {
+  if (!request.hierarchy_node_id.trim()) {
+    throw new Error(
+      "Für die Chat-Anfrage wurde kein gültiger Hierarchieknoten angegeben.",
+    );
+  }
+
+  if (
+    !Array.isArray(request.tool_ids) ||
+    !request.tool_ids.every(
+      (toolId) => typeof toolId === "string" && toolId.trim().length > 0,
+    )
+  ) {
+    throw new Error("Die Tool-IDs der Chat-Anfrage sind ungültig.");
+  }
+
+  if (!isRecord(request.metadata)) {
+    throw new Error("Die Metadaten der Chat-Anfrage sind ungültig.");
+  }
+}
+
+/* ============================================================
+ * SSE-Parsing
+ * ============================================================ */
+
+function parseSseEvent(chunk: string): RawSseEvent | null {
   let event = "message";
+
   let id: string | null = null;
 
   const dataLines: string[] = [];
@@ -234,14 +287,8 @@ function parseSseEvent(
       field = line;
       fieldValue = "";
     } else {
-      field = line.slice(
-        0,
-        separatorIndex,
-      );
-
-      fieldValue = line.slice(
-        separatorIndex + 1,
-      );
+      field = line.slice(0, separatorIndex);
+      fieldValue = line.slice(separatorIndex + 1);
 
       if (fieldValue.startsWith(" ")) {
         fieldValue = fieldValue.slice(1);
@@ -250,7 +297,7 @@ function parseSseEvent(
 
     switch (field) {
       case "event":
-        event = fieldValue;
+        event = fieldValue || "message";
         break;
 
       case "id":
@@ -277,134 +324,62 @@ function parseSseEvent(
   };
 }
 
-function isRecord(
-  value: unknown,
-): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
-  );
-}
-
-function asOptionalString(
-  value: unknown,
-): string | null {
-  return typeof value === "string"
-    ? value
-    : null;
-}
-
-function asOptionalNumber(
-  value: unknown,
-): number | null {
-  if (
-    typeof value === "number" &&
-    Number.isFinite(value)
-  ) {
-    return value;
-  }
-
-  if (
-    typeof value === "string" &&
-    value.trim() !== ""
-  ) {
-    const parsed = Number(value);
-
-    return Number.isFinite(parsed)
-      ? parsed
-      : null;
-  }
-
-  return null;
-}
-
-function parseChatStreamEvent(
-  rawEvent: RawSseEvent,
-): ParsedChatStreamEvent {
-  if (
-    rawEvent.data === "[DONE]"
-  ) {
-    return {
-      type: "complete",
-      sequence: asOptionalNumber(
-        rawEvent.id,
-      ),
-      requestId: null,
-      conversationId: null,
-      messageId: null,
-      payload: null,
-      rawData: rawEvent.data,
-    };
-  }
+function parseChatStreamEvent(rawEvent: RawSseEvent): ParsedChatStreamEvent {
+  let parsed: unknown;
 
   try {
-    const parsed = JSON.parse(
-      rawEvent.data,
-    ) as unknown;
-
-    if (!isRecord(parsed)) {
-      return {
-        type: rawEvent.event,
-        sequence: asOptionalNumber(
-          rawEvent.id,
-        ),
-        requestId: null,
-        conversationId: null,
-        messageId: null,
-        payload: parsed,
-        rawData: rawEvent.data,
-      };
-    }
-
-    const envelope =
-      parsed as ChatStreamEnvelope;
-
-    return {
-      type:
-        typeof envelope.event === "string"
-          ? envelope.event
-          : rawEvent.event,
-      sequence:
-        asOptionalNumber(
-          envelope.sequence,
-        ) ??
-        asOptionalNumber(
-          rawEvent.id,
-        ),
-      requestId: asOptionalString(
-        envelope.request_id,
-      ),
-      conversationId: asOptionalString(
-        envelope.conversation_id,
-      ),
-      messageId: asOptionalString(
-        envelope.message_id,
-      ),
-      payload:
-        envelope.data !== undefined
-          ? envelope.data
-          : parsed,
-      rawData: rawEvent.data,
-    };
-  } catch {
-    return {
-      type: rawEvent.event,
-      sequence: asOptionalNumber(
-        rawEvent.id,
-      ),
-      requestId: null,
-      conversationId: null,
-      messageId: null,
-      payload: rawEvent.data,
-      rawData: rawEvent.data,
-    };
+    parsed = JSON.parse(rawEvent.data) as unknown;
+  } catch (error) {
+    throw new Error(
+      `Das SSE-Ereignis "${rawEvent.event}" enthält kein gültiges JSON.`,
+      {
+        cause: error,
+      },
+    );
   }
+
+  if (!isRecord(parsed)) {
+    throw new Error(
+      `Das SSE-Ereignis "${rawEvent.event}" enthält keinen gültigen Ereignisumschlag.`,
+    );
+  }
+
+  const envelope = parsed as ChatStreamEnvelope;
+
+  const envelopeEvent = asOptionalString(envelope.event);
+
+  const schemaVersion = asOptionalString(envelope.schema_version);
+
+  const eventType = envelopeEvent ?? rawEvent.event;
+
+  if (
+    envelopeEvent &&
+    rawEvent.event !== "message" &&
+    rawEvent.event !== envelopeEvent
+  ) {
+    logDeveloperStep("warn", "sse-event-name-mismatch", {
+      sseEvent: rawEvent.event,
+      envelopeEvent,
+    });
+  }
+
+  return {
+    schemaVersion,
+    type: eventType,
+    sequence:
+      asOptionalSequence(envelope.sequence) ?? asOptionalSequence(rawEvent.id),
+    requestId: asOptionalString(envelope.request_id),
+    conversationId: asOptionalString(envelope.conversation_id),
+    messageId: asOptionalString(envelope.message_id),
+    payload: envelope.data,
+  };
 }
 
-function extractContentFromPayload(
-  payload: unknown,
-): string {
+/* ============================================================
+ * Ereignisinhalte
+ * ============================================================ */
+
+function extractContentFromPayload(payload: unknown): string {
   if (typeof payload === "string") {
     return payload;
   }
@@ -413,336 +388,196 @@ function extractContentFromPayload(
     return "";
   }
 
-  const directContent =
-    payload.content;
+  if (typeof payload.content === "string") {
+    return payload.content;
+  }
+
+  if (typeof payload.text === "string") {
+    return payload.text;
+  }
+
+  if (typeof payload.token === "string") {
+    return payload.token;
+  }
+
+  if (isRecord(payload.token)) {
+    if (typeof payload.token.content === "string") {
+      return payload.token.content;
+    }
+
+    if (typeof payload.token.text === "string") {
+      return payload.token.text;
+    }
+  }
+
+  if (typeof payload.delta === "string") {
+    return payload.delta;
+  }
+
+  if (isRecord(payload.delta) && typeof payload.delta.content === "string") {
+    return payload.delta.content;
+  }
+
+  if (typeof payload.message === "string") {
+    return payload.message;
+  }
 
   if (
-    typeof directContent === "string"
+    isRecord(payload.message) &&
+    typeof payload.message.content === "string"
   ) {
-    return directContent;
-  }
-
-  const token = payload.token;
-
-  if (typeof token === "string") {
-    return token;
-  }
-
-  if (isRecord(token)) {
-    const tokenContent = token.content;
-
-    if (
-      typeof tokenContent === "string"
-    ) {
-      return tokenContent;
-    }
-
-    const tokenText = token.text;
-
-    if (
-      typeof tokenText === "string"
-    ) {
-      return tokenText;
-    }
-  }
-
-  const delta = payload.delta;
-
-  if (typeof delta === "string") {
-    return delta;
-  }
-
-  if (isRecord(delta)) {
-    const deltaContent = delta.content;
-
-    if (
-      typeof deltaContent === "string"
-    ) {
-      return deltaContent;
-    }
-  }
-
-  const message = payload.message;
-
-  if (typeof message === "string") {
-    return message;
-  }
-
-  if (isRecord(message)) {
-    const messageContent =
-      message.content;
-
-    if (
-      typeof messageContent === "string"
-    ) {
-      return messageContent;
-    }
+    return payload.message.content;
   }
 
   return "";
 }
 
-function extractErrorMessage(
-  payload: unknown,
-  fallback: string,
-): string {
+function extractErrorMessage(payload: unknown, fallback: string): string {
   if (typeof payload === "string") {
-    const normalized = payload.trim();
-
-    return normalized || fallback;
+    return payload.trim() || fallback;
   }
 
   if (!isRecord(payload)) {
     return fallback;
   }
 
-  if (
-    typeof payload.message === "string"
-  ) {
+  if (typeof payload.message === "string" && payload.message.trim()) {
     return payload.message;
   }
 
-  if (
-    typeof payload.detail === "string"
-  ) {
+  if (typeof payload.detail === "string" && payload.detail.trim()) {
     return payload.detail;
   }
 
-  if (isRecord(payload.error)) {
-    const nestedMessage =
-      payload.error.message;
-
-    if (
-      typeof nestedMessage === "string"
-    ) {
-      return nestedMessage;
-    }
-  }
-
-  return fallback;
-}
-
-function formatValidationDetails(
-  detail: unknown,
-): string | null {
-  if (!Array.isArray(detail)) {
-    return null;
-  }
-
-  const messages = detail.map(
-    (entry) => {
-      if (!isRecord(entry)) {
-        return String(entry);
-      }
-
-      const location =
-        Array.isArray(entry.loc)
-          ? entry.loc.join(".")
-          : "request";
-
-      const message =
-        typeof entry.msg === "string"
-          ? entry.msg
-          : "Ungültiger Wert";
-
-      return `${location}: ${message}`;
-    },
-  );
-
-  return messages.join("; ");
-}
-
-async function readApiErrorMessage(
-  response: Response,
-): Promise<string> {
-  const fallback =
-    `Die Anfrage ist fehlgeschlagen (${response.status}).`;
-
-  const responseClone = response.clone();
-
-  try {
-    const body =
-      (await response.json()) as ApiErrorBody;
-
-    logDeveloperStep(
-      "error",
-      "http-error-response-parsed",
-      {
-        status: response.status,
-        statusText: response.statusText,
-        code:
-          typeof body.code === "string"
-            ? body.code
-            : null,
-        requestId:
-          typeof body.request_id === "string"
-            ? body.request_id
-            : null,
-        detailsAvailable:
-          body.details !== undefined,
-      },
-    );
-
-    if (
-      typeof body.message === "string"
-    ) {
-      return body.message;
-    }
-
-    if (
-      typeof body.detail === "string"
-    ) {
-      return body.detail;
-    }
-
-    const validationDetails =
-      formatValidationDetails(
-        body.detail,
-      );
-
-    if (validationDetails) {
-      return validationDetails;
-    }
-
-    if (body.details !== undefined) {
-      try {
-        return JSON.stringify(
-          body.details,
-          null,
-          2,
-        );
-      } catch {
-        return fallback;
-      }
-    }
-  } catch (parseError) {
-    logDeveloperStep(
-      "warn",
-      "http-error-json-parse-failed",
-      {
-        status: response.status,
-        error:
-          parseError instanceof Error
-            ? parseError.message
-            : String(parseError),
-      },
-    );
-  }
-
-  try {
-    const responseText =
-      await responseClone.text();
-
-    if (responseText.trim()) {
-      return responseText.trim();
-    }
-  } catch (readError) {
-    logDeveloperStep(
-      "warn",
-      "http-error-text-read-failed",
-      {
-        status: response.status,
-        error:
-          readError instanceof Error
-            ? readError.message
-            : String(readError),
-      },
-    );
-  }
-
-  return fallback;
-}
-
-function isAbortError(
-  error: unknown,
-): boolean {
-  return (
-    error instanceof DOMException &&
-    error.name === "AbortError"
-  );
-}
-
-function validatePrompt(
-  value: string,
-): string {
-  const normalized = value.trim();
-
-  if (!normalized) {
-    throw new Error(
-      "Die Nachricht darf nicht leer sein.",
-    );
-  }
-
   if (
-    normalized.length >
-    MAX_MESSAGE_LENGTH
+    isRecord(payload.error) &&
+    typeof payload.error.message === "string" &&
+    payload.error.message.trim()
   ) {
-    throw new Error(
-      `Die Nachricht darf höchstens ${MAX_MESSAGE_LENGTH.toLocaleString(
-        "de-DE",
-      )} Zeichen enthalten.`,
-    );
+    return payload.error.message;
   }
 
-  return normalized;
+  return fallback;
 }
+
+function formatRequestError(error: unknown): string {
+  if (error instanceof ApiError) {
+    const requestReference = error.requestId
+      ? ` Request-ID: ${error.requestId}.`
+      : "";
+
+    return `${error.message}${requestReference}`;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Die Nachricht konnte nicht gesendet werden.";
+}
+
+function formatTime(timestamp: number): string {
+  return new Date(timestamp).toLocaleTimeString("de-DE", {
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function getInitials(role: ChatRole): string {
+  switch (role) {
+    case "user":
+      return "DU";
+
+    case "assistant":
+      return "KI";
+
+    default:
+      return "SY";
+  }
+}
+
+function getAccessibleRequestStatus(status: ChatRequestStatus): string {
+  switch (status) {
+    case "connecting":
+      return "Die Verbindung zum Chatserver wird aufgebaut.";
+
+    case "streaming":
+      return "Die Antwort wird erstellt.";
+
+    case "completed":
+      return "Die Antwort wurde vollständig empfangen.";
+
+    case "failed":
+      return "Die Chat-Anfrage ist fehlgeschlagen.";
+
+    case "cancelled":
+      return "Die Chat-Anfrage wurde abgebrochen.";
+
+    default:
+      return "Der Chat ist bereit.";
+  }
+}
+
+/* ============================================================
+ * Komponente
+ * ============================================================ */
 
 export function GenericChatView({
   title,
   hierarchyNodeId,
-}: GenericChatViewProps): React.JSX.Element {
-  const [input, setInput] =
-    useState("");
+}: GenericChatViewProps) {
+  const [input, setInput] = useState("");
 
-  const [messages, setMessages] =
-    useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const [requestStatus, setRequestStatus] =
-    useState<ChatRequestStatus>("idle");
+  const [requestStatus, setRequestStatus] = useState<ChatRequestStatus>("idle");
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  const [conversationId, setConversationId] =
-    useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
-  const abortControllerRef =
-    useRef<AbortController | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const messagesEndRef =
-    useRef<HTMLDivElement | null>(null);
+  const streamHandleRef = useRef<ApiStreamHandle | null>(null);
+
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const loading =
-    requestStatus === "connecting" ||
-    requestStatus === "streaming";
+    requestStatus === "connecting" || requestStatus === "streaming";
+
+  /* ----------------------------------------------------------
+   * Lebenszyklus
+   * ---------------------------------------------------------- */
 
   useEffect(() => {
-    logDeveloperStep(
-      "info",
-      "component-mounted",
-      {
-        hierarchyNodeId,
-        title,
-      },
-    );
+    logDeveloperStep("info", "chat-context-activated", {
+      hierarchyNodeId,
+      title,
+    });
+
+    setMessages([]);
+    setConversationId(null);
+    setInput("");
+    setError(null);
+    setRequestStatus("idle");
 
     return () => {
-      logDeveloperStep(
-        "info",
-        "component-unmounting",
-        {
-          activeRequest:
-            abortControllerRef.current !==
-            null,
-        },
-      );
+      logDeveloperStep("info", "chat-context-deactivated", {
+        hierarchyNodeId,
+        hasAbortController: abortControllerRef.current !== null,
+        hasStreamHandle: streamHandleRef.current !== null,
+      });
+
+      streamHandleRef.current?.cancel();
+      streamHandleRef.current?.dispose();
+      streamHandleRef.current = null;
 
       abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
     };
-  }, [
-    hierarchyNodeId,
-    title,
-  ]);
+  }, [hierarchyNodeId, title]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
@@ -750,6 +585,25 @@ export function GenericChatView({
       block: "end",
     });
   }, [messages]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+
+    if (!textarea) {
+      return;
+    }
+
+    textarea.style.height = "auto";
+
+    textarea.style.height = `${Math.min(
+      textarea.scrollHeight,
+      MAX_INPUT_HEIGHT,
+    )}px`;
+  }, [input]);
+
+  /* ----------------------------------------------------------
+   * Nachrichten-State
+   * ---------------------------------------------------------- */
 
   function updateAssistantMessage(
     assistantMessageId: string,
@@ -782,338 +636,244 @@ export function GenericChatView({
 
     setMessages((currentMessages) =>
       currentMessages.map((message) => {
-        if (
-          message.id !==
-          assistantMessageId
-        ) {
+        if (message.id !== assistantMessageId) {
           return message;
         }
 
         return {
           ...message,
-          content:
-            message.content +
-            content,
+          content: message.content + content,
           status: "streaming",
-          requestId:
-            metadata.requestId ??
-            message.requestId,
-          conversationId:
-            metadata.conversationId ??
-            message.conversationId,
-          serverMessageId:
-            metadata.messageId ??
-            message.serverMessageId,
+          requestId: metadata.requestId ?? message.requestId,
+          conversationId: metadata.conversationId ?? message.conversationId,
+          serverMessageId: metadata.messageId ?? message.serverMessageId,
         };
       }),
     );
   }
 
-  function replaceAssistantContent(
+  function setAssistantContent(
     assistantMessageId: string,
     content: string,
-    status: ChatMessageStatus,
+    metadata: {
+      requestId?: string | null;
+      conversationId?: string | null;
+      messageId?: string | null;
+      status?: ChatMessageStatus;
+    } = {},
   ): void {
-    updateAssistantMessage(
-      assistantMessageId,
-      {
-        content,
-        status,
-      },
+    setMessages((currentMessages) =>
+      currentMessages.map((message) => {
+        if (message.id !== assistantMessageId) {
+          return message;
+        }
+
+        return {
+          ...message,
+          content,
+          status: metadata.status ?? "streaming",
+          requestId: metadata.requestId ?? message.requestId,
+          conversationId: metadata.conversationId ?? message.conversationId,
+          serverMessageId: metadata.messageId ?? message.serverMessageId,
+        };
+      }),
     );
   }
 
+  /* ----------------------------------------------------------
+   * Streamverarbeitung
+   * ---------------------------------------------------------- */
+
   async function processSseStream(
-    response: Response,
+    streamHandle: ApiStreamHandle,
     assistantMessageId: string,
     abortSignal: AbortSignal,
   ): Promise<void> {
+    const response = streamHandle.response;
+
     if (!response.body) {
-      throw new Error(
-        "Der Server hat keinen lesbaren Datenstrom geliefert.",
-      );
-    }
-
-    const contentType =
-      response.headers.get(
-        "content-type",
-      );
-
-    if (
-      contentType &&
-      !contentType
-        .toLowerCase()
-        .includes(
-          "text/event-stream",
-        )
-    ) {
-      logDeveloperStep(
-        "warn",
-        "unexpected-response-content-type",
-        {
-          contentType,
-        },
-      );
+      throw new Error("Der Server hat keinen lesbaren Datenstrom geliefert.");
     }
 
     const headerRequestId =
-      response.headers.get(
-        "x-request-id",
-      );
+      streamHandle.requestId ?? response.headers.get("x-request-id");
 
-    logDeveloperStep(
-      "info",
-      "sse-stream-opened",
-      {
-        status: response.status,
-        contentType,
-        requestId: headerRequestId,
-      },
-    );
+    const contentType = response.headers.get("content-type");
 
-    const reader =
-      response.body.getReader();
+    logDeveloperStep("info", "sse-stream-opened", {
+      status: response.status,
+      contentType,
+      requestId: headerRequestId,
+      clientRequestId: streamHandle.clientRequestId,
+    });
 
-    const decoder =
-      new TextDecoder("utf-8");
+    const reader = response.body.getReader();
+
+    const decoder = new TextDecoder("utf-8");
 
     let buffer = "";
-    let completeReceived = false;
-    let errorReceived = false;
-    let processedEventCount = 0;
-    let receivedCharacterCount = 0;
-    let lastSequence: number | null =
-      null;
 
-    async function processChunk(
-      chunk: string,
-    ): Promise<void> {
-      const rawEvent =
-        parseSseEvent(chunk);
+    let completeReceived = false;
+
+    let errorReceived = false;
+
+    let processedEventCount = 0;
+
+    let receivedCharacterCount = 0;
+
+    let lastSequence: number | null = null;
+
+    async function processChunk(chunk: string): Promise<void> {
+      const rawEvent = parseSseEvent(chunk);
 
       if (!rawEvent) {
-        logDeveloperStep(
-          "debug",
-          "sse-empty-event-ignored",
-          {
-            chunkLength: chunk.length,
-          },
-        );
-
         return;
       }
 
-      const streamEvent =
-        parseChatStreamEvent(
-          rawEvent,
+      const streamEvent = parseChatStreamEvent(rawEvent);
+
+      if (streamEvent.schemaVersion !== CHAT_STREAM_SCHEMA_VERSION) {
+        throw new Error(
+          "Der Server verwendet eine nicht unterstützte Chat-Stream-Version. " +
+            `Erwartet: ${CHAT_STREAM_SCHEMA_VERSION}, ` +
+            `erhalten: ${streamEvent.schemaVersion ?? "nicht angegeben"}.`,
         );
+      }
+
+      if (streamEvent.sequence !== null) {
+        if (lastSequence !== null && streamEvent.sequence < lastSequence) {
+          throw new Error(
+            "Der Chat-Stream enthält eine ungültige Ereignisreihenfolge.",
+          );
+        }
+
+        if (lastSequence !== null && streamEvent.sequence === lastSequence) {
+          logDeveloperStep("warn", "duplicate-sse-event-ignored", {
+            sequence: streamEvent.sequence,
+            eventType: streamEvent.type,
+          });
+
+          return;
+        }
+
+        lastSequence = streamEvent.sequence;
+      }
 
       processedEventCount += 1;
 
-      if (
-        streamEvent.sequence !==
-        null
-      ) {
-        if (
-          lastSequence !== null &&
-          streamEvent.sequence <=
-            lastSequence
-        ) {
-          logDeveloperStep(
-            "warn",
-            "sse-sequence-not-increasing",
-            {
-              previousSequence:
-                lastSequence,
-              currentSequence:
-                streamEvent.sequence,
-              eventType:
-                streamEvent.type,
-            },
-          );
-        }
-
-        lastSequence =
-          streamEvent.sequence;
-      }
-
-      logDeveloperStep(
-        "debug",
-        "sse-event-received",
-        {
-          eventType:
-            streamEvent.type,
-          sequence:
-            streamEvent.sequence,
-          requestId:
-            streamEvent.requestId ??
-            headerRequestId,
-          conversationId:
-            streamEvent.conversationId,
-          messageId:
-            streamEvent.messageId,
-          dataLength:
-            rawEvent.data.length,
-          eventCount:
-            processedEventCount,
-        },
-      );
+      logDeveloperStep("debug", "sse-event-received", {
+        eventType: streamEvent.type,
+        sequence: streamEvent.sequence,
+        requestId: streamEvent.requestId ?? headerRequestId,
+        conversationId: streamEvent.conversationId,
+        messageId: streamEvent.messageId,
+        eventCount: processedEventCount,
+      });
 
       if (
-        !KNOWN_STREAM_EVENT_TYPES.has(
-          streamEvent.type as ChatStreamEventType,
-        )
+        !KNOWN_STREAM_EVENT_TYPES.has(streamEvent.type as ChatStreamEventType)
       ) {
-        logDeveloperStep(
-          "warn",
-          "sse-unsupported-event",
-          {
-            eventType:
-              streamEvent.type,
-            sequence:
-              streamEvent.sequence,
-          },
-        );
+        logDeveloperStep("warn", "unsupported-sse-event-ignored", {
+          eventType: streamEvent.type,
+          sequence: streamEvent.sequence,
+        });
 
         return;
       }
 
-      switch (
-        streamEvent.type as ChatStreamEventType
-      ) {
-        case "start": {
-          setRequestStatus(
-            "streaming",
-          );
+      const eventType = streamEvent.type as ChatStreamEventType;
 
-          if (
-            streamEvent.conversationId
-          ) {
-            setConversationId(
-              streamEvent.conversationId,
-            );
+      const requestId = streamEvent.requestId ?? headerRequestId;
+
+      switch (eventType) {
+        case "start": {
+          setRequestStatus("streaming");
+
+          if (streamEvent.conversationId) {
+            setConversationId(streamEvent.conversationId);
           }
 
-          updateAssistantMessage(
-            assistantMessageId,
-            {
-              status: "streaming",
-              requestId:
-                streamEvent.requestId ??
-                headerRequestId ??
-                undefined,
-              conversationId:
-                streamEvent.conversationId ??
-                undefined,
-              serverMessageId:
-                streamEvent.messageId ??
-                undefined,
-            },
-          );
-
-          logDeveloperStep(
-            "info",
-            "generation-started",
-            {
-              requestId:
-                streamEvent.requestId ??
-                headerRequestId,
-              conversationId:
-                streamEvent.conversationId,
-              messageId:
-                streamEvent.messageId,
-            },
-          );
+          updateAssistantMessage(assistantMessageId, {
+            status: "streaming",
+            requestId: requestId ?? undefined,
+            conversationId: streamEvent.conversationId ?? undefined,
+            serverMessageId: streamEvent.messageId ?? undefined,
+          });
 
           break;
         }
 
-        case "token":
-        case "message": {
-          const content =
-            extractContentFromPayload(
-              streamEvent.payload,
-            );
+        case "token": {
+          const content = extractContentFromPayload(streamEvent.payload);
 
           if (!content) {
-            logDeveloperStep(
-              "debug",
-              "sse-content-event-without-text",
-              {
-                eventType:
-                  streamEvent.type,
-                sequence:
-                  streamEvent.sequence,
-              },
-            );
-
-            break;
+            return;
           }
 
-          receivedCharacterCount +=
-            content.length;
+          receivedCharacterCount += content.length;
 
-          appendAssistantContent(
-            assistantMessageId,
-            content,
-            {
-              requestId:
-                streamEvent.requestId ??
-                headerRequestId,
-              conversationId:
-                streamEvent.conversationId,
-              messageId:
-                streamEvent.messageId,
-            },
-          );
+          appendAssistantContent(assistantMessageId, content, {
+            requestId,
+            conversationId: streamEvent.conversationId,
+            messageId: streamEvent.messageId,
+          });
 
           break;
         }
 
-        case "complete":
-        case "done": {
-          completeReceived = true;
+        case "message": {
+          const content = extractContentFromPayload(streamEvent.payload);
 
-          updateAssistantMessage(
-            assistantMessageId,
-            {
-              status: "completed",
-              requestId:
-                streamEvent.requestId ??
-                headerRequestId ??
-                undefined,
-              conversationId:
-                streamEvent.conversationId ??
-                undefined,
-              serverMessageId:
-                streamEvent.messageId ??
-                undefined,
-            },
-          );
-
-          if (
-            streamEvent.conversationId
-          ) {
-            setConversationId(
-              streamEvent.conversationId,
-            );
+          if (!content) {
+            return;
           }
 
-          logDeveloperStep(
-            "info",
-            "generation-completed",
-            {
-              requestId:
-                streamEvent.requestId ??
-                headerRequestId,
-              conversationId:
-                streamEvent.conversationId,
-              messageId:
-                streamEvent.messageId,
-              receivedCharacterCount,
-              processedEventCount,
-            },
-          );
+          receivedCharacterCount = content.length;
+
+          setAssistantContent(assistantMessageId, content, {
+            requestId,
+            conversationId: streamEvent.conversationId,
+            messageId: streamEvent.messageId,
+            status: "streaming",
+          });
+
+          break;
+        }
+
+        case "complete": {
+          completeReceived = true;
+
+          const finalContent = extractContentFromPayload(streamEvent.payload);
+
+          if (finalContent) {
+            receivedCharacterCount = finalContent.length;
+
+            setAssistantContent(assistantMessageId, finalContent, {
+              requestId,
+              conversationId: streamEvent.conversationId,
+              messageId: streamEvent.messageId,
+              status: "completed",
+            });
+          } else {
+            updateAssistantMessage(assistantMessageId, {
+              status: "completed",
+              requestId: requestId ?? undefined,
+              conversationId: streamEvent.conversationId ?? undefined,
+              serverMessageId: streamEvent.messageId ?? undefined,
+            });
+          }
+
+          if (streamEvent.conversationId) {
+            setConversationId(streamEvent.conversationId);
+          }
+
+          logDeveloperStep("info", "generation-completed", {
+            requestId,
+            conversationId: streamEvent.conversationId,
+            messageId: streamEvent.messageId,
+            receivedCharacterCount,
+            processedEventCount,
+          });
 
           break;
         }
@@ -1121,37 +881,24 @@ export function GenericChatView({
         case "error": {
           errorReceived = true;
 
-          const message =
-            extractErrorMessage(
-              streamEvent.payload,
-              "Beim Verarbeiten der Nachricht ist ein Fehler aufgetreten.",
-            );
-
-          logDeveloperStep(
-            "error",
-            "sse-error-event-received",
-            {
-              requestId:
-                streamEvent.requestId ??
-                headerRequestId,
-              sequence:
-                streamEvent.sequence,
-              message,
-            },
+          const message = extractErrorMessage(
+            streamEvent.payload,
+            "Beim Verarbeiten der Nachricht ist ein Fehler aufgetreten.",
           );
+
+          logDeveloperStep("error", "sse-error-event-received", {
+            requestId,
+            sequence: streamEvent.sequence,
+            message,
+          });
 
           throw new Error(message);
         }
 
         case "heartbeat": {
-          logDeveloperStep(
-            "debug",
-            "sse-heartbeat-received",
-            {
-              sequence:
-                streamEvent.sequence,
-            },
-          );
+          logDeveloperStep("debug", "sse-heartbeat-received", {
+            sequence: streamEvent.sequence,
+          });
 
           break;
         }
@@ -1160,16 +907,10 @@ export function GenericChatView({
         case "tool_call":
         case "tool_result":
         case "usage": {
-          logDeveloperStep(
-            "debug",
-            "sse-metadata-event-received",
-            {
-              eventType:
-                streamEvent.type,
-              sequence:
-                streamEvent.sequence,
-            },
-          );
+          logDeveloperStep("debug", "sse-metadata-event-received", {
+            eventType,
+            sequence: streamEvent.sequence,
+          });
 
           break;
         }
@@ -1185,93 +926,65 @@ export function GenericChatView({
           );
         }
 
-        const {
-          value,
-          done,
-        } = await reader.read();
+        const { value, done } = await reader.read();
 
         if (done) {
           buffer += decoder.decode();
           break;
         }
 
-        buffer += decoder.decode(
-          value,
-          {
-            stream: true,
-          },
-        );
+        buffer += decoder.decode(value, {
+          stream: true,
+        });
 
-        buffer =
-          normalizeSseBuffer(
-            buffer,
-          );
+        buffer = normalizeSseBuffer(buffer);
 
-        const chunks =
-          buffer.split("\n\n");
+        const chunks = buffer.split("\n\n");
 
-        buffer =
-          chunks.pop() ?? "";
+        buffer = chunks.pop() ?? "";
 
         for (const chunk of chunks) {
           await processChunk(chunk);
         }
       }
 
-      const remainingChunk =
-        normalizeSseBuffer(
-          buffer,
-        ).trim();
+      const remainingChunk = normalizeSseBuffer(buffer).trim();
 
       if (remainingChunk) {
-        await processChunk(
-          remainingChunk,
-        );
+        await processChunk(remainingChunk);
       }
     } finally {
       try {
         reader.releaseLock();
       } catch {
-        // Der Reader kann beim Abbruch bereits
-        // freigegeben worden sein.
+        // Der Reader kann bei einem Abbruch bereits freigegeben sein.
       }
 
-      logDeveloperStep(
-        "info",
-        "sse-stream-closed",
-        {
-          completeReceived,
-          errorReceived,
-          processedEventCount,
-          receivedCharacterCount,
-          aborted:
-            abortSignal.aborted,
-        },
-      );
+      logDeveloperStep("info", "sse-stream-closed", {
+        completeReceived,
+        errorReceived,
+        processedEventCount,
+        receivedCharacterCount,
+        aborted: abortSignal.aborted,
+      });
     }
 
-    if (
-      !completeReceived &&
-      !errorReceived &&
-      !abortSignal.aborted
-    ) {
+    if (!completeReceived && !errorReceived && !abortSignal.aborted) {
       throw new Error(
         "Die Verbindung wurde beendet, bevor der Server den Chat-Stream ordnungsgemäß abgeschlossen hat.",
       );
     }
   }
 
-  async function submit(
-    event: FormEvent<HTMLFormElement>,
-  ): Promise<void> {
+  /* ----------------------------------------------------------
+   * Absenden
+   * ---------------------------------------------------------- */
+
+  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
 
     if (loading) {
-      logDeveloperStep(
-        "warn",
-        "submit-ignored-request-active",
-      );
-
+      logDeveloperStep("warn", "submit-ignored-request-active");
       return;
     }
 
@@ -1287,706 +1000,542 @@ export function GenericChatView({
 
       setError(message);
 
-      logDeveloperStep(
-        "warn",
-        "input-validation-failed",
-        {
-          message,
-          inputLength:
-            input.length,
-        },
-      );
+      logDeveloperStep("warn", "input-validation-failed", {
+        message,
+        inputLength: input.length,
+      });
 
       return;
     }
 
-    const userMessageId =
-      createMessageId();
+    const userMessageId = createMessageId();
 
-    const assistantMessageId =
-      createMessageId();
+    const assistantMessageId = createMessageId();
 
-    const now = Date.now();
+    const submittedAt = Date.now();
+
+    const activeConversationId = conversationId;
 
     const userMessage: ChatMessage = {
       id: userMessageId,
       role: "user",
       content: prompt,
-      timestamp: now,
+      timestamp: submittedAt,
       status: "completed",
-      conversationId:
-        conversationId ?? undefined,
+      conversationId: activeConversationId ?? undefined,
     };
 
     const assistantMessage: ChatMessage = {
       id: assistantMessageId,
       role: "assistant",
       content: "",
-      timestamp: now,
+      timestamp: submittedAt,
       status: "pending",
-      conversationId:
-        conversationId ?? undefined,
+      conversationId: activeConversationId ?? undefined,
     };
 
-    const requestPayload: ChatRequestPayload =
-      {
-        schema_version:
-          CHAT_SCHEMA_VERSION,
-        message: prompt,
-        conversation_id:
-          conversationId,
-        hierarchy_node_id:
-          hierarchyNodeId,
-        model_id: null,
-        tool_ids: [],
-        metadata: {
-          client: "kernschmied-web",
-          client_message_id:
-            userMessageId,
-          client_assistant_message_id:
-            assistantMessageId,
-          submitted_at:
-            new Date(
-              now,
-            ).toISOString(),
-        },
-      };
-
-    logDeveloperStep(
-      "info",
-      "submit-started",
-      {
-        userMessageId,
-        assistantMessageId,
-        hierarchyNodeId,
-        conversationId,
-        promptLength:
-          prompt.length,
-        toolCount:
-          requestPayload.tool_ids.length,
-        modelId:
-          requestPayload.model_id,
+    const requestPayload: ChatRequestPayload = {
+      message: prompt,
+      conversation_id: activeConversationId,
+      hierarchy_node_id: hierarchyNodeId,
+      model_id: null,
+      tool_ids: [],
+      metadata: {
+        client: "kernschmied-web",
+        client_message_id: userMessageId,
+        client_assistant_message_id: assistantMessageId,
+        submitted_at: new Date(submittedAt).toISOString(),
       },
-    );
-
-    setMessages(
-      (currentMessages) => [
-        ...currentMessages,
-        userMessage,
-        assistantMessage,
-      ],
-    );
-
-    setInput("");
-    setError(null);
-    setRequestStatus(
-      "connecting",
-    );
-
-    const abortController =
-      new AbortController();
-
-    abortControllerRef.current =
-      abortController;
+    };
 
     try {
-      const endpoint =
-        `${API_BASE_URL}${CHAT_STREAM_PATH}`;
-
-      logDeveloperStep(
-        "info",
-        "http-request-started",
-        {
-          endpoint,
-          method: "POST",
-          hierarchyNodeId,
-          conversationId,
-        },
-      );
-
-      const response =
-        await fetch(endpoint, {
-          method: "POST",
-          headers: {
-            Accept:
-              "text/event-stream",
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify(
-            requestPayload,
-          ),
-          signal:
-            abortController.signal,
-        });
-
-      logDeveloperStep(
-        response.ok
-          ? "info"
-          : "warn",
-        "http-response-received",
-        {
-          status:
-            response.status,
-          statusText:
-            response.statusText,
-          ok: response.ok,
-          contentType:
-            response.headers.get(
-              "content-type",
-            ),
-          requestId:
-            response.headers.get(
-              "x-request-id",
-            ),
-        },
-      );
-
-      if (!response.ok) {
-        const message =
-          await readApiErrorMessage(
-            response,
-          );
-
-        throw new Error(message);
-      }
-
-      setRequestStatus(
-        "streaming",
-      );
-
-      await processSseStream(
-        response,
-        assistantMessageId,
-        abortController.signal,
-      );
-
-      setMessages(
-        (currentMessages) =>
-          currentMessages.map(
-            (message) => {
-              if (
-                message.id !==
-                assistantMessageId
-              ) {
-                return message;
-              }
-
-              if (
-                message.content.trim() ===
-                ""
-              ) {
-                return {
-                  ...message,
-                  content:
-                    "Der Server hat keine Antwort geliefert.",
-                  status:
-                    "completed",
-                };
-              }
-
-              return {
-                ...message,
-                status:
-                  "completed",
-              };
-            },
-          ),
-      );
-
-      setRequestStatus(
-        "completed",
-      );
-
-      logDeveloperStep(
-        "info",
-        "submit-completed",
-        {
-          assistantMessageId,
-          conversationId,
-        },
-      );
-    } catch (caughtError) {
-      if (
-        isAbortError(
-          caughtError,
-        ) ||
-        abortController.signal.aborted
-      ) {
-        setRequestStatus(
-          "cancelled",
-        );
-
-        replaceAssistantContent(
-          assistantMessageId,
-          "Die Antwort wurde abgebrochen.",
-          "cancelled",
-        );
-
-        logDeveloperStep(
-          "info",
-          "generation-cancelled",
-          {
-            assistantMessageId,
-          },
-        );
-
-        return;
-      }
-
+      validateChatRequest(requestPayload);
+    } catch (validationError) {
       const message =
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Die Nachricht konnte nicht gesendet werden.";
-
-      setRequestStatus(
-        "failed",
-      );
+        validationError instanceof Error
+          ? validationError.message
+          : "Die Chat-Anfrage ist ungültig.";
 
       setError(message);
 
-      replaceAssistantContent(
-        assistantMessageId,
-        `Fehler: ${message}`,
-        "failed",
-      );
-
-      logDeveloperStep(
-        "error",
-        "submit-failed",
-        {
-          assistantMessageId,
-          errorName:
-            caughtError instanceof Error
-              ? caughtError.name
-              : null,
-          message,
-        },
-      );
-    } finally {
-      if (
-        abortControllerRef.current ===
-        abortController
-      ) {
-        abortControllerRef.current =
-          null;
-      }
-
-      logDeveloperStep(
-        "debug",
-        "submit-cleanup-completed",
-        {
-          finalStatus:
-            abortController.signal.aborted
-              ? "cancelled"
-              : "finished",
-        },
-      );
-    }
-  }
-
-  function stopGeneration(): void {
-    if (
-      !abortControllerRef.current
-    ) {
-      logDeveloperStep(
-        "debug",
-        "stop-ignored-no-active-request",
-      );
+      logDeveloperStep("warn", "chat-request-validation-failed", {
+        message,
+      });
 
       return;
     }
 
-    logDeveloperStep(
-      "info",
-      "stop-requested-by-user",
-      {
-        requestStatus,
-      },
-    );
+    logDeveloperStep("info", "submit-started", {
+      userMessageId,
+      assistantMessageId,
+      hierarchyNodeId,
+      conversationId: activeConversationId,
+      promptLength: prompt.length,
+      toolCount: requestPayload.tool_ids.length,
+      modelId: requestPayload.model_id,
+    });
 
-    abortControllerRef.current.abort();
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      userMessage,
+      assistantMessage,
+    ]);
+
+    setInput("");
+    setError(null);
+    setRequestStatus("connecting");
+
+    const abortController = new AbortController();
+
+    abortControllerRef.current = abortController;
+
+    let streamHandle: ApiStreamHandle | null = null;
+
+    try {
+      streamHandle = await apiPostStream(CHAT_STREAM_PATH, requestPayload, {
+        signal: abortController.signal,
+        expectedContentType: "text/event-stream",
+      });
+
+      streamHandleRef.current = streamHandle;
+
+      setRequestStatus("streaming");
+
+      updateAssistantMessage(assistantMessageId, {
+        requestId: streamHandle.requestId,
+        status: "streaming",
+      });
+
+      await processSseStream(
+        streamHandle,
+        assistantMessageId,
+        abortController.signal,
+      );
+
+      setMessages((currentMessages) =>
+        currentMessages.map((message) => {
+          if (message.id !== assistantMessageId) {
+            return message;
+          }
+
+          if (message.content.trim() === "") {
+            return {
+              ...message,
+              content: "Der Server hat keine Antwort geliefert.",
+              status: "completed",
+            };
+          }
+
+          return {
+            ...message,
+            status: "completed",
+          };
+        }),
+      );
+
+      setRequestStatus("completed");
+
+      logDeveloperStep("info", "submit-completed", {
+        assistantMessageId,
+        requestId: streamHandle.requestId,
+        clientRequestId: streamHandle.clientRequestId,
+      });
+    } catch (caughtError) {
+      const requestWasAborted =
+        abortController.signal.aborted ||
+        isAbortError(caughtError) ||
+        (caughtError instanceof ApiError &&
+          caughtError.code === "request_aborted");
+
+      if (requestWasAborted) {
+        setRequestStatus("cancelled");
+
+        setAssistantContent(
+          assistantMessageId,
+          "Die Antwort wurde abgebrochen.",
+          {
+            status: "cancelled",
+          },
+        );
+
+        logDeveloperStep("info", "generation-cancelled", {
+          assistantMessageId,
+          requestId: streamHandle?.requestId,
+          clientRequestId: streamHandle?.clientRequestId,
+        });
+
+        return;
+      }
+
+      const message = formatRequestError(caughtError);
+
+      setRequestStatus("failed");
+      setError(message);
+
+      setAssistantContent(assistantMessageId, `Fehler: ${message}`, {
+        status: "failed",
+        requestId:
+          caughtError instanceof ApiError ? caughtError.requestId : null,
+      });
+
+      logDeveloperStep("error", "submit-failed", {
+        assistantMessageId,
+        errorName: caughtError instanceof Error ? caughtError.name : null,
+        errorCode: caughtError instanceof ApiError ? caughtError.code : null,
+        requestId:
+          caughtError instanceof ApiError ? caughtError.requestId : null,
+        clientRequestId:
+          caughtError instanceof ApiError ? caughtError.clientRequestId : null,
+        message,
+      });
+    } finally {
+      streamHandle?.dispose();
+
+      if (streamHandleRef.current === streamHandle) {
+        streamHandleRef.current = null;
+      }
+
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null;
+      }
+
+      logDeveloperStep("debug", "submit-cleanup-completed", {
+        aborted: abortController.signal.aborted,
+      });
+    }
   }
 
-  function handleInputKeyDown(
-    event: KeyboardEvent<HTMLInputElement>,
-  ): void {
-    if (
-      event.key === "Escape" &&
-      loading
-    ) {
+  /* ----------------------------------------------------------
+   * Bedienung
+   * ---------------------------------------------------------- */
+
+  function stopGeneration(): void {
+    const streamHandle = streamHandleRef.current;
+
+    const abortController = abortControllerRef.current;
+
+    if (!streamHandle && !abortController) {
+      logDeveloperStep("debug", "stop-ignored-no-active-request");
+      return;
+    }
+
+    logDeveloperStep("info", "stop-requested-by-user", {
+      requestStatus,
+      hasStreamHandle: streamHandle !== null,
+      hasAbortController: abortController !== null,
+    });
+
+    streamHandle?.cancel();
+
+    abortController?.abort(
+      new DOMException(
+        "Die Antwort wurde vom Benutzer abgebrochen.",
+        "AbortError",
+      ),
+    );
+  }
+
+  function handleInputKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
+    if (event.key === "Escape" && loading) {
       event.preventDefault();
       stopGeneration();
+      return;
+    }
+
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey &&
+      !event.nativeEvent.isComposing
+    ) {
+      event.preventDefault();
+
+      if (!loading && input.trim()) {
+        event.currentTarget.form?.requestSubmit();
+      }
     }
   }
 
-  function getInitials(
-    role: ChatRole,
-  ): string {
-    switch (role) {
-      case "user":
-        return "DU";
+  /* ----------------------------------------------------------
+   * Darstellung
+   * ---------------------------------------------------------- */
 
-      case "assistant":
-        return "AI";
-
-      default:
-        return "SY";
-    }
-  }
-
-  function formatTime(
-    timestamp: number,
-  ): string {
-    return new Date(
-      timestamp,
-    ).toLocaleTimeString(
-      [],
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      },
+  const activeAssistantMessage = [...messages]
+    .reverse()
+    .find(
+      (message) =>
+        message.role === "assistant" &&
+        (message.status === "pending" || message.status === "streaming"),
     );
-  }
-
-  const activeAssistantMessage =
-    [...messages]
-      .reverse()
-      .find(
-        (message) =>
-          message.role ===
-            "assistant" &&
-          (
-            message.status ===
-              "pending" ||
-            message.status ===
-              "streaming"
-          ),
-      );
 
   const showTypingIndicator =
     loading &&
-    Boolean(
-      activeAssistantMessage,
-    ) &&
-    !activeAssistantMessage
-      ?.content;
+    Boolean(activeAssistantMessage) &&
+    !activeAssistantMessage?.content;
+
+  const accessibleStatus = getAccessibleRequestStatus(requestStatus);
 
   return (
     <section
-      className="flex h-full min-h-0 flex-col bg-surface-muted dark:bg-slate-900/30"
+      className="flex h-full min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden bg-surface-muted dark:bg-slate-900/30"
       aria-label={`Chat: ${title}`}
     >
-      <header className="shrink-0 border-b border-border bg-white/80 px-5 py-3 backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/60">
-        <h1 className="text-lg font-semibold text-text dark:text-white">
-          {title}
-        </h1>
+      <p className="sr-only" aria-live="polite">
+        {accessibleStatus}
+      </p>
 
-        {import.meta.env.DEV ? (
-          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-text-subtle dark:text-gray-500">
-            <span>
-              Status: {requestStatus}
-            </span>
-
-            <span>
-              Knoten: {hierarchyNodeId}
-            </span>
-
-            {conversationId ? (
-              <span>
-                Chat: {conversationId}
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-      </header>
-
+      {/* Nachrichtenbereich */}
       <div
-        className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5"
+        className="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain"
         aria-live="polite"
         aria-busy={loading}
       >
-        {messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center text-text-muted dark:text-gray-400">
-              <svg
-                className="mx-auto mb-3 h-12 w-12 opacity-40"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={1.5}
-                  d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                />
-              </svg>
-
-              <p className="text-sm">
-                Noch keine Nachrichten.
-              </p>
-
-              <p className="mt-1 text-xs">
-                Stelle deine erste Frage.
-              </p>
-            </div>
-          </div>
-        ) : (
-          messages.map(
-            (message) => {
-              const isUser =
-                message.role === "user";
-
-              const isSystem =
-                message.role === "system";
-
-              if (isSystem) {
-                return null;
-              }
-
-              return (
-                <article
-                  key={message.id}
-                  className={`flex animate-fade-in items-start gap-3 ${
-                    isUser
-                      ? "flex-row-reverse"
-                      : "flex-row"
-                  }`}
-                  data-message-id={
-                    message.id
-                  }
-                  data-message-status={
-                    message.status
-                  }
-                >
-                  <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold uppercase ${
-                      isUser
-                        ? "bg-primary-soft text-primary dark:bg-primary/20 dark:text-primary"
-                        : "bg-secondary-soft text-secondary dark:bg-secondary/20 dark:text-secondary"
-                    }`}
+        <div className="flex min-h-full w-full flex-col px-4 py-6 sm:px-6 lg:px-8">
+          {messages.length === 0 ? (
+            <div className="flex min-h-0 flex-1 items-center justify-center py-10">
+              <div className="w-full max-w-md text-center text-text-muted dark:text-gray-400">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border-soft bg-white/70 shadow-sm dark:border-white/10 dark:bg-slate-800/60">
+                  <MessageCircle
+                    size={27}
+                    className="opacity-60"
                     aria-hidden="true"
-                  >
-                    {getInitials(
-                      message.role,
-                    )}
-                  </div>
+                  />
+                </div>
 
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
-                      isUser
-                        ? "bg-linear-to-br from-primary to-primary-active text-white dark:bg-primary-dark dark:to-primary-active-dark"
-                        : "border border-border-soft bg-white/90 backdrop-blur-sm dark:border-white/10 dark:bg-slate-800/80"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-4">
-                      <span
-                        className={`text-xs font-semibold ${
-                          isUser
-                            ? "text-white/80"
-                            : "text-text-muted dark:text-gray-400"
-                        }`}
-                      >
-                        {isUser
-                          ? "Du"
-                          : "Assistent"}
-                      </span>
+                <p className="text-base font-medium text-text-soft dark:text-gray-300">
+                  Noch keine Nachrichten
+                </p>
 
-                      <time
-                        dateTime={new Date(
-                          message.timestamp,
-                        ).toISOString()}
-                        className={`text-xs ${
-                          isUser
-                            ? "text-white/60"
-                            : "text-text-subtle dark:text-gray-500"
-                        }`}
-                      >
-                        {formatTime(
-                          message.timestamp,
-                        )}
-                      </time>
-                    </div>
-
-                    <p
-                      className={`mt-1 whitespace-pre-wrap text-sm leading-6 ${
-                        isUser
-                          ? "text-white"
-                          : "text-text dark:text-gray-100"
-                      }`}
-                    >
-                      {message.content ||
-                        (
-                          message.status ===
-                            "pending" ||
-                          message.status ===
-                            "streaming"
-                            ? "Antwort wird erstellt …"
-                            : ""
-                        )}
-                    </p>
-
-                    {import.meta.env.DEV &&
-                    !isUser ? (
-                      <div className="mt-2 border-t border-border-soft pt-2 text-[10px] text-text-subtle dark:border-white/10 dark:text-gray-500">
-                        <span>
-                          Status:{" "}
-                          {message.status}
-                        </span>
-
-                        {message.requestId ? (
-                          <span className="ml-3">
-                            Request:{" "}
-                            {message.requestId}
-                          </span>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
-                </article>
-              );
-            },
-          )
-        )}
-
-        {showTypingIndicator ? (
-          <div className="flex animate-fade-in items-start gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary-soft text-xs font-bold uppercase text-secondary dark:bg-secondary/20 dark:text-secondary">
-              AI
-            </div>
-
-            <div className="max-w-[85%] rounded-2xl border border-border-soft bg-white/90 px-4 py-3 backdrop-blur-sm dark:border-white/10 dark:bg-slate-800/80">
-              <div className="flex items-center gap-1">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-primary/60 dark:bg-primary/40" />
-                <span className="animation-delay-200 h-2 w-2 animate-pulse rounded-full bg-primary/60 dark:bg-primary/40" />
-                <span className="animation-delay-400 h-2 w-2 animate-pulse rounded-full bg-primary/60 dark:bg-primary/40" />
-
-                <span className="ml-1 text-sm text-text-muted dark:text-gray-400">
-                  tippt …
-                </span>
+                <p className="mt-1 text-sm">
+                  Schreibe eine Nachricht, um diesen Chat zu beginnen.
+                </p>
               </div>
             </div>
-          </div>
-        ) : null}
+          ) : (
+            <div className="w-full space-y-5">
+              {messages.map((message) => {
+                const isUser = message.role === "user";
 
-        <div ref={messagesEndRef} />
+                const isSystem = message.role === "system";
+
+                const isEmptyActiveAssistant =
+                  !isUser &&
+                  !message.content &&
+                  (message.status === "pending" ||
+                    message.status === "streaming");
+
+                if (isSystem || isEmptyActiveAssistant) {
+                  return null;
+                }
+
+                return (
+                  <article
+                    key={message.id}
+                    className={[
+                      "flex w-full",
+                      "animate-fade-in",
+                      "items-start gap-3",
+                      isUser ? "flex-row-reverse" : "flex-row",
+                    ].join(" ")}
+                    data-message-id={message.id}
+                    data-message-status={message.status}
+                  >
+                    <div
+                      className={[
+                        "flex h-9 w-9 shrink-0",
+                        "items-center justify-center",
+                        "rounded-full text-xs",
+                        "font-bold uppercase ring-1",
+                        isUser
+                          ? [
+                              "bg-primary-soft",
+                              "text-primary",
+                              "ring-primary/15",
+                              "dark:bg-primary/20",
+                              "dark:text-primary",
+                              "dark:ring-primary/25",
+                            ].join(" ")
+                          : [
+                              "bg-secondary-soft",
+                              "text-secondary",
+                              "ring-secondary/15",
+                              "dark:bg-secondary/20",
+                              "dark:text-secondary",
+                              "dark:ring-secondary/25",
+                            ].join(" "),
+                      ].join(" ")}
+                      aria-hidden="true"
+                    >
+                      {getInitials(message.role)}
+                    </div>
+
+                    <div
+                      className={[
+                        "min-w-0 rounded-2xl",
+                        "px-4 py-3 shadow-sm",
+                        isUser
+                          ? [
+                              "max-w-[min(85%,52rem)]",
+                              "bg-linear-to-br",
+                              "from-primary",
+                              "to-primary-active",
+                              "text-white",
+                              "dark:from-primary-dark",
+                              "dark:to-primary-active-dark",
+                            ].join(" ")
+                          : [
+                              "w-full max-w-6xl",
+                              "border",
+                              "border-border-soft",
+                              "bg-white/90",
+                              "backdrop-blur-sm",
+                              "dark:border-white/10",
+                              "dark:bg-slate-800/80",
+                            ].join(" "),
+                      ].join(" ")}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <span
+                          className={[
+                            "text-xs font-semibold",
+                            isUser
+                              ? "text-white/80"
+                              : "text-text-muted dark:text-gray-400",
+                          ].join(" ")}
+                        >
+                          {isUser ? "Du" : "Assistent"}
+                        </span>
+
+                        <time
+                          dateTime={new Date(message.timestamp).toISOString()}
+                          className={[
+                            "shrink-0 text-xs",
+                            isUser
+                              ? "text-white/60"
+                              : "text-text-subtle dark:text-gray-500",
+                          ].join(" ")}
+                        >
+                          {formatTime(message.timestamp)}
+                        </time>
+                      </div>
+
+                      <p
+                        className={[
+                          "mt-1 wrap-break-words",
+                          "whitespace-pre-wrap",
+                          "text-sm leading-6",
+                          isUser
+                            ? "text-white"
+                            : "text-text dark:text-gray-100",
+                        ].join(" ")}
+                      >
+                        {message.content}
+                      </p>
+                    </div>
+                  </article>
+                );
+              })}
+
+              {showTypingIndicator ? (
+                <div className="flex w-full animate-fade-in items-start gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary-soft text-xs font-bold uppercase text-secondary ring-1 ring-secondary/15 dark:bg-secondary/20 dark:text-secondary dark:ring-secondary/25">
+                    KI
+                  </div>
+
+                  <div className="rounded-2xl border border-border-soft bg-white/90 px-4 py-3 shadow-sm backdrop-blur-sm dark:border-white/10 dark:bg-slate-800/80">
+                    <div className="flex items-center gap-1">
+                      <span className="h-2 w-2 animate-pulse rounded-full bg-primary/60" />
+
+                      <span className="animation-delay-200 h-2 w-2 animate-pulse rounded-full bg-primary/60" />
+
+                      <span className="animation-delay-400 h-2 w-2 animate-pulse rounded-full bg-primary/60" />
+
+                      <span className="ml-2 text-sm text-text-muted dark:text-gray-400">
+                        Antwort wird erstellt …
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+
+              <div ref={messagesEndRef} aria-hidden="true" />
+            </div>
+          )}
+        </div>
       </div>
 
+      {/* Fehleranzeige */}
       {error ? (
         <div
-          className="shrink-0 border-t border-danger/20 bg-danger-soft px-4 py-2 text-sm text-danger dark:bg-danger/10 dark:text-danger"
+          className="shrink-0 border-t border-danger/20 bg-danger-soft px-4 py-2.5 text-sm text-danger dark:bg-danger/10 sm:px-6 lg:px-8"
           role="alert"
         >
-          <span className="font-medium">
-            Fehler:
-          </span>{" "}
-          {error}
+          <div className="w-full">
+            <span className="font-medium">Fehler:</span> {error}
+          </div>
         </div>
       ) : null}
 
+      {/* Eingabebereich */}
       <form
         onSubmit={submit}
-        className="shrink-0 border-t border-border bg-white/80 p-4 backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/60"
+        className="shrink-0 border-t border-border bg-white/85 px-4 py-3 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/75 sm:px-6 lg:px-8"
       >
-        <div className="flex gap-2">
-          <label
-            htmlFor="chat-message-input"
-            className="sr-only"
-          >
-            Nachricht
-          </label>
+        <div className="w-full">
+          <div className="flex w-full min-w-0 items-end gap-2">
+            <label htmlFor="chat-message-input" className="sr-only">
+              Nachricht
+            </label>
 
-          <input
-            id="chat-message-input"
-            className="min-w-0 flex-1 rounded-xl border border-border-soft bg-surface-muted px-4 py-2.5 text-text outline-none transition placeholder:text-text-subtle focus:border-primary focus:ring-4 focus:ring-primary-soft disabled:opacity-60 dark:border-white/10 dark:bg-slate-800/40 dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-primary/20"
-            value={input}
-            onChange={(event) =>
-              setInput(
-                event.target.value,
-              )
-            }
-            onKeyDown={
-              handleInputKeyDown
-            }
-            placeholder="Nachricht eingeben …"
-            autoComplete="off"
-            disabled={loading}
-            maxLength={
-              MAX_MESSAGE_LENGTH
-            }
-          />
+            <textarea
+              ref={textareaRef}
+              id="chat-message-input"
+              rows={1}
+              className="max-h-48 min-h-11 min-w-0 flex-1 resize-none overflow-y-auto rounded-xl border border-border-soft bg-surface-muted px-4 py-2.5 text-sm leading-6 text-text outline-none transition placeholder:text-text-subtle focus:border-primary focus:ring-4 focus:ring-primary-soft disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-primary/20"
+              value={input}
+              onChange={(event) => {
+                setInput(event.target.value);
+              }}
+              onKeyDown={handleInputKeyDown}
+              placeholder="Nachricht eingeben …"
+              autoComplete="off"
+              disabled={loading}
+              maxLength={MAX_MESSAGE_LENGTH}
+            />
 
-          {loading ? (
-            <button
-              type="button"
-              className="shrink-0 rounded-xl border border-border-soft bg-surface px-4 py-2.5 font-medium text-text-soft transition hover:bg-surface-hover hover:shadow-sm dark:border-white/10 dark:bg-slate-800/60 dark:text-gray-300 dark:hover:bg-slate-700/60"
-              onClick={stopGeneration}
-              aria-label="Antwort abbrechen"
-              title="Antwort abbrechen"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
+            {loading ? (
+              <button
+                type="button"
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-border-soft bg-surface text-text-soft shadow-sm transition hover:bg-surface-hover hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:border-white/10 dark:bg-slate-800/70 dark:text-gray-300 dark:hover:bg-slate-700/70 dark:hover:text-white dark:focus-visible:ring-offset-slate-900"
+                onClick={stopGeneration}
+                aria-label="Antwort abbrechen"
+                title="Antwort abbrechen"
               >
-                <rect
-                  x="6"
-                  y="6"
-                  width="12"
-                  height="12"
-                  rx="1"
-                />
-              </svg>
-            </button>
-          ) : (
-            <button
-              type="submit"
-              className="shrink-0 rounded-xl bg-primary px-5 py-2.5 font-medium text-white shadow-glow transition hover:bg-primary-hover hover:shadow-primary-glow focus:outline-none focus:ring-4 focus:ring-primary-soft disabled:cursor-not-allowed disabled:opacity-50 dark:bg-primary-dark dark:hover:bg-primary-dark-hover"
-              disabled={!input.trim()}
-              aria-label="Nachricht senden"
-              title="Nachricht senden"
-            >
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                aria-hidden="true"
+                <Square size={18} aria-hidden="true" />
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-glow transition hover:bg-primary-hover hover:shadow-primary-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-primary-dark dark:hover:bg-primary-dark-hover dark:focus-visible:ring-offset-slate-900"
+                disabled={!input.trim()}
+                aria-label="Nachricht senden"
+                title="Nachricht senden"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                />
-              </svg>
-            </button>
-          )}
-        </div>
-
-        <div className="mt-2 flex items-center justify-between gap-4 text-xs text-text-muted dark:text-gray-500">
-          <p>
-            Enter zum Senden. Während der
-            Antwort kann mit Escape
-            abgebrochen werden.
-          </p>
-
-          <span>
-            {input.length.toLocaleString(
-              "de-DE",
+                <Send size={18} aria-hidden="true" />
+              </button>
             )}
-            /
-            {MAX_MESSAGE_LENGTH.toLocaleString(
-              "de-DE",
-            )}
-          </span>
+          </div>
+
+          <div className="mt-2 flex items-center justify-between gap-4 text-xs text-text-muted dark:text-gray-500">
+            <p className="truncate">
+              Enter sendet · Shift + Enter erzeugt eine neue Zeile · Escape
+              bricht ab
+            </p>
+
+            <span className="shrink-0 tabular-nums">
+              {input.length.toLocaleString("de-DE")}/
+              {MAX_MESSAGE_LENGTH.toLocaleString("de-DE")}
+            </span>
+          </div>
         </div>
       </form>
     </section>

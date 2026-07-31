@@ -80,14 +80,14 @@ This dramatically reduces duplicated frontend code while allowing the backend to
 
 The frontend is built using modern technologies.
 
-| Technology | Purpose |
-|------------|---------|
-| React | Component framework |
-| TypeScript | Static typing |
-| Vite | Development server and bundler |
-| Tailwind CSS | Styling |
-| Fetch API | HTTP communication |
-| Server-Sent Events | AI response streaming |
+| Technology         | Purpose                        |
+| ------------------ | ------------------------------ |
+| React              | Component framework            |
+| TypeScript         | Static typing                  |
+| Vite               | Development server and bundler |
+| Tailwind CSS       | Styling                        |
+| Fetch API          | HTTP communication             |
+| Server-Sent Events | AI response streaming          |
 
 ---
 

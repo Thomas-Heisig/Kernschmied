@@ -6,7 +6,6 @@ from collections.abc import Iterable
 
 from app.auth.models import UserContext
 
-
 ADMIN_ROLE = "admin"
 GLOBAL_PERMISSION = "*"
 
@@ -86,10 +85,7 @@ def has_all_permissions(
 ) -> bool:
     required_permissions = tuple(permissions)
 
-    return all(
-        has_permission(user, permission)
-        for permission in required_permissions
-    )
+    return all(has_permission(user, permission) for permission in required_permissions)
 
 
 def has_any_permission(
@@ -101,7 +97,4 @@ def has_any_permission(
     if not required_permissions:
         return True
 
-    return any(
-        has_permission(user, permission)
-        for permission in required_permissions
-    )
+    return any(has_permission(user, permission) for permission in required_permissions)

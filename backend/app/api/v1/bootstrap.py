@@ -28,7 +28,6 @@ from pydantic import (
 from app.core.security_profile import get_security_profile
 from app.core.settings import settings
 
-
 router = APIRouter()
 
 
@@ -215,7 +214,7 @@ class BootstrapResponse(BaseModel):
     )
 
     schema_version: str = BOOTSTRAP_SCHEMA_VERSION  # <-- NEU
-    api_version: str = API_VERSION                  # <-- NEU
+    api_version: str = API_VERSION  # <-- NEU
 
     application: BootstrapApplication
     environment: EnvironmentLiteral
@@ -271,11 +270,7 @@ def _normalize_api_prefix(
     if not raw_prefix:
         return "/api/v1"
 
-    normalized = (
-        raw_prefix
-        if raw_prefix.startswith("/")
-        else f"/{raw_prefix}"
-    )
+    normalized = raw_prefix if raw_prefix.startswith("/") else f"/{raw_prefix}"
 
     if normalized != "/":
         normalized = normalized.rstrip("/")
@@ -324,15 +319,10 @@ def _get_config_service(
 
     if config_service is None:
         raise HTTPException(
-            status_code=(
-                status.HTTP_503_SERVICE_UNAVAILABLE
-            ),
+            status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
             detail={
                 "code": "CONFIG_SERVICE_UNAVAILABLE",
-                "message": (
-                    "Der Konfigurationsdienst ist "
-                    "nicht verfügbar."
-                ),
+                "message": ("Der Konfigurationsdienst ist nicht verfügbar."),
                 "details": {},
                 "request_id": _get_request_id(
                     request,
@@ -390,11 +380,7 @@ async def _read_config_value(
             raw_result,
         )
 
-        return (
-            default
-            if resolved_result is None
-            else resolved_result
-        )
+        return default if resolved_result is None else resolved_result
 
     except (
         KeyError,
@@ -407,9 +393,13 @@ async def _read_config_value(
 def _normalize_environment(
     value: object,
 ) -> EnvironmentLiteral:
-    normalized = str(
-        value,
-    ).strip().lower()
+    normalized = (
+        str(
+            value,
+        )
+        .strip()
+        .lower()
+    )
 
     if normalized == ApplicationEnvironment.INTRANET.value:
         return "intranet"
@@ -973,14 +963,9 @@ def _resolve_features(
         recursive_hierarchy=capabilities.hierarchy,
         server_side_authorization=True,
         streaming_transport="sse",
-        dynamic_models=(
-            capabilities.model_registry
-            or capabilities.model_service
-        ),
+        dynamic_models=(capabilities.model_registry or capabilities.model_service),
         dynamic_tools=capabilities.tool_registry,
-        runtime_configuration=(
-            capabilities.configuration
-        ),
+        runtime_configuration=(capabilities.configuration),
     )
 
 
@@ -1045,10 +1030,8 @@ async def _resolve_revisions(
         "tool_registry",
     )
 
-    configuration_revision = (
-        await _get_config_revision(
-            config_service,
-        )
+    configuration_revision = await _get_config_revision(
+        config_service,
     )
 
     model_registry_revision = (
@@ -1157,9 +1140,7 @@ async def bootstrap(
         request,
     )
 
-    response.headers["Cache-Control"] = (
-        "no-store, no-cache, must-revalidate, private"
-    )
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
 
@@ -1172,9 +1153,7 @@ async def bootstrap(
     response.headers["X-Tool-Registry-Revision"] = str(
         revisions.tool_registry,
     )
-    response.headers["X-Bootstrap-Schema-Version"] = (
-        BOOTSTRAP_SCHEMA_VERSION
-    )
+    response.headers["X-Bootstrap-Schema-Version"] = BOOTSTRAP_SCHEMA_VERSION
 
     return BootstrapResponse(
         schema_version=BOOTSTRAP_SCHEMA_VERSION,
@@ -1205,4 +1184,3 @@ async def bootstrap(
             "new_tool_selector": True,
         },
     )
-    

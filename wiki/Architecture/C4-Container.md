@@ -27,12 +27,12 @@ The container architecture is designed to provide:
 
 The C4 model describes software architecture on four levels:
 
-| Level | Description |
-|--------|-------------|
-| Level 1 | System Context |
+| Level       | Description           |
+| ----------- | --------------------- |
+| Level 1     | System Context        |
 | **Level 2** | **Container Diagram** |
-| Level 3 | Component Diagram |
-| Level 4 | Code |
+| Level 3     | Component Diagram     |
+| Level 4     | Code                  |
 
 This document focuses on **Level 2 – Containers**.
 
@@ -80,11 +80,11 @@ This document focuses on **Level 2 – Containers**.
 
 The platform currently consists of four primary containers:
 
-| Container | Responsibility |
-|-----------|----------------|
-| Frontend | User Interface |
-| Backend | Business Logic |
-| Database | Persistent Storage |
+| Container     | Responsibility     |
+| ------------- | ------------------ |
+| Frontend      | User Interface     |
+| Backend       | Business Logic     |
+| Database      | Persistent Storage |
 | LLM Providers | AI Model Execution |
 
 Each container owns a clearly defined set of responsibilities.
@@ -293,14 +293,14 @@ No direct database access exists.
 
 # Communication Matrix
 
-| Source | Destination | Protocol |
-|----------|-------------|----------|
-| Frontend | Backend | HTTPS |
-| Frontend | Backend | REST |
-| Frontend | Backend | SSE |
-| Backend | Database | SQLAlchemy |
-| Backend | Providers | HTTP / SDK |
-| Backend | Filesystem | Internal |
+| Source   | Destination | Protocol   |
+| -------- | ----------- | ---------- |
+| Frontend | Backend     | HTTPS      |
+| Frontend | Backend     | REST       |
+| Frontend | Backend     | SSE        |
+| Backend  | Database    | SQLAlchemy |
+| Backend  | Providers   | HTTP / SDK |
+| Backend  | Filesystem  | Internal   |
 
 All communication is initiated through the backend.
 
@@ -584,11 +584,11 @@ The architecture intentionally isolates technologies.
 
 Possible replacements include:
 
-| Current | Future |
-|----------|---------|
-| React | Another SPA Framework |
-| SQLite | PostgreSQL |
-| Ollama | Another Provider |
+| Current | Future                                                  |
+| ------- | ------------------------------------------------------- |
+| React   | Another SPA Framework                                   |
+| SQLite  | PostgreSQL                                              |
+| Ollama  | Another Provider                                        |
 | FastAPI | Alternative HTTP Framework (if contracts remain stable) |
 
 Stable contracts minimize migration effort.

@@ -19,9 +19,8 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    JsonValue,          # NEU: Pydantic's JsonValue
+    JsonValue,  # NEU: Pydantic's JsonValue
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -560,10 +559,7 @@ def normalize_string_list(
             item,
         )
 
-        if (
-            normalized
-            and normalized not in result
-        ):
+        if normalized and normalized not in result:
             result.append(
                 normalized,
             )
@@ -869,10 +865,7 @@ def normalize_capabilities(
         raw_capabilities,
     )
 
-    normalized_names: set[str] = {
-        name.casefold()
-        for name in capability_names
-    }
+    normalized_names: set[str] = {name.casefold() for name in capability_names}
 
     aliases: dict[str, set[str]] = {
         "streaming": {
@@ -907,26 +900,11 @@ def normalize_capabilities(
         )
 
     return ToolCapabilities(
-        streaming=bool(
-            normalized_names
-            & aliases["streaming"]
-        ),
-        confirmation_required=bool(
-            normalized_names
-            & aliases["confirmation_required"]
-        ),
-        idempotent=bool(
-            normalized_names
-            & aliases["idempotent"]
-        ),
-        read_only=bool(
-            normalized_names
-            & aliases["read_only"]
-        ),
-        supports_cancellation=bool(
-            normalized_names
-            & aliases["supports_cancellation"]
-        ),
+        streaming=bool(normalized_names & aliases["streaming"]),
+        confirmation_required=bool(normalized_names & aliases["confirmation_required"]),
+        idempotent=bool(normalized_names & aliases["idempotent"]),
+        read_only=bool(normalized_names & aliases["read_only"]),
+        supports_cancellation=bool(normalized_names & aliases["supports_cancellation"]),
         additional=[
             name
             for name in capability_names
@@ -1059,9 +1037,7 @@ def normalize_tool_entry(
     )
 
     if not tool_id:
-        raise ValueError(
-            "Ein Tool besitzt keine gültige ID."
-        )
+        raise ValueError("Ein Tool besitzt keine gültige ID.")
 
     name = normalize_string(
         read_value(
@@ -1174,9 +1150,7 @@ async def list_registry_tools(
     if not callable(
         list_tools,
     ):
-        raise RuntimeError(
-            "Die ToolRegistry implementiert list_tools() nicht."
-        )
+        raise RuntimeError("Die ToolRegistry implementiert list_tools() nicht.")
 
     raw_result: object = list_tools()
 
@@ -1189,24 +1163,16 @@ async def list_registry_tools(
     )
 
     if result_mapping is not None:
-        return [
-            item
-            for item in result_mapping.values()
-        ]
+        return [item for item in result_mapping.values()]
 
     result_sequence = as_object_sequence(
         result,
     )
 
     if result_sequence is not None:
-        return [
-            item
-            for item in result_sequence
-        ]
+        return [item for item in result_sequence]
 
-    raise RuntimeError(
-        "Die ToolRegistry hat ein ungültiges Ergebnis geliefert."
-    )
+    raise RuntimeError("Die ToolRegistry hat ein ungültiges Ergebnis geliefert.")
 
 
 def is_tool_visible(
@@ -1217,25 +1183,14 @@ def is_tool_visible(
     category: str | None,
     capability: str | None,
 ) -> bool:
-    if (
-        not include_disabled
-        and not tool.enabled
-    ):
+    if not include_disabled and not tool.enabled:
         return False
 
-    if (
-        not include_unavailable
-        and not tool.available
-    ):
+    if not include_unavailable and not tool.available:
         return False
 
-    if (
-        category is not None
-        and (
-            tool.category is None
-            or tool.category.casefold()
-            != category.casefold()
-        )
+    if category is not None and (
+        tool.category is None or tool.category.casefold() != category.casefold()
     ):
         return False
 
@@ -1246,14 +1201,10 @@ def is_tool_visible(
 
     known_capabilities: dict[str, bool] = {
         "streaming": tool.capabilities.streaming,
-        "confirmation_required": (
-            tool.capabilities.confirmation_required
-        ),
+        "confirmation_required": (tool.capabilities.confirmation_required),
         "idempotent": tool.capabilities.idempotent,
         "read_only": tool.capabilities.read_only,
-        "supports_cancellation": (
-            tool.capabilities.supports_cancellation
-        ),
+        "supports_cancellation": (tool.capabilities.supports_cancellation),
     }
 
     known_result = known_capabilities.get(
@@ -1264,8 +1215,7 @@ def is_tool_visible(
         return known_result
 
     return normalized_capability in {
-        item.casefold()
-        for item in tool.capabilities.additional
+        item.casefold() for item in tool.capabilities.additional
     }
 
 
@@ -1284,9 +1234,7 @@ def is_tool_visible(
             "description": "Tool-Liste wurde geladen.",
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
-            "description": (
-                "Die Tool-Registry ist nicht verfügbar."
-            ),
+            "description": ("Die Tool-Registry ist nicht verfügbar."),
         },
     },
 )
@@ -1302,30 +1250,26 @@ async def tools(
     ),
     include_unavailable: bool = Query(
         default=False,
-        description=(
-            "Aktuell nicht verfügbare Tools mit ausgeben."
-        ),
+        description=("Aktuell nicht verfügbare Tools mit ausgeben."),
     ),
     category: str | None = Query(
         default=None,
         min_length=1,
         max_length=100,
-        description=(
-            "Optional nach Tool-Kategorie filtern."
-        ),
+        description=("Optional nach Tool-Kategorie filtern."),
     ),
-    capability: Literal[
-        "streaming",
-        "confirmation_required",
-        "idempotent",
-        "read_only",
-        "supports_cancellation",
-    ]
-    | None = Query(
+    capability: (
+        Literal[
+            "streaming",
+            "confirmation_required",
+            "idempotent",
+            "read_only",
+            "supports_cancellation",
+        ]
+        | None
+    ) = Query(
         default=None,
-        description=(
-            "Optional nach einer Fähigkeit filtern."
-        ),
+        description=("Optional nach einer Fähigkeit filtern."),
     ),
 ) -> ToolListResponse:
     registry = get_tool_registry(
@@ -1351,9 +1295,7 @@ async def tools(
             request=request,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="TOOL_REGISTRY_LIST_FAILED",
-            message=(
-                "Die Tool-Liste konnte nicht geladen werden."
-            ),
+            message=("Die Tool-Liste konnte nicht geladen werden."),
         ) from exc
 
     normalized_tools: list[ToolEntry] = []
@@ -1395,11 +1337,7 @@ async def tools(
 
     normalized_tools.sort(
         key=lambda tool: (
-            (
-                tool.category.casefold()
-                if tool.category
-                else ""
-            ),
+            (tool.category.casefold() if tool.category else ""),
             tool.name.casefold(),
             tool.id.casefold(),
         ),
@@ -1413,13 +1351,9 @@ async def tools(
         request,
     )
 
-    response.headers["Cache-Control"] = (
-        "no-store, private"
-    )
+    response.headers["Cache-Control"] = "no-store, private"
 
-    response.headers["X-Tool-Schema-Version"] = (
-        TOOL_API_SCHEMA_VERSION
-    )
+    response.headers["X-Tool-Schema-Version"] = TOOL_API_SCHEMA_VERSION
 
     response.headers["X-Tool-Registry-Revision"] = str(
         registry_revision,

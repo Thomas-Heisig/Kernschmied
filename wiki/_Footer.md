@@ -1,18 +1,16 @@
 ---
-
 ## Navigation
 
 ← [[Home]] · [[Getting-Started]] · [[Architecture]] · [[Project-Principles]]
-
 ---
 
 ## Quick Links
 
 📦 **Repository**  
-https://github.com/Thomas-Heisig/Kernschmied
+<https://github.com/Thomas-Heisig/Kernschmied>
 
 🐞 **Issue Tracker**  
-https://github.com/Thomas-Heisig/Kernschmied/issues
+<https://github.com/Thomas-Heisig/Kernschmied/issues>
 
 📖 **Wiki Home**  
 [[Home]]

@@ -507,15 +507,15 @@ These principles apply regardless of network trust.
 
 # Differences from Other Profiles
 
-| Feature | Development | Intranet | Internet |
-|----------|-------------|----------|----------|
-| HTTPS | Optional | Recommended | Required |
-| Authentication | Simplified | Required | Required |
-| Authorization | Required | Required | Required |
-| Audit Logging | Optional | Required | Required |
-| Rate Limiting | Optional | Optional | Required |
-| Debug Features | Enabled | Disabled | Disabled |
-| Public Access | No | Internal Only | Public |
+| Feature        | Development | Intranet      | Internet |
+| -------------- | ----------- | ------------- | -------- |
+| HTTPS          | Optional    | Recommended   | Required |
+| Authentication | Simplified  | Required      | Required |
+| Authorization  | Required    | Required      | Required |
+| Audit Logging  | Optional    | Required      | Required |
+| Rate Limiting  | Optional    | Optional      | Required |
+| Debug Features | Enabled     | Disabled      | Disabled |
+| Public Access  | No          | Internal Only | Public   |
 
 The application architecture remains identical across all profiles.
 

@@ -1,4 +1,14 @@
 [
-  {"group":"ui","key":"schema_version","value":"1.0","description":"UI-Schema-Version"},
-  {"group":"ui","key":"prompt_levels","value":["system","user","workspace","project","chat"],"description":"Prompt-Reihenfolge"}
+  {
+    "group": "ui",
+    "key": "schema_version",
+    "value": "1.0",
+    "description": "UI-Schema-Version"
+  },
+  {
+    "group": "ui",
+    "key": "prompt_levels",
+    "value": ["system", "user", "workspace", "project", "chat"],
+    "description": "Prompt-Reihenfolge"
+  }
 ]

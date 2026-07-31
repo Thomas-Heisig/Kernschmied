@@ -77,20 +77,13 @@ class ApplicationError(Exception):
         Erzeugt die einheitliche öffentliche Fehlerstruktur.
         """
 
-        response_details = (
-            deepcopy(self.details)
-            if self.expose_details
-            else {}
-        )
+        response_details = deepcopy(self.details) if self.expose_details else {}
 
         return {
             "code": self.code,
             "message": self.message,
             "details": response_details,
-            "request_id": (
-                self.request_id
-                or fallback_request_id
-            ),
+            "request_id": (self.request_id or fallback_request_id),
         }
 
 
@@ -121,9 +114,7 @@ class ResourceNotFoundError(ApplicationError):
 class ResourceConflictError(ApplicationError):
     code = "RESOURCE_CONFLICT"
     status_code = HTTPStatus.CONFLICT
-    default_message = (
-        "Die Aktion steht im Konflikt mit dem aktuellen Zustand."
-    )
+    default_message = "Die Aktion steht im Konflikt mit dem aktuellen Zustand."
 
 
 class ValidationFailedError(ApplicationError):
@@ -161,15 +152,10 @@ class UnsupportedSchemaError(ApplicationError):
         if schema_version is not None:
             details["schema_version"] = schema_version
 
-        version_text = (
-            f" in Version '{schema_version}'"
-            if schema_version
-            else ""
-        )
+        version_text = f" in Version '{schema_version}'" if schema_version else ""
 
         super().__init__(
-            f"Das Schema '{schema_name}'{version_text} "
-            "wird nicht unterstützt.",
+            f"Das Schema '{schema_name}'{version_text} wird nicht unterstützt.",
             details=details,
             request_id=request_id,
         )
@@ -195,8 +181,7 @@ class UnsupportedComponentError(ApplicationError):
             details["component_id"] = component_id
 
         super().__init__(
-            f"Der UI-Komponententyp '{component_type}' "
-            "wird nicht unterstützt.",
+            f"Der UI-Komponententyp '{component_type}' wird nicht unterstützt.",
             details=details,
             request_id=request_id,
         )
@@ -222,8 +207,7 @@ class UnsupportedActionError(ApplicationError):
             details["action_id"] = action_id
 
         super().__init__(
-            f"Der UI-Aktionstyp '{action_type}' "
-            "wird nicht unterstützt.",
+            f"Der UI-Aktionstyp '{action_type}' wird nicht unterstützt.",
             details=details,
             request_id=request_id,
         )
@@ -267,9 +251,7 @@ class ConfigNotDefinedError(ConfigError):
 class ConfigEntryNotFoundError(ConfigError):
     code = "CONFIG_ENTRY_NOT_FOUND"
     status_code = HTTPStatus.NOT_FOUND
-    default_message = (
-        "Der gespeicherte Konfigurationseintrag wurde nicht gefunden."
-    )
+    default_message = "Der gespeicherte Konfigurationseintrag wurde nicht gefunden."
 
     def __init__(
         self,
@@ -282,8 +264,7 @@ class ConfigEntryNotFoundError(ConfigError):
         self.key = key
 
         super().__init__(
-            f"Der Konfigurationseintrag '{group}.{key}' "
-            "wurde nicht gefunden.",
+            f"Der Konfigurationseintrag '{group}.{key}' wurde nicht gefunden.",
             details={
                 "group": group,
                 "key": key,
@@ -318,15 +299,10 @@ class ConfigValueInvalidError(ConfigError):
             "path": list(path),
         }
 
-        location = (
-            ".".join(str(part) for part in path)
-            if path
-            else "<root>"
-        )
+        location = ".".join(str(part) for part in path) if path else "<root>"
 
         super().__init__(
-            f"Der Wert für '{group}.{key}' ist an "
-            f"'{location}' ungültig: {reason}",
+            f"Der Wert für '{group}.{key}' ist an '{location}' ungültig: {reason}",
             details=details,
             request_id=request_id,
         )
@@ -335,9 +311,7 @@ class ConfigValueInvalidError(ConfigError):
 class ConfigNotRuntimeEditableError(ConfigError):
     code = "CONFIG_NOT_RUNTIME_EDITABLE"
     status_code = HTTPStatus.CONFLICT
-    default_message = (
-        "Die Konfiguration kann nicht zur Laufzeit geändert werden."
-    )
+    default_message = "Die Konfiguration kann nicht zur Laufzeit geändert werden."
 
     def __init__(
         self,
@@ -351,10 +325,7 @@ class ConfigNotRuntimeEditableError(ConfigError):
         self.key = key
         self.requires_restart = requires_restart
 
-        message = (
-            f"Die Konfiguration '{group}.{key}' ist nicht "
-            "zur Laufzeit änderbar."
-        )
+        message = f"Die Konfiguration '{group}.{key}' ist nicht zur Laufzeit änderbar."
 
         if requires_restart:
             message += " Die Änderung erfordert einen Neustart."
@@ -373,9 +344,7 @@ class ConfigNotRuntimeEditableError(ConfigError):
 class ConfigRevisionConflictError(ConfigError):
     code = "CONFIG_REVISION_CONFLICT"
     status_code = HTTPStatus.CONFLICT
-    default_message = (
-        "Die Konfiguration wurde zwischenzeitlich geändert."
-    )
+    default_message = "Die Konfiguration wurde zwischenzeitlich geändert."
 
     def __init__(
         self,
@@ -403,8 +372,7 @@ class ScopeNotAllowedError(ConfigError):
     code = "CONFIG_SCOPE_NOT_ALLOWED"
     status_code = HTTPStatus.UNPROCESSABLE_ENTITY
     default_message = (
-        "Der angegebene Gültigkeitsbereich ist für diese "
-        "Konfiguration nicht zulässig."
+        "Der angegebene Gültigkeitsbereich ist für diese Konfiguration nicht zulässig."
     )
 
     def __init__(
@@ -439,9 +407,7 @@ class ScopeNotAllowedError(ConfigError):
 class SecretAccessDeniedError(ConfigError):
     code = "CONFIG_SECRET_ACCESS_DENIED"
     status_code = HTTPStatus.FORBIDDEN
-    default_message = (
-        "Der Zugriff auf den Secret-Wert ist nicht erlaubt."
-    )
+    default_message = "Der Zugriff auf den Secret-Wert ist nicht erlaubt."
 
     def __init__(
         self,
@@ -454,8 +420,7 @@ class SecretAccessDeniedError(ConfigError):
         self.key = key
 
         super().__init__(
-            f"Der Secret-Wert '{group}.{key}' darf nicht "
-            "ausgegeben werden.",
+            f"Der Secret-Wert '{group}.{key}' darf nicht ausgegeben werden.",
             details={
                 "group": group,
                 "key": key,
@@ -525,9 +490,7 @@ class ModelUnavailableError(ModelError):
 class ModelCapabilityNotSupportedError(ModelError):
     code = "MODEL_CAPABILITY_NOT_SUPPORTED"
     status_code = HTTPStatus.UNPROCESSABLE_ENTITY
-    default_message = (
-        "Das Modell unterstützt die angeforderte Fähigkeit nicht."
-    )
+    default_message = "Das Modell unterstützt die angeforderte Fähigkeit nicht."
 
     def __init__(
         self,
@@ -540,8 +503,7 @@ class ModelCapabilityNotSupportedError(ModelError):
         self.capability = capability
 
         super().__init__(
-            f"Das Modell '{model_id}' unterstützt die Fähigkeit "
-            f"'{capability}' nicht.",
+            f"Das Modell '{model_id}' unterstützt die Fähigkeit '{capability}' nicht.",
             details={
                 "model_id": model_id,
                 "capability": capability,
@@ -611,9 +573,7 @@ class ToolUnavailableError(ToolError):
 class ToolConfirmationRequiredError(ToolError):
     code = "TOOL_CONFIRMATION_REQUIRED"
     status_code = HTTPStatus.CONFLICT
-    default_message = (
-        "Die Tool-Ausführung muss vorab bestätigt werden."
-    )
+    default_message = "Die Tool-Ausführung muss vorab bestätigt werden."
 
     def __init__(
         self,
@@ -627,10 +587,7 @@ class ToolConfirmationRequiredError(ToolError):
 
         super().__init__(
             confirmation_message
-            or (
-                f"Die Ausführung des Tools '{tool_id}' "
-                "muss bestätigt werden."
-            ),
+            or (f"Die Ausführung des Tools '{tool_id}' muss bestätigt werden."),
             details={
                 "tool_id": tool_id,
                 "requires_confirmation": True,
@@ -668,8 +625,7 @@ class ToolExecutionFailedError(ToolError):
                 response_details[str(key)] = value
 
         super().__init__(
-            f"Die Ausführung des Tools '{tool_id}' ist "
-            f"fehlgeschlagen: {reason}",
+            f"Die Ausführung des Tools '{tool_id}' ist fehlgeschlagen: {reason}",
             details=response_details,
             request_id=request_id,
         )

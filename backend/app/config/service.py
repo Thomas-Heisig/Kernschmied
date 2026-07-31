@@ -4,14 +4,11 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Protocol, cast
 from uuid import uuid4
-
-from collections.abc import Iterable, Mapping, Sequence
-from typing import Protocol, cast
 
 from jsonschema import Draft202012Validator
 from jsonschema import ValidationError as JsonSchemaValidationError
@@ -28,16 +25,16 @@ from app.config.definitions import (
 )
 from app.storage.models.config import ConfigState, SystemConfig
 
-
 logger = logging.getLogger(__name__)
+
 
 class JsonSchemaValidatorProtocol(Protocol):
     def validate(
         self,
         instance: object,
-    ) -> None:
-        ...
-        
+    ) -> None: ...
+
+
 CONFIG_STATE_ID = 1
 SECRET_MASK = "********"
 
@@ -59,8 +56,7 @@ class ConfigDefinitionNotFoundError(ConfigServiceError):
         self.key = key
 
         super().__init__(
-            f"Keine Konfigurationsdefinition für "
-            f"'{group}.{key}' vorhanden.",
+            f"Keine Konfigurationsdefinition für '{group}.{key}' vorhanden.",
         )
 
 
@@ -75,8 +71,7 @@ class ConfigEntryNotFoundError(ConfigServiceError):
         self.key = key
 
         super().__init__(
-            f"Der Konfigurationseintrag '{group}.{key}' "
-            "wurde nicht gefunden.",
+            f"Der Konfigurationseintrag '{group}.{key}' wurde nicht gefunden.",
         )
 
 
@@ -94,15 +89,10 @@ class ConfigValueValidationError(ConfigServiceError):
         self.reason = reason
         self.path = path
 
-        location = (
-            ".".join(str(part) for part in path)
-            if path
-            else "<root>"
-        )
+        location = ".".join(str(part) for part in path) if path else "<root>"
 
         super().__init__(
-            f"Ungültiger Wert für '{group}.{key}' "
-            f"an '{location}': {reason}",
+            f"Ungültiger Wert für '{group}.{key}' an '{location}': {reason}",
         )
 
 
@@ -118,11 +108,7 @@ class ConfigNotRuntimeEditableError(ConfigServiceError):
         self.key = key
         self.requires_restart = requires_restart
 
-        suffix = (
-            " Die Änderung erfordert einen Neustart."
-            if requires_restart
-            else ""
-        )
+        suffix = " Die Änderung erfordert einen Neustart." if requires_restart else ""
 
         super().__init__(
             f"Die Konfiguration '{group}.{key}' ist nicht "
@@ -158,8 +144,7 @@ class ConfigPersistenceError(ConfigServiceError):
         self.reason = reason
 
         super().__init__(
-            f"Die Konfiguration konnte nicht gespeichert werden: "
-            f"{reason}",
+            f"Die Konfiguration konnte nicht gespeichert werden: {reason}",
         )
 
 
@@ -174,8 +159,7 @@ class ConfigSecretAccessError(ConfigServiceError):
         self.key = key
 
         super().__init__(
-            f"Der Secret-Wert '{group}.{key}' darf nicht "
-            "unmaskiert ausgegeben werden.",
+            f"Der Secret-Wert '{group}.{key}' darf nicht unmaskiert ausgegeben werden.",
         )
 
 
@@ -295,86 +279,85 @@ class ConfigService:
         synchronisiert.
         """
 
-        async with self._write_lock:
-            async with self.session_factory() as session:
-                try:
-                    state = await session.get(
-                        ConfigState,
-                        CONFIG_STATE_ID,
+        async with self._write_lock, self.session_factory() as session:
+            try:
+                state = await session.get(
+                    ConfigState,
+                    CONFIG_STATE_ID,
+                )
+
+                if state is None:
+                    state = ConfigState(
+                        id=CONFIG_STATE_ID,
+                        revision=1,
+                    )
+                    session.add(state)
+
+                registry_changed = False
+
+                for definition in self.definitions:
+                    row = await self._get_config_row(
+                        session=session,
+                        group=definition.group,
+                        key=definition.key,
                     )
 
-                    if state is None:
-                        state = ConfigState(
-                            id=CONFIG_STATE_ID,
-                            revision=1,
-                        )
-                        session.add(state)
-
-                    registry_changed = False
-
-                    for definition in self.definitions:
-                        row = await self._get_config_row(
-                            session=session,
-                            group=definition.group,
-                            key=definition.key,
+                    if row is None:
+                        session.add(
+                            self._create_system_config(
+                                definition,
+                            ),
                         )
 
-                        if row is None:
-                            session.add(
-                                self._create_system_config(
-                                    definition,
-                                ),
-                            )
+                        registry_changed = True
+                        continue
 
-                            registry_changed = True
-                            continue
+                    metadata_changed = self._synchronize_row_metadata(
+                        row=row,
+                        definition=definition,
+                    )
 
-                        metadata_changed = (
-                            self._synchronize_row_metadata(
-                                row=row,
-                                definition=definition,
-                            )
-                        )
+                    if metadata_changed:
+                        registry_changed = True
 
-                        if metadata_changed:
-                            registry_changed = True
-
-                    if registry_changed:
-                        state.revision = max(
+                if registry_changed:
+                    state.revision = (
+                        max(
                             int(state.revision),
                             0,
-                        ) + 1
-
-                    await session.commit()
-
-                except IntegrityError as exc:
-                    await session.rollback()
-
-                    logger.exception(
-                        "Configuration default seeding caused "
-                        "an integrity error",
+                        )
+                        + 1
                     )
 
-                    raise ConfigPersistenceError(
-                        operation="seed_defaults",
-                        reason=(
-                            "Ein Konfigurationseintrag ist bereits "
-                            "vorhanden oder verletzt eine "
-                            "Datenbankbedingung."
-                        ),
-                    ) from exc
+                await session.commit()
 
-                except SQLAlchemyError as exc:
-                    await session.rollback()
+            except IntegrityError as exc:
+                await session.rollback()
 
-                    logger.exception(
-                        "Configuration default seeding failed",
-                    )
+                logger.exception(
+                    "Configuration default seeding caused an integrity error",
+                )
 
-                    raise ConfigPersistenceError(
-                        operation="seed_defaults",
-                        reason=str(exc),
-                    ) from exc
+                raise ConfigPersistenceError(
+                    operation="seed_defaults",
+                    reason=(
+                        "Ein Konfigurationseintrag ist bereits "
+                        "vorhanden oder verletzt eine "
+                        "Datenbankbedingung."
+                    ),
+                ) from exc
+
+            except SQLAlchemyError as exc:
+                await session.rollback()
+
+                logger.exception(
+                    "Configuration default seeding failed",
+                )
+
+                raise ConfigPersistenceError(
+                    operation="seed_defaults",
+                    reason=str(exc),
+                ) from exc
 
         await self.reload()
 
@@ -390,10 +373,14 @@ class ConfigService:
             async with self.session_factory() as session:
                 try:
                     rows = (
-                        await session.execute(
-                            select(SystemConfig),
+                        (
+                            await session.execute(
+                                select(SystemConfig),
+                            )
                         )
-                    ).scalars().all()
+                        .scalars()
+                        .all()
+                    )
 
                     state = await session.get(
                         ConfigState,
@@ -444,8 +431,7 @@ class ConfigService:
             for cache_key, definition in self._definitions.items():
                 if cache_key not in new_cache:
                     logger.warning(
-                        "Configuration entry missing; using default "
-                        "in local cache",
+                        "Configuration entry missing; using default in local cache",
                         extra={
                             "config_group": definition.group,
                             "config_key": definition.key,
@@ -456,11 +442,7 @@ class ConfigService:
                         definition.default_value,
                     )
 
-            new_revision = (
-                int(state.revision)
-                if state is not None
-                else 0
-            )
+            new_revision = int(state.revision) if state is not None else 0
 
             self._cache = new_cache
             self.revision = max(
@@ -710,38 +692,24 @@ class ConfigService:
         include_internal: bool = False,
         include_deprecated: bool = False,
     ) -> tuple[ConfigDefinition, ...]:
-        normalized_group = (
-            group.strip().lower()
-            if group is not None
-            else None
-        )
+        normalized_group = group.strip().lower() if group is not None else None
 
         result: list[ConfigDefinition] = []
 
         for definition in self._definitions.values():
-            if (
-                normalized_group is not None
-                and definition.group != normalized_group
-            ):
+            if normalized_group is not None and definition.group != normalized_group:
                 continue
 
-            if (
-                scope is not None
-                and scope not in definition.allowed_scopes
-            ):
+            if scope is not None and scope not in definition.allowed_scopes:
                 continue
 
             if (
                 not include_internal
-                and definition.visibility
-                == ConfigVisibility.INTERNAL
+                and definition.visibility == ConfigVisibility.INTERNAL
             ):
                 continue
 
-            if (
-                not include_deprecated
-                and definition.deprecated
-            ):
+            if not include_deprecated and definition.deprecated:
                 continue
 
             result.append(definition)
@@ -764,20 +732,26 @@ class ConfigService:
         group: str,
         key: str,
     ) -> bool:
-        return self._normalize_key(
-            group,
-            key,
-        ) in self._definitions
+        return (
+            self._normalize_key(
+                group,
+                key,
+            )
+            in self._definitions
+        )
 
     def has_value(
         self,
         group: str,
         key: str,
     ) -> bool:
-        return self._normalize_key(
-            group,
-            key,
-        ) in self._cache
+        return (
+            self._normalize_key(
+                group,
+                key,
+            )
+            in self._cache
+        )
 
     async def set(
         self,
@@ -821,122 +795,113 @@ class ConfigService:
             changed_by,
         )
 
-        async with self._write_lock:
-            async with self.session_factory() as session:
-                try:
-                    state = await self._get_or_create_state(
-                        session,
-                        for_update=True,
-                    )
+        async with self._write_lock, self.session_factory() as session:
+            try:
+                state = await self._get_or_create_state(
+                    session,
+                    for_update=True,
+                )
 
-                    actual_revision = max(
-                        int(state.revision),
-                        0,
-                    )
+                actual_revision = max(
+                    int(state.revision),
+                    0,
+                )
 
-                    self._assert_revision(
-                        expected_revision=expected_revision,
-                        actual_revision=actual_revision,
-                    )
+                self._assert_revision(
+                    expected_revision=expected_revision,
+                    actual_revision=actual_revision,
+                )
 
-                    row = await self._get_config_row(
-                        session=session,
+                row = await self._get_config_row(
+                    session=session,
+                    group=normalized_group,
+                    key=normalized_key,
+                    for_update=True,
+                )
+
+                if row is None:
+                    raise ConfigEntryNotFoundError(
                         group=normalized_group,
                         key=normalized_key,
-                        for_update=True,
                     )
 
-                    if row is None:
-                        raise ConfigEntryNotFoundError(
-                            group=normalized_group,
-                            key=normalized_key,
-                        )
+                previous_value = deepcopy(
+                    row.value,
+                )
 
-                    previous_value = deepcopy(
-                        row.value,
-                    )
+                changed = previous_value != value
 
-                    changed = previous_value != value
-
-                    if not changed:
-                        await session.rollback()
-
-                        return ConfigUpdateResult(
-                            group=normalized_group,
-                            key=normalized_key,
-                            revision=actual_revision,
-                            changed=False,
-                            requires_restart=(
-                                definition.requires_restart
-                            ),
-                            runtime_editable=(
-                                definition.runtime_editable
-                            ),
-                            previous_value=self._safe_result_value(
-                                definition,
-                                previous_value,
-                            ),
-                            current_value=self._safe_result_value(
-                                definition,
-                                value,
-                            ),
-                        )
-
-                    row.value = deepcopy(value)
-                    row.updated_by = actor
-
-                    self._synchronize_row_metadata(
-                        row=row,
-                        definition=definition,
-                    )
-
-                    state.revision = actual_revision + 1
-                    new_revision = int(state.revision)
-
-                    await session.commit()
-
-                except (
-                    ConfigEntryNotFoundError,
-                    ConfigRevisionConflictError,
-                ):
-                    await session.rollback()
-                    raise
-
-                except IntegrityError as exc:
+                if not changed:
                     await session.rollback()
 
-                    logger.exception(
-                        "Configuration update caused an "
-                        "integrity error",
-                        extra={
-                            "config_group": normalized_group,
-                            "config_key": normalized_key,
-                        },
-                    )
-
-                    raise ConfigPersistenceError(
-                        operation="set",
-                        reason=(
-                            "Die Änderung verletzt eine "
-                            "Datenbankbedingung."
+                    return ConfigUpdateResult(
+                        group=normalized_group,
+                        key=normalized_key,
+                        revision=actual_revision,
+                        changed=False,
+                        requires_restart=(definition.requires_restart),
+                        runtime_editable=(definition.runtime_editable),
+                        previous_value=self._safe_result_value(
+                            definition,
+                            previous_value,
                         ),
-                    ) from exc
-
-                except SQLAlchemyError as exc:
-                    await session.rollback()
-
-                    logger.exception(
-                        "Configuration update failed",
-                        extra={
-                            "config_group": normalized_group,
-                            "config_key": normalized_key,
-                        },
+                        current_value=self._safe_result_value(
+                            definition,
+                            value,
+                        ),
                     )
 
-                    raise ConfigPersistenceError(
-                        operation="set",
-                        reason=str(exc),
-                    ) from exc
+                row.value = deepcopy(value)
+                row.updated_by = actor
+
+                self._synchronize_row_metadata(
+                    row=row,
+                    definition=definition,
+                )
+
+                state.revision = actual_revision + 1
+                new_revision = int(state.revision)
+
+                await session.commit()
+
+            except (
+                ConfigEntryNotFoundError,
+                ConfigRevisionConflictError,
+            ):
+                await session.rollback()
+                raise
+
+            except IntegrityError as exc:
+                await session.rollback()
+
+                logger.exception(
+                    "Configuration update caused an integrity error",
+                    extra={
+                        "config_group": normalized_group,
+                        "config_key": normalized_key,
+                    },
+                )
+
+                raise ConfigPersistenceError(
+                    operation="set",
+                    reason=("Die Änderung verletzt eine Datenbankbedingung."),
+                ) from exc
+
+            except SQLAlchemyError as exc:
+                await session.rollback()
+
+                logger.exception(
+                    "Configuration update failed",
+                    extra={
+                        "config_group": normalized_group,
+                        "config_key": normalized_key,
+                    },
+                )
+
+                raise ConfigPersistenceError(
+                    operation="set",
+                    reason=str(exc),
+                ) from exc
 
         await self.reload()
 
@@ -1027,118 +992,115 @@ class ConfigService:
             changed_by,
         )
 
-        async with self._write_lock:
-            async with self.session_factory() as session:
-                try:
-                    state = await self._get_or_create_state(
-                        session,
+        async with self._write_lock, self.session_factory() as session:
+            try:
+                state = await self._get_or_create_state(
+                    session,
+                    for_update=True,
+                )
+
+                actual_revision = max(
+                    int(state.revision),
+                    0,
+                )
+
+                self._assert_revision(
+                    expected_revision=expected_revision,
+                    actual_revision=actual_revision,
+                )
+
+                pending_results: list[
+                    tuple[
+                        ConfigDefinition,
+                        Any,
+                        Any,
+                        bool,
+                    ]
+                ] = []
+
+                any_changed = False
+
+                for definition, value in prepared_updates:
+                    row = await self._get_config_row(
+                        session=session,
+                        group=definition.group,
+                        key=definition.key,
                         for_update=True,
                     )
 
-                    actual_revision = max(
-                        int(state.revision),
-                        0,
-                    )
-
-                    self._assert_revision(
-                        expected_revision=expected_revision,
-                        actual_revision=actual_revision,
-                    )
-
-                    pending_results: list[
-                        tuple[
-                            ConfigDefinition,
-                            Any,
-                            Any,
-                            bool,
-                        ]
-                    ] = []
-
-                    any_changed = False
-
-                    for definition, value in prepared_updates:
-                        row = await self._get_config_row(
-                            session=session,
+                    if row is None:
+                        raise ConfigEntryNotFoundError(
                             group=definition.group,
                             key=definition.key,
-                            for_update=True,
                         )
 
-                        if row is None:
-                            raise ConfigEntryNotFoundError(
-                                group=definition.group,
-                                key=definition.key,
-                            )
-
-                        previous_value = deepcopy(
-                            row.value,
-                        )
-
-                        changed = previous_value != value
-
-                        if changed:
-                            any_changed = True
-
-                            row.value = deepcopy(value)
-                            row.updated_by = actor
-
-                            self._synchronize_row_metadata(
-                                row=row,
-                                definition=definition,
-                            )
-
-                        pending_results.append(
-                            (
-                                definition,
-                                previous_value,
-                                value,
-                                changed,
-                            ),
-                        )
-
-                    if any_changed:
-                        state.revision = actual_revision + 1
-                        new_revision = int(state.revision)
-
-                        await session.commit()
-                    else:
-                        new_revision = actual_revision
-                        await session.rollback()
-
-                except (
-                    ConfigEntryNotFoundError,
-                    ConfigRevisionConflictError,
-                ):
-                    await session.rollback()
-                    raise
-
-                except IntegrityError as exc:
-                    await session.rollback()
-
-                    logger.exception(
-                        "Bulk configuration update caused an "
-                        "integrity error",
+                    previous_value = deepcopy(
+                        row.value,
                     )
 
-                    raise ConfigPersistenceError(
-                        operation="set_many",
-                        reason=(
-                            "Mindestens eine Änderung verletzt "
-                            "eine Datenbankbedingung."
+                    changed = previous_value != value
+
+                    if changed:
+                        any_changed = True
+
+                        row.value = deepcopy(value)
+                        row.updated_by = actor
+
+                        self._synchronize_row_metadata(
+                            row=row,
+                            definition=definition,
+                        )
+
+                    pending_results.append(
+                        (
+                            definition,
+                            previous_value,
+                            value,
+                            changed,
                         ),
-                    ) from exc
-
-                except SQLAlchemyError as exc:
-                    await session.rollback()
-
-                    logger.exception(
-                        "Bulk configuration update failed",
                     )
 
-                    raise ConfigPersistenceError(
-                        operation="set_many",
-                        reason=str(exc),
-                    ) from exc
+                if any_changed:
+                    state.revision = actual_revision + 1
+                    new_revision = int(state.revision)
+
+                    await session.commit()
+                else:
+                    new_revision = actual_revision
+                    await session.rollback()
+
+            except (
+                ConfigEntryNotFoundError,
+                ConfigRevisionConflictError,
+            ):
+                await session.rollback()
+                raise
+
+            except IntegrityError as exc:
+                await session.rollback()
+
+                logger.exception(
+                    "Bulk configuration update caused an integrity error",
+                )
+
+                raise ConfigPersistenceError(
+                    operation="set_many",
+                    reason=(
+                        "Mindestens eine Änderung verletzt eine Datenbankbedingung."
+                    ),
+                ) from exc
+
+            except SQLAlchemyError as exc:
+                await session.rollback()
+
+                logger.exception(
+                    "Bulk configuration update failed",
+                )
+
+                raise ConfigPersistenceError(
+                    operation="set_many",
+                    reason=str(exc),
+                ) from exc
 
         if any_changed:
             await self.reload()
@@ -1298,9 +1260,7 @@ class ConfigService:
                 .with_for_update()
             )
 
-            state = (
-                await session.execute(query)
-            ).scalar_one_or_none()
+            state = (await session.execute(query)).scalar_one_or_none()
         else:
             state = await session.get(
                 ConfigState,
@@ -1336,9 +1296,7 @@ class ConfigService:
         if for_update:
             query = query.with_for_update()
 
-        return (
-            await session.execute(query)
-        ).scalar_one_or_none()
+        return (await session.execute(query)).scalar_one_or_none()
 
     @staticmethod
     def _create_system_config(
@@ -1568,11 +1526,7 @@ class ConfigService:
             value,
             str,
         ):
-            return (
-                SECRET_MASK
-                if value
-                else ""
-            )
+            return SECRET_MASK if value else ""
 
         if isinstance(
             value,
@@ -1628,4 +1582,3 @@ class ConfigService:
         return deepcopy(
             value,
         )
-

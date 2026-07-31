@@ -13,10 +13,11 @@ from uuid import uuid4
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import (
     SchemaError,
+)
+from jsonschema.exceptions import (
     ValidationError as JsonSchemaValidationError,
 )
 from pydantic import JsonValue
-
 
 TOOL_CONTRACT_VERSION: Final[str] = "1.0"
 
@@ -66,8 +67,7 @@ class JsonSchemaValidatorProtocol(Protocol):
     def validate(
         self,
         instance: object,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 class ToolContractError(Exception):
@@ -98,15 +98,10 @@ class ToolInputValidationError(ToolContractError):
         self.message = message
         self.path = path
 
-        location = (
-            ".".join(str(part) for part in path)
-            if path
-            else "<root>"
-        )
+        location = ".".join(str(part) for part in path) if path else "<root>"
 
         super().__init__(
-            f"Ungültige Eingabe für Tool '{tool_id}' "
-            f"an '{location}': {message}",
+            f"Ungültige Eingabe für Tool '{tool_id}' an '{location}': {message}",
         )
 
 
@@ -126,15 +121,10 @@ class ToolOutputValidationError(ToolContractError):
         self.message = message
         self.path = path
 
-        location = (
-            ".".join(str(part) for part in path)
-            if path
-            else "<root>"
-        )
+        location = ".".join(str(part) for part in path) if path else "<root>"
 
         super().__init__(
-            f"Ungültige Ausgabe von Tool '{tool_id}' "
-            f"an '{location}': {message}",
+            f"Ungültige Ausgabe von Tool '{tool_id}' an '{location}': {message}",
         )
 
 
@@ -156,9 +146,7 @@ class ToolExecutionError(ToolContractError):
         self.code = code
         self.message = message
         self.details: JsonObject = (
-            _copy_json_mapping(details)
-            if details is not None
-            else {}
+            _copy_json_mapping(details) if details is not None else {}
         )
         self.retryable = retryable
 
@@ -222,10 +210,7 @@ class ToolConfirmationRequiredError(ToolContractError):
 
         super().__init__(
             confirmation_message
-            or (
-                f"Die Ausführung von Tool '{tool_id}' "
-                "muss bestätigt werden."
-            ),
+            or (f"Die Ausführung von Tool '{tool_id}' muss bestätigt werden."),
         )
 
 
@@ -353,15 +338,11 @@ class ToolExecutionContext:
         metadata: JsonMapping | None = None,
     ) -> ToolExecutionContext:
         normalized_permissions: frozenset[str] = (
-            granted_permissions
-            if granted_permissions is not None
-            else frozenset()
+            granted_permissions if granted_permissions is not None else frozenset()
         )
 
         normalized_metadata: JsonObject = (
-            _copy_json_mapping(metadata)
-            if metadata is not None
-            else {}
+            _copy_json_mapping(metadata) if metadata is not None else {}
         )
 
         return cls(
@@ -414,9 +395,7 @@ class ToolResult:
         warnings: tuple[str, ...] = (),
     ) -> ToolResult:
         normalized_data: JsonObject = (
-            _copy_json_mapping(data)
-            if data is not None
-            else {}
+            _copy_json_mapping(data) if data is not None else {}
         )
 
         return cls(
@@ -438,15 +417,11 @@ class ToolResult:
         warnings: tuple[str, ...] = (),
     ) -> ToolResult:
         normalized_data: JsonObject = (
-            _copy_json_mapping(data)
-            if data is not None
-            else {}
+            _copy_json_mapping(data) if data is not None else {}
         )
 
         normalized_details: JsonObject = (
-            _copy_json_mapping(details)
-            if details is not None
-            else {}
+            _copy_json_mapping(details) if details is not None else {}
         )
 
         return cls(
@@ -468,9 +443,7 @@ class ToolResult:
         retryable: bool = False,
     ) -> ToolResult:
         normalized_details: JsonObject = (
-            _copy_json_mapping(details)
-            if details is not None
-            else {}
+            _copy_json_mapping(details) if details is not None else {}
         )
 
         return cls(
@@ -535,10 +508,7 @@ class ToolDefinition:
             "requires_confirmation": self.requires_confirmation,
             "confirmation_message": self.confirmation_message,
             "risk_level": self.risk_level.value,
-            "side_effects": [
-                side_effect.value
-                for side_effect in self.side_effects
-            ],
+            "side_effects": [side_effect.value for side_effect in self.side_effects],
             "idempotent": self.idempotent,
             "enabled_by_default": self.enabled_by_default,
             "timeout_seconds": self.timeout_seconds,
@@ -589,9 +559,7 @@ class BaseTool(ABC):
 
     risk_level: ToolRiskLevel = ToolRiskLevel.READ_ONLY
 
-    side_effects: tuple[ToolSideEffect, ...] = (
-        ToolSideEffect.NONE,
-    )
+    side_effects: tuple[ToolSideEffect, ...] = (ToolSideEffect.NONE,)
 
     idempotent: bool = True
     enabled_by_default: bool = False
@@ -615,9 +583,7 @@ class BaseTool(ABC):
         )
 
         if self.result_schema is None:
-            self._output_validator: (
-                JsonSchemaValidatorProtocol | None
-            ) = None
+            self._output_validator: JsonSchemaValidatorProtocol | None = None
         else:
             raw_output_validator: object = Draft202012Validator(
                 dict(self.result_schema),
@@ -817,10 +783,7 @@ class BaseTool(ABC):
         if not availability.is_available:
             raise ToolAvailabilityError(
                 tool_id=self.tool_id,
-                reason=(
-                    availability.reason
-                    or availability.status.value
-                ),
+                reason=(availability.reason or availability.status.value),
             )
 
         self.assert_permissions(
@@ -868,7 +831,7 @@ class BaseTool(ABC):
         Optionaler Lebenszyklus-Hook zum Freigeben von Ressourcen.
         """
 
-        return None
+        return
 
     def _validate_definition(self) -> None:
         required_strings: dict[str, object] = {
@@ -897,8 +860,7 @@ class BaseTool(ABC):
         for field_name, value in required_strings.items():
             if not isinstance(value, str) or not value.strip():
                 raise ToolDefinitionError(
-                    f"Tool-Feld '{field_name}' muss ein "
-                    "nicht leerer String sein.",
+                    f"Tool-Feld '{field_name}' muss ein nicht leerer String sein.",
                 )
 
         if not self._is_valid_identifier(
@@ -916,8 +878,7 @@ class BaseTool(ABC):
 
         except SchemaError as exc:
             raise ToolDefinitionError(
-                "Ungültiges Parameterschema für "
-                f"'{self.tool_id}': {exc.message}",
+                f"Ungültiges Parameterschema für '{self.tool_id}': {exc.message}",
             ) from exc
 
         if self.result_schema is not None:
@@ -928,23 +889,15 @@ class BaseTool(ABC):
 
             except SchemaError as exc:
                 raise ToolDefinitionError(
-                    "Ungültiges Ergebnisschema für "
-                    f"'{self.tool_id}': {exc.message}",
+                    f"Ungültiges Ergebnisschema für '{self.tool_id}': {exc.message}",
                 ) from exc
 
-        if (
-            self.timeout_seconds is not None
-            and self.timeout_seconds <= 0
-        ):
+        if self.timeout_seconds is not None and self.timeout_seconds <= 0:
             raise ToolDefinitionError(
-                f"timeout_seconds von '{self.tool_id}' "
-                "muss größer als null sein.",
+                f"timeout_seconds von '{self.tool_id}' muss größer als null sein.",
             )
 
-        if (
-            self.requires_confirmation
-            and not self.confirmation_message
-        ):
+        if self.requires_confirmation and not self.confirmation_message:
             raise ToolDefinitionError(
                 f"Bestätigungspflichtiges Tool '{self.tool_id}' "
                 "benötigt eine confirmation_message.",
@@ -965,17 +918,14 @@ class BaseTool(ABC):
             )
 
         normalized_permissions = tuple(
-            permission.strip()
-            for permission in self.permissions
-            if permission.strip()
+            permission.strip() for permission in self.permissions if permission.strip()
         )
 
         if len(normalized_permissions) != len(
             set(normalized_permissions),
         ):
             raise ToolDefinitionError(
-                f"Tool '{self.tool_id}' enthält doppelte "
-                "Berechtigungen.",
+                f"Tool '{self.tool_id}' enthält doppelte Berechtigungen.",
             )
 
     @staticmethod
@@ -983,14 +933,11 @@ class BaseTool(ABC):
         value: str,
     ) -> bool:
         allowed_characters = set(
-            "abcdefghijklmnopqrstuvwxyz"
-            "0123456789"
-            "._-",
+            "abcdefghijklmnopqrstuvwxyz0123456789._-",
         )
 
         return bool(value) and all(
-            character in allowed_characters
-            for character in value
+            character in allowed_characters for character in value
         )
 
     @staticmethod
@@ -1011,10 +958,7 @@ class BaseTool(ABC):
             0,
             -1,
         ):
-            wildcard_permission = (
-                ":".join(required_parts[:index])
-                + ":*"
-            )
+            wildcard_permission = ":".join(required_parts[:index]) + ":*"
 
             if wildcard_permission in granted_permissions:
                 return True

@@ -1,16 +1,8 @@
 // F:\Kernschmied\frontend\src\hooks\useAppSchema.ts
 
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  ApiError,
-  apiGet,
-} from "../api/client";
+import { ApiError, apiGet } from "../api/client";
 
 import {
   isHierarchyTree,
@@ -18,19 +10,11 @@ import {
   type HierarchyTree,
 } from "../contracts/hierarchy";
 
-import {
-  isUISchema,
-  parseUISchema,
-  type UISchema,
-} from "../contracts/schema";
+import { isUISchema, parseUISchema, type UISchema } from "../contracts/schema";
 
 const BOOTSTRAP_ENDPOINT = "/bootstrap";
 
-export type AppSchemaLoadStatus =
-  | "idle"
-  | "loading"
-  | "success"
-  | "error";
+export type AppSchemaLoadStatus = "idle" | "loading" | "success" | "error";
 
 export interface AppSchemaError {
   code: string;
@@ -118,320 +102,240 @@ interface AppBootstrap {
 }
 
 export function useAppSchema(): UseAppSchemaResult {
-  const [schema, setSchema] =
-    useState<UISchema | null>(null);
+  const [schema, setSchema] = useState<UISchema | null>(null);
 
-  const [hierarchyTree, setHierarchyTree] =
-    useState<HierarchyTree | null>(null);
+  const [hierarchyTree, setHierarchyTree] = useState<HierarchyTree | null>(
+    null,
+  );
 
-  const [error, setError] =
-    useState<AppSchemaError | null>(null);
+  const [error, setError] = useState<AppSchemaError | null>(null);
 
-  const [status, setStatus] =
-    useState<AppSchemaLoadStatus>("idle");
+  const [status, setStatus] = useState<AppSchemaLoadStatus>("idle");
 
-  const [isRefreshing, setIsRefreshing] =
-    useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const activeRequestControllerRef =
-    useRef<AbortController | null>(null);
+  const activeRequestControllerRef = useRef<AbortController | null>(null);
 
-  const hierarchyEndpointRef =
-    useRef<string | null>(null);
+  const hierarchyEndpointRef = useRef<string | null>(null);
 
   /**
    * Verhindert, dass eine ältere Anfrage den Zustand einer neueren
    * Anfrage überschreibt, selbst wenn ein Transport einen Abbruch
    * nicht vollständig respektiert.
    */
-  const requestGenerationRef =
-    useRef(0);
+  const requestGenerationRef = useRef(0);
 
   /**
    * Wird als Ref geführt, damit `load` nicht von den geladenen Daten
    * abhängt und dadurch im Effect keine ungewollte Ladeschleife
    * entsteht.
    */
-  const hasUsableDataRef =
-    useRef(false);
+  const hasUsableDataRef = useRef(false);
 
-  const load = useCallback(
-    async (): Promise<void> => {
-      activeRequestControllerRef.current?.abort();
+  const load = useCallback(async (): Promise<void> => {
+    activeRequestControllerRef.current?.abort();
 
-      const requestController =
-        new AbortController();
+    const requestController = new AbortController();
 
-      activeRequestControllerRef.current =
-        requestController;
+    activeRequestControllerRef.current = requestController;
 
-      const requestGeneration =
-        requestGenerationRef.current + 1;
+    const requestGeneration = requestGenerationRef.current + 1;
 
-      requestGenerationRef.current =
-        requestGeneration;
+    requestGenerationRef.current = requestGeneration;
 
-      const isInitialLoad =
-        !hasUsableDataRef.current;
+    const isInitialLoad = !hasUsableDataRef.current;
 
-      if (isInitialLoad) {
-        setStatus("loading");
-      } else {
-        setIsRefreshing(true);
-      }
+    if (isInitialLoad) {
+      setStatus("loading");
+    } else {
+      setIsRefreshing(true);
+    }
+
+    setError(null);
+
+    try {
+      const rawBootstrapResponse = await apiGet<unknown>(BOOTSTRAP_ENDPOINT, {
+        signal: requestController.signal,
+      });
+
+      assertRequestIsCurrent(
+        requestController,
+        requestGeneration,
+        requestGenerationRef,
+      );
+
+      const bootstrap = normalizeBootstrapResponse(rawBootstrapResponse);
+
+      const uiSchemaEndpoint = normalizeBootstrapEndpoint(
+        bootstrap.endpoints.ui_schema,
+        "endpoints.ui_schema",
+      );
+
+      const hierarchyEndpoint = normalizeBootstrapEndpoint(
+        bootstrap.endpoints.hierarchy,
+        "endpoints.hierarchy",
+      );
+
+      // Hierarchie-Endpunkt für spätere Teil-Reloads speichern
+      hierarchyEndpointRef.current = hierarchyEndpoint;
+
+      const [rawSchemaResponse, rawHierarchyResponse] = await Promise.all([
+        apiGet<unknown>(uiSchemaEndpoint, {
+          signal: requestController.signal,
+        }),
+
+        apiGet<unknown>(hierarchyEndpoint, {
+          signal: requestController.signal,
+        }),
+      ]);
+
+      assertRequestIsCurrent(
+        requestController,
+        requestGeneration,
+        requestGenerationRef,
+      );
+
+      const normalizedSchema = normalizeUISchemaResponse(rawSchemaResponse);
+
+      const normalizedHierarchy =
+        normalizeHierarchyResponse(rawHierarchyResponse);
+
+      assertRequestIsCurrent(
+        requestController,
+        requestGeneration,
+        requestGenerationRef,
+      );
+
+      setSchema(normalizedSchema);
+      setHierarchyTree(normalizedHierarchy);
+
+      hasUsableDataRef.current = true;
 
       setError(null);
-
-      try {
-        const rawBootstrapResponse =
-          await apiGet<unknown>(
-            BOOTSTRAP_ENDPOINT,
-            {
-              signal:
-                requestController.signal,
-            },
-          );
-
-        assertRequestIsCurrent(
-          requestController,
-          requestGeneration,
-          requestGenerationRef,
-        );
-
-        const bootstrap =
-          normalizeBootstrapResponse(
-            rawBootstrapResponse,
-          );
-
-        const uiSchemaEndpoint =
-          normalizeBootstrapEndpoint(
-            bootstrap.endpoints.ui_schema,
-            "endpoints.ui_schema",
-          );
-
-        const hierarchyEndpoint =
-          normalizeBootstrapEndpoint(
-            bootstrap.endpoints.hierarchy,
-            "endpoints.hierarchy",
-          );
-
-        // Hierarchie-Endpunkt für spätere Teil-Reloads speichern
-        hierarchyEndpointRef.current =
-          hierarchyEndpoint;
-
-        const [
-          rawSchemaResponse,
-          rawHierarchyResponse,
-        ] = await Promise.all([
-          apiGet<unknown>(
-            uiSchemaEndpoint,
-            {
-              signal:
-                requestController.signal,
-            },
-          ),
-
-          apiGet<unknown>(
-            hierarchyEndpoint,
-            {
-              signal:
-                requestController.signal,
-            },
-          ),
-        ]);
-
-        assertRequestIsCurrent(
-          requestController,
-          requestGeneration,
-          requestGenerationRef,
-        );
-
-        const normalizedSchema =
-          normalizeUISchemaResponse(
-            rawSchemaResponse,
-          );
-
-        const normalizedHierarchy =
-          normalizeHierarchyResponse(
-            rawHierarchyResponse,
-          );
-
-        assertRequestIsCurrent(
-          requestController,
-          requestGeneration,
-          requestGenerationRef,
-        );
-
-        setSchema(normalizedSchema);
-        setHierarchyTree(
-          normalizedHierarchy,
-        );
-
-        hasUsableDataRef.current = true;
-
-        setError(null);
-        setStatus("success");
-      } catch (caughtError) {
-        if (
-          requestController.signal.aborted ||
-          isAbortError(caughtError) ||
-          requestGeneration !==
-            requestGenerationRef.current
-        ) {
-          return;
-        }
-
-        const normalizedError =
-          normalizeAppSchemaError(
-            caughtError,
-          );
-
-        logDevelopmentError(
-          "Bootstrap, UI-Schema oder Hierarchie konnten nicht geladen werden.",
-          normalizedError,
-        );
-
-        setError(normalizedError);
-
-        /**
-         * Ein fehlgeschlagener Reload darf bereits erfolgreich geladene
-         * Daten nicht unbrauchbar machen.
-         */
-        if (hasUsableDataRef.current) {
-          setStatus("success");
-        } else {
-          setStatus("error");
-        }
-      } finally {
-        if (
-          requestGeneration ===
-          requestGenerationRef.current
-        ) {
-          setIsRefreshing(false);
-        }
-
-        if (
-          activeRequestControllerRef.current ===
-          requestController
-        ) {
-          activeRequestControllerRef.current =
-            null;
-        }
+      setStatus("success");
+    } catch (caughtError) {
+      if (
+        requestController.signal.aborted ||
+        isAbortError(caughtError) ||
+        requestGeneration !== requestGenerationRef.current
+      ) {
+        return;
       }
-    },
-    [],
-  );
+
+      const normalizedError = normalizeAppSchemaError(caughtError);
+
+      logDevelopmentError(
+        "Bootstrap, UI-Schema oder Hierarchie konnten nicht geladen werden.",
+        normalizedError,
+      );
+
+      setError(normalizedError);
+
+      /**
+       * Ein fehlgeschlagener Reload darf bereits erfolgreich geladene
+       * Daten nicht unbrauchbar machen.
+       */
+      if (hasUsableDataRef.current) {
+        setStatus("success");
+      } else {
+        setStatus("error");
+      }
+    } finally {
+      if (requestGeneration === requestGenerationRef.current) {
+        setIsRefreshing(false);
+      }
+
+      if (activeRequestControllerRef.current === requestController) {
+        activeRequestControllerRef.current = null;
+      }
+    }
+  }, []);
 
   /**
    * Lädt nur die Hierarchie neu (ohne Bootstrap und UI-Schema).
    * Nützlich nach dem Erstellen von Chats oder anderen Baumänderungen.
    */
-  const loadHierarchy = useCallback(
-    async (): Promise<void> => {
-      // Falls noch kein Endpunkt bekannt ist, Full-Reload durchführen
-      if (!hierarchyEndpointRef.current) {
-        await load();
+  const loadHierarchy = useCallback(async (): Promise<void> => {
+    // Falls noch kein Endpunkt bekannt ist, Full-Reload durchführen
+    if (!hierarchyEndpointRef.current) {
+      await load();
+      return;
+    }
+
+    const hierarchyEndpoint = hierarchyEndpointRef.current;
+
+    // Eigene Abort-Controller für Hierarchie-Reload
+    const abortController = new AbortController();
+
+    // Wenn schon ein aktiver Hierarchie-Reload läuft, abbrechen
+    // (vereinfacht: wir verwenden den gleichen Controller wie für Full-Reload,
+    // aber das würde den Full-Reload abbrechen – besser eigenen Controller)
+    // Für Einfachheit: wir nutzen einen separaten Controller, speichern ihn aber nicht global.
+    // Stattdessen lassen wir ihn einfach laufen und verhindern State-Updates nach Abort.
+
+    const requestGeneration = requestGenerationRef.current + 1;
+
+    requestGenerationRef.current = requestGeneration;
+
+    // Wir setzen isRefreshing auf true, damit UI Rückmeldung bekommt
+    setIsRefreshing(true);
+
+    try {
+      const rawHierarchyResponse = await apiGet<unknown>(hierarchyEndpoint, {
+        signal: abortController.signal,
+      });
+
+      // Prüfen, ob die Anfrage noch aktuell ist
+      if (
+        abortController.signal.aborted ||
+        requestGeneration !== requestGenerationRef.current
+      ) {
         return;
       }
 
-      const hierarchyEndpoint =
-        hierarchyEndpointRef.current;
+      const normalizedHierarchy =
+        normalizeHierarchyResponse(rawHierarchyResponse);
 
-      // Eigene Abort-Controller für Hierarchie-Reload
-      const abortController =
-        new AbortController();
-
-      // Wenn schon ein aktiver Hierarchie-Reload läuft, abbrechen
-      // (vereinfacht: wir verwenden den gleichen Controller wie für Full-Reload,
-      // aber das würde den Full-Reload abbrechen – besser eigenen Controller)
-      // Für Einfachheit: wir nutzen einen separaten Controller, speichern ihn aber nicht global.
-      // Stattdessen lassen wir ihn einfach laufen und verhindern State-Updates nach Abort.
-
-      const requestGeneration =
-        requestGenerationRef.current + 1;
-
-      requestGenerationRef.current =
-        requestGeneration;
-
-      // Wir setzen isRefreshing auf true, damit UI Rückmeldung bekommt
-      setIsRefreshing(true);
-
-      try {
-        const rawHierarchyResponse =
-          await apiGet<unknown>(
-            hierarchyEndpoint,
-            {
-              signal:
-                abortController.signal,
-            },
-          );
-
-        // Prüfen, ob die Anfrage noch aktuell ist
-        if (
-          abortController.signal.aborted ||
-          requestGeneration !==
-            requestGenerationRef.current
-        ) {
-          return;
-        }
-
-        const normalizedHierarchy =
-          normalizeHierarchyResponse(
-            rawHierarchyResponse,
-          );
-
-        // Prüfen, ob die Anfrage noch aktuell ist (nach der Verarbeitung)
-        if (
-          abortController.signal.aborted ||
-          requestGeneration !==
-            requestGenerationRef.current
-        ) {
-          return;
-        }
-
-        setHierarchyTree(
-          normalizedHierarchy,
-        );
-
-        // Fehler zurücksetzen, da erfolgreich geladen
-        setError(null);
-        // Status bleibt "success", da wir bereits Daten haben
-        setStatus("success");
-      } catch (caughtError) {
-        // Abort ignorieren
-        if (
-          abortController.signal.aborted ||
-          isAbortError(caughtError) ||
-          requestGeneration !==
-            requestGenerationRef.current
-        ) {
-          return;
-        }
-
-        const normalizedError =
-          normalizeAppSchemaError(
-            caughtError,
-          );
-
-        logDevelopmentError(
-          "Hierarchie konnte nicht neu geladen werden.",
-          normalizedError,
-        );
-
-        // Fehler setzen, aber Status bleibt "success", da wir bereits Daten haben
-        setError(normalizedError);
-      } finally {
-        // isRefreshing zurücksetzen, aber nur wenn keine neuere Anfrage läuft
-        if (
-          requestGeneration ===
-          requestGenerationRef.current
-        ) {
-          setIsRefreshing(false);
-        }
+      // Prüfen, ob die Anfrage noch aktuell ist (nach der Verarbeitung)
+      if (
+        abortController.signal.aborted ||
+        requestGeneration !== requestGenerationRef.current
+      ) {
+        return;
       }
-    },
-    [load],
-  );
+
+      setHierarchyTree(normalizedHierarchy);
+
+      // Fehler zurücksetzen, da erfolgreich geladen
+      setError(null);
+      // Status bleibt "success", da wir bereits Daten haben
+      setStatus("success");
+    } catch (caughtError) {
+      // Abort ignorieren
+      if (
+        abortController.signal.aborted ||
+        isAbortError(caughtError) ||
+        requestGeneration !== requestGenerationRef.current
+      ) {
+        return;
+      }
+
+      const normalizedError = normalizeAppSchemaError(caughtError);
+
+      logDevelopmentError(
+        "Hierarchie konnte nicht neu geladen werden.",
+        normalizedError,
+      );
+
+      // Fehler setzen, aber Status bleibt "success", da wir bereits Daten haben
+      setError(normalizedError);
+    } finally {
+      // isRefreshing zurücksetzen, aber nur wenn keine neuere Anfrage läuft
+      if (requestGeneration === requestGenerationRef.current) {
+        setIsRefreshing(false);
+      }
+    }
+  }, [load]);
 
   useEffect(() => {
     void load();
@@ -441,27 +345,20 @@ export function useAppSchema(): UseAppSchemaResult {
 
       activeRequestControllerRef.current?.abort();
 
-      activeRequestControllerRef.current =
-        null;
+      activeRequestControllerRef.current = null;
     };
   }, [load]);
 
-  const isReady =
-    schema !== null &&
-    hierarchyTree !== null;
+  const isReady = schema !== null && hierarchyTree !== null;
 
   return {
     schema,
-    hierarchy:
-      hierarchyTree?.root ?? null,
+    hierarchy: hierarchyTree?.root ?? null,
     hierarchyTree,
     error,
-    errorMessage:
-      error?.message ?? null,
+    errorMessage: error?.message ?? null,
     status,
-    isLoading:
-      status === "loading" &&
-      !isReady,
+    isLoading: status === "loading" && !isReady,
     isRefreshing,
     isReady,
     reload: load,
@@ -473,18 +370,12 @@ export function useAppSchema(): UseAppSchemaResult {
 // Normalisierungs- und Validierungs-Hilfen (unverändert)
 // ============================================================
 
-function normalizeBootstrapResponse(
-  value: unknown,
-): AppBootstrap {
-  const candidates =
-    getResponseCandidates(
-      value,
-      [
-        "data",
-        "bootstrap",
-        "result",
-      ],
-    );
+function normalizeBootstrapResponse(value: unknown): AppBootstrap {
+  const candidates = getResponseCandidates(value, [
+    "data",
+    "bootstrap",
+    "result",
+  ]);
 
   for (const candidate of candidates) {
     if (isAppBootstrap(candidate)) {
@@ -495,25 +386,17 @@ function normalizeBootstrapResponse(
   throw createContractError(
     "invalid_bootstrap_schema",
     "Das Backend hat einen ungültigen Bootstrap-Vertrag geliefert.",
-    createContractErrorDetails(
-      value,
-      candidates,
-    ),
+    createContractErrorDetails(value, candidates),
   );
 }
 
-function normalizeUISchemaResponse(
-  value: unknown,
-): UISchema {
-  const candidates = getResponseCandidates(
-    value,
-    [
-      "data",
-      "schema",
-      "ui_schema",
-      "result",
-    ],
-  );
+function normalizeUISchemaResponse(value: unknown): UISchema {
+  const candidates = getResponseCandidates(value, [
+    "data",
+    "schema",
+    "ui_schema",
+    "result",
+  ]);
 
   const validationAttempts: Array<{
     candidateIndex: number;
@@ -521,29 +404,19 @@ function normalizeUISchemaResponse(
     issues: unknown;
   }> = [];
 
-  for (
-    let index = 0;
-    index < candidates.length;
-    index += 1
-  ) {
+  for (let index = 0; index < candidates.length; index += 1) {
     const candidate = candidates[index];
 
-    const validation =
-      parseUISchema(candidate);
+    const validation = parseUISchema(candidate);
 
-    if (
-      validation.valid &&
-      validation.schema
-    ) {
+    if (validation.valid && validation.schema) {
       return validation.schema;
     }
 
     validationAttempts.push({
       candidateIndex: index,
-      candidateType:
-        describeValueType(candidate),
-      issues:
-        validation.issues,
+      candidateType: describeValueType(candidate),
+      issues: validation.issues,
     });
 
     /*
@@ -559,8 +432,7 @@ function normalizeUISchemaResponse(
           "Das UI-Schema ist strukturell gültig, erfüllt aber noch nicht alle semantischen Prüfungen.",
           {
             candidate,
-            issues:
-              validation.issues,
+            issues: validation.issues,
           },
         );
       }
@@ -570,42 +442,31 @@ function normalizeUISchemaResponse(
   }
 
   if (import.meta.env.DEV) {
-    console.error(
-      "UI-Schema vollständig abgelehnt.",
-      {
-        rawResponse: value,
-        candidates,
-        validationAttempts,
-      },
-    );
+    console.error("UI-Schema vollständig abgelehnt.", {
+      rawResponse: value,
+      candidates,
+      validationAttempts,
+    });
   }
 
   throw createContractError(
     "invalid_ui_schema",
     "Das Backend hat ein ungültiges oder nicht unterstütztes UI-Schema geliefert.",
     {
-      received_type:
-        describeValueType(value),
-      validation_attempts:
-        validationAttempts,
+      received_type: describeValueType(value),
+      validation_attempts: validationAttempts,
     },
   );
 }
 
-function normalizeHierarchyResponse(
-  value: unknown,
-): HierarchyTree {
-  const candidates =
-    getResponseCandidates(
-      value,
-      [
-        "data",
-        "hierarchy",
-        "hierarchy_tree",
-        "tree",
-        "result",
-      ],
-    );
+function normalizeHierarchyResponse(value: unknown): HierarchyTree {
+  const candidates = getResponseCandidates(value, [
+    "data",
+    "hierarchy",
+    "hierarchy_tree",
+    "tree",
+    "result",
+  ]);
 
   for (const candidate of candidates) {
     if (isHierarchyTree(candidate)) {
@@ -616,10 +477,7 @@ function normalizeHierarchyResponse(
   throw createContractError(
     "invalid_hierarchy_schema",
     "Das Backend hat eine ungültige Hierarchie geliefert.",
-    createContractErrorDetails(
-      value,
-      candidates,
-    ),
+    createContractErrorDetails(value, candidates),
   );
 }
 
@@ -629,16 +487,10 @@ function normalizeHierarchyResponse(
  * Das Backend darf über den Bootstrap-Vertrag keine beliebigen externen
  * Ziele oder protokollrelativen URLs in den API-Client einschleusen.
  */
-function normalizeBootstrapEndpoint(
-  value: string,
-  fieldName: string,
-): string {
-  const normalizedValue =
-    value.trim();
+function normalizeBootstrapEndpoint(value: string, fieldName: string): string {
+  const normalizedValue = value.trim();
 
-  if (
-    normalizedValue.length === 0
-  ) {
+  if (normalizedValue.length === 0) {
     throw createContractError(
       "invalid_bootstrap_endpoint",
       `Der Bootstrap-Einstiegspunkt "${fieldName}" ist leer.`,
@@ -668,12 +520,8 @@ function normalizeBootstrapEndpoint(
   return normalizedValue;
 }
 
-function hasUrlScheme(
-  value: string,
-): boolean {
-  return /^[a-z][a-z\d+.-]*:/i.test(
-    value,
-  );
+function hasUrlScheme(value: string): boolean {
+  return /^[a-z][a-z\d+.-]*:/i.test(value);
 }
 
 /**
@@ -686,33 +534,22 @@ function getResponseCandidates(
   value: unknown,
   wrapperKeys: readonly string[],
 ): unknown[] {
-  const candidates: unknown[] = [
-    value,
-  ];
+  const candidates: unknown[] = [value];
 
   if (!isRecord(value)) {
     return candidates;
   }
 
   for (const key of wrapperKeys) {
-    if (
-      Object.prototype.hasOwnProperty.call(
-        value,
-        key,
-      )
-    ) {
-      candidates.push(
-        value[key],
-      );
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      candidates.push(value[key]);
     }
   }
 
   return candidates;
 }
 
-function isAppBootstrap(
-  value: unknown,
-): value is AppBootstrap {
+function isAppBootstrap(value: unknown): value is AppBootstrap {
   if (!isRecord(value)) {
     return false;
   }
@@ -722,21 +559,10 @@ function isAppBootstrap(
   }
 
   return (
-    isNonEmptyString(
-      value.schema_version,
-    ) &&
-    isNonEmptyString(
-      value.endpoints.ui_schema,
-    ) &&
-    isNonEmptyString(
-      value.endpoints.hierarchy,
-    ) &&
-    (
-      value.request_id === undefined ||
-      isNonEmptyString(
-        value.request_id,
-      )
-    )
+    isNonEmptyString(value.schema_version) &&
+    isNonEmptyString(value.endpoints.ui_schema) &&
+    isNonEmptyString(value.endpoints.hierarchy) &&
+    (value.request_id === undefined || isNonEmptyString(value.request_id))
   );
 }
 
@@ -749,28 +575,18 @@ function assertRequestIsCurrent(
 ): void {
   if (
     controller.signal.aborted ||
-    requestGeneration !==
-      requestGenerationRef.current
+    requestGeneration !== requestGenerationRef.current
   ) {
     throw createAbortError();
   }
 }
 
 function createAbortError(): Error {
-  if (
-    typeof DOMException !==
-    "undefined"
-  ) {
-    return new DOMException(
-      "Die Anfrage wurde abgebrochen.",
-      "AbortError",
-    );
+  if (typeof DOMException !== "undefined") {
+    return new DOMException("Die Anfrage wurde abgebrochen.", "AbortError");
   }
 
-  const error =
-    new Error(
-      "Die Anfrage wurde abgebrochen.",
-    );
+  const error = new Error("Die Anfrage wurde abgebrochen.");
 
   error.name = "AbortError";
 
@@ -782,20 +598,15 @@ function createContractErrorDetails(
   candidates: readonly unknown[],
 ): Record<string, unknown> {
   return {
-    received_type:
-      describeValueType(rawValue),
-    candidate_count:
-      candidates.length,
+    received_type: describeValueType(rawValue),
+    candidate_count: candidates.length,
 
     /**
      * Die vollständige API-Antwort wird absichtlich nicht in den
      * Fehlerdetails abgelegt. Sie könnte vertrauliche oder sehr große
      * Inhalte enthalten.
      */
-    candidate_types:
-      candidates.map(
-        describeValueType,
-      ),
+    candidate_types: candidates.map(describeValueType),
   };
 }
 
@@ -811,9 +622,7 @@ function createContractError(
   };
 }
 
-function normalizeAppSchemaError(
-  error: unknown,
-): AppSchemaError {
+function normalizeAppSchemaError(error: unknown): AppSchemaError {
   if (isAppSchemaError(error)) {
     return error;
   }
@@ -828,16 +637,11 @@ function normalizeAppSchemaError(
     };
   }
 
-  if (
-    typeof DOMException !==
-      "undefined" &&
-    error instanceof DOMException
-  ) {
+  if (typeof DOMException !== "undefined" && error instanceof DOMException) {
     if (error.name === "AbortError") {
       return {
         code: "request_aborted",
-        message:
-          "Die Anfrage wurde abgebrochen.",
+        message: "Die Anfrage wurde abgebrochen.",
       };
     }
 
@@ -862,18 +666,14 @@ function normalizeAppSchemaError(
 
   return {
     code: "app_schema_load_failed",
-    message:
-      "Bootstrap, Schema und Hierarchie konnten nicht geladen werden.",
+    message: "Bootstrap, Schema und Hierarchie konnten nicht geladen werden.",
     details: {
-      received_type:
-        describeValueType(error),
+      received_type: describeValueType(error),
     },
   };
 }
 
-function isAppSchemaError(
-  value: unknown,
-): value is AppSchemaError {
+function isAppSchemaError(value: unknown): value is AppSchemaError {
   if (!isRecord(value)) {
     return false;
   }
@@ -881,78 +681,41 @@ function isAppSchemaError(
   return (
     isNonEmptyString(value.code) &&
     isNonEmptyString(value.message) &&
-    (
-      value.requestId === undefined ||
-      isNonEmptyString(
-        value.requestId,
-      )
-    ) &&
-    (
-      value.status === undefined ||
-      (
-        typeof value.status ===
-          "number" &&
-        Number.isFinite(
-          value.status,
-        ) &&
-        Number.isInteger(
-          value.status,
-        ) &&
+    (value.requestId === undefined || isNonEmptyString(value.requestId)) &&
+    (value.status === undefined ||
+      (typeof value.status === "number" &&
+        Number.isFinite(value.status) &&
+        Number.isInteger(value.status) &&
         value.status >= 100 &&
-        value.status <= 599
-      )
-    )
+        value.status <= 599))
   );
 }
 
-function isAbortError(
-  error: unknown,
-): boolean {
+function isAbortError(error: unknown): boolean {
   if (
-    typeof DOMException !==
-      "undefined" &&
+    typeof DOMException !== "undefined" &&
     error instanceof DOMException &&
     error.name === "AbortError"
   ) {
     return true;
   }
 
-  if (
-    error instanceof Error &&
-    error.name === "AbortError"
-  ) {
+  if (error instanceof Error && error.name === "AbortError") {
     return true;
   }
 
-  return (
-    error instanceof ApiError &&
-    error.code ===
-      "request_aborted"
-  );
+  return error instanceof ApiError && error.code === "request_aborted";
 }
 
-function isRecord(
-  value: unknown,
-): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
-  );
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isNonEmptyString(
-  value: unknown,
-): value is string {
-  return (
-    typeof value === "string" &&
-    value.trim().length > 0
-  );
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
 }
 
-function describeValueType(
-  value: unknown,
-): string {
+function describeValueType(value: unknown): string {
   if (value === null) {
     return "null";
   }
@@ -964,24 +727,16 @@ function describeValueType(
   return typeof value;
 }
 
-function logDevelopmentError(
-  message: string,
-  error: AppSchemaError,
-): void {
+function logDevelopmentError(message: string, error: AppSchemaError): void {
   if (!import.meta.env.DEV) {
     return;
   }
 
-  console.error(
-    message,
-    {
-      code: error.code,
-      message: error.message,
-      status: error.status,
-      requestId:
-        error.requestId,
-      details:
-        error.details,
-    },
-  );
+  console.error(message, {
+    code: error.code,
+    message: error.message,
+    status: error.status,
+    requestId: error.requestId,
+    details: error.details,
+  });
 }

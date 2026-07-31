@@ -28,7 +28,6 @@ from app.contracts.model_backend import (
     Usage,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -85,8 +84,7 @@ class OpenAIRequestError(
         self.status_code = status_code
 
         super().__init__(
-            f"OpenAI-Anfrage für Modell "
-            f"'{model_id}' fehlgeschlagen: {reason}",
+            f"OpenAI-Anfrage für Modell '{model_id}' fehlgeschlagen: {reason}",
         )
 
 
@@ -125,6 +123,17 @@ class OpenAIProvider(
     Modelle werden niemals automatisch freigegeben. Jede Modell-ID muss
     über ``default_model`` oder ``models`` explizit konfiguriert sein.
     """
+
+    def get_model_info(
+        self,
+    ) -> ModelInfo:
+        """
+        Liefert die Modellbeschreibung des konfigurierten Standardmodells.
+        """
+
+        return self._create_model_info(
+            self._default_model,
+        )
 
     def __init__(
         self,
@@ -170,9 +179,7 @@ class OpenAIProvider(
                 ),
             )
         else:
-            self._model_ids = (
-                self._default_model,
-            )
+            self._model_ids = (self._default_model,)
 
         if self._default_model not in self._model_ids:
             self._model_ids = (
@@ -272,8 +279,7 @@ class OpenAIProvider(
 
         except Exception:
             logger.exception(
-                "Der OpenAI-Client konnte nicht sauber "
-                "geschlossen werden.",
+                "Der OpenAI-Client konnte nicht sauber geschlossen werden.",
                 extra={
                     "backend": self.backend_name,
                 },
@@ -327,67 +333,56 @@ class OpenAIProvider(
             # Ein dynamisches ``dict[str, object]`` mit ``**kwargs``
             # verhindert, dass Pylance den Overload mit ``stream=True``
             # erkennt. Das Ergebnis würde dadurch als Unknown behandelt.
-            if (
-                top_p is not None
-                and stop_sequences is not None
-            ):
-                response_stream = (
-                    await client.chat.completions.create(
-                        model=model_id,
-                        messages=messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        top_p=top_p,
-                        stop=stop_sequences,
-                        stream=True,
-                        stream_options={
-                            "include_usage": True,
-                        },
-                    )
+            if top_p is not None and stop_sequences is not None:
+                response_stream = await client.chat.completions.create(
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    stop=stop_sequences,
+                    stream=True,
+                    stream_options={
+                        "include_usage": True,
+                    },
                 )
 
             elif top_p is not None:
-                response_stream = (
-                    await client.chat.completions.create(
-                        model=model_id,
-                        messages=messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        top_p=top_p,
-                        stream=True,
-                        stream_options={
-                            "include_usage": True,
-                        },
-                    )
+                response_stream = await client.chat.completions.create(
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    stream=True,
+                    stream_options={
+                        "include_usage": True,
+                    },
                 )
 
             elif stop_sequences is not None:
-                response_stream = (
-                    await client.chat.completions.create(
-                        model=model_id,
-                        messages=messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        stop=stop_sequences,
-                        stream=True,
-                        stream_options={
-                            "include_usage": True,
-                        },
-                    )
+                response_stream = await client.chat.completions.create(
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    stop=stop_sequences,
+                    stream=True,
+                    stream_options={
+                        "include_usage": True,
+                    },
                 )
 
             else:
-                response_stream = (
-                    await client.chat.completions.create(
-                        model=model_id,
-                        messages=messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        stream=True,
-                        stream_options={
-                            "include_usage": True,
-                        },
-                    )
+                response_stream = await client.chat.completions.create(
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    stream=True,
+                    stream_options={
+                        "include_usage": True,
+                    },
                 )
 
             usage: Usage | None = None
@@ -400,15 +395,9 @@ class OpenAIProvider(
 
                 if chunk.usage is not None:
                     usage = _create_usage(
-                        prompt_tokens=(
-                            chunk.usage.prompt_tokens
-                        ),
-                        completion_tokens=(
-                            chunk.usage.completion_tokens
-                        ),
-                        total_tokens=(
-                            chunk.usage.total_tokens
-                        ),
+                        prompt_tokens=(chunk.usage.prompt_tokens),
+                        completion_tokens=(chunk.usage.completion_tokens),
+                        total_tokens=(chunk.usage.total_tokens),
                     )
 
                 if not chunk.choices:
@@ -441,7 +430,7 @@ class OpenAIProvider(
                 end_data["finish_reason"] = finish_reason
 
             yield StreamEvent.create(
-                type=StreamEventType.END,
+                type=StreamEventType.COMPLETE,
                 usage=usage,
                 data=end_data,
             )
@@ -554,8 +543,7 @@ class OpenAIProvider(
             yield StreamEvent.create(
                 type=StreamEventType.ERROR,
                 content=(
-                    "Bei der OpenAI-Anfrage ist ein "
-                    "unerwarteter Fehler aufgetreten."
+                    "Bei der OpenAI-Anfrage ist ein unerwarteter Fehler aufgetreten."
                 ),
                 data={
                     "backend": self.backend_name,
@@ -629,16 +617,11 @@ class OpenAIProvider(
 
         normalized_model_id = requested_model_id.strip()
 
-        model_id = (
-            normalized_model_id
-            if normalized_model_id
-            else self._default_model
-        )
+        model_id = normalized_model_id if normalized_model_id else self._default_model
 
         if model_id not in self._model_ids:
             raise OpenAIModelNotFoundError(
-                f"Das OpenAI-Modell '{model_id}' "
-                "ist nicht freigegeben.",
+                f"Das OpenAI-Modell '{model_id}' ist nicht freigegeben.",
             )
 
         return model_id
@@ -714,9 +697,7 @@ def _convert_messages(
 
         if message.role is MessageRole.TOOL:
             tool_call_id = (
-                message.tool_call_id.strip()
-                if message.tool_call_id is not None
-                else ""
+                message.tool_call_id.strip() if message.tool_call_id is not None else ""
             )
 
             if tool_call_id:
@@ -749,8 +730,7 @@ def _convert_messages(
 
     if not converted_messages:
         raise OpenAIConfigurationError(
-            "Die OpenAI-Anfrage enthält keine "
-            "verwendbare Nachricht.",
+            "Die OpenAI-Anfrage enthält keine verwendbare Nachricht.",
         )
 
     return converted_messages
@@ -772,10 +752,7 @@ def _format_tool_result_as_text(
     if not normalized_name:
         return f"Tool-Ergebnis:\n{content}"
 
-    return (
-        f"Tool-Ergebnis von '{normalized_name}':\n"
-        f"{content}"
-    )
+    return f"Tool-Ergebnis von '{normalized_name}':\n{content}"
 
 
 def _create_usage(
@@ -789,8 +766,8 @@ def _create_usage(
     """
 
     return Usage(
-        prompt_tokens=prompt_tokens,
-        completion_tokens=completion_tokens,
+        input_tokens=prompt_tokens,
+        output_tokens=completion_tokens,
         total_tokens=total_tokens,
     )
 
@@ -1038,10 +1015,13 @@ def _read_non_negative_int(
     ):
         return default
 
-    if isinstance(
-        value,
-        int,
-    ) and value >= 0:
+    if (
+        isinstance(
+            value,
+            int,
+        )
+        and value >= 0
+    ):
         return value
 
     return default

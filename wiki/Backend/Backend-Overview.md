@@ -117,16 +117,16 @@ The frontend interprets these schemas using trusted components.
 
 The backend is built using:
 
-| Technology | Purpose |
-|------------|---------|
-| Python 3.12 | Programming language |
-| FastAPI | HTTP framework |
-| Pydantic v2 | Validation and serialization |
-| SQLAlchemy Async | Database abstraction |
-| SQLite | Default database |
-| PostgreSQL | Future production database |
-| Alembic | Database migrations |
-| Server-Sent Events | Chat streaming |
+| Technology         | Purpose                      |
+| ------------------ | ---------------------------- |
+| Python 3.12        | Programming language         |
+| FastAPI            | HTTP framework               |
+| Pydantic v2        | Validation and serialization |
+| SQLAlchemy Async   | Database abstraction         |
+| SQLite             | Default database             |
+| PostgreSQL         | Future production database   |
+| Alembic            | Database migrations          |
+| Server-Sent Events | Chat streaming               |
 
 ---
 
@@ -191,16 +191,16 @@ The API layer exposes REST and SSE endpoints.
 
 Typical endpoints include:
 
-| Endpoint | Purpose |
-|----------|---------|
-| `/bootstrap` | Application bootstrap |
-| `/ui/schema` | UI schema |
-| `/hierarchy` | Hierarchy data |
+| Endpoint         | Purpose               |
+| ---------------- | --------------------- |
+| `/bootstrap`     | Application bootstrap |
+| `/ui/schema`     | UI schema             |
+| `/hierarchy`     | Hierarchy data        |
 | `/configuration` | Runtime configuration |
-| `/models` | Available models |
-| `/tools` | Available tools |
-| `/chat/stream` | Streaming chat |
-| `/health` | Health information |
+| `/models`        | Available models      |
+| `/tools`         | Available tools       |
+| `/chat/stream`   | Streaming chat        |
+| `/health`        | Health information    |
 
 Endpoints validate requests and delegate processing to services.
 

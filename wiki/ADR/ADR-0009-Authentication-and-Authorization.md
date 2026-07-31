@@ -147,11 +147,11 @@ Authentication behavior depends on the deployment profile.
 
 Supported profiles include:
 
-| Profile | Purpose |
-|----------|---------|
+| Profile     | Purpose           |
+| ----------- | ----------------- |
 | Development | Local development |
-| Intranet | Company network |
-| Internet | Public deployment |
+| Intranet    | Company network   |
+| Internet    | Public deployment |
 
 Each profile defines minimum security requirements.
 

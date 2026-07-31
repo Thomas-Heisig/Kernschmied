@@ -1,0 +1,202 @@
+ M .vscode/settings.json
+ M CHANGELOG.md
+ M PULL_REQUEST_TEMPLATE.md
+ M README.md
+ M backend/app/api/v1/bootstrap.py
+ M backend/app/api/v1/chat.py
+ M backend/app/api/v1/configs.py
+ M backend/app/api/v1/health.py
+ M backend/app/api/v1/hierarchy.py
+ M backend/app/api/v1/models.py
+ M backend/app/api/v1/router.py
+ M backend/app/api/v1/tools.py
+ M backend/app/api/v1/ui.py
+ M backend/app/auth/__init__.py
+ M backend/app/auth/dependencies.py
+ M backend/app/auth/middleware.py
+ M backend/app/auth/models.py
+ M backend/app/auth/permissions.py
+ M backend/app/config/definitions.py
+ M backend/app/config/resolver.py
+ M backend/app/config/service.py
+ M backend/app/contracts/hierarchy.py
+ M backend/app/contracts/model_backend.py
+ M backend/app/contracts/tool.py
+ M backend/app/contracts/ui_schema.py
+ M backend/app/core/bootstrap.py
+ M backend/app/core/exceptions.py
+ M backend/app/core/security_profile.py
+ M backend/app/core/settings.py
+ M backend/app/database/base.py
+ M backend/app/database/models/hierarchy_node.py
+ M backend/app/hierarchy/models.py
+ M backend/app/hierarchy/permissions.py
+ M backend/app/hierarchy/service.py
+ M backend/app/models/__init__.py
+ M backend/app/models/errors.py
+ M backend/app/models/lifecycle.py
+ M backend/app/models/manifest.py
+ M backend/app/models/providers/__init__.py
+ M backend/app/models/providers/anthropic.py
+ M backend/app/models/providers/azure_openai.py
+ M backend/app/models/providers/google_gemini.py
+ M backend/app/models/providers/http_generic.py
+ M backend/app/models/providers/llama_cpp.py
+ M backend/app/models/providers/mlx.py
+ M backend/app/models/providers/ollama.py
+ M backend/app/models/providers/openai.py
+ M backend/app/models/providers/openai_compatible.py
+ M backend/app/models/providers/transformers.py
+ M backend/app/models/service.py
+ M backend/app/registries/model_registry.py
+ M backend/app/registries/tool_registry.py
+ M backend/app/services/chat_service.py
+ M backend/app/storage/models/base.py
+ M backend/app/storage/models/chat.py
+ M backend/app/storage/models/config.py
+ M backend/app/storage/models/hierarchy.py
+ M backend/app/storage/repositories/chat.py
+ M backend/app/ui/__init__.py
+ M backend/app/ui/node_types.py
+ M backend/app/ui/registry.py
+ M backend/app/ui/repository.py
+ M backend/app/ui/serializer.py
+ M backend/main.py
+ M backend/model_paths/demo/model.json
+ M backend/tools/calculator/implementation.py
+ M backend/tools/calculator/tool.json
+ M config/seed/001-core.json
+ M config/seed/002-ui.json
+ M docs/openapi-formatted.json
+ M docs/openapi.json
+ M frontend/index.html
+ M frontend/postcss.config.js
+ M frontend/src/App.tsx
+ M frontend/src/api/client.ts
+ M frontend/src/app/AppProviders.tsx
+ M frontend/src/app/index.ts
+ M frontend/src/components/chat/GenericChatView.tsx
+ M frontend/src/components/errors/UnsupportedSchema.tsx
+ M frontend/src/components/schema/GenericTree.tsx
+ M frontend/src/contracts/hierarchy.ts
+ M frontend/src/contracts/schema.ts
+ M frontend/src/hooks/useAppSchema.ts
+ M frontend/src/index.css
+ M frontend/src/main.tsx
+ M frontend/src/registry/actionRegistry.ts
+ M frontend/src/registry/iconRegistry.tsx
+ M frontend/src/store/AppStore.tsx
+ M frontend/src/store/index.ts
+ M frontend/src/store/selectors.ts
+ M frontend/src/theme/ThemeProvider.tsx
+ M frontend/src/theme/index.ts
+ M frontend/src/vite-env.d.ts
+ M frontend/tailwind.config.ts
+ M frontend/tsconfig.json
+ M frontend/tsconfig.tsbuildinfo
+ D stop.ps1
+ M wiki/ADR/ADR-0001-Schema-Driven-UI.md
+ M wiki/ADR/ADR-0002-Bootstrap.md
+ M wiki/ADR/ADR-0003-Registries.md
+ M wiki/ADR/ADR-0004-Security-Profiles.md
+ M wiki/ADR/ADR-0005-Versioned-Contracts.md
+ M wiki/ADR/ADR-0006-API-Contracts-and-Versioning.md
+ M wiki/ADR/ADR-0007-Database-and-Storage-Architecture.md
+ M wiki/ADR/ADR-0008-Tool-Architecture.md
+ M wiki/ADR/ADR-0009-Authentication-and-Authorization.md
+ M wiki/ADR/ADR-0010-Configuration-Management.md
+ M wiki/ADR/ADR-0011-Hierarchy-and-Prompt-Inheritance.md
+ M wiki/ADR/ADR-0012-Frontend-Architecture.md
+ M wiki/ADR/ADR-0013-Error-Handling-and-Logging.md
+ M wiki/ADR/ADR-0014-Deployment-Profiles.md
+ M wiki/ADR/ADR-0015-LLM-Provider-Architecture.md
+ M wiki/API/Bootstrap.md
+ M wiki/API/Chat.md
+ M wiki/API/Configuration.md
+ M wiki/API/Errors.md
+ M wiki/API/Hierarchy.md
+ M wiki/API/Models.md
+ M wiki/API/SSE.md
+ M wiki/API/Tools.md
+ M wiki/API/UI-Schema.md
+ M wiki/Architecture.md
+ M wiki/Architecture/Architecture-Decision-Index.md
+ M wiki/Architecture/C4-Container.md
+ M wiki/Architecture/Configuration-Architecture.md
+ M wiki/Architecture/Contract-Versioning.md
+ M wiki/Architecture/Deployment-Architecture.md
+ M wiki/Architecture/Extension-Points.md
+ M wiki/Architecture/Manifest-System.md
+ M wiki/Architecture/Prompt-Inheritance.md
+ M wiki/Architecture/Repository-Structure.md
+ M wiki/Architecture/Security-Architecture.md
+ M wiki/Architecture/System-Context.md
+ M wiki/Architecture/UI-Schema-Pipeline.md
+ M wiki/Backend/Backend-Overview.md
+ M wiki/Backend/Chat.md
+ M wiki/Backend/Configuration.md
+ M wiki/Backend/Contracts.md
+ M wiki/Backend/Database.md
+ M wiki/Backend/Dependency-Injection.md
+ M wiki/Backend/Error-Handling.md
+ M wiki/Backend/Model-Registry.md
+ M wiki/Backend/Security.md
+ M wiki/Backend/Tool-Registry.md
+ M wiki/Concepts/Prompt-Inheritance.md
+ M wiki/Concepts/Runtime-Configuration.md
+ M wiki/Concepts/Schema-Versioning.md
+ M wiki/Deployment/Development.md
+ M wiki/Deployment/Internet.md
+ M wiki/Deployment/Intranet.md
+ M wiki/Development/Release-Process.md
+ M wiki/Development/Roadmap.md
+ M wiki/Development/TODO.md
+ M wiki/FAQ.md
+ M wiki/Frontend/API-Client.md
+ M wiki/Frontend/Action-Registry.md
+ M wiki/Frontend/Component-Registry.md
+ M wiki/Frontend/Forms.md
+ M wiki/Frontend/Frontend-Overview.md
+ M wiki/Frontend/Generic-Tree.md
+ M wiki/Frontend/Routing.md
+ M wiki/Frontend/Schema-Renderer.md
+ M wiki/Frontend/State-Management.md
+ M wiki/Frontend/Streaming.md
+ M wiki/Frontend/UI-Schema.md
+ M wiki/Getting-Started.md
+ M wiki/Glossary.md
+ M wiki/Home.md
+ M wiki/Project-Principles.md
+ M wiki/Work-Documents/Fehlerbehebung_der_chat_Pipelien.md
+ M "wiki/Work-Documents/\303\204nderungen.md"
+ M wiki/_Footer.md
+ M wiki/_Sidebar.md
+ M wiki/todo.md
+?? .editorconfig
+?? .markdownlint-cli2.jsonc
+?? .prettierrc
+?? artifacts/
+?? data/
+?? frontend/public/selfhtml/
+?? frontend/src/api/config.ts
+?? frontend/src/app/AppShell.tsx
+?? frontend/src/app/AppWorkspace.tsx
+?? frontend/src/app/useAppBootstrap.ts
+?? frontend/src/components/chat/index.ts
+?? frontend/src/components/errors/AppErrorScreen.tsx
+?? frontend/src/components/errors/index.ts
+?? frontend/src/components/index.ts
+?? frontend/src/components/layout/
+?? frontend/src/components/schema/index.ts
+?? frontend/src/components/settings/
+?? frontend/src/components/status/
+?? frontend/src/components/websites/
+?? frontend/src/components/workspace/
+?? frontend/src/contracts/config.ts
+?? frontend/src/contracts/index.ts
+?? frontend/src/hooks/useSystemConfig.ts
+?? ollama/
+?? package-lock.json
+?? package.json
+?? pyproject.toml
+?? scripts/

@@ -195,14 +195,14 @@ Configuration values exist in hierarchical scopes.
 
 Supported scopes include:
 
-| Scope | Purpose |
-|--------|---------|
-| SYSTEM | Global defaults |
-| NODE | Hierarchy defaults |
+| Scope   | Purpose               |
+| ------- | --------------------- |
+| SYSTEM  | Global defaults       |
+| NODE    | Hierarchy defaults    |
 | PROJECT | Project configuration |
-| CHAT | Chat configuration |
-| USER | User preferences |
-| REQUEST | Temporary overrides |
+| CHAT    | Chat configuration    |
+| USER    | User preferences      |
+| REQUEST | Temporary overrides   |
 
 ---
 

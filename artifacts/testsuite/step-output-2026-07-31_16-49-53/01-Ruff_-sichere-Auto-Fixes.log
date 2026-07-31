@@ -1,0 +1,1204 @@
+COMMAND: ruff check backend scripts --fix --show-fixes
+WORKING DIRECTORY: F:\Kernschmied
+EXIT CODE: 1
+
+TRY300 Consider moving this statement to an `else` block
+   --> backend\app\api\v1\bootstrap.py:383:9
+    |
+381 |         )
+382 |
+383 |         return default if resolved_result is None else resolved_result
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+384 |
+385 |     except (
+    |
+
+PERF401 Use `list.extend` to create a transformed list
+   --> backend\app\api\v1\chat.py:589:9
+    |
+588 |       for line in serialized.splitlines() or ["{}"]:
+589 | /         lines.append(
+590 | |             f"data: {line}",
+591 | |         )
+    | |_________^
+592 |
+593 |       return "\n".join(lines) + "\n\n"
+    |
+help: Replace for loop with list.extend
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\configs.py:71:41
+   |
+71 | # Eigene rekursive Definition ENTFERNEN – stattdessen Pydantic's JsonValue verwenden
+   |                                         ^
+72 | ConfigScalar = str | int | float | bool | None
+73 | ConfigValue = JsonValue  # JsonValue kommt jetzt aus pydantic
+   |
+
+TRY400 Use `logging.exception` instead of `logging.error`
+   --> backend\app\api\v1\configs.py:990:9
+    |
+989 |       except TypeError as exc:
+990 | /         logger.error(
+991 | |             "ConfigService.set does not support the required contract",
+992 | |             extra={
+993 | |                 "group": group,
+994 | |                 "key": key,
+995 | |                 "request_id": request_id,
+996 | |             },
+997 | |         )
+    | |_________^
+998 |
+999 |           raise structured_http_error(
+    |
+help: Replace with `exception`
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\health.py:21:41
+   |
+21 | # Eigene rekursive Definition ENTFERNEN – stattdessen Pydantic's JsonValue verwenden
+   |                                         ^
+22 | JsonObject: TypeAlias = dict[str, JsonValue]
+   |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\hierarchy.py:29:47
+   |
+29 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+30 | JsonScalar = str | int | float | bool | None
+31 | JsonObject = dict[str, JsonValue]
+   |
+
+RUF002 Docstring contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\hierarchy.py:47:36
+   |
+45 | class HierarchyTreeResponse(BaseModel):
+46 |     """
+47 |     API-Vertrag für die Hierarchie – kompatibel mit Frontend-HierarchyTree.
+   |                                    ^
+48 |     """
+   |
+
+E501 Line too long (98 > 88)
+   --> backend\app\api\v1\hierarchy.py:306:89
+    |
+304 |             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+305 |             code="HIERARCHY_SERVICE_CONTRACT_UNSUPPORTED",
+306 |             message="Der registrierte Hierarchiedienst erfüllt den erforderlichen Vertrag nicht.",
+    |                                                                                         ^^^^^^^^^^
+307 |             details={
+308 |                 "required_method": "get_tree",
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\models.py:33:52
+   |
+33 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+34 | JsonScalar = str | int | float | bool | None
+35 | JsonObject = dict[str, JsonValue]
+   |
+
+TRY004 Prefer `TypeError` exception for invalid type
+    --> backend\app\api\v1\models.py:1068:9
+     |
+1066 |         list_models,
+1067 |     ):
+1068 |         raise RuntimeError("Die ModelRegistry implementiert list_models() nicht.")
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1069 |
+1070 |     raw_result: object = list_models()
+     |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\tools.py:33:52
+   |
+33 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+34 | JsonScalar = str | int | float | bool | None
+35 | JsonObject = dict[str, JsonValue]
+   |
+
+TRY004 Prefer `TypeError` exception for invalid type
+    --> backend\app\api\v1\tools.py:1153:9
+     |
+1151 |         list_tools,
+1152 |     ):
+1153 |         raise RuntimeError("Die ToolRegistry implementiert list_tools() nicht.")
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1154 |
+1155 |     raw_result: object = list_tools()
+     |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\ui.py:45:52
+   |
+45 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+46 | JsonScalar = str | int | float | bool | None
+47 | JsonObject = dict[str, JsonValue]
+   |
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\app\api\v1\ui.py:471:9
+    |
+469 |         value,
+470 |     ):
+471 |         raise ValueError("Callables dürfen nicht Bestandteil des UI-Schemas sein.")
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+472 |
+473 |     if isinstance(
+    |
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\app\api\v1\ui.py:695:17
+    |
+693 |                   dict,
+694 |               ):
+695 | /                 raise ValueError(
+696 | |                     f"{field_name}.{registry_key} muss ein Objekt sein.",
+697 | |                 )
+    | |_________________^
+698 |
+699 |               normalized_registry_value: JsonObject = dict(
+    |
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\app\api\v1\ui.py:713:9
+    |
+712 |       else:
+713 | /         raise ValueError(
+714 | |             f"{field_name} muss eine Liste oder ein Objekt sein.",
+715 | |         )
+    | |_________^
+716 |
+717 |       result: list[JsonValue] = []
+    |
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\app\api\v1\ui.py:726:13
+    |
+724 |               dict,
+725 |           ):
+726 | /             raise ValueError(
+727 | |                 f"{field_name}[{index}] muss ein Objekt sein.",
+728 | |             )
+    | |_____________^
+729 |
+730 |           normalized_item: JsonObject = dict(
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+   --> backend\app\api\v1\ui.py:801:57
+    |
+799 |     schema_data.setdefault("metadata", {})
+800 |
+801 |     # Normalisiere Listen (falls sie als Listen kommen) – aber node_types ist ein Objekt, keine Liste
+    |                                                         ^
+802 |     # Für components, actions, forms: wenn sie als Liste kommen, wandle sie in ein dict um,
+803 |     # wobei der Typ als Schlüssel dient (ähnlich wie Frontend es erwartet).
+    |
+
+E501 Line too long (101 > 88)
+   --> backend\app\api\v1\ui.py:801:89
+    |
+799 |     schema_data.setdefault("metadata", {})
+800 |
+801 |     # Normalisiere Listen (falls sie als Listen kommen) – aber node_types ist ein Objekt, keine Liste
+    |                                                                                         ^^^^^^^^^^^^^
+802 |     # Für components, actions, forms: wenn sie als Liste kommen, wandle sie in ein dict um,
+803 |     # wobei der Typ als Schlüssel dient (ähnlich wie Frontend es erwartet).
+    |
+
+E501 Line too long (91 > 88)
+   --> backend\app\api\v1\ui.py:802:89
+    |
+801 |     # Normalisiere Listen (falls sie als Listen kommen) – aber node_types ist ein Objekt, keine Liste
+802 |     # Für components, actions, forms: wenn sie als Liste kommen, wandle sie in ein dict um,
+    |                                                                                         ^^^
+803 |     # wobei der Typ als Schlüssel dient (ähnlich wie Frontend es erwartet).
+804 |     # Oder wir erwarten, dass der Builder bereits ein dict liefert.
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\auth\models.py:16:52
+   |
+14 | )
+15 |
+16 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+17 | JsonScalar = str | int | float | bool | None
+18 | JsonObject = dict[str, JsonValue]
+   |
+
+SIM108 Use ternary operator `raw_values = [value] if isinstance(value, str) else value` instead of `if`-`else`-block
+   --> backend\app\config\definitions.py:409:9
+    |
+407 |               return frozenset()
+408 |
+409 | /         if isinstance(value, str):
+410 | |             raw_values = [value]
+411 | |         else:
+412 | |             raw_values = value
+    | |______________________________^
+413 |
+414 |           tags: set[str] = set()
+    |
+help: Replace `if`-`else`-block with `raw_values = [value] if isinstance(value, str) else value`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> backend\app\config\definitions.py:497:9
+    |
+496 |       def _validate_scope_rules(self) -> None:
+497 | /         if ConfigScope.REQUEST in self.allowed_scopes:
+498 | |             if not self.request_override_allowed:
+    | |_________________________________________________^
+499 |                   raise ValueError(
+500 |                       f"'{self.full_key}' erlaubt den REQUEST-Scope, "
+    |
+help: Combine `if` statements using `and`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> backend\app\config\definitions.py:504:9
+    |
+502 |                   )
+503 |
+504 | /         if self.request_override_allowed:
+505 | |             if ConfigScope.REQUEST not in self.allowed_scopes:
+    | |______________________________________________________________^
+506 |                   raise ValueError(
+507 |                       f"'{self.full_key}' erlaubt Request-Overrides, "
+    |
+help: Combine `if` statements using `and`
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\config\resolver.py:20:52
+   |
+18 | )
+19 |
+20 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+21 | JsonScalar = str | int | float | bool | None
+22 | JsonObject = dict[str, JsonValue]
+   |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\config\service.py:823:21
+    |
+822 |                   if row is None:
+823 | /                     raise ConfigEntryNotFoundError(
+824 | |                         group=normalized_group,
+825 | |                         key=normalized_key,
+826 | |                     )
+    | |_____________________^
+827 |
+828 |                   previous_value = deepcopy(
+    |
+
+TRY301 Abstract `raise` to an inner function
+    --> backend\app\config\service.py:1032:25
+     |
+1031 |                       if row is None:
+1032 | /                         raise ConfigEntryNotFoundError(
+1033 | |                             group=definition.group,
+1034 | |                             key=definition.key,
+1035 | |                         )
+     | |_________________________^
+1036 |
+1037 |                       previous_value = deepcopy(
+     |
+
+PERF401 Use a list comprehension to create a transformed list
+    --> backend\app\config\service.py:1563:17
+     |
+1562 |               for _item in typed_list:
+1563 | /                 masked_list.append(
+1564 | |                     SECRET_MASK,
+1565 | |                 )
+     | |_________________^
+1566 |
+1567 |               return masked_list
+     |
+help: Replace for loop with list comprehension
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\contracts\hierarchy.py:14:52
+   |
+12 | )  # NEU: Pydantic's JsonValue
+13 |
+14 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+15 | JsonScalar = str | int | float | bool | None
+16 | JsonObject = dict[str, JsonValue]
+   |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+   --> backend\app\contracts\model_backend.py:413:51
+    |
+411 |         )
+412 |
+413 |         # messages sind bereits list[ChatMessage] – keine Prüfung nötig
+    |                                                   ^
+414 |
+415 |         if not 0.0 <= self.temperature <= 2.0:
+    |
+
+E501 Line too long (90 > 88)
+   --> backend\app\contracts\model_backend.py:639:89
+    |
+637 |         ).lower()
+638 |
+639 |         # `capabilities` ist bereits set[ModelCapability], daher keine Konvertierung nötig
+    |                                                                                         ^^
+640 |
+641 |         if self.context_window is not None and self.context_window <= 0:
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\contracts\tool.py:25:47
+   |
+25 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+26 | JsonScalar = str | int | float | bool | None
+27 | JsonObject = dict[str, JsonValue]
+   |
+
+UP042 Class ToolRiskLevel inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\tool.py:217:7
+    |
+217 | class ToolRiskLevel(str, Enum):
+    |       ^^^^^^^^^^^^^
+218 |     """
+219 |     Grobe Risikoklassifizierung für Tool-Ausführungen.
+    |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class ToolAvailabilityStatus inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\tool.py:229:7
+    |
+229 | class ToolAvailabilityStatus(str, Enum):
+    |       ^^^^^^^^^^^^^^^^^^^^^^
+230 |     """
+231 |     Aktueller Verfügbarkeitsstatus eines Tools.
+    |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class ToolExecutionStatus inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\tool.py:240:7
+    |
+240 | class ToolExecutionStatus(str, Enum):
+    |       ^^^^^^^^^^^^^^^^^^^
+241 |     """
+242 |     Ergebnisstatus einer Tool-Ausführung.
+    |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class ToolSideEffect inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\tool.py:251:7
+    |
+251 | class ToolSideEffect(str, Enum):
+    |       ^^^^^^^^^^^^^^
+252 |     """
+253 |     Deklarierte Nebenwirkungen eines Tools.
+    |
+help: Inherit from `enum.StrEnum`
+
+RUF012 Mutable default value for class attribute
+   --> backend\app\contracts\tool.py:547:38
+    |
+545 |       version: str = "1.0.0"
+546 |
+547 |       parameters_schema: JsonMapping = {
+    |  ______________________________________^
+548 | |         "type": "object",
+549 | |         "properties": {},
+550 | |         "additionalProperties": False,
+551 | |     }
+    | |_____^
+552 |
+553 |       result_schema: JsonMapping | None = None
+    |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+RUF012 Mutable default value for class attribute
+   --> backend\app\contracts\tool.py:571:29
+    |
+569 |     tags: tuple[str, ...] = ()
+570 |
+571 |     metadata: JsonMapping = {}
+    |                             ^^
+572 |
+573 |     def __init__(self) -> None:
+    |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+UP042 Class UIComponentKind inherits from both `str` and `enum.Enum`
+  --> backend\app\contracts\ui_schema.py:33:7
+   |
+33 | class UIComponentKind(str, Enum):
+   |       ^^^^^^^^^^^^^^^
+34 |     """
+35 |     Bekannte generische Komponentenarten.
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class UIActionKind inherits from both `str` and `enum.Enum`
+  --> backend\app\contracts\ui_schema.py:62:7
+   |
+62 | class UIActionKind(str, Enum):
+   |       ^^^^^^^^^^^^
+63 |     """
+64 |     Fest definierte Kategorien von UI-Aktionen.
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class UIActionMethod inherits from both `str` and `enum.Enum`
+  --> backend\app\contracts\ui_schema.py:87:7
+   |
+87 | class UIActionMethod(str, Enum):
+   |       ^^^^^^^^^^^^^^
+88 |     """
+89 |     Zulässige HTTP-Methoden für API-gebundene Aktionen.
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class UIActionConfirmationStyle inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\ui_schema.py:99:7
+    |
+ 99 | class UIActionConfirmationStyle(str, Enum):
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^
+100 |     """
+101 |     Darstellung einer Aktionsbestätigung.
+    |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class UIFormFieldType inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\ui_schema.py:110:7
+    |
+110 | class UIFormFieldType(str, Enum):
+    |       ^^^^^^^^^^^^^^^
+111 |     """
+112 |     Bekannte generische Formularfelder.
+    |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class UIVisibility inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\ui_schema.py:137:7
+    |
+137 | class UIVisibility(str, Enum):
+    |       ^^^^^^^^^^^^
+138 |     """
+139 |     Sichtbarkeit eines Schemaelements.
+    |
+help: Inherit from `enum.StrEnum`
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:384:13
+    |
+383 |           if hierarchy_repository is None or hierarchy_service is None:
+384 | /             raise BootstrapStepError(
+385 | |                 step="hierarchy.initialize",
+386 | |                 reason=(
+387 | |                     "Der Hierarchie-Service wurde nicht vollständig initialisiert."
+388 | |                 ),
+389 | |             )
+    | |_____________^
+390 |
+391 |           # ====================================================
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:464:17
+    |
+462 |           async def load_manifests() -> None:
+463 |               if model_service is None:  # type: ignore
+464 | /                 raise RuntimeError(
+465 | |                     "Der ModelService wurde noch nicht erstellt.",
+466 | |                 )
+    | |_________________^
+467 |
+468 |               if not MODEL_MANIFEST_DIRECTORY.exists():
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:469:17
+    |
+468 |               if not MODEL_MANIFEST_DIRECTORY.exists():
+469 | /                 raise RuntimeError(
+470 | |                     "Das Modellmanifest-Verzeichnis existiert "
+471 | |                     f"nicht: {MODEL_MANIFEST_DIRECTORY}",
+472 | |                 )
+    | |_________________^
+473 |
+474 |               if not MODEL_MANIFEST_DIRECTORY.is_dir():
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:475:17
+    |
+474 |               if not MODEL_MANIFEST_DIRECTORY.is_dir():
+475 | /                 raise RuntimeError(
+476 | |                     "Der Modellmanifest-Pfad ist kein "
+477 | |                     f"Verzeichnis: {MODEL_MANIFEST_DIRECTORY}",
+478 | |                 )
+    | |_________________^
+479 |
+480 |               _log_info(
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:529:17
+    |
+527 |                   )
+528 |
+529 | /                 raise RuntimeError(
+530 | |                     "Das Standardmodell "
+531 | |                     f"'{DEFAULT_MODEL_ID}' konnte nicht "
+532 | |                     "registriert werden."
+533 | |                 )
+    | |_________________^
+534 |
+535 |               model_ids = await model_service.list_model_ids()
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:558:17
+    |
+557 |               if model_service is None:  # type: ignore
+558 | /                 raise RuntimeError(
+559 | |                     "Der ModelService ist nicht verfügbar.",
+560 | |                 )
+    | |_________________^
+561 |
+562 |               chat_service = ChatService(
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:574:13
+    |
+573 |           if chat_service is None:
+574 | /             raise BootstrapStepError(
+575 | |                 step="chat.initialize_service",
+576 | |                 reason=("Der ChatService wurde nicht vollständig initialisiert."),
+577 | |             )
+    | |_____________^
+578 |
+579 |           # ====================================================
+    |
+
+TRY300 Consider moving this statement to an `else` block
+   --> backend\app\core\bootstrap.py:621:9
+    |
+619 |         )
+620 |
+621 |         return result
+    |         ^^^^^^^^^^^^^
+622 |
+623 |     except Exception as exc:
+    |
+
+UP042 Class AppEnvironment inherits from both `str` and `enum.Enum`
+  --> backend\app\core\security_profile.py:13:7
+   |
+13 | class AppEnvironment(str, Enum):
+   |       ^^^^^^^^^^^^^^
+14 |     DEVELOPMENT = "development"
+15 |     INTRANET = "intranet"
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class AuthMode inherits from both `str` and `enum.Enum`
+  --> backend\app\core\security_profile.py:19:7
+   |
+19 | class AuthMode(str, Enum):
+   |       ^^^^^^^^
+20 |     NONE = "none"
+21 |     API_KEY = "api_key"
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class AppEnvironment inherits from both `str` and `enum.Enum`
+  --> backend\app\core\settings.py:76:7
+   |
+76 | class AppEnvironment(str, Enum):
+   |       ^^^^^^^^^^^^^^
+77 |     """
+78 |     Festes Betriebsprofil.
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class LogLevel inherits from both `str` and `enum.Enum`
+  --> backend\app\core\settings.py:89:7
+   |
+89 | class LogLevel(str, Enum):
+   |       ^^^^^^^^
+90 |     CRITICAL = "CRITICAL"
+91 |     ERROR = "ERROR"
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class ForwardedHeaderMode inherits from both `str` and `enum.Enum`
+  --> backend\app\core\settings.py:97:7
+   |
+97 | class ForwardedHeaderMode(str, Enum):
+   |       ^^^^^^^^^^^^^^^^^^^
+98 |     """
+99 |     Steuerung der Verarbeitung weitergeleiteter Proxy-Header.
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class DatabaseMigrationMode inherits from both `str` and `enum.Enum`
+   --> backend\app\core\settings.py:106:7
+    |
+106 | class DatabaseMigrationMode(str, Enum):
+    |       ^^^^^^^^^^^^^^^^^^^^^
+107 |     """
+108 |     Verhalten beim Anwendungsstart.
+    |
+help: Inherit from `enum.StrEnum`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> backend\app\core\settings.py:908:9
+    |
+906 |               )
+907 |
+908 | /         if self.database_migration_mode == DatabaseMigrationMode.UPGRADE:
+909 | |             if self.app_environment == AppEnvironment.INTERNET:
+    | |_______________________________________________________________^
+910 |                   raise ValueError(
+911 |                       "DATABASE_MIGRATION_MODE=upgrade ist im "
+    |
+help: Combine `if` statements using `and`
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\database\models\hierarchy_node.py:23:47
+   |
+21 | from app.database.base import Base
+22 |
+23 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+24 | JsonScalar = str | int | float | bool | None
+25 | JsonObject = dict[str, JsonValue]
+   |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\hierarchy\models.py:9:47
+   |
+ 7 | from pydantic import JsonValue
+ 8 |
+ 9 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+10 | JsonScalar = str | int | float | bool | None
+11 | JsonObject = dict[str, JsonValue]
+   |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\models\lifecycle.py:772:21
+    |
+771 |                   if not isinstance(backend, BaseModelBackend):  # type: ignore[reportUnnecessaryIsInstance]
+772 | /                     raise TypeError(
+773 | |                         "Die Backend-Factory hat keine "
+774 | |                         "BaseModelBackend-Instanz zurückgegeben.",
+775 | |                     )
+    | |_____________________^
+776 |
+777 |                   entry.backend = backend
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+    --> backend\app\models\lifecycle.py:1020:57
+     |
+1018 |                 ensure_loaded=True,
+1019 |             ) as backend:
+1020 |                 # Der Vertrag deklariert generate nicht – Pylance-Hinweis unterdrücken
+     |                                                         ^
+1021 |                 result: StreamEvent = await asyncio.wait_for(
+1022 |                     backend.generate(request),  # type: ignore[reportAttributeAccessIssue]
+     |
+
+E501 Line too long (103 > 88)
+    --> backend\app\models\lifecycle.py:1095:89
+     |
+1093 |                 ensure_loaded=True,
+1094 |             ) as backend:
+1095 |                 # cast sorgt für den korrekten Typ, da backend.stream nicht im Interface deklariert ist
+     |                                                                                         ^^^^^^^^^^^^^^^
+1096 |                 stream_iter = cast(
+1097 |                     AsyncIterator[StreamEvent],
+     |
+
+TRY300 Consider moving this statement to an `else` block
+    --> backend\app\models\lifecycle.py:1260:21
+     |
+1258 |                     entry.state = ModelLifecycleState.UNLOADED
+1259 |
+1260 |                     return True
+     |                     ^^^^^^^^^^^
+1261 |
+1262 |                 except TimeoutError as exc:
+     |
+
+E501 Line too long (101 > 88)
+    --> backend\app\models\lifecycle.py:1347:89
+     |
+1346 |             try:
+1347 |                 # Backend.shutdown() ist im Interface nicht deklariert → Pylance-Hinweis unterdrücken
+     |                                                                                         ^^^^^^^^^^^^^
+1348 |                 await asyncio.wait_for(
+1349 |                     backend.shutdown(),  # type: ignore[reportAttributeAccessIssue]
+     |
+
+E501 Line too long (91 > 88)
+    --> backend\app\models\lifecycle.py:1578:89
+     |
+1576 |         if callable(is_loaded_attr):
+1577 |             try:
+1578 |                 # Den Rückgabewert explizit mit Any annehmen, da der Callable unbekannt ist
+     |                                                                                         ^^^
+1579 |                 result: Any = is_loaded_attr()
+1580 |                 if isinstance(result, bool):
+     |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\models\manifest.py:53:42
+   |
+52 | JsonPrimitive: TypeAlias = str | int | float | bool | None
+53 | # JsonValue wird von pydantic importiert – nicht rekursiv definiert
+   |                                          ^
+54 | JsonObject: TypeAlias = dict[str, JsonValue]
+55 | ValidationErrorItem: TypeAlias = dict[str, JsonValue]
+   |
+
+SIM105 Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
+    --> backend\app\models\manifest.py:1237:9
+     |
+1235 |           )
+1236 |       except Exception:
+1237 | /         try:
+1238 | |             temporary_path.unlink(
+1239 | |                 missing_ok=True,
+1240 | |             )
+1241 | |         except OSError:
+1242 | |             pass
+     | |________________^
+1243 |
+1244 |           raise
+     |
+help: Replace `try`-`except`-`pass` with `with contextlib.suppress(OSError): ...`
+
+TRY300 Consider moving this statement to an `else` block
+    --> backend\app\models\manifest.py:1476:9
+     |
+1474 |             parent,
+1475 |         )
+1476 |         return True
+     |         ^^^^^^^^^^^
+1477 |     except ValueError:
+1478 |         return False
+     |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+   --> backend\app\models\providers\__init__.py:273:54
+    |
+271 |         BaseModelBackend,
+272 |     ):  # type: ignore
+273 |         # Hier kann es sich um ein Protokoll handeln – zur Laufzeit prüfen wir
+    |                                                      ^
+274 |         # ob es die erforderlichen Methoden hat.
+275 |         # Da BaseModelBackend eine abstrakte Basisklasse ist, funktioniert
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+   --> backend\app\models\providers\__init__.py:431:58
+    |
+429 |             dependencies: ProviderDependencies | None = None,
+430 |         ) -> BaseModelBackend | Awaitable[BaseModelBackend]:
+431 |             # Der tatsächliche Rückgabetyp ist dynamisch – er kann
+    |                                                          ^
+432 |             # BaseModelBackend oder Awaitable[BaseModelBackend] sein.
+433 |             # Der Aufrufer (Registry) wird das später auflösen.
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+   --> backend\app\models\providers\__init__.py:443:47
+    |
+441 |             )
+442 |             # raw_result kann entweder BaseModelBackend oder Awaitable sein.
+443 |             # Wir geben es unverändert weiter – der Registry-Code prüft es.
+    |                                               ^
+444 |             # Um Pylance zufriedenzustellen, typisieren wir es als Union.
+445 |             # Da der Union-Typ korrekt ist, hilft ein cast.
+    |
+
+PERF402 Use `list` or `list.copy` to create a copy of a list
+    --> backend\app\models\providers\http_generic.py:1966:9
+     |
+1965 |       for value in values:
+1966 | /         result.append(
+1967 | |             value,
+1968 | |         )
+     | |_________^
+1969 |
+1970 |       return result
+     |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\models\providers\llama_cpp.py:306:21
+    |
+305 |                 if isinstance(item, _StreamFailure):
+306 |                     raise item.error
+    |                     ^^^^^^^^^^^^^^^^
+307 |
+308 |                 parsed_chunk = _parse_chunk(
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\models\providers\mlx.py:484:21
+    |
+482 |                     _StreamFailure,
+483 |                 ):
+484 |                     raise queue_item.error
+    |                     ^^^^^^^^^^^^^^^^^^^^^^
+485 |
+486 |                 yield StreamEvent.create(
+    |
+
+PERF401 Use a list comprehension to create a transformed list
+   --> backend\app\models\providers\mlx.py:746:9
+    |
+745 |       for message in converted_messages:
+746 | /         prompt_parts.append(
+747 | |             f"{message['role']}: {message['content']}",
+748 | |         )
+    | |_________^
+749 |
+750 |       prompt_parts.append(
+    |
+help: Replace for loop with list comprehension
+
+TRY300 Consider moving this statement to an `else` block
+   --> backend\app\models\providers\ollama.py:244:13
+    |
+242 |             )
+243 |
+244 |             return response.is_success
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+245 |
+246 |         except asyncio.CancelledError:
+    |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> backend\app\models\providers\ollama.py:581:9
+    |
+579 |           request: GenerationRequest,
+580 |       ) -> None:
+581 | /         if request.tools:
+582 | |             if not self._supports_tools:
+    | |________________________________________^
+583 |                   raise OllamaConfigurationError(
+584 |                       "Das konfigurierte Ollama-Modell "
+    |
+help: Combine `if` statements using `and`
+
+PERF403 Use a dictionary comprehension instead of a for-loop
+    --> backend\app\models\providers\ollama.py:1103:13
+     |
+1101 |             str,
+1102 |         ):
+1103 |             result[raw_key] = raw_value
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1104 |
+1105 |     return result
+     |
+help: Replace for loop with dict comprehension
+
+PERF401 Use a list comprehension to create a transformed list
+    --> backend\app\models\providers\transformers.py:1058:9
+     |
+1057 |       for message in converted_messages:
+1058 | /         prompt_parts.append(
+1059 | |             f"{message['role']}: {message['content']}",
+1060 | |         )
+     | |_________^
+1061 |
+1062 |       prompt_parts.append(
+     |
+help: Replace for loop with list comprehension
+
+E501 Line too long (93 > 88)
+  --> backend\app\models\service.py:33:89
+   |
+31 | 13. Provider-Erzeugung und Secret-Auflösung sind systembezogene Vorgänge.
+32 | 14. Autorisierung und Provider-Lifecycle bleiben getrennte Verantwortlichkeiten.
+33 | 15. Registry und Fallback-Speicher werden niemals gleichzeitig als Wahrheitsquelle verwendet.
+   |                                                                                         ^^^^^
+34 | 16. Bei einer Ersetzung wird zuerst der alte Lifecycle entfernt und danach der neue registriert.
+35 | 17. Fehlgeschlagene Ersetzungen stellen den vorherigen Zustand bestmöglich wieder her.
+   |
+
+E501 Line too long (96 > 88)
+  --> backend\app\models\service.py:34:89
+   |
+32 | 14. Autorisierung und Provider-Lifecycle bleiben getrennte Verantwortlichkeiten.
+33 | 15. Registry und Fallback-Speicher werden niemals gleichzeitig als Wahrheitsquelle verwendet.
+34 | 16. Bei einer Ersetzung wird zuerst der alte Lifecycle entfernt und danach der neue registriert.
+   |                                                                                         ^^^^^^^^
+35 | 17. Fehlgeschlagene Ersetzungen stellen den vorherigen Zustand bestmöglich wieder her.
+   |
+
+TRY301 Abstract `raise` to an inner function
+    --> backend\app\models\service.py:1036:21
+     |
+1034 |                       and not replace
+1035 |                   ):
+1036 | /                     raise DuplicateModelManifestError(
+1037 | |                         model_id,
+1038 | |                         manifest_paths=[
+1039 | |                             str(
+1040 | |                                 known_path,
+1041 | |                             )
+1042 | |                             for known_path in known_paths
+1043 | |                         ],
+1044 | |                         request_id=self._request_id(
+1045 | |                             access_context,
+1046 | |                         ),
+1047 | |                     )
+     | |_____________________^
+1048 |
+1049 |                   result = await self.register_manifest(
+     |
+
+E501 Line too long (90 > 88)
+   --> backend\app\registries\model_registry.py:490:89
+    |
+488 |                     return entry
+489 |                 logger.warning(
+490 |                     "Explizites Default-Modell %s ist nicht aktiv oder nicht registriert",
+    |                                                                                         ^^
+491 |                     self._default_model_id,
+492 |                 )
+    |
+
+PERF401 Use `list.extend` to create a transformed list
+   --> backend\app\registries\model_registry.py:600:17
+    |
+599 |               for loaded_manifest in manifests:
+600 | /                 results.append(
+601 | |                     ModelDiscoveryResult(
+602 | |                         manifest_path=(loaded_manifest.manifest_path),
+603 | |                         model_id=model_id,
+604 | |                         provider_type=(loaded_manifest.manifest.provider.type),
+605 | |                         status=(ModelDiscoveryResultStatus.DUPLICATE),
+606 | |                         message=str(duplicate_error),
+607 | |                         error_type=(duplicate_error.__class__.__name__),
+608 | |                         error_code=str(
+609 | |                             duplicate_error.code,
+610 | |                         ),
+611 | |                     ),
+612 | |                 )
+    | |_________________^
+613 |
+614 |               if not continue_on_error:
+    |
+help: Replace for loop with list.extend
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\registries\tool_registry.py:560:21
+    |
+558 |                 )
+559 |                 if manifest.tool_id in ids_seen:
+560 |                     raise DuplicateToolRegistrationError(manifest.tool_id)
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+561 |                 ids_seen[manifest.tool_id] = manifest_path
+562 |                 loaded_manifests.append(manifest)
+    |
+
+TRY300 Consider moving this statement to an `else` block
+    --> backend\app\registries\tool_registry.py:1215:9
+     |
+1213 |     try:
+1214 |         path.relative_to(parent)
+1215 |         return True
+     |         ^^^^^^^^^^^
+1216 |     except ValueError:
+1217 |         return False
+     |
+
+E501 Line too long (96 > 88)
+    --> backend\app\registries\tool_registry.py:1338:89
+     |
+1336 |         return ToolAvailability(
+1337 |             status=ToolAvailabilityStatus.UNAVAILABLE,
+1338 |             reason="Die Verfügbarkeitsprüfung lieferte einen nicht unterstützten Rückgabewert.",
+     |                                                                                         ^^^^^^^^
+1339 |         )
+     |
+
+PERF401 Use `list.extend` to create a transformed list
+   --> backend\app\services\chat_service.py:702:13
+    |
+701 |           for line in payload.splitlines() or ("",):
+702 | /             lines.append(
+703 | |                 f"data: {line}",
+704 | |             )
+    | |_____________^
+705 |
+706 |           lines.extend(
+    |
+help: Replace for loop with list.extend
+
+TRY300 Consider moving this statement to an `else` block
+    --> backend\app\services\chat_service.py:1127:13
+     |
+1125 |             )
+1126 |
+1127 |             return response
+     |             ^^^^^^^^^^^^^^^
+1128 |
+1129 |         except asyncio.CancelledError as exc:
+     |
+
+TRY301 Abstract `raise` to an inner function
+    --> backend\app\services\chat_service.py:1326:21
+     |
+1324 |                       )
+1325 |
+1326 | /                     raise ChatGenerationError(
+1327 | |                         error_message,
+1328 | |                         request_id=(context.request_id),
+1329 | |                         details={
+1330 | |                             "conversation_id": (conversation_id),
+1331 | |                             "model_id": model_id,
+1332 | |                             "model_event": payload,
+1333 | |                         },
+1334 | |                     )
+     | |_____________________^
+1335 |
+1336 |                   mapped_events = self._map_model_stream_event(
+     |
+
+E501 Line too long (90 > 88)
+    --> backend\app\services\chat_service.py:1550:89
+     |
+1549 |             error = ChatGenerationError(
+1550 |                 "Beim Erzeugen der Chat-Antwort ist ein unerwarteter Fehler aufgetreten.",
+     |                                                                                         ^^
+1551 |                 request_id=(context.request_id),
+1552 |                 details={
+     |
+
+E501 Line too long (89 > 88)
+    --> backend\app\services\chat_service.py:1944:89
+     |
+1942 |         }
+1943 |
+1944 |         # Special handling for nested structures that need explicit normalization/merging
+     |                                                                                         ^
+1945 |         metadata = getattr(model_event, "metadata", None)
+1946 |         if metadata is not None:
+     |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\storage\models\chat.py:22:47
+   |
+20 | from app.storage.models.base import Base, utc_now
+21 |
+22 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+23 | JsonScalar = str | int | float | bool | None
+24 | JsonObject = dict[str, JsonValue]
+   |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\storage\models\hierarchy.py:23:47
+   |
+21 | from app.storage.models.base import Base, utc_now
+22 |
+23 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+24 | JsonScalar = str | int | float | bool | None
+25 | JsonObject = dict[str, JsonValue]
+   |
+
+PERF401 Use a list comprehension to create a transformed list
+   --> backend\app\ui\serializer.py:114:13
+    |
+113 |           for action_type in action_types:
+114 | /             validated_actions.append(
+115 | |                 self._registry.require_action(
+116 | |                     action_type,
+117 | |                 ),
+118 | |             )
+    | |_____________^
+119 |
+120 |           return validated_actions
+    |
+help: Replace for loop with list comprehension
+
+SIM108 Use ternary operator `raw_value = enum_value if isinstance(enum_value, str) else str(value)` instead of `if`-`else`-block
+   --> backend\main.py:327:9
+    |
+325 |           )
+326 |
+327 | /         if isinstance(
+328 | |             enum_value,
+329 | |             str,
+330 | |         ):
+331 | |             raw_value = enum_value
+332 | |         else:
+333 | |             raw_value = str(
+334 | |                 value,
+335 | |             )
+    | |_____________^
+336 |
+337 |       normalized = raw_value.strip().lower()
+    |
+help: Replace `if`-`else`-block with `raw_value = enum_value if isinstance(enum_value, str) else str(value)`
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\tools\calculator\implementation.py:109:13
+    |
+107 |               bool,
+108 |           ):
+109 | /             raise ValueError(
+110 | |                 "Boolesche Werte sind nicht erlaubt.",
+111 | |             )
+    | |_____________^
+112 |
+113 |           if isinstance(
+    |
+
+RUF012 Mutable default value for class attribute
+   --> backend\tools\calculator\implementation.py:283:37
+    |
+281 |       )
+282 |
+283 |       parameters: dict[str, object] = {
+    |  _____________________________________^
+284 | |         "type": "object",
+285 | |         "properties": {
+286 | |             "expression": {
+287 | |                 "type": "string",
+288 | |                 "title": "Mathematischer Ausdruck",
+289 | |                 "description": (
+290 | |                     "Ein einfacher mathematischer Ausdruck, "
+291 | |                     "zum Beispiel '(1250 * 0.19) + 81'."
+292 | |                 ),
+293 | |                 "minLength": 1,
+294 | |                 "maxLength": MAX_EXPRESSION_LENGTH,
+295 | |             },
+296 | |         },
+297 | |         "required": [
+298 | |             "expression",
+299 | |         ],
+300 | |         "additionalProperties": False,
+301 | |     }
+    | |_____^
+302 |
+303 |       # Diese Methode muss dieselbe Signatur wie BaseTool.execute besitzen.
+    |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+Found 100 errors.
+No fixes available (21 hidden fixes can be enabled with the `--unsafe-fixes` option).

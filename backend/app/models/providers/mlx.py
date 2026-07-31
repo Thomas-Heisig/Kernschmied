@@ -27,7 +27,6 @@ from app.contracts.model_backend import (
     StreamEventType,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -75,8 +74,7 @@ class MLXTokenizerProtocol(Protocol):
         *,
         tokenize: bool,
         add_generation_prompt: bool,
-    ) -> object:
-        ...
+    ) -> object: ...
 
 
 @runtime_checkable
@@ -88,8 +86,7 @@ class MLXGenerationResponseProtocol(Protocol):
     @property
     def text(
         self,
-    ) -> str:
-        ...
+    ) -> str: ...
 
 
 class MLXLoadProtocol(Protocol):
@@ -100,8 +97,7 @@ class MLXLoadProtocol(Protocol):
     def __call__(
         self,
         model_path: str,
-    ) -> tuple[object, object]:
-        ...
+    ) -> tuple[object, object]: ...
 
 
 class MLXStreamGenerateProtocol(Protocol):
@@ -118,8 +114,7 @@ class MLXStreamGenerateProtocol(Protocol):
         max_tokens: int,
         temp: float,
         top_p: float,
-    ) -> Iterator[object]:
-        ...
+    ) -> Iterator[object]: ...
 
 
 class MLXBindings:
@@ -167,15 +162,10 @@ class _StreamEnd:
     """
 
 
-StreamQueueItem: TypeAlias = (
-    _StreamToken
-    | _StreamFailure
-    | _StreamEnd
-)
+StreamQueueItem: TypeAlias = _StreamToken | _StreamFailure | _StreamEnd
 
 
-def _load_mlx_bindings(
-) -> MLXBindings | None:
+def _load_mlx_bindings() -> MLXBindings | None:
     """
     Lädt mlx-lm ausschließlich über einen festen Modulnamen.
 
@@ -190,8 +180,7 @@ def _load_mlx_bindings(
 
     except ImportError:
         logger.info(
-            "mlx-lm ist nicht installiert. "
-            "Der MLX-Provider bleibt deaktiviert.",
+            "mlx-lm ist nicht installiert. Der MLX-Provider bleibt deaktiviert.",
         )
         return None
 
@@ -255,19 +244,25 @@ class MLXProvider(
     freigegeben oder dynamisch erkannt.
     """
 
+    def get_model_info(
+        self,
+    ) -> ModelInfo:
+        """
+        Liefert die Modellbeschreibung dieser Providerinstanz.
+        """
+
+        return self._create_model_info()
+
     def __init__(
         self,
         config: JsonMapping,
     ) -> None:
-        self._model_path = (
-            _read_optional_string(
-                config,
-                "path",
-            )
-            or _read_optional_string(
-                config,
-                "model_name",
-            )
+        self._model_path = _read_optional_string(
+            config,
+            "path",
+        ) or _read_optional_string(
+            config,
+            "model_name",
         )
 
         configured_model_id = _read_optional_string(
@@ -283,11 +278,7 @@ class MLXProvider(
                 self._model_path,
             ).name.strip()
 
-            self._model_id = (
-                model_name
-                if model_name
-                else DEFAULT_MODEL_ID
-            )
+            self._model_id = model_name if model_name else DEFAULT_MODEL_ID
 
         else:
             self._model_id = DEFAULT_MODEL_ID
@@ -427,9 +418,7 @@ class MLXProvider(
                 request.top_p,
             )
 
-            queue: asyncio.Queue[StreamQueueItem] = (
-                asyncio.Queue()
-            )
+            queue: asyncio.Queue[StreamQueueItem] = asyncio.Queue()
 
             event_loop = asyncio.get_running_loop()
 
@@ -502,7 +491,7 @@ class MLXProvider(
             await producer_task
 
             yield StreamEvent.create(
-                type=StreamEventType.END,
+                type=StreamEventType.COMPLETE,
                 data={
                     "backend": self.backend_name,
                     "model": model_id,
@@ -582,20 +571,14 @@ class MLXProvider(
     async def _ensure_loaded(
         self,
     ) -> tuple[object, object]:
-        if (
-            self._model is not None
-            and self._tokenizer is not None
-        ):
+        if self._model is not None and self._tokenizer is not None:
             return (
                 self._model,
                 self._tokenizer,
             )
 
         async with self._load_lock:
-            if (
-                self._model is not None
-                and self._tokenizer is not None
-            ):
+            if self._model is not None and self._tokenizer is not None:
                 return (
                     self._model,
                     self._tokenizer,
@@ -603,8 +586,7 @@ class MLXProvider(
 
             if self._model_path is None:
                 raise MLXConfigurationError(
-                    "Für den MLX-Provider fehlt "
-                    "'model_name' oder 'path'.",
+                    "Für den MLX-Provider fehlt 'model_name' oder 'path'.",
                 )
 
             if self._local_files_only:
@@ -618,8 +600,7 @@ class MLXProvider(
 
                 if not exists:
                     raise MLXConfigurationError(
-                        "Der konfigurierte lokale MLX-Modellpfad "
-                        "existiert nicht.",
+                        "Der konfigurierte lokale MLX-Modellpfad existiert nicht.",
                     )
 
             bindings = _require_mlx_bindings()
@@ -643,16 +624,11 @@ class MLXProvider(
     ) -> str:
         normalized_model_id = requested_model_id.strip()
 
-        model_id = (
-            normalized_model_id
-            if normalized_model_id
-            else self._model_id
-        )
+        model_id = normalized_model_id if normalized_model_id else self._model_id
 
         if model_id != self._model_id:
             raise MLXModelNotFoundError(
-                f"Das MLX-Modell '{model_id}' "
-                "ist nicht freigegeben.",
+                f"Das MLX-Modell '{model_id}' ist nicht freigegeben.",
             )
 
         return model_id
@@ -690,12 +666,10 @@ class MLXProvider(
         )
 
 
-def _require_mlx_bindings(
-) -> MLXBindings:
+def _require_mlx_bindings() -> MLXBindings:
     if _MLX_BINDINGS is None:
         raise MLXConfigurationError(
-            "Der MLX-Provider benötigt das Paket 'mlx-lm' "
-            "auf einem Apple-Silicon-Mac.",
+            "Der MLX-Provider benötigt das Paket 'mlx-lm' auf einem Apple-Silicon-Mac.",
         )
 
     return _MLX_BINDINGS
@@ -727,8 +701,7 @@ def _read_generation_text(
         return raw_text
 
     raise MLXConfigurationError(
-        "mlx_lm.stream_generate() lieferte ein "
-        "unbekanntes Antwortformat.",
+        "mlx_lm.stream_generate() lieferte ein unbekanntes Antwortformat.",
     )
 
 
@@ -758,10 +731,13 @@ def _create_prompt(
             )
 
         else:
-            if isinstance(
-                rendered,
-                str,
-            ) and rendered:
+            if (
+                isinstance(
+                    rendered,
+                    str,
+                )
+                and rendered
+            ):
                 return rendered
 
     prompt_parts: list[str] = []

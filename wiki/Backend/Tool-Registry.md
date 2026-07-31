@@ -227,15 +227,15 @@ Each registry entry represents one logical tool.
 
 Typical information includes:
 
-| Field | Purpose |
-|--------|----------|
-| Identifier | Stable logical name |
-| Display Name | Human-readable name |
-| Description | Functional overview |
-| Version | Tool version |
-| Input Schema | Request validation |
-| Output Schema | Result validation |
-| Metadata | Additional information |
+| Field         | Purpose                |
+| ------------- | ---------------------- |
+| Identifier    | Stable logical name    |
+| Display Name  | Human-readable name    |
+| Description   | Functional overview    |
+| Version       | Tool version           |
+| Input Schema  | Request validation     |
+| Output Schema | Result validation      |
+| Metadata      | Additional information |
 
 Registry entries remain immutable after initialization.
 

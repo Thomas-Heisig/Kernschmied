@@ -112,10 +112,10 @@ Example:
 
 ```json
 {
-    "id": "workspace-1",
-    "type": "workspace",
-    "title": "Main Workspace",
-    "children": []
+  "id": "workspace-1",
+  "type": "workspace",
+  "title": "Main Workspace",
+  "children": []
 }
 ```
 
@@ -127,20 +127,20 @@ The renderer relies on the contract rather than business-specific types.
 
 A node may contain:
 
-| Property | Description |
-|----------|-------------|
-| id | Unique identifier |
-| parent_id | Parent node |
-| type | Node type |
-| title | Display title |
-| subtitle | Optional secondary text |
-| icon | Icon identifier |
-| expanded | Initial expansion state |
+| Property   | Description                  |
+| ---------- | ---------------------------- |
+| id         | Unique identifier            |
+| parent_id  | Parent node                  |
+| type       | Node type                    |
+| title      | Display title                |
+| subtitle   | Optional secondary text      |
+| icon       | Icon identifier              |
+| expanded   | Initial expansion state      |
 | selectable | Whether selection is allowed |
-| draggable | Drag support |
-| droppable | Drop support |
-| disabled | Disabled state |
-| children | Child nodes |
+| draggable  | Drag support                 |
+| droppable  | Drop support                 |
+| disabled   | Disabled state               |
+| children   | Child nodes                  |
 
 Additional metadata may be included without modifying the renderer.
 
@@ -385,7 +385,7 @@ Example:
 
 ```json
 {
-    "icon": "folder"
+  "icon": "folder"
 }
 ```
 

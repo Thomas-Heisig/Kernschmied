@@ -16,8 +16,16 @@ from collections.abc import (
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from enum import StrEnum
-from typing import TypeAlias, cast
+from typing import cast
 
+from app.api.v1.router import api_router
+from app.auth import AuthenticationContextMiddleware
+from app.core.bootstrap import (
+    bootstrap_application,
+    shutdown_application,
+)
+from app.core.exceptions import ApplicationError
+from app.core.settings import settings
 from fastapi import (
     FastAPI,
     HTTPException,
@@ -30,25 +38,22 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
-from app.api.v1.router import api_router
-from app.auth import AuthenticationContextMiddleware
-from app.core.bootstrap import bootstrap_application
-from app.core.exceptions import ApplicationError
-from app.core.settings import settings
-
-
 logger = logging.getLogger(__name__)
 
 
 # ============================================================
-# Konstanten
+# Modulkonfiguration
 # ============================================================
 
+SOURCE_FILE = "backend/main.py"
+LOG_AREA = "application-runtime"
 
 DEFAULT_API_PREFIX = "/api/v1"
 DEFAULT_API_VERSION = "1.0"
 
 REQUEST_ID_HEADER = "X-Request-ID"
+CLIENT_REQUEST_ID_HEADER = "X-Client-Request-ID"
+
 API_VERSION_HEADER = "X-API-Version"
 CONFIG_REVISION_HEADER = "X-Config-Revision"
 
@@ -57,17 +62,47 @@ DEVELOPMENT_CORS_ORIGINS: tuple[str, ...] = (
     "http://127.0.0.1:5173",
 )
 
-REQUEST_ID_ALLOWED_CHARACTERS = frozenset(
-    "abcdefghijklmnopqrstuvwxyz"
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    "0123456789"
-    "-_.",
+CORS_ALLOWED_METHODS: tuple[str, ...] = (
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
 )
 
-ShutdownCallback: TypeAlias = Callable[
-    [],
-    None | Awaitable[None],
-]
+CORS_ALLOWED_HEADERS: tuple[str, ...] = (
+    "Accept",
+    "Authorization",
+    "Cache-Control",
+    "Content-Type",
+    "If-Match",
+    "If-None-Match",
+    "Last-Event-ID",
+    CLIENT_REQUEST_ID_HEADER,
+    REQUEST_ID_HEADER,
+)
+
+CORS_EXPOSED_HEADERS: tuple[str, ...] = (
+    REQUEST_ID_HEADER,
+    API_VERSION_HEADER,
+    CONFIG_REVISION_HEADER,
+    "X-Chat-Stream-ID",
+    "X-Chat-Schema-Version",
+    "X-Hierarchy-Schema-Version",
+    "X-Model-Registry-Revision",
+    "X-Model-Schema-Version",
+    "X-Tool-Registry-Revision",
+    "X-Tool-Schema-Version",
+    "X-UI-API-Schema-Version",
+    "X-UI-Schema-Version",
+)
+
+REQUEST_ID_ALLOWED_CHARACTERS = frozenset(
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_.",
+)
+
+MAX_REQUEST_ID_LENGTH = 128
 
 
 # ============================================================
@@ -83,6 +118,14 @@ class ApplicationEnvironment(StrEnum):
 
 @dataclass(frozen=True, slots=True)
 class RuntimeApplicationConfig:
+    """
+    Früh verfügbare Laufzeitkonfiguration der Anwendung.
+
+    Enthält ausschließlich Bootstrap-, Infrastruktur- und
+    Sicherheitswerte. Fachliche Einstellungen werden aus dem
+    ConfigService gelesen.
+    """
+
     environment: ApplicationEnvironment
     app_name: str
     app_version: str
@@ -101,9 +144,8 @@ def get_setting(
     """
     Liest eine Bootstrap-Einstellung defensiv.
 
-    Diese Funktion ist nur für Infrastruktur-, Bootstrap- und
-    Sicherheitswerte gedacht. Fachliche Konfiguration wird nicht aus
-    `settings`, sondern aus dem ConfigService gelesen.
+    Fachliche Einstellungen dürfen nicht über diese Funktion
+    aufgelöst werden.
     """
 
     return getattr(
@@ -125,10 +167,15 @@ def setting_as_string(
     if value is None:
         return default
 
-    if isinstance(value, StrEnum):
+    if isinstance(
+        value,
+        StrEnum,
+    ):
         normalized = value.value.strip()
     else:
-        normalized = str(value).strip()
+        normalized = str(
+            value,
+        ).strip()
 
     return normalized or default
 
@@ -142,13 +189,22 @@ def setting_as_bool(
         default,
     )
 
-    if isinstance(value, bool):
+    if isinstance(
+        value,
+        bool,
+    ):
         return value
 
-    if isinstance(value, int):
+    if isinstance(
+        value,
+        int,
+    ):
         return value != 0
 
-    if isinstance(value, str):
+    if isinstance(
+        value,
+        str,
+    ):
         normalized = value.strip().lower()
 
         if normalized in {
@@ -179,20 +235,29 @@ def coerce_non_negative_int(
 ) -> int:
     """
     Konvertiert bekannte Werttypen in eine nicht negative Ganzzahl.
-
-    Unbekannte Objekte werden bewusst nicht direkt an int() übergeben.
     """
 
-    if isinstance(value, bool):
-        return int(value)
+    if isinstance(
+        value,
+        bool,
+    ):
+        return int(
+            value,
+        )
 
-    if isinstance(value, int):
+    if isinstance(
+        value,
+        int,
+    ):
         return max(
             value,
             0,
         )
 
-    if isinstance(value, str):
+    if isinstance(
+        value,
+        str,
+    ):
         normalized = value.strip()
 
         if not normalized:
@@ -203,6 +268,7 @@ def coerce_non_negative_int(
                 int(normalized),
                 0,
             )
+
         except ValueError:
             return default
 
@@ -212,7 +278,10 @@ def coerce_non_negative_int(
 def normalize_api_prefix(
     value: object,
 ) -> str:
-    if isinstance(value, StrEnum):
+    if isinstance(
+        value,
+        StrEnum,
+    ):
         raw_prefix = value.value.strip()
     else:
         raw_prefix = str(
@@ -222,18 +291,11 @@ def normalize_api_prefix(
     if not raw_prefix:
         return DEFAULT_API_PREFIX
 
-    prefix = (
-        raw_prefix
-        if raw_prefix.startswith("/")
-        else f"/{raw_prefix}"
-    )
+    prefix = raw_prefix if raw_prefix.startswith("/") else f"/{raw_prefix}"
 
     prefix = prefix.rstrip("/")
 
-    if not prefix:
-        return DEFAULT_API_PREFIX
-
-    return prefix
+    return prefix or DEFAULT_API_PREFIX
 
 
 def normalize_environment_value(
@@ -241,14 +303,6 @@ def normalize_environment_value(
 ) -> str:
     """
     Normalisiert Umgebungswerte aus Strings und Enum-Instanzen.
-
-    Dadurch werden sowohl
-
-    - "development"
-    - ApplicationEnvironment.DEVELOPMENT
-    - ältere Darstellungen wie "AppEnvironment.DEVELOPMENT"
-
-    sicher behandelt.
     """
 
     if isinstance(
@@ -257,8 +311,12 @@ def normalize_environment_value(
     ):
         return value.value
 
-    if isinstance(value, StrEnum):
+    if isinstance(
+        value,
+        StrEnum,
+    ):
         raw_value = value.value
+
     else:
         enum_value = getattr(
             value,
@@ -266,10 +324,15 @@ def normalize_environment_value(
             None,
         )
 
-        if isinstance(enum_value, str):
+        if isinstance(
+            enum_value,
+            str,
+        ):
             raw_value = enum_value
         else:
-            raw_value = str(value)
+            raw_value = str(
+                value,
+            )
 
     normalized = raw_value.strip().lower()
 
@@ -279,20 +342,23 @@ def normalize_environment_value(
     )
 
     for prefix in legacy_prefixes:
-        if normalized.startswith(prefix):
-            legacy_value = normalized.removeprefix(
-                prefix,
-            )
+        if not normalized.startswith(
+            prefix,
+        ):
+            continue
 
-            logger.warning(
-                "Legacy environment representation detected",
-                extra={
-                    "configured_environment": normalized,
-                    "normalized_environment": legacy_value,
-                },
-            )
+        legacy_value = normalized.removeprefix(
+            prefix,
+        )
 
-            return legacy_value
+        _log_warning(
+            "Legacy environment representation detected",
+            runtime_event="legacy-environment-normalized",
+            configured_environment=normalized,
+            normalized_environment=legacy_value,
+        )
+
+        return legacy_value
 
     return normalized
 
@@ -317,10 +383,10 @@ def resolve_environment() -> ApplicationEnvironment:
         return ApplicationEnvironment(
             normalized,
         )
+
     except ValueError as exc:
         allowed_values = ", ".join(
-            environment.value
-            for environment in ApplicationEnvironment
+            environment.value for environment in ApplicationEnvironment
         )
 
         raise RuntimeError(
@@ -336,11 +402,11 @@ def normalize_origins(
     """
     Normalisiert CORS-Origins.
 
-    Unterstützt werden:
+    Unterstützt:
 
-    - kommaseparierte Zeichenketten
-    - Sequenzen aus Zeichenketten
-    - Mengen aus Zeichenketten
+    - kommaseparierte Zeichenketten,
+    - Sequenzen,
+    - Mengen.
     """
 
     raw_values: list[object]
@@ -348,15 +414,24 @@ def normalize_origins(
     if value is None:
         raw_values = []
 
-    elif isinstance(value, str):
+    elif isinstance(
+        value,
+        str,
+    ):
         raw_values = list(
             value.split(","),
         )
 
-    elif isinstance(value, Mapping):
+    elif isinstance(
+        value,
+        Mapping,
+    ):
         raw_values = []
 
-    elif isinstance(value, Sequence):
+    elif isinstance(
+        value,
+        Sequence,
+    ):
         raw_values = list(
             cast(
                 Sequence[object],
@@ -366,10 +441,7 @@ def normalize_origins(
 
     elif isinstance(
         value,
-        (
-            set,
-            frozenset,
-        ),
+        set | frozenset,
     ):
         raw_values = list(
             cast(
@@ -388,17 +460,20 @@ def normalize_origins(
         if raw_origin is None:
             continue
 
-        origin = str(
-            raw_origin,
-        ).strip().rstrip("/")
+        origin = (
+            str(
+                raw_origin,
+            )
+            .strip()
+            .rstrip("/")
+        )
 
         if not origin:
             continue
 
         if origin == "*":
             raise RuntimeError(
-                "Der CORS-Ursprung '*' ist mit "
-                "allow_credentials=True nicht zulässig.",
+                "Der CORS-Ursprung '*' ist mit allow_credentials=True nicht zulässig.",
             )
 
         if origin in seen:
@@ -407,6 +482,7 @@ def normalize_origins(
         seen.add(
             origin,
         )
+
         origins.append(
             origin,
         )
@@ -441,10 +517,7 @@ def resolve_cors_origins(
 def build_runtime_config() -> RuntimeApplicationConfig:
     environment = resolve_environment()
 
-    docs_enabled_default = (
-        environment
-        is not ApplicationEnvironment.INTERNET
-    )
+    docs_enabled_default = environment is not ApplicationEnvironment.INTERNET
 
     docs_enabled = setting_as_bool(
         "docs_enabled",
@@ -452,21 +525,16 @@ def build_runtime_config() -> RuntimeApplicationConfig:
     )
 
     development_auth_fallback_enabled = (
-        environment
-        is ApplicationEnvironment.DEVELOPMENT
+        environment is ApplicationEnvironment.DEVELOPMENT
         and setting_as_bool(
             "development_auth_fallback_enabled",
             True,
         )
     )
 
-    hsts_enabled = (
-        environment
-        is ApplicationEnvironment.INTERNET
-        or setting_as_bool(
-            "hsts_enabled",
-            False,
-        )
+    hsts_enabled = environment is ApplicationEnvironment.INTERNET or setting_as_bool(
+        "hsts_enabled",
+        False,
     )
 
     return RuntimeApplicationConfig(
@@ -493,9 +561,7 @@ def build_runtime_config() -> RuntimeApplicationConfig:
             environment,
         ),
         docs_enabled=docs_enabled,
-        development_auth_fallback_enabled=(
-            development_auth_fallback_enabled
-        ),
+        development_auth_fallback_enabled=(development_auth_fallback_enabled),
         hsts_enabled=hsts_enabled,
     )
 
@@ -508,44 +574,92 @@ def build_runtime_config() -> RuntimeApplicationConfig:
 def is_valid_request_id(
     value: str,
 ) -> bool:
-    return (
-        1 <= len(value) <= 128
-        and all(
-            character in REQUEST_ID_ALLOWED_CHARACTERS
-            for character in value
-        )
+    return 1 <= len(value) <= MAX_REQUEST_ID_LENGTH and all(
+        character in REQUEST_ID_ALLOWED_CHARACTERS for character in value
     )
+
+
+def normalize_request_id(
+    value: object,
+) -> str | None:
+    if not isinstance(
+        value,
+        str,
+    ):
+        return None
+
+    normalized = value.strip()
+
+    if not normalized:
+        return None
+
+    if not is_valid_request_id(
+        normalized,
+    ):
+        return None
+
+    return normalized
 
 
 def get_request_id(
     request: Request,
 ) -> str:
-    request_id = getattr(
-        request.state,
-        "request_id",
-        None,
+    """
+    Liefert die serverseitige Request-ID.
+
+    Eine bereits durch die Middleware gesetzte ID wird bevorzugt.
+    """
+
+    state_request_id = normalize_request_id(
+        getattr(
+            request.state,
+            "request_id",
+            None,
+        ),
     )
 
-    if isinstance(request_id, str):
-        normalized = request_id.strip()
-
-        if (
-            normalized
-            and is_valid_request_id(
-                normalized,
-            )
-        ):
-            return normalized
+    if state_request_id is not None:
+        return state_request_id
 
     generated_request_id = str(
         uuid.uuid4(),
     )
 
-    request.state.request_id = (
-        generated_request_id
-    )
+    request.state.request_id = generated_request_id
 
     return generated_request_id
+
+
+def get_client_request_id(
+    request: Request,
+) -> str | None:
+    """
+    Liefert die optionale Korrelations-ID des Frontends.
+
+    Die Client-ID bleibt getrennt von der serverseitigen Request-ID.
+    """
+
+    state_client_request_id = normalize_request_id(
+        getattr(
+            request.state,
+            "client_request_id",
+            None,
+        ),
+    )
+
+    if state_client_request_id is not None:
+        return state_client_request_id
+
+    header_client_request_id = normalize_request_id(
+        request.headers.get(
+            CLIENT_REQUEST_ID_HEADER,
+        ),
+    )
+
+    if header_client_request_id is not None:
+        request.state.client_request_id = header_client_request_id
+
+    return header_client_request_id
 
 
 def get_runtime_config(
@@ -565,9 +679,7 @@ def get_runtime_config(
 
     runtime_config = build_runtime_config()
 
-    app.state.runtime_config = (
-        runtime_config
-    )
+    app.state.runtime_config = runtime_config
 
     return runtime_config
 
@@ -597,17 +709,15 @@ def structured_error_response(
 
     if headers is not None:
         response_headers.update(
-            dict(headers),
+            dict(
+                headers,
+            ),
         )
 
     content: dict[str, object] = {
         "code": code,
         "message": message,
-        "details": (
-            details
-            if details is not None
-            else {}
-        ),
+        "details": (details if details is not None else {}),
         "request_id": request_id,
     }
 
@@ -624,10 +734,8 @@ def validation_error_details(
     exc: RequestValidationError,
 ) -> dict[str, object]:
     """
-    Entfernt Eingabewerte und Kontexte aus Validierungsfehlern.
-
-    Dadurch werden keine Passwörter, Tokens oder sonstigen sensitiven
-    Request-Daten in Fehlerantworten zurückgegeben.
+    Entfernt Requestwerte und interne Kontexte aus
+    Validierungsfehlern.
     """
 
     raw_errors = cast(
@@ -635,9 +743,7 @@ def validation_error_details(
         exc.errors(),
     )
 
-    sanitized_errors: list[
-        dict[str, object]
-    ] = []
+    sanitized_errors: list[dict[str, object]] = []
 
     for raw_error in raw_errors:
         sanitized_error = {
@@ -674,7 +780,9 @@ def parse_http_exception_detail(
     ):
         return (
             "HTTP_ERROR",
-            str(detail),
+            str(
+                detail,
+            ),
             {},
             None,
         )
@@ -699,308 +807,22 @@ def parse_http_exception_detail(
         {},
     )
 
-    raw_request_id = typed_detail.get(
-        "request_id",
+    request_id = normalize_request_id(
+        typed_detail.get(
+            "request_id",
+        ),
     )
-
-    request_id = (
-        str(raw_request_id).strip()
-        if raw_request_id is not None
-        else None
-    )
-
-    if request_id == "":
-        request_id = None
 
     return (
-        str(raw_code),
-        str(raw_message),
+        str(
+            raw_code,
+        ),
+        str(
+            raw_message,
+        ),
         raw_details,
         request_id,
     )
-
-
-# ============================================================
-# Shutdown-Verwaltung
-# ============================================================
-
-
-def register_shutdown_callback(
-    app: FastAPI,
-    callback: ShutdownCallback,
-) -> None:
-    """
-    Registriert eine geordnete Shutdown-Funktion.
-
-    Bootstrap-Komponenten sollten diese Schnittstelle verwenden, statt
-    von `main.py` über Attributnamen erkannt zu werden.
-    """
-
-    callbacks_value: object = getattr(
-        app.state,
-        "shutdown_callbacks",
-        None,
-    )
-
-    if callbacks_value is None:
-        callbacks: list[ShutdownCallback] = []
-        app.state.shutdown_callbacks = callbacks
-
-    elif isinstance(
-        callbacks_value,
-        list,
-    ):
-        callbacks = cast(
-            list[ShutdownCallback],
-            callbacks_value,
-        )
-
-    else:
-        raise RuntimeError(
-            "app.state.shutdown_callbacks besitzt "
-            "einen ungültigen Typ.",
-        )
-
-    callbacks.append(
-        callback,
-    )
-
-    owner = getattr(
-        callback,
-        "__self__",
-        None,
-    )
-
-    if owner is None:
-        return
-
-    managed_ids_value: object = getattr(
-        app.state,
-        "shutdown_managed_object_ids",
-        None,
-    )
-
-    if managed_ids_value is None:
-        managed_ids: set[int] = set()
-        app.state.shutdown_managed_object_ids = (
-            managed_ids
-        )
-
-    elif isinstance(
-        managed_ids_value,
-        set,
-    ):
-        managed_ids = cast(
-            set[int],
-            managed_ids_value,
-        )
-
-    else:
-        raise RuntimeError(
-            "app.state.shutdown_managed_object_ids "
-            "besitzt einen ungültigen Typ.",
-        )
-
-    managed_ids.add(
-        id(owner),
-    )
-
-async def invoke_shutdown_callback(
-    callback: ShutdownCallback,
-    *,
-    callback_name: str,
-) -> None:
-    try:
-        result = callback()
-
-        if inspect.isawaitable(
-            result,
-        ):
-            await result
-
-    except Exception:
-        logger.exception(
-            "Shutdown callback failed",
-            extra={
-                "callback": callback_name,
-            },
-        )
-
-
-async def run_registered_shutdown_callbacks(
-    app: FastAPI,
-) -> None:
-    callbacks_value = getattr(
-        app.state,
-        "shutdown_callbacks",
-        None,
-    )
-
-    if not isinstance(
-        callbacks_value,
-        list,
-    ):
-        return
-
-    callbacks = cast(
-        list[ShutdownCallback],
-        callbacks_value,
-    )
-
-    for callback in reversed(
-        callbacks.copy(),
-    ):
-        callback_name = getattr(
-            callback,
-            "__qualname__",
-            getattr(
-                callback,
-                "__name__",
-                callback.__class__.__name__,
-            ),
-        )
-
-        await invoke_shutdown_callback(
-            callback,
-            callback_name=str(
-                callback_name,
-            ),
-        )
-
-    callbacks.clear()
-
-
-async def shutdown_legacy_state_services(
-    app: FastAPI,
-) -> None:
-    """
-    Übergangskompatibilität für Services ohne registrierten
-    Shutdown-Callback.
-    """
-
-    state_attribute_names: tuple[str, ...] = (
-        "chat_service",
-        "model_service",
-        "model_lifecycle",
-        "tool_registry",
-        "model_registry",
-        "config_service",
-        "database",
-        "database_manager",
-        "db_engine",
-    )
-
-    managed_ids_value: object = getattr(
-        app.state,
-        "shutdown_managed_object_ids",
-        None,
-    )
-
-    if managed_ids_value is None:
-        managed_object_ids: set[int] = set()
-
-    elif isinstance(
-        managed_ids_value,
-        set,
-    ):
-        managed_object_ids = cast(
-            set[int],
-            managed_ids_value,
-        )
-
-    else:
-        logger.warning(
-            "Invalid shutdown_managed_object_ids state",
-            extra={
-                "actual_type": (
-                    managed_ids_value
-                    .__class__
-                    .__name__
-                ),
-            },
-        )
-
-        managed_object_ids = set()
-
-    closed_objects: set[int] = set()
-
-    for attribute_name in state_attribute_names:
-        service = getattr(
-            app.state,
-            attribute_name,
-            None,
-        )
-
-        if service is None:
-            continue
-
-        object_id = id(
-            service,
-        )
-
-        if object_id in managed_object_ids:
-            continue
-
-        if object_id in closed_objects:
-            continue
-
-        closed_objects.add(
-            object_id,
-        )
-
-        for method_name in (
-            "shutdown",
-            "close",
-            "dispose",
-        ):
-            method_value = getattr(
-                service,
-                method_name,
-                None,
-            )
-
-            if not callable(
-                method_value,
-            ):
-                continue
-
-            callback = cast(
-                ShutdownCallback,
-                method_value,
-            )
-
-            await invoke_shutdown_callback(
-                callback,
-                callback_name=(
-                    f"{attribute_name}."
-                    f"{method_name}"
-                ),
-            )
-
-            break
-
-async def shutdown_application(
-    app: FastAPI,
-) -> None:
-    await run_registered_shutdown_callbacks(
-        app,
-    )
-
-    await shutdown_legacy_state_services(
-        app,
-    )
-
-    managed_ids_value: object = getattr(
-        app.state,
-        "shutdown_managed_object_ids",
-        None,
-    )
-
-    if isinstance(
-        managed_ids_value,
-        set,
-    ):
-        managed_ids_value.clear()
 
 
 # ============================================================
@@ -1016,18 +838,20 @@ async def lifespan(
         app,
     )
 
-    app.state.shutdown_callbacks = []
-    app.state.shutdown_managed_object_ids = set()
+    app.state.bootstrap_complete = False
     app.state.bootstrap_completed = False
+    app.state.bootstrap_error = None
     app.state.bootstrap_result = None
+    app.state.started_at_monotonic = None
+    app.state.environment = runtime_config.environment.value
 
-    logger.info(
-        "Application bootstrap started",
-        extra={
-            "environment": (
-                runtime_config.environment.value
-            ),
-        },
+    _log_info(
+        "Application lifecycle startup started",
+        runtime_event="lifecycle-startup-started",
+        environment=runtime_config.environment.value,
+        application_name=runtime_config.app_name,
+        application_version=runtime_config.app_version,
+        api_prefix=runtime_config.api_prefix,
     )
 
     try:
@@ -1035,56 +859,69 @@ async def lifespan(
             app,
         )
 
-        app.state.bootstrap_result = (
-            bootstrap_result
-        )
+        app.state.bootstrap_result = bootstrap_result
 
+        app.state.bootstrap_complete = True
         app.state.bootstrap_completed = True
 
-        app.state.started_at_monotonic = (
-            time.monotonic()
-        )
+        app.state.started_at_monotonic = time.monotonic()
 
-        app.state.environment = (
-            runtime_config.environment.value
-        )
-
-        logger.info(
-            "Application bootstrap completed",
-            extra={
-                "environment": (
-                    runtime_config.environment.value
-                ),
-            },
+        _log_info(
+            "Application lifecycle startup completed",
+            runtime_event="lifecycle-startup-completed",
+            environment=runtime_config.environment.value,
+            bootstrap_complete=True,
         )
 
         yield
 
-    except Exception:
-        logger.exception(
-            "Application lifecycle failed",
-            extra={
-                "environment": (
-                    runtime_config.environment.value
-                ),
-            },
+    except Exception as exc:
+        app.state.bootstrap_complete = False
+        app.state.bootstrap_completed = False
+        app.state.bootstrap_error = str(
+            exc,
         )
+
+        _log_exception(
+            "Application lifecycle failed",
+            runtime_event="lifecycle-failed",
+            environment=runtime_config.environment.value,
+            error_type=type(exc).__name__,
+            error_message=str(exc),
+        )
+
         raise
 
     finally:
+        app.state.bootstrap_complete = False
         app.state.bootstrap_completed = False
 
-        logger.info(
-            "Application shutdown started",
+        _log_info(
+            "Application lifecycle shutdown started",
+            runtime_event="lifecycle-shutdown-started",
+            environment=runtime_config.environment.value,
         )
 
-        await shutdown_application(
-            app,
-        )
+        try:
+            await shutdown_application(
+                app,
+            )
 
-        logger.info(
-            "Application shutdown completed",
-        )
+        except Exception as exc:
+            _log_exception(
+                "Application shutdown failed",
+                runtime_event="lifecycle-shutdown-failed",
+                environment=runtime_config.environment.value,
+                error_type=type(exc).__name__,
+                error_message=str(exc),
+            )
+
+        else:
+            _log_info(
+                "Application lifecycle shutdown completed",
+                runtime_event="lifecycle-shutdown-completed",
+                environment=runtime_config.environment.value,
+            )
 
 
 # ============================================================
@@ -1102,24 +939,16 @@ def register_exception_handlers(
         request: Request,
         exc: ApplicationError,
     ) -> JSONResponse:
-        exception_request_id = getattr(
-            exc,
-            "request_id",
-            None,
+        exception_request_id = normalize_request_id(
+            getattr(
+                exc,
+                "request_id",
+                None,
+            ),
         )
 
-        if (
-            isinstance(
-                exception_request_id,
-                str,
-            )
-            and is_valid_request_id(
-                exception_request_id,
-            )
-        ):
-            request.state.request_id = (
-                exception_request_id
-            )
+        if exception_request_id is not None:
+            request.state.request_id = exception_request_id
 
         status_code_value = getattr(
             exc,
@@ -1148,6 +977,24 @@ def register_exception_handlers(
             {},
         )
 
+        _log_warning(
+            "Application error handled",
+            runtime_event="application-error-handled",
+            request_id=get_request_id(
+                request,
+            ),
+            client_request_id=get_client_request_id(
+                request,
+            ),
+            path=request.url.path,
+            method=request.method,
+            status_code=status_code_int,
+            error_code=str(
+                code_value,
+            ),
+            error_type=type(exc).__name__,
+        )
+
         return structured_error_response(
             request=request,
             status_code=status_code_int,
@@ -1167,18 +1014,44 @@ def register_exception_handlers(
         request: Request,
         exc: RequestValidationError,
     ) -> JSONResponse:
+        details = validation_error_details(
+            exc,
+        )
+
+        errors = details.get(
+            "errors",
+            [],
+        )
+
+        error_count = (
+            len(errors)  # type: ignore
+            if isinstance(
+                errors,
+                list,
+            )
+            else 0
+        )
+
+        _log_warning(
+            "Request validation failed",
+            runtime_event="request-validation-failed",
+            request_id=get_request_id(
+                request,
+            ),
+            client_request_id=get_client_request_id(
+                request,
+            ),
+            path=request.url.path,
+            method=request.method,
+            validation_error_count=error_count,
+        )
+
         return structured_error_response(
             request=request,
-            status_code=(
-                status.HTTP_422_UNPROCESSABLE_ENTITY
-            ),
+            status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
             code="REQUEST_VALIDATION_FAILED",
-            message=(
-                "Die Anfrage enthält ungültige Daten."
-            ),
-            details=validation_error_details(
-                exc,
-            ),
+            message=("Die Anfrage enthält ungültige Daten."),
+            details=details,
         )
 
     @application.exception_handler(
@@ -1197,15 +1070,23 @@ def register_exception_handlers(
             exc.detail,
         )
 
-        if (
-            exception_request_id is not None
-            and is_valid_request_id(
-                exception_request_id,
-            )
-        ):
-            request.state.request_id = (
-                exception_request_id
-            )
+        if exception_request_id is not None:
+            request.state.request_id = exception_request_id
+
+        _log_warning(
+            "HTTP exception handled",
+            runtime_event="http-exception-handled",
+            request_id=get_request_id(
+                request,
+            ),
+            client_request_id=get_client_request_id(
+                request,
+            ),
+            path=request.url.path,
+            method=request.method,
+            status_code=exc.status_code,
+            error_code=code,
+        )
 
         return structured_error_response(
             request=request,
@@ -1227,27 +1108,25 @@ def register_exception_handlers(
             request,
         )
 
-        logger.exception(
+        _log_exception(
             "Unhandled application exception",
-            extra={
-                "request_id": request_id,
-                "path": request.url.path,
-                "method": request.method,
-                "exception_type": (
-                    exc.__class__.__name__
-                ),
-            },
+            runtime_event="unhandled-exception",
+            request_id=request_id,
+            client_request_id=get_client_request_id(
+                request,
+            ),
+            path=request.url.path,
+            method=request.method,
+            error_type=type(exc).__name__,
+            error_message=str(exc),
         )
 
         return structured_error_response(
             request=request,
-            status_code=(
-                status.HTTP_500_INTERNAL_SERVER_ERROR
-            ),
+            status_code=(status.HTTP_500_INTERNAL_SERVER_ERROR),
             code="INTERNAL_SERVER_ERROR",
             message=(
-                "Bei der Verarbeitung der Anfrage "
-                "ist ein interner Fehler aufgetreten."
+                "Bei der Verarbeitung der Anfrage ist ein interner Fehler aufgetreten."
             ),
         )
 
@@ -1295,10 +1174,14 @@ async def resolve_config_revision(
                 resolved_result,
             )
 
-        except Exception:
-            logger.exception(
+        except Exception as exc:
+            _log_exception(
                 "Config revision could not be resolved",
+                runtime_event="config-revision-resolution-failed",
+                error_type=type(exc).__name__,
+                error_message=str(exc),
             )
+
             return 0
 
     raw_revision: object = getattr(
@@ -1313,7 +1196,7 @@ async def resolve_config_revision(
 
 
 # ============================================================
-# Middleware
+# Response- und Sicherheitsheader
 # ============================================================
 
 
@@ -1323,45 +1206,63 @@ def add_security_headers(
     runtime_config: RuntimeApplicationConfig,
     request_id: str,
 ) -> None:
-    response.headers[
-        REQUEST_ID_HEADER
-    ] = request_id
+    response.headers[REQUEST_ID_HEADER] = request_id
 
-    response.headers[
-        API_VERSION_HEADER
-    ] = runtime_config.api_version
+    response.headers[API_VERSION_HEADER] = runtime_config.api_version
 
-    response.headers[
-        "X-Content-Type-Options"
-    ] = "nosniff"
+    response.headers["X-Content-Type-Options"] = "nosniff"
 
-    response.headers[
-        "X-Frame-Options"
-    ] = "DENY"
+    response.headers["X-Frame-Options"] = "DENY"
 
-    response.headers[
-        "Referrer-Policy"
-    ] = "no-referrer"
+    response.headers["Referrer-Policy"] = "no-referrer"
 
-    response.headers[
-        "Permissions-Policy"
-    ] = (
-        "camera=(), microphone=(), "
-        "geolocation=()"
-    )
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
 
     if runtime_config.hsts_enabled:
-        response.headers[
-            "Strict-Transport-Security"
-        ] = (
-            "max-age=31536000; "
-            "includeSubDomains"
+        response.headers["Strict-Transport-Security"] = (
+            "max-age=31536000; includeSubDomains"
         )
+
+
+# ============================================================
+# Middleware
+# ============================================================
+
+
+def register_authentication_middleware(
+    application: FastAPI,
+    *,
+    runtime_config: RuntimeApplicationConfig,
+) -> None:
+    """
+    Registriert die Authentifizierung.
+
+    Diese Middleware wird vor dem Request-Kontext registriert.
+    Da Starlette die zuletzt registrierte Middleware außen
+    ausführt, wird der Request-Kontext danach außerhalb der
+    Authentifizierung liegen.
+    """
+
+    application.add_middleware(
+        AuthenticationContextMiddleware,
+        development_fallback_enabled=(runtime_config.development_auth_fallback_enabled),
+    )
+
+    _log_info(
+        "Authentication middleware registered",
+        runtime_event="authentication-middleware-registered",
+        environment=runtime_config.environment.value,
+        development_fallback_enabled=(runtime_config.development_auth_fallback_enabled),
+    )
 
 
 def register_http_middleware(
     application: FastAPI,
 ) -> None:
+    """
+    Registriert Request-ID, Laufzeitmessung und Sicherheitsheader.
+    """
+
     @application.middleware("http")
     async def request_context_middleware(
         request: Request,
@@ -1370,42 +1271,65 @@ def register_http_middleware(
             Awaitable[Response],
         ],
     ) -> Response:
-        incoming_request_id = request.headers.get(
-            REQUEST_ID_HEADER,
+        incoming_server_request_id = normalize_request_id(
+            request.headers.get(
+                REQUEST_ID_HEADER,
+            ),
         )
 
-        normalized_incoming_request_id = (
-            incoming_request_id.strip()
-            if incoming_request_id is not None
-            else None
+        client_request_id = normalize_request_id(
+            request.headers.get(
+                CLIENT_REQUEST_ID_HEADER,
+            ),
         )
 
-        request_id = (
-            normalized_incoming_request_id
-            if (
-                normalized_incoming_request_id is not None
-                and is_valid_request_id(
-                    normalized_incoming_request_id,
-                )
-            )
-            else str(
-                uuid.uuid4(),
-            )
+        request_id = incoming_server_request_id or str(
+            uuid.uuid4(),
         )
 
-        request.state.request_id = (
-            request_id
-        )
+        request.state.request_id = request_id
+        request.state.client_request_id = client_request_id
 
         started_at = time.perf_counter()
 
-        response = await call_next(
-            request,
+        _log_debug(
+            "HTTP request started",
+            runtime_event="http-request-started",
+            request_id=request_id,
+            client_request_id=client_request_id,
+            method=request.method,
+            path=request.url.path,
+            origin=request.headers.get(
+                "origin",
+            ),
         )
 
-        duration_ms = (
-            time.perf_counter() - started_at
-        ) * 1000
+        try:
+            response = await call_next(
+                request,
+            )
+
+        except Exception as exc:
+            duration_ms = (time.perf_counter() - started_at) * 1000
+
+            _log_exception(
+                "HTTP request middleware failed",
+                runtime_event="http-request-middleware-failed",
+                request_id=request_id,
+                client_request_id=client_request_id,
+                method=request.method,
+                path=request.url.path,
+                duration_ms=round(
+                    duration_ms,
+                    2,
+                ),
+                error_type=type(exc).__name__,
+                error_message=str(exc),
+            )
+
+            raise
+
+        duration_ms = (time.perf_counter() - started_at) * 1000
 
         runtime_config = get_runtime_config(
             request.app,
@@ -1417,37 +1341,24 @@ def register_http_middleware(
             request_id=request_id,
         )
 
-        logger.info(
+        _log_info(
             "HTTP request completed",
-            extra={
-                "request_id": request_id,
-                "method": request.method,
-                "path": request.url.path,
-                "status_code": (
-                    response.status_code
-                ),
-                "duration_ms": round(
-                    duration_ms,
-                    2,
-                ),
-            },
+            runtime_event="http-request-completed",
+            request_id=request_id,
+            client_request_id=client_request_id,
+            method=request.method,
+            path=request.url.path,
+            status_code=response.status_code,
+            duration_ms=round(
+                duration_ms,
+                2,
+            ),
+            origin=request.headers.get(
+                "origin",
+            ),
         )
 
         return response
-
-
-def register_authentication_middleware(
-    application: FastAPI,
-    *,
-    runtime_config: RuntimeApplicationConfig,
-) -> None:
-    application.add_middleware(
-        AuthenticationContextMiddleware,
-        development_fallback_enabled=(
-            runtime_config
-            .development_auth_fallback_enabled
-        ),
-    )
 
 
 def register_cors_middleware(
@@ -1455,21 +1366,19 @@ def register_cors_middleware(
     *,
     runtime_config: RuntimeApplicationConfig,
 ) -> None:
-    if (
-        runtime_config.environment
-        in {
-            ApplicationEnvironment.INTRANET,
-            ApplicationEnvironment.INTERNET,
-        }
-        and not runtime_config.cors_origins
-    ):
-        logger.info(
-            "Cross-origin requests are disabled",
-            extra={
-                "environment": (
-                    runtime_config.environment.value
-                ),
-            },
+    """
+    Registriert CORS als äußerste Middleware.
+
+    Dadurch werden gültige OPTIONS-Preflight-Anfragen bereits
+    durch CORSMiddleware beantwortet und erreichen weder
+    Authentifizierung noch API-Routen.
+    """
+
+    if not runtime_config.cors_origins:
+        _log_warning(
+            "No CORS origins configured",
+            runtime_event="cors-without-origins",
+            environment=runtime_config.environment.value,
         )
 
     application.add_middleware(
@@ -1478,37 +1387,35 @@ def register_cors_middleware(
             runtime_config.cors_origins,
         ),
         allow_credentials=True,
-        allow_methods=[
-            "GET",
-            "POST",
-            "PUT",
-            "PATCH",
-            "DELETE",
-            "OPTIONS",
-        ],
-        allow_headers=[
-            "Accept",
-            "Authorization",
-            "Content-Type",
-            "If-Match",
-            "If-None-Match",
-            "Last-Event-ID",
-            REQUEST_ID_HEADER,
-        ],
-        expose_headers=[
-            REQUEST_ID_HEADER,
-            API_VERSION_HEADER,
-            CONFIG_REVISION_HEADER,
-            "X-Chat-Stream-ID",
-            "X-Chat-Schema-Version",
-            "X-Hierarchy-Schema-Version",
-            "X-Model-Registry-Revision",
-            "X-Model-Schema-Version",
-            "X-Tool-Registry-Revision",
-            "X-Tool-Schema-Version",
-            "X-UI-API-Schema-Version",
-            "X-UI-Schema-Version",
-        ],
+        allow_methods=list(
+            CORS_ALLOWED_METHODS,
+        ),
+        allow_headers=list(
+            CORS_ALLOWED_HEADERS,
+        ),
+        expose_headers=list(
+            CORS_EXPOSED_HEADERS,
+        ),
+        max_age=600,
+    )
+
+    _log_info(
+        "CORS middleware registered",
+        runtime_event="cors-middleware-registered",
+        environment=runtime_config.environment.value,
+        allowed_origins=list(
+            runtime_config.cors_origins,
+        ),
+        allowed_methods=list(
+            CORS_ALLOWED_METHODS,
+        ),
+        allowed_headers=list(
+            CORS_ALLOWED_HEADERS,
+        ),
+        exposed_headers=list(
+            CORS_EXPOSED_HEADERS,
+        ),
+        allow_credentials=True,
         max_age=600,
     )
 
@@ -1543,21 +1450,11 @@ def register_routes(
         return {
             "name": runtime_config.app_name,
             "status": "running",
-            "environment": (
-                runtime_config.environment.value
-            ),
-            "application_version": (
-                runtime_config.app_version
-            ),
-            "api_version": (
-                runtime_config.api_version
-            ),
-            "api_prefix": (
-                runtime_config.api_prefix
-            ),
-            "config_revision": (
-                config_revision
-            ),
+            "environment": (runtime_config.environment.value),
+            "application_version": (runtime_config.app_version),
+            "api_version": (runtime_config.api_version),
+            "api_prefix": (runtime_config.api_prefix),
+            "config_revision": (config_revision),
             "request_id": get_request_id(
                 request,
             ),
@@ -1569,9 +1466,14 @@ def register_routes(
         summary="Liveness-Prüfung",
         include_in_schema=False,
     )
-    async def health_live() -> dict[str, str]:
+    async def health_live(
+        request: Request,
+    ) -> dict[str, str]:
         return {
             "status": "alive",
+            "request_id": get_request_id(
+                request,
+            ),
         }
 
     @application.get(
@@ -1583,6 +1485,14 @@ def register_routes(
     async def health_ready(
         request: Request,
     ) -> JSONResponse:
+        bootstrap_complete = bool(
+            getattr(
+                request.app.state,
+                "bootstrap_complete",
+                False,
+            ),
+        )
+
         bootstrap_completed = bool(
             getattr(
                 request.app.state,
@@ -1591,15 +1501,30 @@ def register_routes(
             ),
         )
 
+        ready = bootstrap_complete and bootstrap_completed
+
         request_id = get_request_id(
             request,
         )
 
-        if not bootstrap_completed:
+        if not ready:
+            bootstrap_error = getattr(
+                request.app.state,
+                "bootstrap_error",
+                None,
+            )
+
+            _log_warning(
+                "Readiness check failed",
+                runtime_event="readiness-check-failed",
+                request_id=request_id,
+                bootstrap_complete=bootstrap_complete,
+                bootstrap_completed=bootstrap_completed,
+                has_bootstrap_error=(bootstrap_error is not None),
+            )
+
             return JSONResponse(
-                status_code=(
-                    status.HTTP_503_SERVICE_UNAVAILABLE
-                ),
+                status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
                 content={
                     "status": "not_ready",
                     "request_id": request_id,
@@ -1622,6 +1547,12 @@ def register_routes(
             },
         )
 
+    _log_info(
+        "Application routes registered",
+        runtime_event="routes-registered",
+        api_prefix=runtime_config.api_prefix,
+    )
+
 
 # ============================================================
 # Anwendungs-Factory
@@ -1631,23 +1562,11 @@ def register_routes(
 def create_application() -> FastAPI:
     runtime_config = build_runtime_config()
 
-    docs_url = (
-        "/docs"
-        if runtime_config.docs_enabled
-        else None
-    )
+    docs_url = "/docs" if runtime_config.docs_enabled else None
 
-    redoc_url = (
-        "/redoc"
-        if runtime_config.docs_enabled
-        else None
-    )
+    redoc_url = "/redoc" if runtime_config.docs_enabled else None
 
-    openapi_url = (
-        "/openapi.json"
-        if runtime_config.docs_enabled
-        else None
-    )
+    openapi_url = "/openapi.json" if runtime_config.docs_enabled else None
 
     application = FastAPI(
         title=runtime_config.app_name,
@@ -1663,26 +1582,41 @@ def create_application() -> FastAPI:
         openapi_url=openapi_url,
     )
 
-    application.state.runtime_config = (
-        runtime_config
-    )
+    application.state.runtime_config = runtime_config
 
     register_exception_handlers(
         application,
     )
 
-    register_http_middleware(
-        application,
-    )
+    # --------------------------------------------------------
+    # Middleware-Reihenfolge
+    # --------------------------------------------------------
+    #
+    # Starlette führt zuletzt registrierte Middleware außen aus.
+    #
+    # Ausführungsreihenfolge:
+    #
+    # 1. CORSMiddleware
+    # 2. Request-Kontext / Request-ID
+    # 3. AuthenticationContextMiddleware
+    # 4. Router / Endpunkt
+    #
+    # Dadurch:
+    #
+    # - beantwortet CORS gültige OPTIONS-Preflights,
+    # - erhalten Auth-Fehler Request-ID- und Sicherheitsheader,
+    # - werden API-Endpunkte weiterhin authentifiziert.
+    # --------------------------------------------------------
 
     register_authentication_middleware(
         application,
         runtime_config=runtime_config,
     )
 
-    # Starlette führt die zuletzt registrierte Middleware außen aus.
-    # CORS bleibt deshalb außen, damit auch Antworten der
-    # Authentifizierungs-Middleware CORS-Header erhalten.
+    register_http_middleware(
+        application,
+    )
+
     register_cors_middleware(
         application,
         runtime_config=runtime_config,
@@ -1693,25 +1627,92 @@ def create_application() -> FastAPI:
         runtime_config=runtime_config,
     )
 
-    logger.info(
+    _log_info(
         "FastAPI application created",
-        extra={
-            "environment": (
-                runtime_config.environment.value
-            ),
-            "api_prefix": (
-                runtime_config.api_prefix
-            ),
-            "docs_enabled": (
-                runtime_config.docs_enabled
-            ),
-            "cors_origins": list(
-                runtime_config.cors_origins,
-            ),
-        },
+        runtime_event="application-created",
+        environment=runtime_config.environment.value,
+        application_name=runtime_config.app_name,
+        application_version=runtime_config.app_version,
+        api_prefix=runtime_config.api_prefix,
+        api_version=runtime_config.api_version,
+        docs_enabled=runtime_config.docs_enabled,
+        cors_origins=list(
+            runtime_config.cors_origins,
+        ),
+        development_auth_fallback_enabled=(
+            runtime_config.development_auth_fallback_enabled
+        ),
+        hsts_enabled=runtime_config.hsts_enabled,
     )
 
     return application
 
+
+# ============================================================
+# Strukturierte Logging-Hilfsfunktionen
+# ============================================================
+
+
+def _log_context(
+    **values: object,
+) -> dict[str, object]:
+    return {
+        "source": SOURCE_FILE,
+        "area": LOG_AREA,
+        **values,
+    }
+
+
+def _log_debug(
+    message: str,
+    **context: object,
+) -> None:
+    logger.debug(
+        message,
+        extra=_log_context(
+            **context,
+        ),
+    )
+
+
+def _log_info(
+    message: str,
+    **context: object,
+) -> None:
+    logger.info(
+        message,
+        extra=_log_context(
+            **context,
+        ),
+    )
+
+
+def _log_warning(
+    message: str,
+    **context: object,
+) -> None:
+    logger.warning(
+        message,
+        extra=_log_context(
+            **context,
+        ),
+    )
+
+
+def _log_exception(
+    message: str,
+    **context: object,
+) -> None:
+    logger.exception(
+        message,
+        extra=_log_context(
+            **context,
+        ),
+    )
+
+
+# ============================================================
+# ASGI-Anwendung
+# ============================================================
 
 app = create_application()

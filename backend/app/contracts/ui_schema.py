@@ -14,7 +14,6 @@ from pydantic import (
     model_validator,
 )
 
-
 UI_SCHEMA_NAME = "app-ui"
 UI_SCHEMA_VERSION = "1.0"
 MINIMUM_CLIENT_VERSION = "0.1.0"
@@ -317,9 +316,7 @@ class UIActionConfirmation(BaseModel):
         str_strip_whitespace=True,
     )
 
-    style: UIActionConfirmationStyle = (
-        UIActionConfirmationStyle.SIMPLE
-    )
+    style: UIActionConfirmationStyle = UIActionConfirmationStyle.SIMPLE
 
     title: str = Field(
         min_length=1,
@@ -352,10 +349,7 @@ class UIActionConfirmation(BaseModel):
     def validate_typed_confirmation(
         self,
     ) -> UIActionConfirmation:
-        if (
-            self.style == UIActionConfirmationStyle.TYPED
-            and not self.typed_value
-        ):
+        if self.style == UIActionConfirmationStyle.TYPED and not self.typed_value:
             raise ValueError(
                 "Eine typed-Bestätigung benötigt typed_value.",
             )
@@ -466,8 +460,7 @@ class UIActionDefinition(BaseModel):
     ) -> UIActionDefinition:
         if self.endpoint is None and self.method is not None:
             raise ValueError(
-                "Eine HTTP-Methode darf nur zusammen mit endpoint "
-                "angegeben werden.",
+                "Eine HTTP-Methode darf nur zusammen mit endpoint angegeben werden.",
             )
 
         if self.endpoint is not None and self.method is None:
@@ -649,10 +642,7 @@ class UIFormDefinition(BaseModel):
     def validate_unique_fields(
         self,
     ) -> UIFormDefinition:
-        field_names = [
-            field_definition.name
-            for field_definition in self.fields
-        ]
+        field_names = [field_definition.name for field_definition in self.fields]
 
         if len(field_names) != len(set(field_names)):
             raise ValueError(
@@ -968,9 +958,12 @@ class UISchema(BaseModel):
         form_ids = set(self.forms)
 
         for node_type_id, definition in self.node_types.items():
-            unknown_children = set(
-                definition.allowed_child_types,
-            ) - node_type_ids
+            unknown_children = (
+                set(
+                    definition.allowed_child_types,
+                )
+                - node_type_ids
+            )
 
             if unknown_children:
                 raise ValueError(
@@ -979,9 +972,12 @@ class UISchema(BaseModel):
                     f"{', '.join(sorted(unknown_children))}.",
                 )
 
-            unknown_actions = set(
-                definition.allowed_actions,
-            ) - action_ids
+            unknown_actions = (
+                set(
+                    definition.allowed_actions,
+                )
+                - action_ids
+            )
 
             if unknown_actions:
                 raise ValueError(
@@ -1025,27 +1021,19 @@ class UISchema(BaseModel):
     def public_component_ids(
         self,
     ) -> tuple[str, ...]:
-        return tuple(
-            sorted(self.components)
-        )
+        return tuple(sorted(self.components))
 
     def public_action_ids(
         self,
     ) -> tuple[str, ...]:
-        return tuple(
-            sorted(self.actions)
-        )
+        return tuple(sorted(self.actions))
 
     def public_form_ids(
         self,
     ) -> tuple[str, ...]:
-        return tuple(
-            sorted(self.forms)
-        )
+        return tuple(sorted(self.forms))
 
     def public_node_type_ids(
         self,
     ) -> tuple[str, ...]:
-        return tuple(
-            sorted(self.node_types)
-        )
+        return tuple(sorted(self.node_types))

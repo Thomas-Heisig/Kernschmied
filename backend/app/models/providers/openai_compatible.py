@@ -26,7 +26,6 @@ from app.contracts.model_backend import (
     Usage,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -108,6 +107,17 @@ class OpenAICompatibleProvider(
     Modelle werden ausschließlich über die Konfiguration freigegeben.
     """
 
+    def get_model_info(
+        self,
+    ) -> ModelInfo:
+        """
+        Liefert die Modellbeschreibung des konfigurierten Standardmodells.
+        """
+
+        return self._create_model_info(
+            self._default_model,
+        )
+
     def __init__(
         self,
         config: JsonMapping,
@@ -152,9 +162,7 @@ class OpenAICompatibleProvider(
                 ),
             )
         else:
-            self._model_ids = (
-                self._default_model,
-            )
+            self._model_ids = (self._default_model,)
 
         if self._default_model not in self._model_ids:
             self._model_ids = (
@@ -254,8 +262,7 @@ class OpenAICompatibleProvider(
 
         except Exception:
             logger.exception(
-                "Der OpenAI-kompatible Client konnte nicht "
-                "sauber geschlossen werden.",
+                "Der OpenAI-kompatible Client konnte nicht sauber geschlossen werden.",
                 extra={
                     "backend": self.backend_name,
                 },
@@ -307,67 +314,56 @@ class OpenAICompatibleProvider(
             # Die vier expliziten Aufrufe sind bewusst getrennt.
             # Dadurch erkennt Pylance den OpenAI-SDK-Overload mit
             # stream=True und leitet einen typisierten Stream ab.
-            if (
-                top_p is not None
-                and stop_sequences is not None
-            ):
-                response_stream = (
-                    await client.chat.completions.create(
-                        model=model_id,
-                        messages=messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        top_p=top_p,
-                        stop=stop_sequences,
-                        stream=True,
-                        stream_options={
-                            "include_usage": True,
-                        },
-                    )
+            if top_p is not None and stop_sequences is not None:
+                response_stream = await client.chat.completions.create(
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    stop=stop_sequences,
+                    stream=True,
+                    stream_options={
+                        "include_usage": True,
+                    },
                 )
 
             elif top_p is not None:
-                response_stream = (
-                    await client.chat.completions.create(
-                        model=model_id,
-                        messages=messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        top_p=top_p,
-                        stream=True,
-                        stream_options={
-                            "include_usage": True,
-                        },
-                    )
+                response_stream = await client.chat.completions.create(
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    top_p=top_p,
+                    stream=True,
+                    stream_options={
+                        "include_usage": True,
+                    },
                 )
 
             elif stop_sequences is not None:
-                response_stream = (
-                    await client.chat.completions.create(
-                        model=model_id,
-                        messages=messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        stop=stop_sequences,
-                        stream=True,
-                        stream_options={
-                            "include_usage": True,
-                        },
-                    )
+                response_stream = await client.chat.completions.create(
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    stop=stop_sequences,
+                    stream=True,
+                    stream_options={
+                        "include_usage": True,
+                    },
                 )
 
             else:
-                response_stream = (
-                    await client.chat.completions.create(
-                        model=model_id,
-                        messages=messages,
-                        max_tokens=max_tokens,
-                        temperature=temperature,
-                        stream=True,
-                        stream_options={
-                            "include_usage": True,
-                        },
-                    )
+                response_stream = await client.chat.completions.create(
+                    model=model_id,
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                    stream=True,
+                    stream_options={
+                        "include_usage": True,
+                    },
                 )
 
             usage: Usage | None = None
@@ -380,15 +376,9 @@ class OpenAICompatibleProvider(
 
                 if chunk.usage is not None:
                     usage = Usage(
-                        prompt_tokens=(
-                            chunk.usage.prompt_tokens
-                        ),
-                        completion_tokens=(
-                            chunk.usage.completion_tokens
-                        ),
-                        total_tokens=(
-                            chunk.usage.total_tokens
-                        ),
+                        input_tokens=chunk.usage.prompt_tokens,
+                        output_tokens=chunk.usage.completion_tokens,
+                        total_tokens=chunk.usage.total_tokens,
                     )
 
                 if not chunk.choices:
@@ -421,7 +411,7 @@ class OpenAICompatibleProvider(
                 end_data["finish_reason"] = finish_reason
 
             yield StreamEvent.create(
-                type=StreamEventType.END,
+                type=StreamEventType.COMPLETE,
                 usage=usage,
                 data=end_data,
             )
@@ -558,18 +548,14 @@ class OpenAICompatibleProvider(
 
         if self._base_url is None:
             raise OpenAICompatibleConfigurationError(
-                "Die base_url des OpenAI-kompatiblen "
-                "Endpunkts fehlt.",
+                "Die base_url des OpenAI-kompatiblen Endpunkts fehlt.",
             )
 
         if self._client is not None:
             return self._client
 
         client = AsyncOpenAI(
-            api_key=(
-                self._api_key
-                or DEFAULT_API_KEY
-            ),
+            api_key=(self._api_key or DEFAULT_API_KEY),
             organization=self._organization,
             project=self._project,
             base_url=self._base_url,
@@ -587,16 +573,11 @@ class OpenAICompatibleProvider(
     ) -> str:
         normalized_model_id = requested_model_id.strip()
 
-        model_id = (
-            normalized_model_id
-            if normalized_model_id
-            else self._default_model
-        )
+        model_id = normalized_model_id if normalized_model_id else self._default_model
 
         if model_id not in self._model_ids:
             raise OpenAICompatibleModelNotFoundError(
-                f"Das OpenAI-kompatible Modell '{model_id}' "
-                "ist nicht freigegeben.",
+                f"Das OpenAI-kompatible Modell '{model_id}' ist nicht freigegeben.",
             )
 
         return model_id
@@ -688,9 +669,7 @@ def _convert_messages(
 
         if message.role is MessageRole.TOOL:
             tool_call_id = (
-                message.tool_call_id.strip()
-                if message.tool_call_id is not None
-                else ""
+                message.tool_call_id.strip() if message.tool_call_id is not None else ""
             )
 
             if tool_call_id:
@@ -723,8 +702,7 @@ def _convert_messages(
 
     if not converted_messages:
         raise OpenAICompatibleConfigurationError(
-            "Die OpenAI-kompatible Anfrage enthält keine "
-            "verwendbare Nachricht.",
+            "Die OpenAI-kompatible Anfrage enthält keine verwendbare Nachricht.",
         )
 
     return converted_messages
@@ -746,10 +724,7 @@ def _format_tool_result_as_text(
     if not normalized_name:
         return f"Tool-Ergebnis:\n{content}"
 
-    return (
-        f"Tool-Ergebnis von '{normalized_name}':\n"
-        f"{content}"
-    )
+    return f"Tool-Ergebnis von '{normalized_name}':\n{content}"
 
 
 def _create_error_event(
@@ -952,10 +927,13 @@ def _read_non_negative_int(
     ):
         return default
 
-    if isinstance(
-        value,
-        int,
-    ) and value >= 0:
+    if (
+        isinstance(
+            value,
+            int,
+        )
+        and value >= 0
+    ):
         return value
 
     return default

@@ -102,8 +102,7 @@ class HierarchyService:
         if "system_prompt" in changes:
             self._permissions.require(actor, EDIT_PROMPT_ACTION, node)
         if any(
-            key in changes
-            for key in ("tool_policy", "config_overrides", "metadata")
+            key in changes for key in ("tool_policy", "config_overrides", "metadata")
         ):
             self._permissions.require(actor, EDIT_CONFIG_ACTION, node)
 

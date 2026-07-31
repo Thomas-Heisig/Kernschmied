@@ -430,11 +430,11 @@ Logging infrastructure remains centralized while allowing contextual logging wit
 
 Dependencies have clearly defined lifetimes.
 
-| Lifetime | Examples |
-|-----------|----------|
+| Lifetime    | Examples                          |
+| ----------- | --------------------------------- |
 | Application | Registries, configuration service |
-| Request | Database session, request context |
-| Transient | Temporary helper objects |
+| Request     | Database session, request context |
+| Transient   | Temporary helper objects          |
 
 Correct lifetime management prevents resource leaks.
 

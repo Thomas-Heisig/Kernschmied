@@ -38,8 +38,7 @@ class HierarchyServiceProtocol(Protocol):
         *,
         root_id: str | None = None,
         max_depth: int | None = None,
-    ) -> object:
-        ...
+    ) -> object: ...
 
 
 # NEU: Frontend-kompatibler Response-Vertrag
@@ -211,9 +210,7 @@ def normalize_json_value(
 
         for raw_key, raw_value in mapping.items():
             if not isinstance(raw_key, str):
-                raise TypeError(
-                    "Hierarchieschlüssel müssen Strings sein."
-                )
+                raise TypeError("Hierarchieschlüssel müssen Strings sein.")
 
             result[raw_key] = normalize_json_value(
                 raw_value,
@@ -229,19 +226,14 @@ def normalize_json_value(
             value,
             bytes | bytearray,
         ):
-            raise TypeError(
-                "Binärdaten sind nicht zulässig."
-            )
+            raise TypeError("Binärdaten sind nicht zulässig.")
 
         sequence = cast(
             Sequence[object],
             value,
         )
 
-        return [
-            normalize_json_value(item)
-            for item in sequence
-        ]
+        return [normalize_json_value(item) for item in sequence]
 
     if isinstance(
         value,
@@ -252,10 +244,7 @@ def normalize_json_value(
             value,
         )
 
-        return [
-            normalize_json_value(item)
-            for item in values
-        ]
+        return [normalize_json_value(item) for item in values]
 
     model_dump = getattr(
         value,
@@ -270,9 +259,7 @@ def normalize_json_value(
             )
         )
 
-    raise TypeError(
-        f"Nicht unterstützter Typ '{type(value).__name__}'."
-    )
+    raise TypeError(f"Nicht unterstützter Typ '{type(value).__name__}'.")
 
 
 def normalize_hierarchy(
@@ -286,9 +273,7 @@ def normalize_hierarchy(
         normalized,
         dict,
     ):
-        raise TypeError(
-            "Die Hierarchie muss ein JSON-Objekt sein."
-        )
+        raise TypeError("Die Hierarchie muss ein JSON-Objekt sein.")
 
     return normalized
 
@@ -368,13 +353,9 @@ async def hierarchy(
         request,
     )
 
-    response.headers["Cache-Control"] = (
-        "no-store, no-cache, must-revalidate"
-    )
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     response.headers["Pragma"] = "no-cache"
-    response.headers["X-Hierarchy-Schema-Version"] = (
-        HIERARCHY_SCHEMA_VERSION
-    )
+    response.headers["X-Hierarchy-Schema-Version"] = HIERARCHY_SCHEMA_VERSION
 
     return HierarchyTreeResponse(
         root=tree,

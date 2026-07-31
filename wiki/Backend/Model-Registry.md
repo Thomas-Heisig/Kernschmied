@@ -225,14 +225,14 @@ Each registry entry represents a logical model.
 
 Typical fields include:
 
-| Field | Purpose |
-|--------|----------|
-| Identifier | Stable logical name |
-| Display Name | User-visible name |
-| Provider | Provider identifier |
-| Model | Provider model reference |
-| Capabilities | Supported features |
-| Metadata | Optional information |
+| Field        | Purpose                  |
+| ------------ | ------------------------ |
+| Identifier   | Stable logical name      |
+| Display Name | User-visible name        |
+| Provider     | Provider identifier      |
+| Model        | Provider model reference |
+| Capabilities | Supported features       |
+| Metadata     | Optional information     |
 
 The internal structure may evolve independently of the public API.
 

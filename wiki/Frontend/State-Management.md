@@ -396,7 +396,7 @@ State should always be updated immutably.
 Preferred:
 
 ```tsx
-setItems(items => [...items, newItem]);
+setItems((items) => [...items, newItem]);
 ```
 
 Avoid mutating existing objects.

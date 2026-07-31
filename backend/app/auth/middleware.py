@@ -12,7 +12,6 @@ from starlette.types import ASGIApp
 
 from app.auth.models import UserContext
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -54,9 +53,7 @@ class AuthenticationContextMiddleware(BaseHTTPMiddleware):
     ) -> None:
         super().__init__(app)
 
-        self.development_fallback_enabled = (
-            development_fallback_enabled
-        )
+        self.development_fallback_enabled = development_fallback_enabled
 
     async def dispatch(
         self,
@@ -72,10 +69,7 @@ class AuthenticationContextMiddleware(BaseHTTPMiddleware):
                 principal=principal,
                 request=request,
             )
-        elif (
-            environment == "development"
-            and self.development_fallback_enabled
-        ):
+        elif environment == "development" and self.development_fallback_enabled:
             user = self._create_development_user(request)
         else:
             user = UserContext.anonymous()

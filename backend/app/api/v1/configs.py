@@ -26,12 +26,11 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    JsonValue,          # <-- NEU: Pydantic's JsonValue
+    JsonValue,  # <-- NEU: Pydantic's JsonValue
     field_validator,
 )
 
 from app.core.security_profile import get_security_profile
-
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +70,7 @@ SENSITIVE_KEY_PARTS: frozenset[str] = frozenset(
 
 # Eigene rekursive Definition ENTFERNEN – stattdessen Pydantic's JsonValue verwenden
 ConfigScalar = str | int | float | bool | None
-ConfigValue = JsonValue                    # JsonValue kommt jetzt aus pydantic
+ConfigValue = JsonValue  # JsonValue kommt jetzt aus pydantic
 ConfigIdentifier: TypeAlias = tuple[str, str]
 ConfigEntries: TypeAlias = Mapping[ConfigIdentifier, ConfigValue]
 
@@ -203,11 +202,7 @@ def structured_http_error(
     message: str,
     details: Mapping[str, object] | None = None,
 ) -> HTTPException:
-    normalized_details: dict[str, object] = (
-        dict(details)
-        if details is not None
-        else {}
-    )
+    normalized_details: dict[str, object] = dict(details) if details is not None else {}
 
     return HTTPException(
         status_code=status_code,
@@ -234,13 +229,9 @@ def get_config_service(
     if service is None:
         raise structured_http_error(
             request=request,
-            status_code=(
-                status.HTTP_503_SERVICE_UNAVAILABLE
-            ),
+            status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
             code="CONFIG_SERVICE_UNAVAILABLE",
-            message=(
-                "Der Konfigurationsdienst ist nicht verfügbar."
-            ),
+            message=("Der Konfigurationsdienst ist nicht verfügbar."),
         )
 
     return service
@@ -357,14 +348,9 @@ def validate_config_name(
     ):
         raise structured_http_error(
             request=request,
-            status_code=(
-                status.HTTP_422_UNPROCESSABLE_ENTITY
-            ),
+            status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
             code="INVALID_CONFIG_IDENTIFIER",
-            message=(
-                f"Der Konfigurationsbezeichner "
-                f"'{field_name}' ist ungültig."
-            ),
+            message=(f"Der Konfigurationsbezeichner '{field_name}' ist ungültig."),
             details={
                 "field": field_name,
                 "value": value,
@@ -381,10 +367,7 @@ def is_sensitive_key(
 ) -> bool:
     normalized = f"{group}.{key}".lower()
 
-    return any(
-        part in normalized
-        for part in SENSITIVE_KEY_PARTS
-    )
+    return any(part in normalized for part in SENSITIVE_KEY_PARTS)
 
 
 def is_reserved_group(
@@ -501,9 +484,13 @@ def normalize_string_collection(
     if isinstance(value, str):
         normalized = value.strip()
 
-        return {
-            normalized,
-        } if normalized else set()
+        return (
+            {
+                normalized,
+            }
+            if normalized
+            else set()
+        )
 
     if isinstance(value, Mapping):
         return set()
@@ -612,10 +599,7 @@ def development_fallback_allowed(
         environment_value,
     )
 
-    return (
-        str(raw_environment).strip().lower()
-        == "development"
-    )
+    return str(raw_environment).strip().lower() == "development"
 
 
 def require_config_permission(
@@ -629,10 +613,7 @@ def require_config_permission(
         request,
     )
 
-    if (
-        "*" in permissions
-        or permission in permissions
-    ):
+    if "*" in permissions or permission in permissions:
         return
 
     if development_fallback_allowed(
@@ -653,10 +634,7 @@ def require_config_permission(
         request=request,
         status_code=status.HTTP_403_FORBIDDEN,
         code="CONFIG_PERMISSION_DENIED",
-        message=(
-            "Für diese Konfigurationsaktion fehlt "
-            "die Berechtigung."
-        ),
+        message=("Für diese Konfigurationsaktion fehlt die Berechtigung."),
         details={
             "required_permission": permission,
         },
@@ -696,8 +674,7 @@ def normalize_config_value(
         for raw_key, raw_value in typed_mapping.items():
             if not isinstance(raw_key, str):
                 raise TypeError(
-                    f"{path} enthält einen nicht unterstützten "
-                    "Mapping-Schlüssel."
+                    f"{path} enthält einen nicht unterstützten Mapping-Schlüssel."
                 )
 
             result[raw_key] = normalize_config_value(
@@ -752,8 +729,7 @@ def normalize_config_value(
         ]
 
     raise TypeError(
-        f"{path} besitzt den nicht unterstützten Typ "
-        f"'{type(value).__name__}'."
+        f"{path} besitzt den nicht unterstützten Typ '{type(value).__name__}'."
     )
 
 
@@ -834,12 +810,8 @@ async def read_config_entries(
         ):
             raise structured_http_error(
                 request=request,
-                status_code=(
-                    status.HTTP_503_SERVICE_UNAVAILABLE
-                ),
-                code=(
-                    "CONFIG_SERVICE_CONTRACT_UNSUPPORTED"
-                ),
+                status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
+                code=("CONFIG_SERVICE_CONTRACT_UNSUPPORTED"),
                 message=(
                     "Der Konfigurationsdienst unterstützt "
                     "keine öffentliche Methode zum Auflisten "
@@ -863,14 +835,9 @@ async def read_config_entries(
     ):
         raise structured_http_error(
             request=request,
-            status_code=(
-                status.HTTP_500_INTERNAL_SERVER_ERROR
-            ),
+            status_code=(status.HTTP_500_INTERNAL_SERVER_ERROR),
             code="INVALID_CONFIG_SERVICE_RESPONSE",
-            message=(
-                "Der Konfigurationsdienst hat ein "
-                "ungültiges Ergebnis geliefert."
-            ),
+            message=("Der Konfigurationsdienst hat ein ungültiges Ergebnis geliefert."),
             details={
                 "expected_type": "mapping",
                 "actual_type": type(
@@ -926,9 +893,7 @@ async def read_config_entries(
             )
             continue
 
-        normalized_entries[identifier] = (
-            normalized_value
-        )
+        normalized_entries[identifier] = normalized_value
 
     return normalized_entries
 
@@ -954,15 +919,8 @@ def build_config_items(
             ConfigEntryResponse(
                 group=group,
                 key=key,
-                value=(
-                    None
-                    if sensitive
-                    else value
-                ),
-                editable=(
-                    not reserved
-                    and not sensitive
-                ),
+                value=(None if sensitive else value),
+                editable=(not reserved and not sensitive),
                 sensitive=sensitive,
             ),
         )
@@ -996,14 +954,9 @@ async def call_config_set(
     ):
         raise structured_http_error(
             request=request,
-            status_code=(
-                status.HTTP_503_SERVICE_UNAVAILABLE
-            ),
+            status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
             code="CONFIG_SERVICE_CONTRACT_UNSUPPORTED",
-            message=(
-                "Der Konfigurationsdienst unterstützt "
-                "keine Änderungen."
-            ),
+            message=("Der Konfigurationsdienst unterstützt keine Änderungen."),
             details={
                 "required_method": "set",
             },
@@ -1024,9 +977,7 @@ async def call_config_set(
             group,
             key,
             payload.value,
-            expected_revision=(
-                payload.expected_revision
-            ),
+            expected_revision=(payload.expected_revision),
             actor_id=actor_id,
             request_id=request_id,
         )
@@ -1047,12 +998,8 @@ async def call_config_set(
 
         raise structured_http_error(
             request=request,
-            status_code=(
-                status.HTTP_503_SERVICE_UNAVAILABLE
-            ),
-            code=(
-                "CONFIG_SERVICE_CONTRACT_UNSUPPORTED"
-            ),
+            status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
+            code=("CONFIG_SERVICE_CONTRACT_UNSUPPORTED"),
             message=(
                 "Der Konfigurationsdienst unterstützt "
                 "den benötigten versionierten "
@@ -1070,13 +1017,9 @@ async def call_config_set(
     except ValueError as exc:
         raise structured_http_error(
             request=request,
-            status_code=(
-                status.HTTP_422_UNPROCESSABLE_ENTITY
-            ),
+            status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
             code="CONFIG_VALUE_INVALID",
-            message=(
-                "Der Konfigurationswert ist ungültig."
-            ),
+            message=("Der Konfigurationswert ist ungültig."),
             details={
                 "group": group,
                 "key": key,
@@ -1119,16 +1062,12 @@ async def list_config(
         request,
     )
 
-    response.headers["Cache-Control"] = (
-        "no-store, private"
-    )
+    response.headers["Cache-Control"] = "no-store, private"
     response.headers["Pragma"] = "no-cache"
     response.headers["X-Config-Revision"] = str(
         revision,
     )
-    response.headers["X-Config-Schema-Version"] = (
-        CONFIG_API_SCHEMA_VERSION
-    )
+    response.headers["X-Config-Schema-Version"] = CONFIG_API_SCHEMA_VERSION
 
     return ConfigListResponse(
         revision=revision,
@@ -1152,25 +1091,16 @@ async def list_config(
     ),
     responses={
         status.HTTP_200_OK: {
-            "description": (
-                "Konfiguration wurde aktualisiert."
-            ),
+            "description": ("Konfiguration wurde aktualisiert."),
         },
         status.HTTP_403_FORBIDDEN: {
-            "description": (
-                "Keine Berechtigung für die Änderung."
-            ),
+            "description": ("Keine Berechtigung für die Änderung."),
         },
         status.HTTP_409_CONFLICT: {
-            "description": (
-                "Die Konfiguration wurde "
-                "zwischenzeitlich geändert."
-            ),
+            "description": ("Die Konfiguration wurde zwischenzeitlich geändert."),
         },
         status.HTTP_422_UNPROCESSABLE_ENTITY: {
-            "description": (
-                "Gruppe, Schlüssel oder Wert ist ungültig."
-            ),
+            "description": ("Gruppe, Schlüssel oder Wert ist ungültig."),
         },
     },
 )
@@ -1206,8 +1136,7 @@ async def update_config(
             status_code=status.HTTP_403_FORBIDDEN,
             code="CONFIG_GROUP_NOT_RUNTIME_EDITABLE",
             message=(
-                "Diese Konfigurationsgruppe darf "
-                "nicht zur Laufzeit bearbeitet werden."
+                "Diese Konfigurationsgruppe darf nicht zur Laufzeit bearbeitet werden."
             ),
             details={
                 "group": normalized_group,
@@ -1243,8 +1172,7 @@ async def update_config(
 
     if (
         payload.expected_revision is not None
-        and payload.expected_revision
-        != current_revision
+        and payload.expected_revision != current_revision
     ):
         raise structured_http_error(
             request=request,
@@ -1258,9 +1186,7 @@ async def update_config(
             details={
                 "group": normalized_group,
                 "key": normalized_key,
-                "expected_revision": (
-                    payload.expected_revision
-                ),
+                "expected_revision": (payload.expected_revision),
                 "current_revision": current_revision,
             },
         )
@@ -1281,16 +1207,12 @@ async def update_config(
     if new_revision <= current_revision:
         new_revision = current_revision + 1
 
-    response.headers["Cache-Control"] = (
-        "no-store, private"
-    )
+    response.headers["Cache-Control"] = "no-store, private"
     response.headers["Pragma"] = "no-cache"
     response.headers["X-Config-Revision"] = str(
         new_revision,
     )
-    response.headers["X-Config-Schema-Version"] = (
-        CONFIG_API_SCHEMA_VERSION
-    )
+    response.headers["X-Config-Schema-Version"] = CONFIG_API_SCHEMA_VERSION
 
     logger.info(
         "Configuration value updated",

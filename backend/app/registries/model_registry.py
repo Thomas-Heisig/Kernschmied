@@ -56,7 +56,6 @@ from app.models.manifest import (
     load_model_manifest,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -166,8 +165,7 @@ class ModelDiscoveryReport:
     def duration_seconds(self) -> float:
         return max(
             0.0,
-            self.finished_at_monotonic
-            - self.started_at_monotonic,
+            self.finished_at_monotonic - self.started_at_monotonic,
         )
 
     @property
@@ -184,24 +182,21 @@ class ModelDiscoveryReport:
     @property
     def failed_count(self) -> int:
         return sum(
-            result.status
-            == ModelDiscoveryResultStatus.FAILED
+            result.status == ModelDiscoveryResultStatus.FAILED
             for result in self.results
         )
 
     @property
     def duplicate_count(self) -> int:
         return sum(
-            result.status
-            == ModelDiscoveryResultStatus.DUPLICATE
+            result.status == ModelDiscoveryResultStatus.DUPLICATE
             for result in self.results
         )
 
     @property
     def skipped_count(self) -> int:
         return sum(
-            result.status
-            == ModelDiscoveryResultStatus.SKIPPED
+            result.status == ModelDiscoveryResultStatus.SKIPPED
             for result in self.results
         )
 
@@ -230,12 +225,12 @@ class ModelRegistrySnapshot:
     registration_index: int
     registered_at_monotonic: float
 
-    metadata: dict[str, Any] = field(default_factory=lambda: {})
+    metadata: dict[str, Any] = field(default_factory=dict)  # type: ignore[reportUnknownVariableType]
 
 
 class ModelRegistry:
     """
-    Thread- beziehungsweise Task-sichere Registry für Modellmanifeste.
+    Task-sichere Registry für Modellmanifeste.
 
     Die Registry speichert nur validierte LoadedModelManifest-Objekte.
     Ungültige Dateien werden nicht als verwendbare Modelle registriert.
@@ -245,6 +240,8 @@ class ModelRegistry:
     es registriert und aktiviert ist. Ist kein explizites Standardmodell
     gesetzt oder nicht verfügbar, wird das erste aktivierte Modell als
     Fallback verwendet.
+
+    Alle Lese- und Schreibzugriffe sind durch ein asyncio.Lock geschützt.
     """
 
     def __init__(
@@ -254,7 +251,7 @@ class ModelRegistry:
         base_directories: Sequence[str | Path] | None = None,
         recursive: bool = DEFAULT_DISCOVERY_RECURSIVE,
         follow_symlinks: bool = DEFAULT_FOLLOW_SYMLINKS,
-        default_model_id: str | None = None,  # NEU: explizite Default-ID
+        default_model_id: str | None = None,
     ) -> None:
         if base_directories is not None and base_dir is not None:
             raise ValueError(
@@ -267,17 +264,12 @@ class ModelRegistry:
         if base_directories is not None:
             raw_directories = base_directories
         elif base_dir is not None:
-            raw_directories = (
-                base_dir,
-            )
+            raw_directories = (base_dir,)
         else:
-            raw_directories = (
-                DEFAULT_MODEL_DIRECTORY,
-            )
+            raw_directories = (DEFAULT_MODEL_DIRECTORY,)
 
         self._base_directories = tuple(
-            Path(directory).expanduser().resolve()
-            for directory in raw_directories
+            Path(directory).expanduser().resolve() for directory in raw_directories
         )
 
         self._recursive = recursive
@@ -296,47 +288,173 @@ class ModelRegistry:
         self._registration_counter = 0
         self._lock = asyncio.Lock()
 
-        self._last_discovery_report: (
-            ModelDiscoveryReport | None
-        ) = None
+        self._last_discovery_report: ModelDiscoveryReport | None = None
 
-        # NEU: explizite Default-Modell-ID (kann None sein)
         self._default_model_id: str | None = None
         if default_model_id is not None:
-            # Normalisierung und erste Validierung
             self._default_model_id = self._normalize_model_id(default_model_id)
 
     # ========================================================
-    # Eigenschaften
+    # Basis-Verzeichnisse
     # ========================================================
 
     @property
     def base_directories(self) -> tuple[Path, ...]:
         return self._base_directories
 
-    @property
-    def count(self) -> int:
-        return len(self._entries)
+    # ========================================================
+    # Task-sichere Abfragen
+    # ========================================================
 
-    @property
-    def last_discovery_report(
+    async def get_count(self) -> int:
+        """Gibt die Anzahl der registrierten Einträge zurück."""
+        async with self._lock:
+            return len(self._entries)
+
+    async def get_last_discovery_report(self) -> ModelDiscoveryReport | None:
+        """Gibt den letzten Discovery-Report zurück (task-sicher)."""
+        async with self._lock:
+            return self._last_discovery_report
+
+    async def has(self, model_id: str) -> bool:
+        """Prüft, ob ein Modell mit der gegebenen ID registriert ist."""
+        normalized = self._normalize_model_id(model_id)
+        async with self._lock:
+            return normalized in self._entries
+
+    async def get_entry(self, model_id: str) -> ModelRegistryEntry:
+        """Gibt den Registry-Eintrag für eine Modell-ID zurück."""
+        normalized = self._normalize_model_id(model_id)
+        async with self._lock:
+            entry = self._entries.get(normalized)
+            if entry is None:
+                raise ModelNotRegisteredError(normalized)
+            return entry
+
+    async def get(self, model_id: str) -> ModelRegistryEntry:
+        """Alias für get_entry."""
+        return await self.get_entry(model_id)
+
+    async def get_manifest(self, model_id: str) -> ModelManifest:
+        """Gibt das Manifest für eine Modell-ID zurück."""
+        entry = await self.get_entry(model_id)
+        return entry.manifest
+
+    async def get_loaded_manifest(self, model_id: str) -> LoadedModelManifest:
+        """Gibt das geladene Manifest für eine Modell-ID zurück."""
+        entry = await self.get_entry(model_id)
+        return entry.loaded_manifest
+
+    async def get_by_path(self, manifest_path: str | Path) -> ModelRegistryEntry:
+        """Gibt den Eintrag anhand des Manifest-Pfads zurück."""
+        path = Path(manifest_path).expanduser().resolve()
+        async with self._lock:
+            model_id = self._path_index.get(path)
+            if model_id is None:
+                raise ModelManifestNotFoundError(str(path))
+            entry = self._entries.get(model_id)
+            if entry is None:
+                raise ModelManifestNotFoundError(str(path))
+            return entry
+
+    async def list_entries(
         self,
-    ) -> ModelDiscoveryReport | None:
-        return self._last_discovery_report
+        *,
+        enabled_only: bool = False,
+        provider_type: str | None = None,
+        capability: str | None = None,
+        tags: Iterable[str] | None = None,
+    ) -> tuple[ModelRegistryEntry, ...]:
+        """
+        Liefert gefilterte Registry-Einträge (task-sicher).
+        """
+        normalized_provider_type = (
+            provider_type.strip().lower() if provider_type is not None else None
+        )
+
+        normalized_capability = (
+            capability.strip().lower() if capability is not None else None
+        )
+
+        required_tags = frozenset(
+            str(tag).strip().lower() for tag in (tags or ()) if str(tag).strip()
+        )
+
+        async with self._lock:
+            entries: list[ModelRegistryEntry] = []
+
+            for entry in self._entries.values():
+                manifest = entry.manifest
+
+                if enabled_only and not manifest.is_enabled:
+                    continue
+
+                if (
+                    normalized_provider_type is not None
+                    and entry.provider_type != normalized_provider_type
+                ):
+                    continue
+
+                if normalized_capability is not None and not manifest.supports(
+                    normalized_capability,
+                ):
+                    continue
+
+                if required_tags and not required_tags.issubset(
+                    manifest.tags,
+                ):
+                    continue
+
+                entries.append(entry)
+
+            return tuple(
+                sorted(
+                    entries,
+                    key=lambda item: (
+                        item.manifest.presentation.sort_order,
+                        item.manifest.display_name.lower(),
+                        item.model_id,
+                    ),
+                ),
+            )
+
+    async def list_model_ids(
+        self,
+        *,
+        enabled_only: bool = False,
+    ) -> tuple[str, ...]:
+        entries = await self.list_entries(enabled_only=enabled_only)
+        return tuple(entry.model_id for entry in entries)
+
+    async def list_snapshots(
+        self,
+        *,
+        enabled_only: bool = False,
+    ) -> tuple[ModelRegistrySnapshot, ...]:
+        entries = await self.list_entries(enabled_only=enabled_only)
+        return tuple(self._create_snapshot(entry) for entry in entries)
+
+    async def get_snapshot(self, model_id: str) -> ModelRegistrySnapshot:
+        entry = await self.get_entry(model_id)
+        return self._create_snapshot(entry)
+
+    async def list_models(
+        self,
+        *,
+        enabled_only: bool = False,
+    ) -> list[dict[str, Any]]:
+        """
+        Kompatible Ausgabe für bestehende Aufrufer (task-sicher).
+        """
+        snapshots = await self.list_snapshots(enabled_only=enabled_only)
+        return [self._snapshot_to_dict(snapshot) for snapshot in snapshots]
 
     # ========================================================
-    # Default-Modell (NEU)
+    # Default-Modell
     # ========================================================
 
     async def set_default_model_id(self, model_id: str | None) -> None:
-        """
-        Setzt oder entfernt die explizite Default-Modell-ID.
-
-        Die ID wird normalisiert. Existiert das Modell nicht in der Registry,
-        wird ein ModelNotRegisteredError ausgelöst (optional könnte man auch
-        nur warnen, aber hier wird es als Fehler behandelt, weil der Aufrufer
-        eine gültige ID erwarten kann).
-        """
+        """Setzt oder entfernt die explizite Default-Modell-ID."""
         if model_id is None:
             async with self._lock:
                 self._default_model_id = None
@@ -344,15 +462,12 @@ class ModelRegistry:
 
         normalized = self._normalize_model_id(model_id)
         async with self._lock:
-            # Prüfen, ob das Modell registriert ist
             if normalized not in self._entries:
                 raise ModelNotRegisteredError(normalized)
             self._default_model_id = normalized
 
     async def get_default_model_id(self) -> str | None:
-        """
-        Gibt die explizit gesetzte Default-Modell-ID zurück (oder None).
-        """
+        """Gibt die explizit gesetzte Default-Modell-ID zurück."""
         async with self._lock:
             return self._default_model_id
 
@@ -362,10 +477,8 @@ class ModelRegistry:
 
         Priorität:
         1. Explizit gesetzte Default-ID (falls vorhanden und registriert)
-        2. Erstes aktiviertes Modell (enabled_only=True) als Fallback
+        2. Erstes aktiviertes Modell als Fallback
         3. None, wenn kein aktiviertes Modell existiert.
-
-        Diese Methode ist für den 503-Fehler bei model_id=null relevant.
         """
         async with self._lock:
             # 1. Explizites Default
@@ -373,8 +486,6 @@ class ModelRegistry:
                 entry = self._entries.get(self._default_model_id)
                 if entry is not None and entry.enabled:
                     return entry
-                # Falls das explizite Default deaktiviert oder nicht existiert,
-                # loggen wir das und fallen auf den ersten aktiven zurück.
                 logger.warning(
                     "Explizites Default-Modell %s ist nicht aktiv oder nicht registriert",
                     self._default_model_id,
@@ -385,7 +496,6 @@ class ModelRegistry:
                 if entry.enabled:
                     return entry
 
-            # 3. Kein aktiviertes Modell
             return None
 
     # ========================================================
@@ -433,9 +543,7 @@ class ModelRegistry:
             try:
                 loaded_manifest = load_model_manifest(
                     manifest_path,
-                    allowed_base_directories=(
-                        self._base_directories
-                    ),
+                    allowed_base_directories=(self._base_directories),
                 )
 
                 loaded_by_model_id.setdefault(
@@ -459,9 +567,7 @@ class ModelRegistry:
                         "manifest_path": str(
                             manifest_path,
                         ),
-                        "error_type": (
-                            exc.__class__.__name__
-                        ),
+                        "error_type": (exc.__class__.__name__),
                         "error_code": getattr(
                             exc,
                             "code",
@@ -474,9 +580,7 @@ class ModelRegistry:
                 if not continue_on_error:
                     raise
 
-        valid_manifests: list[
-            LoadedModelManifest
-        ] = []
+        valid_manifests: list[LoadedModelManifest] = []
 
         for model_id, manifests in sorted(
             loaded_by_model_id.items(),
@@ -489,29 +593,18 @@ class ModelRegistry:
 
             duplicate_error = DuplicateModelManifestError(
                 model_id,
-                manifest_paths=[
-                    str(item.manifest_path)
-                    for item in manifests
-                ],
+                manifest_paths=[str(item.manifest_path) for item in manifests],
             )
 
             for loaded_manifest in manifests:
                 results.append(
                     ModelDiscoveryResult(
-                        manifest_path=(
-                            loaded_manifest.manifest_path
-                        ),
+                        manifest_path=(loaded_manifest.manifest_path),
                         model_id=model_id,
-                        provider_type=(
-                            loaded_manifest.manifest.provider.type
-                        ),
-                        status=(
-                            ModelDiscoveryResultStatus.DUPLICATE
-                        ),
+                        provider_type=(loaded_manifest.manifest.provider.type),
+                        status=(ModelDiscoveryResultStatus.DUPLICATE),
                         message=str(duplicate_error),
-                        error_type=(
-                            duplicate_error.__class__.__name__
-                        ),
+                        error_type=(duplicate_error.__class__.__name__),
                         error_code=str(
                             duplicate_error.code,
                         ),
@@ -521,102 +614,180 @@ class ModelRegistry:
             if not continue_on_error:
                 raise duplicate_error
 
-        discovered_valid_paths = {
-            item.manifest_path
-            for item in valid_manifests
-        }
+        discovered_valid_paths = {item.manifest_path for item in valid_manifests}
 
-        if clear_missing:
-            await self._remove_missing_paths(
-                discovered_valid_paths,
+        # Schreibvorgänge unter Lock
+        async with self._lock:
+            if clear_missing:
+                await self._remove_missing_paths_locked(
+                    discovered_valid_paths,
+                )
+
+            for loaded_manifest in sorted(
+                valid_manifests,
+                key=lambda item: (
+                    item.manifest.presentation.sort_order,
+                    item.manifest.display_name.lower(),
+                    item.manifest.id,
+                ),
+            ):
+                try:
+                    replaced = await self._register_locked(
+                        loaded_manifest,
+                        replace=replace_existing,
+                    )
+
+                    results.append(
+                        ModelDiscoveryResult(
+                            manifest_path=(loaded_manifest.manifest_path),
+                            model_id=loaded_manifest.model_id,
+                            provider_type=(loaded_manifest.manifest.provider.type),
+                            status=(
+                                ModelDiscoveryResultStatus.REPLACED
+                                if replaced
+                                else ModelDiscoveryResultStatus.REGISTERED
+                            ),
+                        ),
+                    )
+
+                except DuplicateModelRegistrationError as exc:
+                    results.append(
+                        ModelDiscoveryResult(
+                            manifest_path=(loaded_manifest.manifest_path),
+                            model_id=loaded_manifest.model_id,
+                            provider_type=(loaded_manifest.manifest.provider.type),
+                            status=(ModelDiscoveryResultStatus.SKIPPED),
+                            message=str(exc),
+                            error_type=(exc.__class__.__name__),
+                            error_code=str(exc.code),
+                        ),
+                    )
+
+                    if not continue_on_error:
+                        raise
+
+                except Exception as exc:
+                    results.append(
+                        self._create_error_result(
+                            manifest_path=(loaded_manifest.manifest_path),
+                            error=exc,
+                            model_id=loaded_manifest.model_id,
+                            provider_type=(loaded_manifest.manifest.provider.type),
+                        ),
+                    )
+
+                    if not continue_on_error:
+                        raise
+
+            report = ModelDiscoveryReport(
+                base_directories=self._base_directories,
+                discovered_paths=discovered_paths,
+                results=tuple(results),
+                started_at_monotonic=started_at,
+                finished_at_monotonic=time.monotonic(),
             )
 
-        for loaded_manifest in sorted(
-            valid_manifests,
-            key=lambda item: (
-                item.manifest.presentation.sort_order,
-                item.manifest.display_name.lower(),
-                item.manifest.id,
-            ),
-        ):
-            try:
-                replaced = await self.register(
-                    loaded_manifest,
-                    replace=replace_existing,
-                )
-
-                results.append(
-                    ModelDiscoveryResult(
-                        manifest_path=(
-                            loaded_manifest.manifest_path
-                        ),
-                        model_id=loaded_manifest.model_id,
-                        provider_type=(
-                            loaded_manifest.manifest.provider.type
-                        ),
-                        status=(
-                            ModelDiscoveryResultStatus.REPLACED
-                            if replaced
-                            else ModelDiscoveryResultStatus.REGISTERED
-                        ),
-                    ),
-                )
-
-            except DuplicateModelRegistrationError as exc:
-                results.append(
-                    ModelDiscoveryResult(
-                        manifest_path=(
-                            loaded_manifest.manifest_path
-                        ),
-                        model_id=loaded_manifest.model_id,
-                        provider_type=(
-                            loaded_manifest.manifest.provider.type
-                        ),
-                        status=(
-                            ModelDiscoveryResultStatus.SKIPPED
-                        ),
-                        message=str(exc),
-                        error_type=(
-                            exc.__class__.__name__
-                        ),
-                        error_code=str(exc.code),
-                    ),
-                )
-
-                if not continue_on_error:
-                    raise
-
-            except Exception as exc:
-                results.append(
-                    self._create_error_result(
-                        manifest_path=(
-                            loaded_manifest.manifest_path
-                        ),
-                        error=exc,
-                        model_id=loaded_manifest.model_id,
-                        provider_type=(
-                            loaded_manifest.manifest.provider.type
-                        ),
-                    ),
-                )
-
-                if not continue_on_error:
-                    raise
-
-        report = ModelDiscoveryReport(
-            base_directories=self._base_directories,
-            discovered_paths=discovered_paths,
-            results=tuple(results),
-            started_at_monotonic=started_at,
-            finished_at_monotonic=time.monotonic(),
-        )
-
-        self._last_discovery_report = report
+            self._last_discovery_report = report
 
         return report
 
     # ========================================================
-    # Registrierung
+    # Registrierung (interne Lock-Varianten)
+    # ========================================================
+
+    async def _register_locked(
+        self,
+        loaded_manifest: LoadedModelManifest,
+        *,
+        replace: bool = False,
+    ) -> bool:
+        """
+        Registriert ein validiertes Manifest (wird bereits unter Lock aufgerufen).
+        """
+        model_id = self._normalize_model_id(
+            loaded_manifest.model_id,
+        )
+
+        existing = self._entries.get(model_id)
+
+        if existing is not None and not replace:
+            raise DuplicateModelRegistrationError(model_id)
+
+        self._registration_counter += 1
+
+        entry = ModelRegistryEntry(
+            loaded_manifest=loaded_manifest,
+            status=(
+                ModelRegistryEntryStatus.REGISTERED
+                if loaded_manifest.manifest.is_enabled
+                else ModelRegistryEntryStatus.DISABLED
+            ),
+            registration_index=(self._registration_counter),
+            registered_at_monotonic=(time.monotonic()),
+        )
+
+        if existing is not None:
+            self._path_index.pop(
+                existing.manifest_path,
+                None,
+            )
+
+        self._entries[model_id] = entry
+        self._path_index[loaded_manifest.manifest_path] = model_id
+
+        # Warnung, wenn Default deaktiviert wurde
+        if (
+            self._default_model_id is not None
+            and self._default_model_id == model_id
+            and not entry.enabled
+        ):
+            logger.warning(
+                "Default-Modell %s wurde als deaktiviert registriert",
+                model_id,
+            )
+
+        return existing is not None
+
+    async def _remove_missing_paths_locked(
+        self,
+        discovered_paths: set[Path],
+    ) -> None:
+        """
+        Entfernt Einträge, deren Pfad nicht mehr in discovered_paths enthalten ist.
+        (wird bereits unter Lock aufgerufen)
+        """
+        missing_model_ids = [
+            model_id
+            for model_id, entry in self._entries.items()
+            if entry.manifest_path not in discovered_paths
+        ]
+
+        for model_id in missing_model_ids:
+            entry = self._entries.pop(
+                model_id,
+                None,
+            )
+
+            if entry is None:
+                continue
+
+            self._path_index.pop(
+                entry.manifest_path,
+                None,
+            )
+
+            if (
+                self._default_model_id is not None
+                and self._default_model_id == model_id
+            ):
+                self._default_model_id = None
+                logger.info(
+                    "Default-Modell %s wurde wegen fehlender Manifestdatei entfernt",
+                    model_id,
+                )
+
+    # ========================================================
+    # Öffentliche Schreibmethoden (mit Lock)
     # ========================================================
 
     async def register(
@@ -625,72 +796,9 @@ class ModelRegistry:
         *,
         replace: bool = False,
     ) -> bool:
-        """
-        Registriert ein validiertes Manifest.
-
-        Rückgabe:
-
-        - False: neue Registrierung
-        - True: vorhandener Eintrag wurde ersetzt
-        """
-
-        model_id = self._normalize_model_id(
-            loaded_manifest.model_id,
-        )
-
+        """Registriert ein validiertes Manifest."""
         async with self._lock:
-            existing = self._entries.get(
-                model_id,
-            )
-
-            if existing is not None and not replace:
-                raise DuplicateModelRegistrationError(
-                    model_id,
-                )
-
-            self._registration_counter += 1
-
-            entry = ModelRegistryEntry(
-                loaded_manifest=loaded_manifest,
-                status=(
-                    ModelRegistryEntryStatus.REGISTERED
-                    if loaded_manifest.manifest.is_enabled
-                    else ModelRegistryEntryStatus.DISABLED
-                ),
-                registration_index=(
-                    self._registration_counter
-                ),
-                registered_at_monotonic=(
-                    time.monotonic()
-                ),
-            )
-
-            if existing is not None:
-                self._path_index.pop(
-                    existing.manifest_path,
-                    None,
-                )
-
-            self._entries[model_id] = entry
-            self._path_index[
-                loaded_manifest.manifest_path
-            ] = model_id
-
-            # NEU: Wenn das Default-Modell deaktiviert oder nicht existiert,
-            # wird es nicht automatisch zurückgesetzt – der Aufrufer kann
-            # über set_default_model_id() nachsteuern.
-            # Wir geben nur eine Warnung, falls das Default nicht mehr aktiv ist.
-            if (
-                self._default_model_id is not None
-                and self._default_model_id == model_id
-                and not entry.enabled
-            ):
-                logger.warning(
-                    "Default-Modell %s wurde als deaktiviert registriert",
-                    model_id,
-                )
-
-            return existing is not None
+            return await self._register_locked(loaded_manifest, replace=replace)
 
     async def register_file(
         self,
@@ -698,15 +806,10 @@ class ModelRegistry:
         *,
         replace: bool = False,
     ) -> ModelRegistryEntry:
-        """
-        Lädt und registriert eine einzelne model.json-Datei.
-        """
-
+        """Lädt und registriert eine einzelne model.json-Datei."""
         loaded_manifest = load_model_manifest(
             manifest_path,
-            allowed_base_directories=(
-                self._base_directories
-            ),
+            allowed_base_directories=(self._base_directories),
         )
 
         await self.register(
@@ -714,7 +817,7 @@ class ModelRegistry:
             replace=replace,
         )
 
-        return self.get_entry(
+        return await self.get_entry(
             loaded_manifest.model_id,
         )
 
@@ -722,13 +825,8 @@ class ModelRegistry:
         self,
         model_id: str,
     ) -> bool:
-        """
-        Entfernt ein Modell aus der Registry.
-        """
-
-        normalized = self._normalize_model_id(
-            model_id,
-        )
+        """Entfernt ein Modell aus der Registry."""
+        normalized = self._normalize_model_id(model_id)
 
         async with self._lock:
             entry = self._entries.pop(
@@ -744,7 +842,6 @@ class ModelRegistry:
                 None,
             )
 
-            # NEU: Wenn das Default-Modell entfernt wurde, setzen wir es zurück.
             if (
                 self._default_model_id is not None
                 and self._default_model_id == normalized
@@ -758,254 +855,11 @@ class ModelRegistry:
             return True
 
     async def clear(self) -> None:
-        """
-        Leert die Registry vollständig.
-        """
-
+        """Leert die Registry vollständig."""
         async with self._lock:
             self._entries.clear()
             self._path_index.clear()
-            # NEU: Auch Default zurücksetzen
             self._default_model_id = None
-
-    async def _remove_missing_paths(
-        self,
-        discovered_paths: set[Path],
-    ) -> None:
-        async with self._lock:
-            missing_model_ids = [
-                model_id
-                for model_id, entry in self._entries.items()
-                if entry.manifest_path
-                not in discovered_paths
-            ]
-
-            for model_id in missing_model_ids:
-                entry = self._entries.pop(
-                    model_id,
-                )
-
-                self._path_index.pop(
-                    entry.manifest_path,
-                    None,
-                )
-
-                # NEU: Wenn ein entferntes Modell das Default war, zurücksetzen
-                if (
-                    self._default_model_id is not None
-                    and self._default_model_id == model_id
-                ):
-                    self._default_model_id = None
-                    logger.info(
-                        "Default-Modell %s wurde wegen fehlender Manifestdatei entfernt",
-                        model_id,
-                    )
-
-    # ========================================================
-    # Zugriff
-    # ========================================================
-
-    def has(
-        self,
-        model_id: str,
-    ) -> bool:
-        normalized = self._normalize_model_id(
-            model_id,
-        )
-
-        return normalized in self._entries
-
-    def get_entry(
-        self,
-        model_id: str,
-    ) -> ModelRegistryEntry:
-        normalized = self._normalize_model_id(
-            model_id,
-        )
-
-        entry = self._entries.get(
-            normalized,
-        )
-
-        if entry is None:
-            raise ModelNotRegisteredError(
-                normalized,
-            )
-
-        return entry
-
-    # NEU: Alias für get_entry, um die geforderte get(model_id)-Schnittstelle zu erfüllen
-    def get(self, model_id: str) -> ModelRegistryEntry:
-        """
-        Alias für get_entry – löst ein Modell anhand seiner ID auf.
-        """
-        return self.get_entry(model_id)
-
-    def get_manifest(
-        self,
-        model_id: str,
-    ) -> ModelManifest:
-        return self.get_entry(
-            model_id,
-        ).manifest
-
-    def get_loaded_manifest(
-        self,
-        model_id: str,
-    ) -> LoadedModelManifest:
-        return self.get_entry(
-            model_id,
-        ).loaded_manifest
-
-    def get_by_path(
-        self,
-        manifest_path: str | Path,
-    ) -> ModelRegistryEntry:
-        path = Path(
-            manifest_path,
-        ).expanduser().resolve()
-
-        model_id = self._path_index.get(
-            path,
-        )
-
-        if model_id is None:
-            raise ModelManifestNotFoundError(
-                str(path),
-            )
-
-        return self.get_entry(
-            model_id,
-        )
-
-    def list_entries(
-        self,
-        *,
-        enabled_only: bool = False,
-        provider_type: str | None = None,
-        capability: str | None = None,
-        tags: Iterable[str] | None = None,
-    ) -> tuple[ModelRegistryEntry, ...]:
-        """
-        Liefert gefilterte Registry-Einträge.
-        """
-
-        normalized_provider_type = (
-            provider_type.strip().lower()
-            if provider_type is not None
-            else None
-        )
-
-        normalized_capability = (
-            capability.strip().lower()
-            if capability is not None
-            else None
-        )
-
-        required_tags = frozenset(
-            str(tag).strip().lower()
-            for tag in (tags or ())
-            if str(tag).strip()
-        )
-
-        entries: list[ModelRegistryEntry] = []
-
-        for entry in self._entries.values():
-            manifest = entry.manifest
-
-            if enabled_only and not manifest.is_enabled:
-                continue
-
-            if (
-                normalized_provider_type is not None
-                and entry.provider_type
-                != normalized_provider_type
-            ):
-                continue
-
-            if (
-                normalized_capability is not None
-                and not manifest.supports(
-                    normalized_capability,
-                )
-            ):
-                continue
-
-            if (
-                required_tags
-                and not required_tags.issubset(
-                    manifest.tags,
-                )
-            ):
-                continue
-
-            entries.append(entry)
-
-        return tuple(
-            sorted(
-                entries,
-                key=lambda item: (
-                    item.manifest.presentation.sort_order,
-                    item.manifest.display_name.lower(),
-                    item.model_id,
-                ),
-            ),
-        )
-
-    def list_model_ids(
-        self,
-        *,
-        enabled_only: bool = False,
-    ) -> tuple[str, ...]:
-        return tuple(
-            entry.model_id
-            for entry in self.list_entries(
-                enabled_only=enabled_only,
-            )
-        )
-
-    def list_snapshots(
-        self,
-        *,
-        enabled_only: bool = False,
-    ) -> tuple[ModelRegistrySnapshot, ...]:
-        return tuple(
-            self._create_snapshot(entry)
-            for entry in self.list_entries(
-                enabled_only=enabled_only,
-            )
-        )
-
-    def get_snapshot(
-        self,
-        model_id: str,
-    ) -> ModelRegistrySnapshot:
-        return self._create_snapshot(
-            self.get_entry(model_id),
-        )
-
-    # ========================================================
-    # Kompatible API
-    # ========================================================
-
-    def list_models(
-        self,
-        *,
-        enabled_only: bool = False,
-    ) -> list[dict[str, Any]]:
-        """
-        Kompatible Ausgabe für bestehende Aufrufer.
-
-        Anders als die frühere Implementierung werden ausschließlich
-        validierte und sichere Daten ausgegeben.
-        """
-
-        return [
-            self._snapshot_to_dict(snapshot)
-            for snapshot in self.list_snapshots(
-                enabled_only=enabled_only,
-            )
-        ]
 
     # ========================================================
     # Diagnose
@@ -1017,7 +871,6 @@ class ModelRegistry:
     ) -> ModelRegistrySnapshot:
         manifest = entry.manifest
 
-        # Explizite Typisierung, um Pylance-Warnung zu vermeiden
         metadata: dict[str, Any] = {
             "registry_status": entry.status.value,
             "presentation": (
@@ -1053,12 +906,8 @@ class ModelRegistry:
                 sorted(manifest.tags),
             ),
             manifest_path=entry.manifest_path,
-            registration_index=(
-                entry.registration_index
-            ),
-            registered_at_monotonic=(
-                entry.registered_at_monotonic
-            ),
+            registration_index=(entry.registration_index),
+            registered_at_monotonic=(entry.registered_at_monotonic),
             metadata=metadata,
         )
 
@@ -1066,13 +915,6 @@ class ModelRegistry:
     def _snapshot_to_dict(
         snapshot: ModelRegistrySnapshot,
     ) -> dict[str, Any]:
-        """
-        Wandelt einen Snapshot in ein API-freundliches Mapping um.
-
-        provider wird zusätzlich als Zeichenkette ausgegeben, damit ältere
-        Aufrufer mit dem früheren Vertrag weiterarbeiten können.
-        """
-
         return {
             "id": snapshot.model_id,
             "name": snapshot.display_name,
@@ -1085,10 +927,7 @@ class ModelRegistry:
             "enabled": snapshot.enabled,
             "status": snapshot.status,
             "runtime": snapshot.runtime,
-            "capabilities": {
-                capability: True
-                for capability in snapshot.capabilities
-            },
+            "capabilities": {capability: True for capability in snapshot.capabilities},
             "capability_list": list(
                 snapshot.capabilities,
             ),
@@ -1109,22 +948,16 @@ class ModelRegistry:
         model_id: str | None = None,
         provider_type: str | None = None,
     ) -> ModelDiscoveryResult:
-        resolved_model_id = (
-            model_id
-            or getattr(
-                error,
-                "model_id",
-                None,
-            )
+        resolved_model_id = model_id or getattr(
+            error,
+            "model_id",
+            None,
         )
 
-        resolved_provider_type = (
-            provider_type
-            or getattr(
-                error,
-                "provider_type",
-                None,
-            )
+        resolved_provider_type = provider_type or getattr(
+            error,
+            "provider_type",
+            None,
         )
 
         error_code = getattr(
@@ -1140,11 +973,7 @@ class ModelRegistry:
             status=ModelDiscoveryResultStatus.FAILED,
             message=str(error),
             error_type=error.__class__.__name__,
-            error_code=(
-                str(error_code)
-                if error_code is not None
-                else None
-            ),
+            error_code=(str(error_code) if error_code is not None else None),
         )
 
     # ========================================================
@@ -1155,7 +984,6 @@ class ModelRegistry:
     def _normalize_model_id(
         model_id: str,
     ) -> str:
-        # Der Parameter ist bereits als str typisiert – wir prüfen nur auf Leerheit.
         normalized = model_id.strip().lower()
 
         if not normalized:

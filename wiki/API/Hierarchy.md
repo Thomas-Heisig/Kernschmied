@@ -155,14 +155,14 @@ No node type receives special treatment inside the backend.
 
 # Node Fields
 
-| Field | Description |
-|--------|-------------|
-| id | Unique node identifier |
-| parent_id | Parent node identifier |
-| type | Generic node type |
-| name | Display name |
-| schema | UI schema identifier |
-| metadata | Optional custom metadata |
+| Field     | Description              |
+| --------- | ------------------------ |
+| id        | Unique node identifier   |
+| parent_id | Parent node identifier   |
+| type      | Generic node type        |
+| name      | Display name             |
+| schema    | UI schema identifier     |
+| metadata  | Optional custom metadata |
 
 Additional fields may be introduced without breaking compatibility.
 

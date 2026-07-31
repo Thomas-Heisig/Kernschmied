@@ -239,7 +239,7 @@ Example:
 
 ```json
 {
-    "layout": "two-column"
+  "layout": "two-column"
 }
 ```
 
@@ -347,18 +347,15 @@ Schema:
 
 ```json
 {
-    "label": "Name",
-    "required": true
+  "label": "Name",
+  "required": true
 }
 ```
 
 React:
 
 ```tsx
-<TextField
-    label="Name"
-    required
-/>
+<TextField label="Name" required />
 ```
 
 The mapping layer keeps schemas independent from React implementation details.
@@ -389,7 +386,7 @@ Example:
 
 ```json
 {
-    "action": "save"
+  "action": "save"
 }
 ```
 

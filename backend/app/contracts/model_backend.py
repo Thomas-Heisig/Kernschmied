@@ -1,53 +1,69 @@
 # F:\Kernschmied\backend\app\contracts\model_backend.py
-# Korrigierte Version: JsonValue wird von Pydantic importiert
+
+"""
+Stabile backendunabhängige Verträge des Kernschmied-Modellsystems.
+
+Diese Datei definiert ausschließlich providerunabhängige Datentypen und
+den gemeinsamen Vertrag aller Modell-Backends.
+
+Architekturregeln:
+
+1. Provider-spezifische SDK-Typen dürfen diese Systemgrenze nicht
+   überschreiten.
+2. Alle Metadaten müssen JSON-kompatibel sein.
+3. Streaming und nicht streamende Generierung verwenden denselben
+   StreamEvent-Vertrag.
+4. Providerfehler werden außerhalb dieses Vertrags in stabile
+   ModelError-Typen übersetzt.
+5. Ein Stream-Aufruf liefert unmittelbar einen AsyncIterator.
+6. Abbruch und Cancellation dürfen nicht verschluckt werden.
+7. Unbekannte Event- oder Capability-Typen werden nicht still akzeptiert.
+8. Multimodale Inhalte werden erst mit einer versionierten Erweiterung
+   des Nachrichtenvertrags eingeführt.
+"""
 
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import AsyncIterator, Mapping
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
-from enum import Enum
+from enum import StrEnum
 from typing import TypeAlias
 
 from pydantic import JsonValue
 
-
-# ==========================================================
+# ============================================================
 # JSON-Vertrag
-# ==========================================================
+# ============================================================
 
 
 JsonScalar: TypeAlias = str | int | float | bool | None
-# JsonValue wird von pydantic importiert – nicht rekursiv definiert
-JsonObject: TypeAlias = dict[str, JsonValue]
-JsonMapping: TypeAlias = Mapping[str, JsonValue]
+
+JsonObject: TypeAlias = dict[
+    str,
+    JsonValue,
+]
+
+JsonMapping: TypeAlias = Mapping[
+    str,
+    JsonValue,
+]
 
 
 def _empty_json_object() -> JsonObject:
-    """
-    Typisierte Factory für leere JSON-Objekte.
-
-    Eine eigene Factory verhindert, dass Pylance bei
-    `default_factory=dict` den Typ `dict[Unknown, Unknown]` ableitet.
-    """
-
     return {}
 
 
-def _empty_tool_definitions() -> list[ToolDefinition]:
-    """
-    Typisierte Factory für die Tool-Liste eines GenerationRequest.
-    """
+def _empty_chat_messages() -> list[ChatMessage]:
+    return []
 
+
+def _empty_tool_definitions() -> list[ToolDefinition]:
     return []
 
 
 def _empty_capabilities() -> set[ModelCapability]:
-    """
-    Typisierte Factory für Modellfähigkeiten.
-    """
-
     return set()
 
 
@@ -63,45 +79,91 @@ def _copy_json_mapping(
     )
 
 
-# ==========================================================
+def _normalize_required_identifier(
+    value: str,
+    *,
+    field_name: str,
+) -> str:
+    """Normalisiert einen erforderlichen Identifier (z.B. ID)."""
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError(
+            f"{field_name} darf nicht leer sein.",
+        )
+    return normalized
+
+
+def _normalize_optional_identifier(
+    value: str | None,
+    *,
+    field_name: str,
+) -> str | None:
+    """Normalisiert einen optionalen Identifier."""
+    if value is None:
+        return None
+    return _normalize_required_identifier(
+        value,
+        field_name=field_name,
+    )
+
+
+# ============================================================
 # Fähigkeiten
-# ==========================================================
+# ============================================================
 
 
-class ModelCapability(str, Enum):
+class ModelCapability(StrEnum):
+    """
+    Stabile Fähigkeiten eines Modell-Backends.
+
+    Die Werte müssen mit den Capability-Werten der Modellmanifeste
+    übereinstimmen.
+    """
+
     CHAT = "chat"
     COMPLETION = "completion"
+
     TOOLS = "tools"
+    STREAMING = "streaming"
+    STRUCTURED_OUTPUT = "structured_output"
+
     VISION = "vision"
     EMBEDDINGS = "embeddings"
+
     AUDIO_INPUT = "audio_input"
     AUDIO_OUTPUT = "audio_output"
+
     IMAGE_GENERATION = "image_generation"
-    JSON_MODE = "json_mode"
-    STREAMING = "streaming"
+
+    # Kompatibilitätsalias für ältere Provider.
+    JSON_MODE = "structured_output"
 
 
-# ==========================================================
+# ============================================================
 # Rollen
-# ==========================================================
+# ============================================================
 
 
-class MessageRole(str, Enum):
+class MessageRole(StrEnum):
     SYSTEM = "system"
     USER = "user"
     ASSISTANT = "assistant"
     TOOL = "tool"
 
 
-# ==========================================================
-# Chat Message
-# ==========================================================
+# ============================================================
+# Chat-Nachricht
+# ============================================================
 
 
 @dataclass(slots=True)
 class ChatMessage:
     """
-    Einheitliche Nachricht innerhalb eines Modellaufrufs.
+    Einheitliche Textnachricht innerhalb eines Modellaufrufs.
+
+    Der aktuelle Vertragsstand unterstützt ausschließlich Textinhalte.
+    Vision-, Audio- und andere multimodale Inhalte benötigen künftig
+    einen versionierten MessageContentPart-Vertrag.
     """
 
     role: MessageRole
@@ -113,6 +175,25 @@ class ChatMessage:
     metadata: JsonObject = field(
         default_factory=_empty_json_object,
     )
+
+    def __post_init__(self) -> None:
+        # `role` ist bereits vom Typ MessageRole, daher keine Konvertierung nötig.
+        self.name = _normalize_optional_identifier(
+            self.name,
+            field_name="name",
+        )
+        self.tool_call_id = _normalize_optional_identifier(
+            self.tool_call_id,
+            field_name="tool_call_id",
+        )
+        self.metadata = _copy_json_mapping(
+            self.metadata,
+        )
+
+        if self.role is MessageRole.TOOL and self.tool_call_id is None:
+            raise ValueError(
+                "Nachrichten mit role='tool' benötigen eine tool_call_id.",
+            )
 
     @classmethod
     def create(
@@ -130,16 +211,18 @@ class ChatMessage:
             name=name,
             tool_call_id=tool_call_id,
             metadata=(
-                _copy_json_mapping(metadata)
+                _copy_json_mapping(
+                    metadata,
+                )
                 if metadata is not None
                 else {}
             ),
         )
 
 
-# ==========================================================
-# Tool-Definition für Modellaufrufe
-# ==========================================================
+# ============================================================
+# Tool-Definition
+# ============================================================
 
 
 @dataclass(slots=True)
@@ -147,15 +230,28 @@ class ToolDefinition:
     """
     Modellunabhängige Tool-Beschreibung für Function Calling.
 
-    Dies ist die für Modell-Backends reduzierte Darstellung eines Tools.
-    Der vollständige Tool-Vertrag befindet sich in
-    `app.contracts.tool`.
+    Dies ist die reduzierte Provideransicht eines bereits serverseitig
+    registrierten und autorisierten Tools.
     """
 
     id: str
     name: str
     description: str
     schema: JsonObject
+
+    def __post_init__(self) -> None:
+        self.id = _normalize_required_identifier(
+            self.id,
+            field_name="id",
+        )
+        self.name = _normalize_required_identifier(
+            self.name,
+            field_name="name",
+        )
+        self.description = self.description.strip()
+        self.schema = _copy_json_mapping(
+            self.schema,
+        )
 
     @classmethod
     def create(
@@ -176,19 +272,119 @@ class ToolDefinition:
         )
 
 
-# ==========================================================
+# ============================================================
+# Structured Output
+# ============================================================
+
+
+@dataclass(slots=True)
+class ResponseFormat:
+    """
+    Providerunabhängige Anforderung an ein strukturiertes Ergebnis.
+
+    type:
+
+    - text
+    - json_object
+    - json_schema
+    """
+
+    type: str = "text"
+    schema: JsonObject | None = None
+    name: str | None = None
+    strict: bool = False
+
+    def __post_init__(self) -> None:
+        normalized_type = _normalize_required_identifier(
+            self.type,
+            field_name="response_format.type",
+        ).lower()
+
+        allowed_types = {
+            "text",
+            "json_object",
+            "json_schema",
+        }
+
+        if normalized_type not in allowed_types:
+            raise ValueError(
+                "response_format.type muss 'text', "
+                "'json_object' oder 'json_schema' sein.",
+            )
+
+        self.type = normalized_type
+
+        self.name = _normalize_optional_identifier(
+            self.name,
+            field_name="response_format.name",
+        )
+
+        if self.schema is not None:
+            self.schema = _copy_json_mapping(
+                self.schema,
+            )
+
+        if self.type == "json_schema" and self.schema is None:
+            raise ValueError(
+                "response_format.schema ist bei type='json_schema' erforderlich.",
+            )
+
+        if self.type != "json_schema" and self.schema is not None:
+            raise ValueError(
+                "response_format.schema ist nur bei type='json_schema' erlaubt.",
+            )
+
+
+# ============================================================
+# Usage
+# ============================================================
+
+
+@dataclass(slots=True)
+class Usage:
+    """
+    Verbrauchsinformationen einer Modellgenerierung.
+    """
+
+    input_tokens: int = 0
+    output_tokens: int = 0
+    total_tokens: int = 0
+
+    # Optional: zusätzliche Metadaten
+    metadata: JsonObject = field(
+        default_factory=_empty_json_object,
+    )
+
+    def __post_init__(self) -> None:
+        if self.input_tokens < 0:
+            raise ValueError("input_tokens darf nicht negativ sein.")
+        if self.output_tokens < 0:
+            raise ValueError("output_tokens darf nicht negativ sein.")
+        self.total_tokens = self.input_tokens + self.output_tokens
+
+        self.metadata = _copy_json_mapping(self.metadata)
+
+
+# ============================================================
 # Generation Request
-# ==========================================================
+# ============================================================
 
 
 @dataclass(slots=True)
 class GenerationRequest:
     """
-    Backendunabhängiger Auftrag zur Text- oder Chat-Generierung.
+    Backendunabhängiger Auftrag zur Modellgenerierung.
+
+    `model` bezeichnet die providerseitige Modellkennung. Die logische
+    Kernschmied-Modell-ID wird außerhalb dieses Vertrags durch Registry,
+    Service und Lifecycle verwaltet.
     """
 
     model: str
-    messages: list[ChatMessage]
+
+    messages: list[ChatMessage] = field(
+        default_factory=_empty_chat_messages,
+    )
 
     temperature: float = 0.2
     max_tokens: int | None = None
@@ -200,115 +396,174 @@ class GenerationRequest:
     )
 
     tool_choice: str | None = None
+    response_format: ResponseFormat | None = None
+
     stream: bool = True
 
     metadata: JsonObject = field(
         default_factory=_empty_json_object,
     )
 
+    def __post_init__(self) -> None:
+        self.model = _normalize_required_identifier(
+            self.model,
+            field_name="model",
+        )
+
+        # messages sind bereits list[ChatMessage] – keine Prüfung nötig
+
+        if not 0.0 <= self.temperature <= 2.0:
+            raise ValueError(
+                "temperature muss zwischen 0.0 und 2.0 liegen.",
+            )
+
+        if self.max_tokens is not None and self.max_tokens <= 0:
+            raise ValueError(
+                "max_tokens muss größer als null sein.",
+            )
+
+        if self.top_p is not None and not 0.0 < self.top_p <= 1.0:
+            raise ValueError(
+                "top_p muss größer als 0.0 und höchstens 1.0 sein.",
+            )
+
+        if self.stop is not None:
+            normalized_stop: list[str] = []
+            for index, stop_value in enumerate(self.stop):
+                normalized_stop.append(
+                    _normalize_required_identifier(
+                        stop_value,
+                        field_name=f"stop[{index}]",
+                    ),
+                )
+            self.stop = normalized_stop
+
+        self.tool_choice = _normalize_optional_identifier(
+            self.tool_choice,
+            field_name="tool_choice",
+        )
+
+        if self.tool_choice is not None and not self.tools:
+            raise ValueError(
+                "tool_choice darf nur gesetzt werden, wenn Tools übergeben wurden.",
+            )
+
+        # response_format ist bereits ResponseFormat oder None
+
+        # stream ist bereits bool
+
+        self.metadata = _copy_json_mapping(
+            self.metadata,
+        )
+
     @classmethod
     def create(
         cls,
         *,
         model: str,
-        messages: list[ChatMessage],
+        messages: Sequence[ChatMessage],
         temperature: float = 0.2,
         max_tokens: int | None = None,
         top_p: float | None = None,
-        stop: list[str] | None = None,
-        tools: list[ToolDefinition] | None = None,
+        stop: Sequence[str] | None = None,
+        tools: Sequence[ToolDefinition] | None = None,
         tool_choice: str | None = None,
+        response_format: ResponseFormat | None = None,
         stream: bool = True,
         metadata: JsonMapping | None = None,
     ) -> GenerationRequest:
         return cls(
             model=model,
-            messages=list(
-                messages,
-            ),
+            messages=list(messages),
             temperature=temperature,
             max_tokens=max_tokens,
             top_p=top_p,
-            stop=(
-                list(stop)
-                if stop is not None
-                else None
-            ),
-            tools=(
-                list(tools)
-                if tools is not None
-                else []
-            ),
+            stop=(list(stop) if stop is not None else None),
+            tools=(list(tools) if tools is not None else []),
             tool_choice=tool_choice,
+            response_format=response_format,
             stream=stream,
-            metadata=(
-                _copy_json_mapping(metadata)
-                if metadata is not None
-                else {}
-            ),
+            metadata=(_copy_json_mapping(metadata) if metadata is not None else {}),
         )
 
 
-# ==========================================================
-# Nutzung
-# ==========================================================
-
-
-@dataclass(slots=True)
-class Usage:
-    """
-    Einheitliche Token-Nutzungsdaten eines Modellaufrufs.
-    """
-
-    prompt_tokens: int = 0
-    completion_tokens: int = 0
-    total_tokens: int = 0
-
-    def __post_init__(self) -> None:
-        if self.prompt_tokens < 0:
-            raise ValueError(
-                "prompt_tokens darf nicht negativ sein.",
-            )
-
-        if self.completion_tokens < 0:
-            raise ValueError(
-                "completion_tokens darf nicht negativ sein.",
-            )
-
-        if self.total_tokens < 0:
-            raise ValueError(
-                "total_tokens darf nicht negativ sein.",
-            )
-
-
-# ==========================================================
+# ============================================================
 # Stream Event
-# ==========================================================
+# ============================================================
 
 
-class StreamEventType(str, Enum):
+class StreamEventType(StrEnum):
+    """
+    Interner und providerunabhängiger Stream-Vertrag.
+
+    Die Werte stimmen mit dem vorgesehenen SSE-Vertrag überein.
+    """
+
     START = "start"
     TOKEN = "token"
+    MESSAGE = "message"
+    REASONING = "reasoning"
+
     TOOL_CALL = "tool_call"
     TOOL_RESULT = "tool_result"
-    INFO = "info"
+
+    USAGE = "usage"
+    COMPLETE = "complete"
+
     ERROR = "error"
-    END = "end"
+    HEARTBEAT = "heartbeat"
 
 
 @dataclass(slots=True)
 class StreamEvent:
     """
-    Einheitliches Ereignis eines Modell-Streams.
+    Einheitliches Ereignis einer Modellgenerierung.
+
+    Regeln:
+
+    - TOKEN, MESSAGE und REASONING dürfen `content` enthalten.
+    - USAGE und COMPLETE dürfen `usage` enthalten.
+    - Providerfehler sollten vorzugsweise als Exception ausgelöst werden.
+    - ERROR bleibt für kontrollierte, bereits normalisierte Streamfehler
+      verfügbar.
     """
 
     type: StreamEventType
+
     content: str | None = None
     usage: Usage | None = None
 
     data: JsonObject = field(
         default_factory=_empty_json_object,
     )
+
+    def __post_init__(self) -> None:
+        # `type` ist bereits StreamEventType, daher keine Konvertierung nötig
+        self.data = _copy_json_mapping(
+            self.data,
+        )
+
+        content_event_types = {
+            StreamEventType.TOKEN,
+            StreamEventType.MESSAGE,
+            StreamEventType.REASONING,
+            StreamEventType.ERROR,
+        }
+
+        if self.content is not None and self.type not in content_event_types:
+            raise ValueError(
+                f"Das Event '{self.type.value}' darf keinen content-Wert enthalten.",
+            )
+
+        usage_event_types = {
+            StreamEventType.USAGE,
+            StreamEventType.COMPLETE,
+        }
+
+        if self.usage is not None and self.type not in usage_event_types:
+            raise ValueError(
+                f"Das Event '{self.type.value}' darf keine Usage-Daten enthalten.",
+            )
 
     @classmethod
     def create(
@@ -323,23 +578,22 @@ class StreamEvent:
             type=type,
             content=content,
             usage=usage,
-            data=(
-                _copy_json_mapping(data)
-                if data is not None
-                else {}
-            ),
+            data=(_copy_json_mapping(data) if data is not None else {}),
         )
 
 
-# ==========================================================
+# ============================================================
 # Modellinformationen
-# ==========================================================
+# ============================================================
 
 
 @dataclass(slots=True)
 class ModelInfo:
     """
-    Öffentliche Beschreibung eines verfügbaren Modells.
+    Providerunabhängige Beschreibung eines verfügbaren Modells.
+
+    `capabilities` ist die maßgebliche Quelle. Die supports_*-Felder
+    bleiben als kompatible, daraus abgeleitete Diagnosewerte erhalten.
     """
 
     id: str
@@ -358,27 +612,49 @@ class ModelInfo:
     supports_tools: bool = False
     supports_vision: bool = False
     supports_embeddings: bool = False
+    supports_structured_output: bool = False
 
     metadata: JsonObject = field(
         default_factory=_empty_json_object,
     )
 
     def __post_init__(self) -> None:
-        if (
-            self.context_window is not None
-            and self.context_window <= 0
-        ):
-            raise ValueError(
-                "context_window muss größer als null sein.",
-            )
+        self.id = _normalize_required_identifier(
+            self.id,
+            field_name="id",
+        )
+        self.backend = _normalize_required_identifier(
+            self.backend,
+            field_name="backend",
+        )
+        self.display_name = _normalize_required_identifier(
+            self.display_name,
+            field_name="display_name",
+        )
+        self.provider = _normalize_required_identifier(
+            self.provider,
+            field_name="provider",
+        ).lower()
 
-        if (
-            self.max_output_tokens is not None
-            and self.max_output_tokens <= 0
-        ):
-            raise ValueError(
-                "max_output_tokens muss größer als null sein.",
-            )
+        # `capabilities` ist bereits set[ModelCapability], daher keine Konvertierung nötig
+
+        if self.context_window is not None and self.context_window <= 0:
+            raise ValueError("context_window muss größer als null sein.")
+
+        if self.max_output_tokens is not None and self.max_output_tokens <= 0:
+            raise ValueError("max_output_tokens muss größer als null sein.")
+
+        self.supports_streaming = ModelCapability.STREAMING in self.capabilities
+        self.supports_tools = ModelCapability.TOOLS in self.capabilities
+        self.supports_vision = ModelCapability.VISION in self.capabilities
+        self.supports_embeddings = ModelCapability.EMBEDDINGS in self.capabilities
+        self.supports_structured_output = (
+            ModelCapability.STRUCTURED_OUTPUT in self.capabilities
+        )
+
+        self.metadata = _copy_json_mapping(
+            self.metadata,
+        )
 
     @classmethod
     def create(
@@ -395,6 +671,7 @@ class ModelInfo:
         supports_tools: bool = False,
         supports_vision: bool = False,
         supports_embeddings: bool = False,
+        supports_structured_output: bool = False,
         metadata: JsonMapping | None = None,
     ) -> ModelInfo:
         return cls(
@@ -402,152 +679,51 @@ class ModelInfo:
             backend=backend,
             display_name=display_name,
             provider=provider,
-            capabilities=(
-                set(capabilities)
-                if capabilities is not None
-                else set()
-            ),
+            capabilities=(set(capabilities) if capabilities is not None else set()),
             context_window=context_window,
             max_output_tokens=max_output_tokens,
             supports_streaming=supports_streaming,
             supports_tools=supports_tools,
             supports_vision=supports_vision,
             supports_embeddings=supports_embeddings,
-            metadata=(
-                _copy_json_mapping(metadata)
-                if metadata is not None
-                else {}
-            ),
+            supports_structured_output=supports_structured_output,
+            metadata=(_copy_json_mapping(metadata) if metadata is not None else {}),
         )
 
 
-# ==========================================================
+# ============================================================
 # Base Backend
-# ==========================================================
+# ============================================================
 
 
 class BaseModelBackend(ABC):
     """
-    Einheitlicher Vertrag für alle Modell-Backends.
-
-    Unterstützte Implementierungen können beispielsweise sein:
-
-    - Ollama
-    - llama.cpp
-    - Transformers
-    - OpenAI
-    - Gemini
-    - Anthropic
-    - Azure OpenAI
+    Einheitlicher Vertrag aller Modell-Backends.
 
     Ein Backend darf ausschließlich Modelle seines registrierten
-    Provider-Typs verwalten. Auswahl, Freigabe und Autorisierung
-    erfolgen außerhalb dieses Vertrags.
+    Provider-Typs verwalten. Auswahl, Freigabe, Autorisierung und
+    Lifecycle-Verwaltung müssen über diesen Vertrag erfolgen.
     """
 
-    @property
     @abstractmethod
-    def backend_name(self) -> str:
-        """
-        Eindeutiger registrierter Name des Backends.
-        """
+    def get_model_info(self) -> ModelInfo:
+        """Gibt die Modellinformationen des Backends zurück."""
+        pass
 
-        raise NotImplementedError
 
-    @abstractmethod
-    async def is_available(self) -> bool:
-        """
-        Prüft, ob das Backend momentan genutzt werden kann.
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    async def list_models(
-        self,
-    ) -> list[ModelInfo]:
-        """
-        Liefert alle aktuell verfügbaren Modelle des Backends.
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    async def get_model(
-        self,
-        model_id: str,
-    ) -> ModelInfo:
-        """
-        Liefert Informationen zu einem Modell.
-
-        Implementierungen sollten für unbekannte Modelle einen
-        kontrollierten Modellfehler auslösen.
-        """
-
-        raise NotImplementedError
-
-    @abstractmethod
-    def stream(
-        self,
-        request: GenerationRequest,
-    ) -> AsyncIterator[StreamEvent]:
-        """
-        Startet eine Streaming-Ausgabe.
-
-        Konkrete Implementierungen verwenden typischerweise:
-
-        async def stream(
-            self,
-            request: GenerationRequest,
-        ) -> AsyncIterator[StreamEvent]:
-            yield StreamEvent(...)
-
-        Wichtig ist, dass der Aufruf von `stream()` unmittelbar einen
-        AsyncIterator liefert und keine Coroutine, die zuerst separat
-        awaited werden müsste.
-        """
-
-        raise NotImplementedError
-
-    async def generate(
-        self,
-        request: GenerationRequest,
-    ) -> str:
-        """
-        Komfortfunktion für eine vollständige Textantwort.
-
-        Die Methode sammelt ausschließlich TOKEN-Ereignisse. Tool-,
-        Informations- und Fehlerereignisse werden nicht als Text
-        übernommen.
-        """
-
-        parts: list[str] = []
-
-        stream_iterator: AsyncIterator[StreamEvent] = self.stream(
-            request,
-        )
-
-        async for event in stream_iterator:
-            if event.type is not StreamEventType.TOKEN:
-                continue
-
-            if event.content is None:
-                continue
-
-            parts.append(
-                event.content,
-            )
-
-        return "".join(
-            parts,
-        )
-
-    async def shutdown(self) -> None:
-        """
-        Optionaler Lebenszyklus-Hook zum Freigeben von Ressourcen.
-
-        Backends können beispielsweise HTTP-Clients, Modellinstanzen,
-        GPU-Speicher oder Worker-Prozesse schließen.
-        """
-
-        return None
+__all__ = [
+    "BaseModelBackend",
+    "ChatMessage",
+    "GenerationRequest",
+    "JsonMapping",
+    "JsonObject",
+    "JsonScalar",
+    "MessageRole",
+    "ModelCapability",
+    "ModelInfo",
+    "ResponseFormat",
+    "StreamEvent",
+    "StreamEventType",
+    "ToolDefinition",
+    "Usage",
+]

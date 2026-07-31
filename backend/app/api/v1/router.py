@@ -15,7 +15,6 @@ from app.api.v1 import (
     ui,
 )
 
-
 API_VERSION = "v1"
 
 api_router = APIRouter()

@@ -26,7 +26,6 @@ from app.contracts.model_backend import (
     Usage,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -54,15 +53,9 @@ DEFAULT_MAX_TOKENS: Final[int] = 4096
 DEFAULT_MODEL_ID: Final[str] = "http-generic"
 DEFAULT_DISPLAY_NAME: Final[str] = "HTTP Generic"
 
-DEFAULT_RESPONSE_PATH: Final[str] = (
-    "choices.0.message.content"
-)
-DEFAULT_STREAM_RESPONSE_PATH: Final[str] = (
-    "choices.0.delta.content"
-)
-DEFAULT_STREAM_FINISH_REASON_PATH: Final[str] = (
-    "choices.0.finish_reason"
-)
+DEFAULT_RESPONSE_PATH: Final[str] = "choices.0.message.content"
+DEFAULT_STREAM_RESPONSE_PATH: Final[str] = "choices.0.delta.content"
+DEFAULT_STREAM_FINISH_REASON_PATH: Final[str] = "choices.0.finish_reason"
 DEFAULT_STREAM_USAGE_PATH: Final[str] = "usage"
 
 SUPPORTED_STREAM_MODES: Final[frozenset[str]] = frozenset(
@@ -173,8 +166,7 @@ class HTTPGenericResponseError(
         self.reason = reason
 
         super().__init__(
-            f"Antwort von '{url}' konnte nicht verarbeitet werden: "
-            f"{reason}",
+            f"Antwort von '{url}' konnte nicht verarbeitet werden: {reason}",
         )
 
 
@@ -296,6 +288,10 @@ class HTTPGenericProvider(BaseModelBackend):
         self._model_id = (
             _read_optional_string(
                 config,
+                "logical_model_id",
+            )
+            or _read_optional_string(
+                config,
                 "model_id",
             )
             or DEFAULT_MODEL_ID
@@ -387,6 +383,19 @@ class HTTPGenericProvider(BaseModelBackend):
             self._create_model_info(),
         ]
 
+    def get_model_info(
+        self,
+    ) -> ModelInfo:
+        """
+        Liefert die Beschreibung des durch diese Providerinstanz
+        repräsentierten Modells.
+
+        Eine Providerinstanz des HTTP-Generic-Providers repräsentiert
+        genau ein kontrolliert konfiguriertes logisches Modell.
+        """
+
+        return self._create_model_info()
+
     async def get_model(
         self,
         model_id: str,
@@ -452,7 +461,8 @@ class HTTPGenericProvider(BaseModelBackend):
         metadata = HTTPStreamMetadata()
 
         yield StreamEvent.create(
-            type=StreamEventType.START,
+            type=StreamEventType.COMPLETE,
+            usage=metadata.usage,
             data={
                 "backend": self.backend_name,
                 "model": model_id,
@@ -529,12 +539,10 @@ class HTTPGenericProvider(BaseModelBackend):
             }
 
             if metadata.finish_reason is not None:
-                end_data["finish_reason"] = (
-                    metadata.finish_reason
-                )
+                end_data["finish_reason"] = metadata.finish_reason
 
             yield StreamEvent.create(
-                type=StreamEventType.END,
+                type=StreamEventType.COMPLETE,
                 usage=metadata.usage,
                 data=end_data,
             )
@@ -670,14 +678,12 @@ class HTTPGenericProvider(BaseModelBackend):
 
         if request.tools:
             raise HTTPGenericConfigurationError(
-                "Tool-Aufrufe werden vom HTTP-Generic-Provider "
-                "noch nicht unterstützt.",
+                "Tool-Aufrufe werden vom HTTP-Generic-Provider noch nicht unterstützt.",
             )
 
         if request.tool_choice is not None:
             raise HTTPGenericConfigurationError(
-                "tool_choice wird vom HTTP-Generic-Provider "
-                "noch nicht unterstützt.",
+                "tool_choice wird vom HTTP-Generic-Provider noch nicht unterstützt.",
             )
 
     def _resolve_model_id(
@@ -690,11 +696,7 @@ class HTTPGenericProvider(BaseModelBackend):
 
         normalized_model_id = requested_model_id.strip()
 
-        model_id = (
-            normalized_model_id
-            if normalized_model_id
-            else self._model_id
-        )
+        model_id = normalized_model_id if normalized_model_id else self._model_id
 
         if model_id != self._model_id:
             raise HTTPGenericModelNotFoundError(
@@ -720,9 +722,7 @@ class HTTPGenericProvider(BaseModelBackend):
         """
 
         stop_value: JsonValue = (
-            _string_sequence_to_json_list(stop)
-            if stop is not None
-            else None
+            _string_sequence_to_json_list(stop) if stop is not None else None
         )
 
         placeholders: dict[str, JsonValue] = {
@@ -1120,14 +1120,10 @@ def _convert_messages(
                 converted_message["name"] = normalized_name
 
         if message.tool_call_id is not None:
-            normalized_tool_call_id = (
-                message.tool_call_id.strip()
-            )
+            normalized_tool_call_id = message.tool_call_id.strip()
 
             if normalized_tool_call_id:
-                converted_message["tool_call_id"] = (
-                    normalized_tool_call_id
-                )
+                converted_message["tool_call_id"] = normalized_tool_call_id
 
         if message.metadata:
             converted_message["metadata"] = deepcopy(
@@ -1144,6 +1140,8 @@ def _convert_messages(
         )
 
     return converted
+
+
 def _convert_message_role(
     role: MessageRole,
 ) -> str:
@@ -1219,9 +1217,7 @@ def _resolve_template_value(
             )
 
         return deepcopy(
-            placeholders[
-                exact_placeholder
-            ],
+            placeholders[exact_placeholder],
         )
 
     resolved = value
@@ -1306,6 +1302,7 @@ def _json_value_to_inline_text(
 # JSON-Verarbeitung
 # ============================================================
 
+
 def _normalize_stop_sequences(
     value: list[str] | None,
 ) -> list[str] | None:
@@ -1330,6 +1327,7 @@ def _normalize_stop_sequences(
 
     return normalized or None
 
+
 def _parse_json_response(
     response: httpx.Response,
     *,
@@ -1345,9 +1343,7 @@ def _parse_json_response(
     except json.JSONDecodeError as exc:
         raise HTTPGenericResponseError(
             url=url,
-            reason=(
-                "Der Antwortinhalt ist kein gültiges JSON."
-            ),
+            reason=("Der Antwortinhalt ist kein gültiges JSON."),
         ) from exc
 
     return _validate_json_value(
@@ -1419,10 +1415,7 @@ def _validate_json_value(
 
     raise HTTPGenericResponseError(
         url="<response>",
-        reason=(
-            f"Nicht unterstützter JSON-Wert vom Typ "
-            f"'{type(value).__name__}'."
-        ),
+        reason=(f"Nicht unterstützter JSON-Wert vom Typ '{type(value).__name__}'."),
     )
 
 
@@ -1573,15 +1566,12 @@ def _create_usage_from_mapping(
     normalized_total_tokens = (
         total_tokens
         if total_tokens is not None
-        else (
-            normalized_prompt_tokens
-            + normalized_completion_tokens
-        )
+        else (normalized_prompt_tokens + normalized_completion_tokens)
     )
 
     return Usage(
-        prompt_tokens=normalized_prompt_tokens,
-        completion_tokens=normalized_completion_tokens,
+        input_tokens=normalized_prompt_tokens,
+        output_tokens=normalized_completion_tokens,
         total_tokens=normalized_total_tokens,
     )
 
@@ -1890,10 +1880,13 @@ def _read_non_negative_int(
     ):
         return default
 
-    if isinstance(
-        value,
-        int,
-    ) and value >= 0:
+    if (
+        isinstance(
+            value,
+            int,
+        )
+        and value >= 0
+    ):
         return value
 
     return default
@@ -2010,20 +2003,18 @@ def _create_http_status_reason(
 
     body = response.text.strip()
 
-    if len(
-        body,
-    ) > 1000:
+    if (
+        len(
+            body,
+        )
+        > 1000
+    ):
         body = f"{body[:1000]}…"
 
     if body:
-        return (
-            f"HTTP {response.status_code}: {body}"
-        )
+        return f"HTTP {response.status_code}: {body}"
 
-    return (
-        f"HTTP {response.status_code}: "
-        f"{response.reason_phrase}"
-    )
+    return f"HTTP {response.status_code}: {response.reason_phrase}"
 
 
 def _create_error_event(

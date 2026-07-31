@@ -167,16 +167,16 @@ Kernschmied defines several independent contract versions.
 
 Examples include:
 
-| Contract | Purpose |
-|-----------|---------|
-| API | REST interface |
-| Bootstrap | Initial application state |
-| UI Schema | Dynamic frontend |
-| Hierarchy Schema | Generic hierarchy |
-| Chat | Chat requests and responses |
-| Model Registry | Model metadata |
-| Tool Registry | Tool metadata |
-| Configuration | Runtime configuration |
+| Contract         | Purpose                     |
+| ---------------- | --------------------------- |
+| API              | REST interface              |
+| Bootstrap        | Initial application state   |
+| UI Schema        | Dynamic frontend            |
+| Hierarchy Schema | Generic hierarchy           |
+| Chat             | Chat requests and responses |
+| Model Registry   | Model metadata              |
+| Tool Registry    | Tool metadata               |
+| Configuration    | Runtime configuration       |
 
 Each contract evolves independently.
 
@@ -323,19 +323,19 @@ Request IDs improve troubleshooting across distributed systems.
 
 Standard HTTP status codes are used consistently.
 
-| Status | Meaning |
-|----------|---------|
-| 200 | Success |
-| 201 | Created |
-| 204 | No Content |
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 403 | Forbidden |
-| 404 | Not Found |
-| 409 | Conflict |
-| 422 | Validation Error |
-| 429 | Rate Limited |
-| 500 | Internal Error |
+| Status | Meaning          |
+| ------ | ---------------- |
+| 200    | Success          |
+| 201    | Created          |
+| 204    | No Content       |
+| 400    | Bad Request      |
+| 401    | Unauthorized     |
+| 403    | Forbidden        |
+| 404    | Not Found        |
+| 409    | Conflict         |
+| 422    | Validation Error |
+| 429    | Rate Limited     |
+| 500    | Internal Error   |
 
 ---
 

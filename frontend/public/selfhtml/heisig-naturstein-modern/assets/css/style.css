@@ -1,0 +1,582 @@
+:root {
+  --ink: #171814;
+  --paper: #f7f4ed;
+  --tone: #ebe7de;
+  --stone: #d3b583;
+  --muted: #64665f;
+  --line: #cbc5b9;
+  --wrap: min(1180px, calc(100% - 40px));
+  font-family: Arial, sans-serif;
+  color: var(--ink);
+  background: var(--paper);
+}
+* {
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+}
+body {
+  margin: 0;
+  line-height: 1.65;
+}
+img {
+  max-width: 100%;
+  display: block;
+}
+a {
+  color: inherit;
+}
+h1,
+h2,
+h3 {
+  font-family: Georgia, serif;
+  line-height: 1.12;
+  margin-top: 0;
+}
+.wrap {
+  width: var(--wrap);
+  margin: auto;
+}
+.skip-link {
+  position: fixed;
+  left: 1rem;
+  top: 1rem;
+  z-index: 99;
+  background: #fff;
+  padding: 0.8rem 1rem;
+  transform: translateY(-180%);
+}
+.skip-link:focus {
+  transform: none;
+}
+:focus-visible {
+  outline: 3px solid #f2c879;
+  outline-offset: 4px;
+}
+.site-header {
+  background: var(--ink);
+  color: #fff;
+}
+.topbar {
+  border-bottom: 1px solid #ffffff24;
+  font-size: 0.78rem;
+}
+.topbar-inner,
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.topbar-inner {
+  min-height: 36px;
+}
+.topbar a {
+  margin-left: 20px;
+}
+.nav {
+  min-height: 84px;
+}
+.brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  text-decoration: none;
+}
+.brand-mark {
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--stone);
+  display: grid;
+  place-items: center;
+  font-family: Georgia;
+  font-size: 1.55rem;
+}
+.brand small,
+.brand strong {
+  display: block;
+}
+.brand small {
+  font-size: 0.62rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.nav-links a {
+  text-decoration: none;
+}
+.nav-links a[aria-current="page"] {
+  border-bottom: 2px solid var(--stone);
+}
+.nav-cta {
+  border: 1px solid #fff8;
+  padding: 10px 14px;
+}
+.menu-button {
+  display: none;
+}
+.page-hero {
+  padding: 110px 0 80px;
+  background: var(--ink);
+  color: #fff;
+}
+.page-hero h1 {
+  font-size: clamp(3rem, 7vw, 6rem);
+  max-width: 900px;
+}
+.page-hero p {
+  max-width: 720px;
+  font-size: 1.15rem;
+  color: #ffffffbf;
+}
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.72rem;
+  color: var(--stone);
+  font-weight: 700;
+}
+.section {
+  padding: 95px 0;
+}
+.tone {
+  background: var(--tone);
+}
+.hero-home {
+  min-height: 720px;
+  display: grid;
+  align-items: center;
+  background:
+    linear-gradient(90deg, #0d0e0be8, #0d0e0b8c),
+    url("../images/kueche-calacatta.jpg") center/cover;
+  color: #fff;
+}
+.hero-home h1 {
+  font-size: clamp(3.2rem, 7vw, 6.5rem);
+  max-width: 900px;
+}
+.hero-home p {
+  max-width: 680px;
+  font-size: 1.15rem;
+  color: #ffffffc9;
+}
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+.button {
+  display: inline-flex;
+  padding: 14px 20px;
+  text-decoration: none;
+  border: 1px solid currentColor;
+  font-weight: 700;
+}
+.button.primary {
+  background: var(--stone);
+  color: #111;
+  border-color: var(--stone);
+}
+.grid {
+  display: grid;
+  gap: 24px;
+}
+.service-grid {
+  grid-template-columns: repeat(3, 1fr);
+}
+.card {
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 30px;
+}
+.card .number {
+  color: #92794f;
+  font-size: 0.75rem;
+}
+.card h2,
+.card h3 {
+  margin: 20px 0 12px;
+}
+.card a {
+  font-weight: 700;
+  text-underline-offset: 4px;
+}
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 70px;
+  align-items: center;
+}
+.split img {
+  width: 100%;
+  height: 540px;
+  object-fit: cover;
+}
+.checklist {
+  padding-left: 1.2rem;
+}
+.checklist li {
+  margin: 0.6rem 0;
+}
+.gallery {
+  grid-template-columns: repeat(3, 1fr);
+}
+.gallery figure {
+  margin: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+.gallery img {
+  width: 100%;
+  height: 360px;
+  object-fit: cover;
+}
+.gallery figcaption {
+  padding: 14px;
+}
+.legal {
+  max-width: 860px;
+}
+.legal h2 {
+  margin-top: 42px;
+}
+.contact-box {
+  background: var(--ink);
+  color: #fff;
+  padding: 50px;
+}
+.contact-box a {
+  display: block;
+  font-size: 1.15rem;
+  margin: 0.5rem 0;
+}
+.craft-mark img {
+  margin: 10px 0;
+}
+.craft-mark small {
+  display: block;
+  max-width: 230px;
+  color: #ffffff99;
+}
+footer {
+  background: #11120f;
+  color: #ffffffb0;
+  padding: 70px 0 24px;
+}
+.footer-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1.2fr 1fr;
+  gap: 40px;
+}
+.footer-grid h2 {
+  font: 700 0.74rem Arial;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #fff;
+}
+.footer-grid a {
+  display: block;
+  text-decoration: none;
+  margin: 7px 0;
+}
+.footer-bottom {
+  border-top: 1px solid #ffffff24;
+  margin-top: 50px;
+  padding-top: 20px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+}
+.notice {
+  border-left: 4px solid #9b621e;
+  background: #fff4dc;
+  padding: 18px;
+}
+@media (max-width: 900px) {
+  .topbar {
+    display: none;
+  }
+  .menu-button {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    background: none;
+    border: 0;
+    color: #fff;
+  }
+  .menu-button span {
+    width: 26px;
+    height: 2px;
+    background: currentColor;
+  }
+  .nav-links {
+    display: none;
+    position: absolute;
+    top: 84px;
+    left: 20px;
+    right: 20px;
+    background: #fff;
+    color: #111;
+    padding: 24px;
+    flex-direction: column;
+    align-items: stretch;
+    z-index: 10;
+  }
+  .nav-links.open {
+    display: flex;
+  }
+  .service-grid,
+  .gallery {
+    grid-template-columns: 1fr 1fr;
+  }
+  .split {
+    grid-template-columns: 1fr;
+  }
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 580px) {
+  :root {
+    --wrap: calc(100% - 28px);
+  }
+  .section {
+    padding: 70px 0;
+  }
+  .service-grid,
+  .gallery,
+  .footer-grid {
+    grid-template-columns: 1fr;
+  }
+  .actions {
+    flex-direction: column;
+  }
+  .footer-bottom {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* Restaurierung & Denkmalpflege */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+.button.light {
+  color: #fff;
+  border-color: #ffffff99;
+  background: #ffffff0d;
+}
+.restoration-hero {
+  background:
+    linear-gradient(90deg, #11120ff2 0%, #11120fcf 46%, #11120f73 100%),
+    url("../images/referenzen/gedenkanlage-delmenhorst-2020.jpg") center 46% /
+      cover;
+  min-height: 650px;
+  display: grid;
+  align-items: center;
+}
+.restoration-hero h1 {
+  max-width: 760px;
+}
+.feature-figure,
+.project-photo {
+  margin: 0;
+}
+.feature-figure img {
+  width: 100%;
+  height: 620px;
+  object-fit: cover;
+  object-position: center;
+  border: 1px solid var(--line);
+}
+.feature-figure figcaption,
+.project-photo figcaption {
+  padding: 0.85rem 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+.project-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 70px;
+  align-items: end;
+  margin-bottom: 45px;
+}
+.project-heading h2 {
+  font-size: clamp(2.3rem, 5vw, 4.5rem);
+  margin-bottom: 0;
+}
+.project-lead {
+  font-size: 1.15rem;
+  margin: 0;
+}
+.project-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+  gap: 55px;
+  align-items: start;
+}
+.project-photo img {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+.project-story {
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 35px;
+}
+.project-story h3 {
+  margin-top: 30px;
+  margin-bottom: 8px;
+}
+.project-story h3:first-child {
+  margin-top: 0;
+}
+.project-facts {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-top: 45px;
+  border-top: 1px solid var(--line);
+  border-left: 1px solid var(--line);
+}
+.project-facts div {
+  padding: 22px;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: #fff;
+}
+.project-facts span,
+.project-facts strong {
+  display: block;
+}
+.project-facts span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--muted);
+  margin-bottom: 5px;
+}
+.work-steps {
+  margin-top: 65px;
+}
+.work-steps ol {
+  list-style: none;
+  padding: 0;
+  margin: 28px 0 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  counter-reset: steps;
+}
+.work-steps li {
+  counter-increment: steps;
+  padding: 25px;
+  border-top: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  background: #fff;
+  min-height: 210px;
+}
+.work-steps li:first-child {
+  border-left: 1px solid var(--line);
+}
+.work-steps li::before {
+  content: "0" counter(steps);
+  display: block;
+  color: #92794f;
+  font-family: Georgia, serif;
+  font-size: 2rem;
+  margin-bottom: 35px;
+}
+.work-steps strong,
+.work-steps span {
+  display: block;
+}
+.work-steps span {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 0.94rem;
+}
+.source-note {
+  margin-top: 55px;
+  padding: 30px;
+  border-left: 5px solid var(--stone);
+  background: #fff;
+}
+.source-note h3 {
+  margin-bottom: 10px;
+}
+.source-note p:last-child {
+  margin-bottom: 0;
+}
+.source-note a {
+  font-weight: 700;
+  text-underline-offset: 4px;
+}
+.compact {
+  gap: 40px;
+}
+.cta-panel {
+  background: var(--ink);
+  color: #fff;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+}
+.cta-panel .button {
+  margin-bottom: 8px;
+}
+.cta-panel > a:not(.button) {
+  font-size: 1.08rem;
+}
+@media (max-width: 900px) {
+  .restoration-hero {
+    min-height: 560px;
+  }
+  .feature-figure img {
+    height: auto;
+  }
+  .project-heading,
+  .project-layout {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+  .project-facts,
+  .work-steps ol {
+    grid-template-columns: 1fr 1fr;
+  }
+  .work-steps li:nth-child(3) {
+    border-left: 1px solid var(--line);
+  }
+}
+@media (max-width: 580px) {
+  .restoration-hero {
+    min-height: 520px;
+    background-position: 58% center;
+  }
+  .project-facts,
+  .work-steps ol {
+    grid-template-columns: 1fr;
+  }
+  .work-steps li {
+    border-left: 1px solid var(--line);
+  }
+  .project-story,
+  .cta-panel {
+    padding: 25px;
+  }
+}

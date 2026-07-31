@@ -1,0 +1,23 @@
+{
+  "config": {
+    "default": true,
+
+    // Lange Dokumentationszeilen sind erlaubt.
+    "MD013": false,
+
+    // Mehrere Überschriften mit gleichem Text sind in langen Wiki-Seiten erlaubt.
+    "MD024": {
+      "siblings_only": true,
+    },
+
+    // Inline-HTML zunächst zulassen.
+    "MD033": false,
+
+    // Erste Zeile muss nicht zwingend H1 sein.
+    "MD041": false,
+  },
+
+  "globs": ["wiki/**/*.md", "README.md"],
+
+  "ignores": ["**/node_modules/**", "**/.venv/**", "**/dist/**", "**/build/**"],
+}

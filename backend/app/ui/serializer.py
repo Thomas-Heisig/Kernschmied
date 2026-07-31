@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-
 from collections.abc import Mapping, Sequence
 
 from app.contracts.ui_schema import (
@@ -40,9 +38,7 @@ class UISchemaSerializer:
             node_type,
             definition,
         ) in node_types.items():
-            normalized_node_type = (
-                node_type.strip().lower()
-            )
+            normalized_node_type = node_type.strip().lower()
 
             if not normalized_node_type:
                 raise ValueError(
@@ -51,9 +47,7 @@ class UISchemaSerializer:
 
             if normalized_node_type in validated_node_types:
                 raise ValueError(
-                    f"Der Node-Typ "
-                    f"'{normalized_node_type}' "
-                    "ist doppelt definiert.",
+                    f"Der Node-Typ '{normalized_node_type}' ist doppelt definiert.",
                 )
 
             normalized_actions = self._validate_actions(
@@ -65,9 +59,7 @@ class UISchemaSerializer:
             # Vertragsklasse keine model_copy-Operation benötigt.
             del normalized_actions
 
-            validated_node_types[
-                normalized_node_type
-            ] = definition
+            validated_node_types[normalized_node_type] = definition
 
         known_node_types = set(
             validated_node_types,
@@ -79,15 +71,11 @@ class UISchemaSerializer:
         ) in validated_node_types.items():
             normalized_child_types = {
                 child_type.strip().lower()
-                for child_type
-                in definition.allowed_child_types
+                for child_type in definition.allowed_child_types
                 if child_type.strip()
             }
 
-            unknown_children = (
-                normalized_child_types
-                - known_node_types
-            )
+            unknown_children = normalized_child_types - known_node_types
 
             if unknown_children:
                 raise ValueError(

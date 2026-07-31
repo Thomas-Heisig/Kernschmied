@@ -148,9 +148,7 @@ The manifest is validated before the tool becomes available.
     "name": "Calculator",
     "description": "Evaluates mathematical expressions.",
     "category": "utility",
-    "capabilities": [
-      "expression_evaluation"
-    ],
+    "capabilities": ["expression_evaluation"],
     "available": true
   }
 ]
@@ -162,14 +160,14 @@ The response intentionally contains metadata only.
 
 # Tool Fields
 
-| Field | Description |
-|--------|-------------|
-| id | Stable tool identifier |
-| name | Human-readable name |
-| description | Functional description |
-| category | Tool category |
-| capabilities | Supported operations |
-| available | Runtime availability |
+| Field        | Description            |
+| ------------ | ---------------------- |
+| id           | Stable tool identifier |
+| name         | Human-readable name    |
+| description  | Functional description |
+| category     | Tool category          |
+| capabilities | Supported operations   |
+| available    | Runtime availability   |
 
 Future versions may add additional metadata without breaking compatibility.
 
@@ -241,7 +239,7 @@ Example:
 
 ```json
 {
-    "available": true
+  "available": true
 }
 ```
 

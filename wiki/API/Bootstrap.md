@@ -39,11 +39,11 @@ GET /api/v1/bootstrap
 
 Authentication depends on the active deployment profile.
 
-| Profile | Authentication |
-|----------|----------------|
-| development | Optional |
-| intranet | Required |
-| internet | Required |
+| Profile     | Authentication |
+| ----------- | -------------- |
+| development | Optional       |
+| intranet    | Required       |
+| internet    | Required       |
 
 ---
 
@@ -117,8 +117,8 @@ Provides application metadata.
 
 ```json
 {
-    "name":"Kernschmied",
-    "version":"0.1.0"
+  "name": "Kernschmied",
+  "version": "0.1.0"
 }
 ```
 
@@ -134,7 +134,7 @@ Example:
 
 ```json
 {
-    "profile":"development"
+  "profile": "development"
 }
 ```
 
@@ -154,8 +154,8 @@ Example:
 
 ```json
 {
-    "id":"local-user",
-    "display_name":"Development User"
+  "id": "local-user",
+  "display_name": "Development User"
 }
 ```
 
@@ -173,7 +173,7 @@ Example:
 
 ```json
 {
-    "profile":"internet"
+  "profile": "internet"
 }
 ```
 
@@ -189,9 +189,9 @@ Example:
 
 ```json
 {
-    "chat_streaming":true,
-    "tool_registry":true,
-    "configuration":true
+  "chat_streaming": true,
+  "tool_registry": true,
+  "configuration": true
 }
 ```
 
@@ -221,9 +221,9 @@ Example:
 
 ```json
 {
-    "api":1,
-    "chat":1,
-    "ui_schema":1
+  "api": 1,
+  "chat": 1,
+  "ui_schema": 1
 }
 ```
 
@@ -239,7 +239,7 @@ Example:
 
 ```json
 {
-    "chat_stream":"/api/v1/chat/stream"
+  "chat_stream": "/api/v1/chat/stream"
 }
 ```
 
@@ -269,7 +269,7 @@ Example:
 
 ```json
 {
-    "request_id":"e3f5b4e9"
+  "request_id": "e3f5b4e9"
 }
 ```
 
@@ -356,10 +356,10 @@ Example:
 
 ```json
 {
-  "code":"internal_error",
-  "message":"Bootstrap could not be generated.",
-  "details":{},
-  "request_id":"..."
+  "code": "internal_error",
+  "message": "Bootstrap could not be generated.",
+  "details": {},
+  "request_id": "..."
 }
 ```
 

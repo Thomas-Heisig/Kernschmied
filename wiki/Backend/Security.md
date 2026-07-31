@@ -148,11 +148,11 @@ Deployment profiles determine the required authentication mechanism.
 
 Typical profiles include:
 
-| Profile | Authentication |
-|----------|----------------|
-| Development | Simplified local identity |
-| Intranet | Organization authentication |
-| Internet | Secure session authentication |
+| Profile     | Authentication                |
+| ----------- | ----------------------------- |
+| Development | Simplified local identity     |
+| Intranet    | Organization authentication   |
+| Internet    | Secure session authentication |
 
 Authentication always precedes authorization.
 

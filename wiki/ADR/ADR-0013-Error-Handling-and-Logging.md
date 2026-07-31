@@ -169,12 +169,12 @@ Example:
 
 Every structured error contains:
 
-| Field | Purpose |
-|--------|---------|
-| code | Stable machine-readable identifier |
-| message | Human-readable description |
-| details | Additional structured information |
-| request_id | Correlation identifier |
+| Field      | Purpose                            |
+| ---------- | ---------------------------------- |
+| code       | Stable machine-readable identifier |
+| message    | Human-readable description         |
+| details    | Additional structured information  |
+| request_id | Correlation identifier             |
 
 ---
 
@@ -208,17 +208,17 @@ Clients should rely on error codes rather than localized messages.
 
 Errors use standard HTTP status codes.
 
-| Status | Meaning |
-|----------|---------|
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 403 | Forbidden |
-| 404 | Not Found |
-| 409 | Conflict |
-| 422 | Validation Error |
-| 429 | Too Many Requests |
-| 500 | Internal Error |
-| 503 | Service Unavailable |
+| Status | Meaning             |
+| ------ | ------------------- |
+| 400    | Bad Request         |
+| 401    | Unauthorized        |
+| 403    | Forbidden           |
+| 404    | Not Found           |
+| 409    | Conflict            |
+| 422    | Validation Error    |
+| 429    | Too Many Requests   |
+| 500    | Internal Error      |
+| 503    | Service Unavailable |
 
 ---
 
@@ -388,13 +388,13 @@ Each layer adds context without changing log semantics.
 
 The platform uses consistent log levels.
 
-| Level | Purpose |
-|---------|---------|
-| DEBUG | Development diagnostics |
-| INFO | Normal operation |
-| WARNING | Recoverable problems |
-| ERROR | Failed operations |
-| CRITICAL | Severe system failures |
+| Level    | Purpose                 |
+| -------- | ----------------------- |
+| DEBUG    | Development diagnostics |
+| INFO     | Normal operation        |
+| WARNING  | Recoverable problems    |
+| ERROR    | Failed operations       |
+| CRITICAL | Severe system failures  |
 
 Log levels should be used consistently across all modules.
 

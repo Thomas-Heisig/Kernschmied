@@ -8,7 +8,6 @@ from typing import Final, TypeAlias
 
 from app.contracts.tool import BaseTool
 
-
 Number: TypeAlias = int | float
 BinaryOperation: TypeAlias = Callable[[Number, Number], Number]
 UnaryOperation: TypeAlias = Callable[[Number], Number]
@@ -58,9 +57,7 @@ def _negate(
     return -value
 
 
-BINARY_OPERATIONS: Final[
-    dict[type[ast.operator], BinaryOperation]
-] = {
+BINARY_OPERATIONS: Final[dict[type[ast.operator], BinaryOperation]] = {
     ast.Add: _add,
     ast.Sub: _subtract,
     ast.Mult: _multiply,
@@ -68,9 +65,7 @@ BINARY_OPERATIONS: Final[
 }
 
 
-UNARY_OPERATIONS: Final[
-    dict[type[ast.unaryop], UnaryOperation]
-] = {
+UNARY_OPERATIONS: Final[dict[type[ast.unaryop], UnaryOperation]] = {
     ast.USub: _negate,
 }
 
@@ -135,9 +130,7 @@ def evaluate(
 
         if operation is None:
             raise ValueError(
-                f"Der Operator "
-                f"'{type(node.op).__name__}' "
-                "ist nicht erlaubt.",
+                f"Der Operator '{type(node.op).__name__}' ist nicht erlaubt.",
             )
 
         left = evaluate(
@@ -171,9 +164,7 @@ def evaluate(
 
         if operation is None:
             raise ValueError(
-                f"Der unäre Operator "
-                f"'{type(node.op).__name__}' "
-                "ist nicht erlaubt.",
+                f"Der unäre Operator '{type(node.op).__name__}' ist nicht erlaubt.",
             )
 
         operand = evaluate(
@@ -192,9 +183,7 @@ def evaluate(
         return result
 
     raise ValueError(
-        f"Der Ausdruckstyp "
-        f"'{type(node).__name__}' "
-        "ist nicht erlaubt.",
+        f"Der Ausdruckstyp '{type(node).__name__}' ist nicht erlaubt.",
     )
 
 
@@ -212,9 +201,12 @@ def parse_and_evaluate(
             "Der mathematische Ausdruck darf nicht leer sein.",
         )
 
-    if len(
-        normalized_expression,
-    ) > MAX_EXPRESSION_LENGTH:
+    if (
+        len(
+            normalized_expression,
+        )
+        > MAX_EXPRESSION_LENGTH
+    ):
         raise ValueError(
             "Der mathematische Ausdruck ist zu lang.",
         )
@@ -230,7 +222,6 @@ def parse_and_evaluate(
             "Der mathematische Ausdruck ist syntaktisch ungültig.",
         ) from exc
 
-  
     result = evaluate(
         parsed.body,
     )
@@ -266,9 +257,12 @@ def _validate_result(
             "Das Ergebnis ist nicht endlich.",
         )
 
-    if abs(
-        numeric_value,
-    ) > MAX_ABSOLUTE_RESULT:
+    if (
+        abs(
+            numeric_value,
+        )
+        > MAX_ABSOLUTE_RESULT
+    ):
         raise ValueError(
             "Das Ergebnis überschreitet den erlaubten Wertebereich.",
         )

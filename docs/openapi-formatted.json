@@ -8,9 +8,7 @@
   "paths": {
     "/api/v1/health": {
       "get": {
-        "tags": [
-          "System / Health"
-        ],
+        "tags": ["System / Health"],
         "summary": "Health Check",
         "operationId": "health_api_v1_health_get",
         "responses": {
@@ -29,9 +27,7 @@
     },
     "/api/v1/bootstrap": {
       "get": {
-        "tags": [
-          "System / Bootstrap"
-        ],
+        "tags": ["System / Bootstrap"],
         "summary": "Frontend-Bootstrap laden",
         "description": "Liefert die initialen, nicht sensiblen Laufzeitinformationen für das schema-gesteuerte Frontend. Der Bootstrap ersetzt keine serverseitige Autorisierung.",
         "operationId": "bootstrap_api_v1_bootstrap_get",
@@ -51,9 +47,7 @@
     },
     "/api/v1/ui/schema": {
       "get": {
-        "tags": [
-          "UI / Schema"
-        ],
+        "tags": ["UI / Schema"],
         "summary": "UI-Schema laden",
         "description": "Liefert den versionierten, schema-gesteuerten UI-Vertrag. Das Frontend darf ausschließlich bekannte Komponenten- und Aktionstypen aus seinen festen Registries ausführen.",
         "operationId": "ui_schema_api_v1_ui_schema_get",
@@ -103,9 +97,7 @@
     },
     "/api/v1/hierarchy": {
       "get": {
-        "tags": [
-          "Hierarchy"
-        ],
+        "tags": ["Hierarchy"],
         "summary": "Health Check",
         "operationId": "health_api_v1_hierarchy_get",
         "responses": {
@@ -124,9 +116,7 @@
     },
     "/api/v1/models": {
       "get": {
-        "tags": [
-          "Registry / Models"
-        ],
+        "tags": ["Registry / Models"],
         "summary": "Verfügbare Modelle auflisten",
         "description": "Liefert die serverseitig registrierten und für das Frontend sichtbaren Modelle. Die Sichtbarkeit ersetzt keine Autorisierung bei einer späteren Modellauswahl.",
         "operationId": "models_api_v1_models_get",
@@ -219,9 +209,7 @@
     },
     "/api/v1/tools": {
       "get": {
-        "tags": [
-          "Registry / Tools"
-        ],
+        "tags": ["Registry / Tools"],
         "summary": "Verfügbare Tools auflisten",
         "description": "Liefert die registrierten und für das Frontend sichtbaren Tools. Die Listung eines Tools stellt keine Ausführungsfreigabe dar.",
         "operationId": "tools_api_v1_tools_get",
@@ -325,9 +313,7 @@
     },
     "/api/v1/chat/stream": {
       "post": {
-        "tags": [
-          "Chat"
-        ],
+        "tags": ["Chat"],
         "summary": "Chat-Antwort streamen",
         "description": "Erzeugt eine Chat-Antwort als versionierten Server-Sent-Events-Datenstrom.",
         "operationId": "stream_chat_api_v1_chat_stream_post",
@@ -366,9 +352,7 @@
     },
     "/api/v1/config": {
       "get": {
-        "tags": [
-          "Administration / Configuration"
-        ],
+        "tags": ["Administration / Configuration"],
         "summary": "Konfiguration auflisten",
         "description": "Liefert die sichtbare Fachkonfiguration und die aktuelle Revision. Sensible Werte werden nicht ausgegeben.",
         "operationId": "list_config_api_v1_config_get",
@@ -388,9 +372,7 @@
     },
     "/api/v1/config/{group}/{key}": {
       "put": {
-        "tags": [
-          "Administration / Configuration"
-        ],
+        "tags": ["Administration / Configuration"],
         "summary": "Konfigurationswert ändern",
         "description": "Ändert einen runtime-editierbaren Konfigurationswert. Die Änderung muss durch den ConfigService validiert, versioniert und protokolliert werden.",
         "operationId": "update_config_api_v1_config__group___key__put",
@@ -449,9 +431,7 @@
     },
     "/": {
       "get": {
-        "tags": [
-          "System"
-        ],
+        "tags": ["System"],
         "summary": "Anwendungsstatus",
         "operationId": "root__get",
         "responses": {
@@ -485,11 +465,7 @@
           },
           "environment": {
             "type": "string",
-            "enum": [
-              "development",
-              "intranet",
-              "internet"
-            ],
+            "enum": ["development", "intranet", "internet"],
             "title": "Environment"
           },
           "api_prefix": {
@@ -499,12 +475,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "name",
-          "version",
-          "environment",
-          "api_prefix"
-        ],
+        "required": ["name", "version", "environment", "api_prefix"],
         "title": "BootstrapApplication",
         "description": "Grundinformationen über die laufende Anwendung."
       },
@@ -682,11 +653,7 @@
           },
           "environment": {
             "type": "string",
-            "enum": [
-              "development",
-              "intranet",
-              "internet"
-            ],
+            "enum": ["development", "intranet", "internet"],
             "title": "Environment"
           },
           "user": {
@@ -804,10 +771,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
+        "required": ["id", "name"],
         "title": "BootstrapUser",
         "description": "Minimale, frontendfähige Darstellung des aktuellen Benutzers.\n\nEs werden keine Session-Tokens, Passwortdaten oder internen\nAuthentifizierungsinformationen ausgegeben."
       },
@@ -923,9 +887,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "message"
-        ],
+        "required": ["message"],
         "title": "ChatRequest",
         "description": "Eingabevertrag für eine Chat-Anfrage.\n\nModell- und Tool-IDs sind ausschließlich Benutzerwünsche. Auswahl,\nFreigabe und Autorisierung erfolgen serverseitig."
       },
@@ -955,11 +917,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "group",
-          "key",
-          "value"
-        ],
+        "required": ["group", "key", "value"],
         "title": "ConfigEntryResponse"
       },
       "ConfigListResponse": {
@@ -995,10 +953,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "revision",
-          "items"
-        ],
+        "required": ["revision", "items"],
         "title": "ConfigListResponse"
       },
       "ConfigUpdateRequest": {
@@ -1035,9 +990,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "value"
-        ],
+        "required": ["value"],
         "title": "ConfigUpdateRequest",
         "description": "Änderung eines einzelnen Konfigurationswertes.\n\n`expected_revision` schützt vor dem unbeabsichtigten Überschreiben\neiner zwischenzeitlich geänderten Konfiguration."
       },
@@ -1076,11 +1029,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "group",
-          "key",
-          "revision"
-        ],
+        "required": ["group", "key", "revision"],
         "title": "ConfigUpdateResponse"
       },
       "HTTPValidationError": {
@@ -1284,11 +1233,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "id",
-          "name",
-          "provider"
-        ],
+        "required": ["id", "name", "provider"],
         "title": "ModelEntry",
         "description": "Öffentlicher, frontendfähiger Modelleintrag.\n\nInterne Dateipfade, Zugangsdaten und Provider-Secrets werden nicht\nan das Frontend weitergegeben."
       },
@@ -1363,28 +1308,20 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "title": "ModelListResponse"
       },
       "ServiceStatus": {
         "properties": {
           "status": {
             "type": "string",
-            "enum": [
-              "up",
-              "down",
-              "unknown"
-            ],
+            "enum": ["up", "down", "unknown"],
             "title": "Status"
           }
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "status"
-        ],
+        "required": ["status"],
         "title": "ServiceStatus"
       },
       "ToolCapabilities": {
@@ -1523,10 +1460,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "id",
-          "name"
-        ],
+        "required": ["id", "name"],
         "title": "ToolEntry",
         "description": "Öffentlicher, frontendfähiger Tool-Eintrag.\n\nInterne Python-Pfade, Importnamen, Zugangsdaten und ausführbare\nImplementierungsdetails werden nicht ausgegeben."
       },
@@ -1614,9 +1548,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "items"
-        ],
+        "required": ["items"],
         "title": "ToolListResponse"
       },
       "UIActionDefinition": {
@@ -1666,13 +1598,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "enum": [
-                  "GET",
-                  "POST",
-                  "PUT",
-                  "PATCH",
-                  "DELETE"
-                ]
+                "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
               },
               {
                 "type": "null"
@@ -1714,10 +1640,7 @@
         },
         "additionalProperties": true,
         "type": "object",
-        "required": [
-          "id",
-          "type"
-        ],
+        "required": ["id", "type"],
         "title": "UIActionDefinition",
         "description": "Beschreibung einer frontendseitig bekannten Aktion.\n\nEine deklarierte Aktion ersetzt niemals die serverseitige\nAutorisierung des zugehörigen API-Endpunkts."
       },
@@ -1780,10 +1703,7 @@
         },
         "additionalProperties": true,
         "type": "object",
-        "required": [
-          "id",
-          "type"
-        ],
+        "required": ["id", "type"],
         "title": "UIComponentDefinition",
         "description": "Beschreibung einer bekannten generischen UI-Komponente.\n\nDer konkrete Komponententyp muss im Frontend in einer festen\nKomponenten-Registry vorhanden sein."
       },
@@ -1836,10 +1756,7 @@
         },
         "additionalProperties": true,
         "type": "object",
-        "required": [
-          "id",
-          "schema"
-        ],
+        "required": ["id", "schema"],
         "title": "UIFormDefinition",
         "description": "Dynamisch renderbares Formular.\n\n`form_schema` wird im öffentlichen JSON-Vertrag weiterhin unter\ndem Feldnamen `schema` ausgegeben."
       },
@@ -1918,10 +1835,7 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": [
-          "ui_schema_version",
-          "schema"
-        ],
+        "required": ["ui_schema_version", "schema"],
         "title": "UISchemaResponse",
         "description": "Transportvertrag des API-Endpunkts.\n\n`ui_schema` wird im öffentlichen JSON-Vertrag weiterhin als\n`schema` serialisiert."
       },
@@ -1951,11 +1865,7 @@
           }
         },
         "type": "object",
-        "required": [
-          "loc",
-          "msg",
-          "type"
-        ],
+        "required": ["loc", "msg", "type"],
         "title": "ValidationError"
       }
     }

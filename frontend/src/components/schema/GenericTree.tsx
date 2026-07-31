@@ -23,14 +23,8 @@ const INDENT_SIZE_PX = 16;
 const BASE_INDENT_PX = 8;
 
 // Hilfsfunktion: Prüft, ob ein Wert ein Objekt ist (und nicht null/Array)
-function isPlainObject(
-  value: unknown,
-): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
-  );
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export interface GenericTreeProps {
@@ -49,10 +43,7 @@ export interface GenericTreeProps {
    * GenericTree führt Aktionen niemals selbst aus. Die tatsächliche
    * Ausführung und Autorisierung erfolgen außerhalb der Darstellung.
    */
-  onAction?: (
-    action: string,
-    node: HierarchyNode,
-  ) => void;
+  onAction?: (action: string, node: HierarchyNode) => void;
 
   /**
    * Wird aufgerufen, wenn für einen Projektknoten ein neuer Chat erstellt werden soll.
@@ -70,9 +61,7 @@ export interface GenericTreeProps {
   /**
    * Wird aufgerufen, wenn sich der Aufklappzustand ändert.
    */
-  onExpandedNodeIdsChange?: (
-    expandedNodeIds: ReadonlySet<string>,
-  ) => void;
+  onExpandedNodeIdsChange?: (expandedNodeIds: ReadonlySet<string>) => void;
 
   /**
    * Maximale Anzahl direkt sichtbarer Aktionen je Knoten.
@@ -87,9 +76,7 @@ export interface GenericTreeProps {
   /**
    * Optionaler Renderer für Knotennamen.
    */
-  renderLabel?: (
-    node: HierarchyNode,
-  ) => ReactNode;
+  renderLabel?: (node: HierarchyNode) => ReactNode;
 }
 
 interface TreeNodeProps {
@@ -100,63 +87,36 @@ interface TreeNodeProps {
   expandedNodeIds: ReadonlySet<string>;
   maxVisibleActions: number;
   onSelect: (node: HierarchyNode) => void;
-  onAction?: (
-    action: string,
-    node: HierarchyNode,
-  ) => void;
+  onAction?: (action: string, node: HierarchyNode) => void;
   onCreateChat?: (parentNodeId: string) => void;
   onToggleExpanded: (nodeId: string) => void;
-  renderLabel?: (
-    node: HierarchyNode,
-  ) => ReactNode;
+  renderLabel?: (node: HierarchyNode) => ReactNode;
 }
 
 function joinClassNames(
-  ...values: Array<
-    string | false | null | undefined
-  >
+  ...values: Array<string | false | null | undefined>
 ): string {
-  return values
-    .filter(Boolean)
-    .join(" ");
+  return values.filter(Boolean).join(" ");
 }
 
-function getChildren(
-  node: HierarchyNode,
-): readonly HierarchyNode[] {
-  return Array.isArray(node.children)
-    ? node.children
-    : [];
+function getChildren(node: HierarchyNode): readonly HierarchyNode[] {
+  return Array.isArray(node.children) ? node.children : [];
 }
 
-function hasChildren(
-  node: HierarchyNode,
-): boolean {
+function hasChildren(node: HierarchyNode): boolean {
   return getChildren(node).length > 0;
 }
 
-function getNodeActions(
-  node: HierarchyNode,
-): readonly string[] {
-  return Array.isArray(node.actions)
-    ? node.actions
-    : [];
+function getNodeActions(node: HierarchyNode): readonly string[] {
+  return Array.isArray(node.actions) ? node.actions : [];
 }
 
-function normalizeVisibleActionCount(
-  value: number | undefined,
-): number {
-  if (
-    value === undefined ||
-    !Number.isFinite(value)
-  ) {
+function normalizeVisibleActionCount(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value)) {
     return DEFAULT_VISIBLE_ACTION_COUNT;
   }
 
-  return Math.max(
-    0,
-    Math.floor(value),
-  );
+  return Math.max(0, Math.floor(value));
 }
 
 function GenericTreeComponent({
@@ -172,25 +132,16 @@ function GenericTreeComponent({
   className,
   renderLabel,
 }: GenericTreeProps) {
-  const [
-    internalExpandedNodeIds,
-    setInternalExpandedNodeIds,
-  ] = useState<Set<string>>(
-    () => new Set([root.id]),
-  );
+  const [internalExpandedNodeIds, setInternalExpandedNodeIds] = useState<
+    Set<string>
+  >(() => new Set([root.id]));
 
-  const isControlled =
-    expandedNodeIds !== undefined;
+  const isControlled = expandedNodeIds !== undefined;
 
-  const effectiveExpandedNodeIds =
-    expandedNodeIds ??
-    internalExpandedNodeIds;
+  const effectiveExpandedNodeIds = expandedNodeIds ?? internalExpandedNodeIds;
 
   const visibleActionCount = useMemo(
-    () =>
-      normalizeVisibleActionCount(
-        maxVisibleActions,
-      ),
+    () => normalizeVisibleActionCount(maxVisibleActions),
     [maxVisibleActions],
   );
 
@@ -199,71 +150,37 @@ function GenericTreeComponent({
       return;
     }
 
-    setInternalExpandedNodeIds(
-      (currentExpandedNodeIds) => {
-        if (
-          currentExpandedNodeIds.has(
-            root.id,
-          )
-        ) {
-          return currentExpandedNodeIds;
-        }
+    setInternalExpandedNodeIds((currentExpandedNodeIds) => {
+      if (currentExpandedNodeIds.has(root.id)) {
+        return currentExpandedNodeIds;
+      }
 
-        return new Set([
-          root.id,
-        ]);
-      },
-    );
-  }, [
-    isControlled,
-    root.id,
-  ]);
+      return new Set([root.id]);
+    });
+  }, [isControlled, root.id]);
 
-  const handleToggleExpanded =
-    useCallback(
-      (nodeId: string) => {
-        const nextExpandedNodeIds =
-          new Set(
-            effectiveExpandedNodeIds,
-          );
+  const handleToggleExpanded = useCallback(
+    (nodeId: string) => {
+      const nextExpandedNodeIds = new Set(effectiveExpandedNodeIds);
 
-        if (
-          nextExpandedNodeIds.has(
-            nodeId,
-          )
-        ) {
-          nextExpandedNodeIds.delete(
-            nodeId,
-          );
-        } else {
-          nextExpandedNodeIds.add(
-            nodeId,
-          );
-        }
+      if (nextExpandedNodeIds.has(nodeId)) {
+        nextExpandedNodeIds.delete(nodeId);
+      } else {
+        nextExpandedNodeIds.add(nodeId);
+      }
 
-        if (!isControlled) {
-          setInternalExpandedNodeIds(
-            nextExpandedNodeIds,
-          );
-        }
+      if (!isControlled) {
+        setInternalExpandedNodeIds(nextExpandedNodeIds);
+      }
 
-        onExpandedNodeIdsChange?.(
-          nextExpandedNodeIds,
-        );
-      },
-      [
-        effectiveExpandedNodeIds,
-        isControlled,
-        onExpandedNodeIdsChange,
-      ],
-    );
+      onExpandedNodeIdsChange?.(nextExpandedNodeIds);
+    },
+    [effectiveExpandedNodeIds, isControlled, onExpandedNodeIdsChange],
+  );
 
   return (
     <div
-      className={joinClassNames(
-        "min-w-0",
-        className,
-      )}
+      className={joinClassNames("min-w-0", className)}
       role="tree"
       aria-label="Anwendungshierarchie"
     >
@@ -271,21 +188,13 @@ function GenericTreeComponent({
         node={root}
         schema={schema}
         depth={0}
-        selectedNodeId={
-          selectedNodeId
-        }
-        expandedNodeIds={
-          effectiveExpandedNodeIds
-        }
-        maxVisibleActions={
-          visibleActionCount
-        }
+        selectedNodeId={selectedNodeId}
+        expandedNodeIds={effectiveExpandedNodeIds}
+        maxVisibleActions={visibleActionCount}
         onSelect={onSelect}
         onAction={onAction}
         onCreateChat={onCreateChat}
-        onToggleExpanded={
-          handleToggleExpanded
-        }
+        onToggleExpanded={handleToggleExpanded}
         renderLabel={renderLabel}
       />
     </div>
@@ -305,148 +214,88 @@ function TreeNodeComponent({
   onToggleExpanded,
   renderLabel,
 }: TreeNodeProps) {
-  const nodeDefinitionRaw =
-    schema.node_types[node.type];
+  const nodeDefinitionRaw = schema.node_types[node.type];
 
   // Sicherstellen, dass nodeDefinitionRaw ein Objekt ist
   const nodeDefinition = isPlainObject(nodeDefinitionRaw)
     ? nodeDefinitionRaw
     : undefined;
 
-  const children = useMemo(
-    () => getChildren(node),
-    [node],
-  );
+  const children = useMemo(() => getChildren(node), [node]);
 
-  const nodeHasChildren =
-    children.length > 0;
+  const nodeHasChildren = children.length > 0;
 
-  const isExpanded =
-    nodeHasChildren &&
-    expandedNodeIds.has(
-      node.id,
-    );
+  const isExpanded = nodeHasChildren && expandedNodeIds.has(node.id);
 
-  const isSelected =
-    selectedNodeId === node.id;
+  const isSelected = selectedNodeId === node.id;
 
-  const isKnownNodeType =
-    nodeDefinition !== undefined;
+  const isKnownNodeType = nodeDefinition !== undefined;
 
-  const knownActions = useMemo(
-    () => {
-      if (!onAction) {
-        return [];
-      }
+  const knownActions = useMemo(() => {
+    if (!onAction) {
+      return [];
+    }
 
-      return getNodeActions(node)
-        .filter(isKnownActionKind)
-        .slice(
-          0,
-          maxVisibleActions,
-        );
-    },
-    [
-      maxVisibleActions,
-      node,
-      onAction,
-    ],
-  );
+    return getNodeActions(node)
+      .filter(isKnownActionKind)
+      .slice(0, maxVisibleActions);
+  }, [maxVisibleActions, node, onAction]);
 
-  const handleSelect =
-    useCallback(() => {
-      onSelect(node);
-    }, [
-      node,
-      onSelect,
-    ]);
+  const handleSelect = useCallback(() => {
+    onSelect(node);
+  }, [node, onSelect]);
 
-  const handleToggle =
-    useCallback(() => {
-      if (!nodeHasChildren) {
+  const handleToggle = useCallback(() => {
+    if (!nodeHasChildren) {
+      return;
+    }
+
+    onToggleExpanded(node.id);
+  }, [node.id, nodeHasChildren, onToggleExpanded]);
+
+  const handleSelectKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLButtonElement>) => {
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+
+        if (nodeHasChildren && !isExpanded) {
+          onToggleExpanded(node.id);
+        }
+
         return;
       }
 
-      onToggleExpanded(
-        node.id,
-      );
-    }, [
-      node.id,
-      nodeHasChildren,
-      onToggleExpanded,
-    ]);
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
 
-  const handleSelectKeyDown =
-    useCallback(
-      (
-        event: KeyboardEvent<HTMLButtonElement>,
-      ) => {
-        if (
-          event.key === "ArrowRight"
-        ) {
-          event.preventDefault();
-
-          if (
-            nodeHasChildren &&
-            !isExpanded
-          ) {
-            onToggleExpanded(
-              node.id,
-            );
-          }
-
-          return;
+        if (nodeHasChildren && isExpanded) {
+          onToggleExpanded(node.id);
         }
 
-        if (
-          event.key === "ArrowLeft"
-        ) {
-          event.preventDefault();
+        return;
+      }
 
-          if (
-            nodeHasChildren &&
-            isExpanded
-          ) {
-            onToggleExpanded(
-              node.id,
-            );
-          }
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        onSelect(node);
+      }
+    },
+    [isExpanded, node, nodeHasChildren, onSelect, onToggleExpanded],
+  );
 
-          return;
-        }
-
-        if (
-          event.key === "Enter" ||
-          event.key === " "
-        ) {
-          event.preventDefault();
-          onSelect(node);
-        }
-      },
-      [
-        isExpanded,
-        node,
-        nodeHasChildren,
-        onSelect,
-        onToggleExpanded,
-      ],
-    );
-
-  const renderedLabel =
-    renderLabel
-      ? renderLabel(node)
-      : node.name;
+  const renderedLabel = renderLabel ? renderLabel(node) : node.name;
 
   // Sichere Extraktion von icon und color
   const iconName = isPlainObject(nodeDefinition?.icon)
     ? undefined
     : typeof nodeDefinition?.icon === "string"
-    ? nodeDefinition.icon
-    : undefined;
+      ? nodeDefinition.icon
+      : undefined;
 
-  const color = typeof nodeDefinition?.color === "string"
-    ? nodeDefinition.color
-    : undefined;
+  const color =
+    typeof nodeDefinition?.color === "string"
+      ? nodeDefinition.color
+      : undefined;
 
   // Prüfen, ob der Knoten ein Projekt ist (für "Neuer Chat"-Button)
   const isProject = node.type === "project";
@@ -456,11 +305,7 @@ function TreeNodeComponent({
       role="treeitem"
       aria-level={depth + 1}
       aria-selected={isSelected}
-      aria-expanded={
-        nodeHasChildren
-          ? isExpanded
-          : undefined
-      }
+      aria-expanded={nodeHasChildren ? isExpanded : undefined}
     >
       <div
         className={joinClassNames(
@@ -472,10 +317,7 @@ function TreeNodeComponent({
             : "text-text-soft hover:bg-surface-hover dark:text-gray-300 dark:hover:bg-slate-800/60",
         )}
         style={{
-          paddingLeft:
-            BASE_INDENT_PX +
-            depth *
-              INDENT_SIZE_PX,
+          paddingLeft: BASE_INDENT_PX + depth * INDENT_SIZE_PX,
         }}
       >
         {/* Toggle-Button (Pfeil) */}
@@ -490,11 +332,7 @@ function TreeNodeComponent({
               : "pointer-events-none opacity-0",
           )}
           onClick={handleToggle}
-          tabIndex={
-            nodeHasChildren
-              ? 0
-              : -1
-          }
+          tabIndex={nodeHasChildren ? 0 : -1}
           aria-label={
             nodeHasChildren
               ? isExpanded
@@ -502,16 +340,13 @@ function TreeNodeComponent({
                 : `${node.name} ausklappen`
               : undefined
           }
-          aria-hidden={
-            !nodeHasChildren
-          }
+          aria-hidden={!nodeHasChildren}
         >
           <span
             aria-hidden="true"
             className={joinClassNames(
               "text-xs transition-transform duration-fast",
-              isExpanded &&
-                "rotate-90",
+              isExpanded && "rotate-90",
             )}
           >
             ▶
@@ -527,9 +362,7 @@ function TreeNodeComponent({
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1",
           )}
           onClick={handleSelect}
-          onKeyDown={
-            handleSelectKeyDown
-          }
+          onKeyDown={handleSelectKeyDown}
           title={
             isKnownNodeType
               ? node.name
@@ -539,18 +372,12 @@ function TreeNodeComponent({
           <DynamicIcon
             name={
               iconName ??
-              (
-                isKnownNodeType
-                  ? DEFAULT_NODE_ICON
-                  : UNKNOWN_NODE_ICON
-              )
+              (isKnownNodeType ? DEFAULT_NODE_ICON : UNKNOWN_NODE_ICON)
             }
             color={color}
           />
 
-          <span className="min-w-0 flex-1 truncate">
-            {renderedLabel}
-          </span>
+          <span className="min-w-0 flex-1 truncate">{renderedLabel}</span>
 
           {!isKnownNodeType && (
             <span
@@ -596,8 +423,7 @@ function TreeNodeComponent({
         )}
 
         {/* Aktionen-Buttons (nur bei Hover sichtbar) */}
-        {knownActions.length >
-          0 && (
+        {knownActions.length > 0 && (
           <div
             className={joinClassNames(
               "flex shrink-0 items-center gap-1",
@@ -607,89 +433,57 @@ function TreeNodeComponent({
             )}
             aria-label={`Aktionen für ${node.name}`}
           >
-            {knownActions.map(
-              (action) => (
-                <button
-                  key={action}
-                  type="button"
-                  className={joinClassNames(
-                    "rounded px-1.5 py-1",
-                    "text-xs text-text-muted",
-                    "hover:bg-surface-hover hover:text-text",
-                    "dark:text-gray-400 dark:hover:bg-slate-700/60 dark:hover:text-white",
-                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                  )}
-                  title={action}
-                  aria-label={`${action}: ${node.name}`}
-                  onClick={(
-                    event,
-                  ) => {
-                    event.stopPropagation();
+            {knownActions.map((action) => (
+              <button
+                key={action}
+                type="button"
+                className={joinClassNames(
+                  "rounded px-1.5 py-1",
+                  "text-xs text-text-muted",
+                  "hover:bg-surface-hover hover:text-text",
+                  "dark:text-gray-400 dark:hover:bg-slate-700/60 dark:hover:text-white",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                )}
+                title={action}
+                aria-label={`${action}: ${node.name}`}
+                onClick={(event) => {
+                  event.stopPropagation();
 
-                    onAction?.(
-                      action,
-                      node,
-                    );
-                  }}
-                >
-                  {action}
-                </button>
-              ),
-            )}
+                  onAction?.(action, node);
+                }}
+              >
+                {action}
+              </button>
+            ))}
           </div>
         )}
       </div>
 
       {/* Kinder (rekursiv) */}
-      {nodeHasChildren &&
-        isExpanded && (
-          <div role="group">
-            {children.map(
-              (child) => (
-                <TreeNode
-                  key={child.id}
-                  node={child}
-                  schema={schema}
-                  depth={
-                    depth + 1
-                  }
-                  selectedNodeId={
-                    selectedNodeId
-                  }
-                  expandedNodeIds={
-                    expandedNodeIds
-                  }
-                  maxVisibleActions={
-                    maxVisibleActions
-                  }
-                  onSelect={
-                    onSelect
-                  }
-                  onAction={
-                    onAction
-                  }
-                  onCreateChat={
-                    onCreateChat
-                  }
-                  onToggleExpanded={
-                    onToggleExpanded
-                  }
-                  renderLabel={
-                    renderLabel
-                  }
-                />
-              ),
-            )}
-          </div>
-        )}
+      {nodeHasChildren && isExpanded && (
+        <div role="group">
+          {children.map((child) => (
+            <TreeNode
+              key={child.id}
+              node={child}
+              schema={schema}
+              depth={depth + 1}
+              selectedNodeId={selectedNodeId}
+              expandedNodeIds={expandedNodeIds}
+              maxVisibleActions={maxVisibleActions}
+              onSelect={onSelect}
+              onAction={onAction}
+              onCreateChat={onCreateChat}
+              onToggleExpanded={onToggleExpanded}
+              renderLabel={renderLabel}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-const TreeNode = memo(
-  TreeNodeComponent,
-);
+const TreeNode = memo(TreeNodeComponent);
 
-export const GenericTree = memo(
-  GenericTreeComponent,
-);
+export const GenericTree = memo(GenericTreeComponent);

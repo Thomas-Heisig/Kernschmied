@@ -366,12 +366,12 @@ Different prompt sections may use different merge strategies.
 
 Typical strategies include:
 
-| Strategy | Description |
-|----------|-------------|
-| Append | Add instructions after inherited content |
-| Replace | Replace inherited section |
-| Disable | Remove inherited contribution |
-| Structured Merge | Merge structured prompt metadata |
+| Strategy         | Description                              |
+| ---------------- | ---------------------------------------- |
+| Append           | Add instructions after inherited content |
+| Replace          | Replace inherited section                |
+| Disable          | Remove inherited contribution            |
+| Structured Merge | Merge structured prompt metadata         |
 
 The merge strategy is defined by configuration.
 

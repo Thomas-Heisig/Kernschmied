@@ -10,4 +10,3 @@ class Base(DeclarativeBase):
     Alle ORM-Modelle müssen von genau dieser Klasse erben, damit
     Migrationen und Metadatenregistrierung konsistent bleiben.
     """
-

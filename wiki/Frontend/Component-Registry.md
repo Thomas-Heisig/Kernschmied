@@ -69,15 +69,15 @@ Without a registry, rendering often looks like this:
 
 ```tsx
 if (type === "text") {
-    return <TextField />;
+  return <TextField />;
 }
 
 if (type === "checkbox") {
-    return <Checkbox />;
+  return <Checkbox />;
 }
 
 if (type === "table") {
-    return <Table />;
+  return <Table />;
 }
 ```
 
@@ -190,12 +190,12 @@ If no component exists, the fallback component is used.
 
 The registry may expose metadata such as:
 
-| Property | Description |
-|----------|-------------|
-| type | Component identifier |
-| name | Human-readable name |
-| category | UI category |
-| version | Supported version |
+| Property    | Description            |
+| ----------- | ---------------------- |
+| type        | Component identifier   |
+| name        | Human-readable name    |
+| category    | UI category            |
+| version     | Supported version      |
 | description | Optional documentation |
 
 Example:

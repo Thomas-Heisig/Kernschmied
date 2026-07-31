@@ -1,9 +1,6 @@
 // F:\Kernschmied\frontend\src\registry\actionRegistry.ts
 
-import {
-  KNOWN_ACTION_KINDS,
-  type KnownActionKind,
-} from "../contracts/schema";
+import { KNOWN_ACTION_KINDS, type KnownActionKind } from "../contracts/schema";
 
 /**
  * Eine Aktion wird nur dann als unterstützt behandelt, wenn sie:
@@ -267,10 +264,7 @@ const actionDefinitions = [
 function createActionRegistry(
   definitions: readonly ActionDefinition[],
 ): ActionRegistry {
-  const registry = new Map<
-    KnownActionKind,
-    Readonly<ActionDefinition>
-  >();
+  const registry = new Map<KnownActionKind, Readonly<ActionDefinition>>();
 
   for (const definition of definitions) {
     if (registry.has(definition.kind)) {
@@ -318,12 +312,9 @@ export const actionRegistry: ActionRegistry =
  * Diese Prüfung sagt nicht aus, ob ein Handler vorhanden ist oder ob
  * der aktuelle Benutzer die Aktion ausführen darf.
  */
-export function isKnownActionKind(
-  value: unknown,
-): value is KnownActionKind {
+export function isKnownActionKind(value: unknown): value is KnownActionKind {
   return (
-    typeof value === "string" &&
-    actionRegistry.has(value as KnownActionKind)
+    typeof value === "string" && actionRegistry.has(value as KnownActionKind)
   );
 }
 
@@ -345,9 +336,7 @@ export function getActionDefinition(
  *
  * Die tatsächliche Berechtigung muss weiterhin serverseitig geprüft werden.
  */
-export function isActionEnabled(
-  kind: string,
-): kind is KnownActionKind {
+export function isActionEnabled(kind: string): kind is KnownActionKind {
   const definition = getActionDefinition(kind);
 
   return definition?.enabled !== false;
@@ -356,9 +345,7 @@ export function isActionEnabled(
 /**
  * Prüft, ob für die Aktion ein ausführbarer Frontend-Handler vorhanden ist.
  */
-export function hasActionHandler(
-  kind: string,
-): kind is KnownActionKind {
+export function hasActionHandler(kind: string): kind is KnownActionKind {
   const definition = getActionDefinition(kind);
 
   return typeof definition?.handler === "function";
@@ -430,9 +417,7 @@ export async function executeRegisteredAction<
   }
 
   try {
-    return (await definition.handler(
-      context,
-    )) as ActionResult<TResult>;
+    return (await definition.handler(context)) as ActionResult<TResult>;
   } catch (error) {
     return {
       success: false,

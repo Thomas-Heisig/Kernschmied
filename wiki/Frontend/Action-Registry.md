@@ -229,20 +229,20 @@ The registry may expose metadata.
 
 Example:
 
-| Property | Description |
-|----------|-------------|
-| type | Action identifier |
-| category | Navigation, CRUD, Dialog |
-| description | Documentation |
-| version | Supported schema versions |
+| Property    | Description               |
+| ----------- | ------------------------- |
+| type        | Action identifier         |
+| category    | Navigation, CRUD, Dialog  |
+| description | Documentation             |
+| version     | Supported schema versions |
 
 Example:
 
 ```json
 {
-    "type": "submit",
-    "category": "form",
-    "description": "Submits a form."
+  "type": "submit",
+  "category": "form",
+  "description": "Submits a form."
 }
 ```
 
@@ -316,9 +316,9 @@ Example:
 
 ```json
 {
-    "type": "submit",
-    "label": "Save",
-    "endpoint": "/api/projects"
+  "type": "submit",
+  "label": "Save",
+  "endpoint": "/api/projects"
 }
 ```
 
@@ -336,8 +336,8 @@ Example:
 
 ```json
 {
-    "type": "navigate",
-    "target": "/projects"
+  "type": "navigate",
+  "target": "/projects"
 }
 ```
 
@@ -399,8 +399,8 @@ Example:
 
 ```json
 {
-    "type": "navigate",
-    "target": "/workspace/12"
+  "type": "navigate",
+  "target": "/workspace/12"
 }
 ```
 
@@ -414,8 +414,8 @@ Example:
 
 ```json
 {
-    "type": "dialog",
-    "dialog": "delete-confirmation"
+  "type": "dialog",
+  "dialog": "delete-confirmation"
 }
 ```
 

@@ -42,13 +42,13 @@ The TODO list follows a few important principles.
 
 Tasks are grouped by priority rather than deadlines.
 
-| Priority | Meaning |
-|----------|---------|
+| Priority | Meaning                                        |
+| -------- | ---------------------------------------------- |
 | Critical | Required for platform stability or correctness |
-| High | Important architectural improvements |
-| Medium | Valuable enhancements with moderate impact |
-| Low | Nice-to-have improvements |
-| Future | Long-term ideas and research topics |
+| High     | Important architectural improvements           |
+| Medium   | Valuable enhancements with moderate impact     |
+| Low      | Nice-to-have improvements                      |
+| Future   | Long-term ideas and research topics            |
 
 Priorities may change as the platform evolves.
 

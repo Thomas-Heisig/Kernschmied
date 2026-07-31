@@ -123,15 +123,15 @@ Application services never assemble prompts manually.
 
 Prompts may originate from multiple scopes.
 
-| Scope | Typical Purpose |
-|--------|-----------------|
-| System | Global behavior |
-| Organization | Organizational policies |
-| Department | Department-specific context |
-| Project | Project instructions |
-| Conversation | Conversation context |
-| User | Personal preferences |
-| Request | Temporary instructions |
+| Scope        | Typical Purpose             |
+| ------------ | --------------------------- |
+| System       | Global behavior             |
+| Organization | Organizational policies     |
+| Department   | Department-specific context |
+| Project      | Project instructions        |
+| Conversation | Conversation context        |
+| User         | Personal preferences        |
+| Request      | Temporary instructions      |
 
 Each scope contributes only the information relevant to its responsibility.
 
@@ -337,12 +337,12 @@ Different prompt sections may use different merge strategies.
 
 Supported strategies include:
 
-| Strategy | Description |
-|----------|-------------|
-| Replace | Replace inherited content |
-| Append | Add content after inherited prompt |
-| Prepend | Add content before inherited prompt |
-| Deep Merge | Merge structured prompt objects |
+| Strategy   | Description                         |
+| ---------- | ----------------------------------- |
+| Replace    | Replace inherited content           |
+| Append     | Add content after inherited prompt  |
+| Prepend    | Add content before inherited prompt |
+| Deep Merge | Merge structured prompt objects     |
 
 The merge strategy is defined by the prompt schema.
 

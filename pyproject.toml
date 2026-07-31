@@ -1,0 +1,32 @@
+[tool.ruff]
+target-version = "py311"
+line-length = 88
+extend-exclude = [
+    ".venv",
+    "node_modules",
+    "dist",
+    "build",
+    "frontend",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",
+    "F",
+    "I",
+    "B",
+    "SIM",
+    "UP",
+    "RUF",
+    "TRY",
+    "PERF",
+]
+ignore = [
+    "BLE001",
+    "TRY003",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

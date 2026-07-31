@@ -536,15 +536,15 @@ These principles are not optional.
 
 # Differences from Other Profiles
 
-| Feature | Development | Intranet | Internet |
-|----------|-------------|----------|----------|
-| HTTPS | Optional | Recommended | Required |
-| Authentication | Simplified | Required | Required |
-| Session Security | Basic | Strong | Strict |
-| Rate Limiting | Optional | Recommended | Required |
-| Audit Logging | Optional | Required | Required |
-| Public Access | No | Limited | Yes |
-| Debug Features | Enabled | Limited | Disabled |
+| Feature          | Development | Intranet    | Internet |
+| ---------------- | ----------- | ----------- | -------- |
+| HTTPS            | Optional    | Recommended | Required |
+| Authentication   | Simplified  | Required    | Required |
+| Session Security | Basic       | Strong      | Strict   |
+| Rate Limiting    | Optional    | Recommended | Required |
+| Audit Logging    | Optional    | Required    | Required |
+| Public Access    | No          | Limited     | Yes      |
+| Debug Features   | Enabled     | Limited     | Disabled |
 
 The underlying application architecture remains identical.
 

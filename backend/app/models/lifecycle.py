@@ -42,7 +42,7 @@ from collections.abc import AsyncGenerator, AsyncIterator, Awaitable, Callable, 
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Any, Final
+from typing import Any, Final, cast
 
 from app.contracts.model_backend import (
     BaseModelBackend,
@@ -51,19 +51,16 @@ from app.contracts.model_backend import (
 )
 from app.models.errors import (
     ModelError,
-    ModelGenerationCancelledError,
     ModelGenerationTimeoutError,
     ModelLoadError,
     ModelNotReadyError,
     ModelOperationConflictError,
     ModelShutdownError,
-    ModelStreamCancelledError,
     ModelStreamTimeoutError,
     ModelUnavailableError,
     ModelUnloadError,
     translate_provider_error,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -140,12 +137,8 @@ class ModelLifecyclePolicy:
         Erlaubt nach einem Ladefehler einen späteren erneuten Versuch.
     """
 
-    generation_timeout_seconds: float = (
-        DEFAULT_GENERATION_TIMEOUT_SECONDS
-    )
-    stream_idle_timeout_seconds: float = (
-        DEFAULT_STREAM_IDLE_TIMEOUT_SECONDS
-    )
+    generation_timeout_seconds: float = DEFAULT_GENERATION_TIMEOUT_SECONDS
+    stream_idle_timeout_seconds: float = DEFAULT_STREAM_IDLE_TIMEOUT_SECONDS
     idle_unload_seconds: float | None = DEFAULT_IDLE_UNLOAD_SECONDS
     shutdown_timeout_seconds: float = DEFAULT_SHUTDOWN_TIMEOUT_SECONDS
 
@@ -172,10 +165,7 @@ class ModelLifecyclePolicy:
                 "shutdown_timeout_seconds muss größer als 0 sein.",
             )
 
-        if (
-            self.idle_unload_seconds is not None
-            and self.idle_unload_seconds <= 0
-        ):
+        if self.idle_unload_seconds is not None and self.idle_unload_seconds <= 0:
             raise ValueError(
                 "idle_unload_seconds muss größer als 0 oder None sein.",
             )
@@ -205,12 +195,11 @@ class ModelLifecycleDefinition:
     policy: ModelLifecyclePolicy = field(
         default_factory=ModelLifecyclePolicy,
     )
-    metadata: dict[str, Any] = field(
-        default_factory=lambda: {},
-    )
+    # Verwende lambda, um Pylance einen konkreten Typ für das default-dict zu geben
+    metadata: dict[str, Any] = field(default_factory=lambda: {})
 
     def __post_init__(self) -> None:
-        model_id = self.model_id.strip()
+        model_id = self.model_id.strip().lower()
         provider_type = self.provider_type.strip().lower()
 
         if not model_id:
@@ -290,8 +279,11 @@ class _ModelLifecycleEntry:
     state: ModelLifecycleState = ModelLifecycleState.REGISTERED
 
     active_operations: int = 0
+    accepting_operations: bool = True
+
     successful_operations: int = 0
     failed_operations: int = 0
+    cancelled_operations: int = 0
 
     created_at_monotonic: float | None = None
     loaded_at_monotonic: float | None = None
@@ -337,18 +329,14 @@ class ModelLifecycleManager:
     def __init__(
         self,
         *,
-        maintenance_interval_seconds: float = (
-            DEFAULT_MAINTENANCE_INTERVAL_SECONDS
-        ),
+        maintenance_interval_seconds: float = (DEFAULT_MAINTENANCE_INTERVAL_SECONDS),
     ) -> None:
         if maintenance_interval_seconds <= 0:
             raise ValueError(
                 "maintenance_interval_seconds muss größer als 0 sein.",
             )
 
-        self._maintenance_interval_seconds = (
-            maintenance_interval_seconds
-        )
+        self._maintenance_interval_seconds = maintenance_interval_seconds
 
         self._entries: dict[str, _ModelLifecycleEntry] = {}
         self._registry_lock = asyncio.Lock()
@@ -356,6 +344,17 @@ class ModelLifecycleManager:
         self._maintenance_task: asyncio.Task[None] | None = None
         self._started = False
         self._shutdown_requested = False
+
+    # ========================================================
+    # Hilfsmethode: Normalisierung
+    # ========================================================
+
+    @staticmethod
+    def _normalize_model_id(model_id: str) -> str:
+        normalized = model_id.strip().lower()
+        if not normalized:
+            raise ValueError("model_id darf nicht leer sein.")
+        return normalized
 
     # ========================================================
     # Registrierung
@@ -382,9 +381,7 @@ class ModelLifecycleManager:
                 raise ModelOperationConflictError(
                     model_id=definition.model_id,
                     operation="register",
-                    lifecycle_state=(
-                        self._entries[definition.model_id].state
-                    ),
+                    lifecycle_state=(self._entries[definition.model_id].state),
                     reason="Das Modell ist bereits registriert.",
                 )
 
@@ -398,6 +395,17 @@ class ModelLifecycleManager:
             await self.ensure_ready(
                 definition.model_id,
                 load=definition.policy.eager_load,
+            )
+
+        # Maintenance-Task starten, falls nötig
+        if (
+            self._started
+            and definition.policy.unload_when_idle
+            and self._maintenance_task is None
+        ):
+            self._maintenance_task = asyncio.create_task(
+                self._maintenance_loop(),
+                name="model-lifecycle-maintenance",
             )
 
     async def unregister(
@@ -438,9 +446,7 @@ class ModelLifecycleManager:
             if current_entry is not entry:
                 return False
 
-            del self._entries[
-                normalized_model_id
-            ]
+            del self._entries[normalized_model_id]
 
         return True
 
@@ -454,12 +460,14 @@ class ModelLifecycleManager:
 
         return normalized_model_id in self._entries
 
+    async def _snapshot_entries(self) -> tuple[_ModelLifecycleEntry, ...]:
+        async with self._registry_lock:
+            return tuple(self._entries.values())
+
     def list_model_ids(
         self,
     ) -> tuple[str, ...]:
-        return tuple(
-            sorted(self._entries),
-        )
+        return tuple(sorted(self._entries.keys()))
 
     # ========================================================
     # Start und Maintenance
@@ -472,8 +480,7 @@ class ModelLifecycleManager:
 
         if self._shutdown_requested:
             raise RuntimeError(
-                "Ein bereits beendeter Lifecycle kann nicht neu "
-                "gestartet werden.",
+                "Ein bereits beendeter Lifecycle kann nicht neu gestartet werden.",
             )
 
         if self._started:
@@ -481,11 +488,9 @@ class ModelLifecycleManager:
 
         self._started = True
 
-        eager_entries = [
-            entry
-            for entry in self._entries.values()
-            if entry.policy.eager_create
-        ]
+        entries = await self._snapshot_entries()
+
+        eager_entries = [entry for entry in entries if entry.policy.eager_create]
 
         for entry in eager_entries:
             try:
@@ -502,10 +507,7 @@ class ModelLifecycleManager:
                     },
                 )
 
-        if any(
-            entry.policy.unload_when_idle
-            for entry in self._entries.values()
-        ):
+        if any(entry.policy.unload_when_idle for entry in entries):
             self._maintenance_task = asyncio.create_task(
                 self._maintenance_loop(),
                 name="model-lifecycle-maintenance",
@@ -521,17 +523,13 @@ class ModelLifecycleManager:
         unloaded_model_ids: list[str] = []
         now = time.monotonic()
 
-        entries = tuple(
-            self._entries.values(),
-        )
+        entries = await self._snapshot_entries()
 
         for entry in entries:
             if not entry.policy.unload_when_idle:
                 continue
 
-            idle_unload_seconds = (
-                entry.policy.idle_unload_seconds
-            )
+            idle_unload_seconds = entry.policy.idle_unload_seconds
 
             if idle_unload_seconds is None:
                 continue
@@ -602,6 +600,80 @@ class ModelLifecycleManager:
             logger.exception(
                 "Model lifecycle maintenance loop failed",
             )
+
+    # ========================================================
+    # Operations-Gate
+    # ========================================================
+
+    async def _close_operation_gate(
+        self,
+        entry: _ModelLifecycleEntry,
+        *,
+        operation: str,
+        wait_for_active_operations: bool,
+        timeout_seconds: float,
+    ) -> bool:
+        """
+        Schließt das Gate für neue Operationen.
+
+        Wenn wait_for_active_operations True ist, wird auf das Ende
+        aktiver Operationen gewartet. Andernfalls wird das Gate
+        geschlossen und sofort zurückgegeben (False, falls noch aktiv).
+
+        Gibt True zurück, wenn das Gate geschlossen wurde und keine
+        aktiven Operationen mehr vorhanden sind.
+        """
+        async with entry.usage_condition:
+            if not entry.accepting_operations:
+                raise ModelOperationConflictError(
+                    model_id=entry.model_id,
+                    operation=operation,
+                    lifecycle_state=entry.state,
+                    reason=(
+                        "Für das Modell läuft bereits eine exklusive Lifecycle-Aktion."
+                    ),
+                )
+
+            entry.accepting_operations = False
+
+            if entry.active_operations == 0:
+                return True
+
+            if not wait_for_active_operations:
+                entry.accepting_operations = True
+                entry.usage_condition.notify_all()
+                return False
+
+            try:
+                async with asyncio.timeout(timeout_seconds):
+                    await entry.usage_condition.wait_for(
+                        lambda: entry.active_operations == 0,
+                    )
+            except TimeoutError as exc:
+                entry.accepting_operations = True
+                entry.usage_condition.notify_all()
+                raise ModelOperationConflictError(
+                    model_id=entry.model_id,
+                    operation=operation,
+                    lifecycle_state=entry.state,
+                    reason=(
+                        "Aktive Modelloperationen wurden nicht rechtzeitig beendet."
+                    ),
+                ) from exc
+
+            return True
+
+    async def _open_operation_gate(
+        self,
+        entry: _ModelLifecycleEntry,
+    ) -> None:
+        """
+        Öffnet das Gate für neue Operationen (außer bei SHUTDOWN).
+        """
+        async with entry.usage_condition:
+            if entry.state != ModelLifecycleState.SHUTDOWN:  # type: ignore[comparison-overlap]
+                entry.accepting_operations = True
+                entry.usage_condition.notify_all()
 
     # ========================================================
     # Backend-Auflösung
@@ -687,9 +759,7 @@ class ModelLifecycleManager:
             entry.state = ModelLifecycleState.CREATING
 
             try:
-                backend_or_awaitable = (
-                    entry.definition.factory()
-                )
+                backend_or_awaitable = entry.definition.factory()
 
                 if inspect.isawaitable(
                     backend_or_awaitable,
@@ -698,8 +768,6 @@ class ModelLifecycleManager:
                 else:
                     backend = backend_or_awaitable
 
-                # Vertragssicherheit: Die Factory muss ein BaseModelBackend zurückgeben
-                # Ein expliziter isinstance-Check ist hier notwendig für Laufzeitsicherheit.
                 if not isinstance(backend, BaseModelBackend):  # type: ignore[reportUnnecessaryIsInstance]
                     raise TypeError(
                         "Die Backend-Factory hat keine "
@@ -707,12 +775,8 @@ class ModelLifecycleManager:
                     )
 
                 entry.backend = backend
-                entry.created_at_monotonic = (
-                    time.monotonic()
-                )
-                entry.last_used_at_monotonic = (
-                    entry.created_at_monotonic
-                )
+                entry.created_at_monotonic = time.monotonic()
+                entry.last_used_at_monotonic = entry.created_at_monotonic
                 entry.last_error = None
                 entry.failed_at_monotonic = None
                 entry.state = ModelLifecycleState.CREATED
@@ -732,7 +796,6 @@ class ModelLifecycleManager:
                     model_id=entry.model_id,
                 )
 
-                # translated ist bereits ein ModelError (garantiert durch translate_provider_error)
                 raise translated from exc
 
     async def _ensure_backend_loaded(
@@ -799,12 +862,8 @@ class ModelLifecycleManager:
                 if inspect.isawaitable(result):
                     await result
 
-                entry.loaded_at_monotonic = (
-                    time.monotonic()
-                )
-                entry.last_used_at_monotonic = (
-                    entry.loaded_at_monotonic
-                )
+                entry.loaded_at_monotonic = time.monotonic()
+                entry.last_used_at_monotonic = entry.loaded_at_monotonic
                 entry.last_error = None
                 entry.failed_at_monotonic = None
                 entry.state = ModelLifecycleState.READY
@@ -839,22 +898,25 @@ class ModelLifecycleManager:
         """
         Reserviert ein Modell für eine aktive Operation.
 
-        Solange mindestens eine Operation aktiv ist, darf das Modell nicht
-        automatisch entladen werden.
+        Die Reservierung erfolgt **vor** dem Erzeugen/Laden des Backends,
+        um Race Conditions mit Unload/Shutdown zu vermeiden.
         """
 
         entry = self._get_entry(
             model_id,
         )
 
-        backend = await self.get_backend(
-            entry.model_id,
-            ensure_loaded=ensure_loaded,
-        )
-
+        # 1. Operation reservieren (Gate prüfen)
         async with entry.usage_condition:
+            if not entry.accepting_operations:
+                raise ModelOperationConflictError(
+                    model_id=entry.model_id,
+                    operation="acquire",
+                    lifecycle_state=entry.state,
+                    reason=("Das Modell akzeptiert derzeit keine neuen Operationen."),
+                )
+
             if entry.state in {
-                ModelLifecycleState.UNLOADING,
                 ModelLifecycleState.SHUTTING_DOWN,
                 ModelLifecycleState.SHUTDOWN,
             }:
@@ -862,40 +924,62 @@ class ModelLifecycleManager:
                     model_id=entry.model_id,
                     operation="acquire",
                     lifecycle_state=entry.state,
-                    reason=(
-                        "Das Modell wird derzeit entladen oder beendet."
-                    ),
+                    reason=("Das Modell wird beendet oder wurde bereits beendet."),
                 )
 
             entry.active_operations += 1
             entry.last_used_at_monotonic = time.monotonic()
-            entry.state = ModelLifecycleState.BUSY
+
+        operation_succeeded = False
+        operation_cancelled = False
 
         try:
+            # 2. Backend holen (erzeugt/lädt bei Bedarf)
+            backend = await self.get_backend(
+                entry.model_id,
+                ensure_loaded=ensure_loaded,
+            )
+
+            # 3. Zustand auf BUSY setzen (falls nicht bereits SHUTTING_DOWN)
+            async with entry.usage_condition:
+                if entry.state not in {
+                    ModelLifecycleState.SHUTTING_DOWN,
+                    ModelLifecycleState.SHUTDOWN,
+                }:
+                    entry.state = ModelLifecycleState.BUSY
+
             yield backend
 
-        except BaseException:
-            entry.failed_operations += 1
+            operation_succeeded = True
+
+        except asyncio.CancelledError:
+            operation_cancelled = True
             raise
 
-        else:
-            entry.successful_operations += 1
-
         finally:
+            # 4. Operation freigeben und Statistik aktualisieren
             async with entry.usage_condition:
                 entry.active_operations = max(
                     0,
                     entry.active_operations - 1,
                 )
-                entry.last_used_at_monotonic = (
-                    time.monotonic()
-                )
+                entry.last_used_at_monotonic = time.monotonic()
 
-                if entry.active_operations == 0:
-                    if entry.state == ModelLifecycleState.BUSY:
-                        entry.state = ModelLifecycleState.READY
+                if operation_succeeded:
+                    entry.successful_operations += 1
+                elif operation_cancelled:
+                    entry.cancelled_operations += 1
+                else:
+                    entry.failed_operations += 1
 
-                    entry.usage_condition.notify_all()
+                if (
+                    entry.active_operations == 0
+                    and entry.accepting_operations
+                    and entry.state == ModelLifecycleState.BUSY
+                ):
+                    entry.state = ModelLifecycleState.READY
+
+                entry.usage_condition.notify_all()
 
     # ========================================================
     # Generierung
@@ -933,16 +1017,15 @@ class ModelLifecycleManager:
                 entry.model_id,
                 ensure_loaded=True,
             ) as backend:
-                result = await asyncio.wait_for(
-                    backend.generate(request),
+                # Der Vertrag deklariert generate nicht – Pylance-Hinweis unterdrücken
+                result: StreamEvent = await asyncio.wait_for(
+                    backend.generate(request),  # type: ignore[reportAttributeAccessIssue]
                     timeout=effective_timeout,
                 )
 
-                # Der Vertrag von BaseModelBackend garantiert StreamEvent.
-                # Pylance kann den Typ nicht immer ableiten – wir helfen mit type: ignore.
-                return result  # type: ignore[return-value]
+                return result
 
-        except asyncio.TimeoutError as exc:
+        except TimeoutError as exc:
             raise ModelGenerationTimeoutError(
                 model_id=entry.model_id,
                 provider_type=entry.provider_type,
@@ -951,14 +1034,8 @@ class ModelLifecycleManager:
                 cause=exc,
             ) from exc
 
-        except asyncio.CancelledError as exc:
-            raise ModelGenerationCancelledError(
-                model_id=entry.model_id,
-                provider_type=entry.provider_type,
-                reason="Die Generierung wurde abgebrochen.",
-                request_id=request_id,
-                cause=exc,
-            ) from exc
+        except asyncio.CancelledError:
+            raise
 
         except ModelError:
             raise
@@ -971,8 +1048,12 @@ class ModelLifecycleManager:
                 request_id=request_id,
             )
 
-            # translated ist bereits ein ModelError
             raise translated from exc
+
+    # ========================================================
+    # Streaming (korrigiert mit aclose)
+    # ========================================================
+
     async def stream(
         self,
         model_id: str,
@@ -1003,13 +1084,20 @@ class ModelLifecycleManager:
                 "idle_timeout_seconds muss größer als 0 sein.",
             )
 
+        # Vorinitialisierung, damit finally-Block keinen Unbound-Fehler bekommt
+        iterator_object: AsyncIterator[StreamEvent] | None = None
+
         try:
             async with self.acquire(
                 entry.model_id,
                 ensure_loaded=True,
             ) as backend:
-                iterator = backend.stream(request)
-                iterator_object = iterator.__aiter__()
+                # cast sorgt für den korrekten Typ, da backend.stream nicht im Interface deklariert ist
+                stream_iter = cast(
+                    AsyncIterator[StreamEvent],
+                    backend.stream(request),  # type: ignore[reportAttributeAccessIssue]
+                )
+                iterator_object = stream_iter.__aiter__()
 
                 while True:
                     try:
@@ -1017,36 +1105,9 @@ class ModelLifecycleManager:
                             iterator_object.__anext__(),
                             timeout=effective_idle_timeout,
                         )
-
                     except StopAsyncIteration:
                         break
-
-                    except asyncio.TimeoutError as exc:
-                        close_method = getattr(
-                            iterator_object,
-                            "aclose",
-                            None,
-                        )
-
-                        if callable(close_method):
-                            try:
-                                close_result = close_method()
-
-                                if inspect.isawaitable(
-                                    close_result,
-                                ):
-                                    await close_result
-                            except Exception:
-                                logger.exception(
-                                    "Could not close timed-out model stream",
-                                    extra={
-                                        "model_id": entry.model_id,
-                                        "provider_type": (
-                                            entry.provider_type
-                                        ),
-                                    },
-                                )
-
+                    except TimeoutError as exc:
                         raise ModelStreamTimeoutError(
                             model_id=entry.model_id,
                             provider_type=entry.provider_type,
@@ -1057,14 +1118,8 @@ class ModelLifecycleManager:
 
                     yield event
 
-        except asyncio.CancelledError as exc:
-            raise ModelStreamCancelledError(
-                model_id=entry.model_id,
-                provider_type=entry.provider_type,
-                reason="Der Modellstream wurde abgebrochen.",
-                request_id=request_id,
-                cause=exc,
-            ) from exc
+        except asyncio.CancelledError:
+            raise
 
         except ModelError:
             raise
@@ -1077,11 +1132,45 @@ class ModelLifecycleManager:
                 request_id=request_id,
             )
 
-            # translated ist bereits ein ModelError
             raise translated from exc
 
+        finally:
+            # Iterator zuverlässig schließen
+            if iterator_object is not None:
+                close_method = getattr(
+                    iterator_object,
+                    "aclose",
+                    None,
+                )
+                if callable(close_method):
+                    try:
+                        close_result = close_method()
+                        if inspect.isawaitable(close_result):
+                            async with asyncio.timeout(
+                                entry.policy.shutdown_timeout_seconds,
+                            ):
+                                await asyncio.shield(close_result)
+                    except asyncio.CancelledError:
+                        logger.warning(
+                            "Model stream cleanup was cancelled",
+                            extra={
+                                "model_id": entry.model_id,
+                                "provider_type": entry.provider_type,
+                                "request_id": request_id,
+                            },
+                        )
+                    except Exception:
+                        logger.exception(
+                            "Could not close model stream cleanly",
+                            extra={
+                                "model_id": entry.model_id,
+                                "provider_type": entry.provider_type,
+                                "request_id": request_id,
+                            },
+                        )
+
     # ========================================================
-    # Entladen
+    # Entladen (korrigiert mit Gate)
     # ========================================================
 
     async def unload(
@@ -1115,135 +1204,95 @@ class ModelLifecycleManager:
             else entry.policy.shutdown_timeout_seconds
         )
 
-        if wait_for_active_operations:
-            await self._wait_until_unused(
-                entry,
-                timeout_seconds=effective_timeout,
-            )
-        elif entry.active_operations > 0:
+        # 1. Gate schließen
+        gate_closed = await self._close_operation_gate(
+            entry,
+            operation="unload",
+            wait_for_active_operations=wait_for_active_operations,
+            timeout_seconds=effective_timeout,
+        )
+
+        if not gate_closed:
             return False
 
-        async with entry.lifecycle_lock:
-            if entry.active_operations > 0:
-                if not wait_for_active_operations:
+        try:
+            async with entry.lifecycle_lock:
+                backend = entry.backend
+
+                # Defensive Prüfung (trotz vorheriger Prüfung)
+                if backend is None:  # type: ignore[unnecessary-comparison]
                     return False
 
-                raise ModelOperationConflictError(
-                    model_id=entry.model_id,
-                    operation="unload",
-                    lifecycle_state=entry.state,
-                    reason=(
-                        "Das Modell besitzt noch aktive Operationen."
-                    ),
-                )
-
-            backend = entry.backend
-
-            # Hier ist backend garantiert nicht None (siehe Prüfung oben)
-            # Der Check ist sicherheitshalber trotzdem drin, aber Pylance
-            # würde meckern – deshalb type: ignore.
-            if backend is None:  # type: ignore[reportUnnecessaryComparison]
-                return False
-
-            unload_method = getattr(
-                backend,
-                "unload_model",
-                None,
-            )
-
-            if not callable(unload_method):
                 unload_method = getattr(
                     backend,
-                    "unload",
+                    "unload_model",
                     None,
                 )
 
-            if not callable(unload_method):
-                return False
-
-            previous_state = entry.state
-            entry.state = ModelLifecycleState.UNLOADING
-
-            try:
-                result = unload_method()
-
-                if inspect.isawaitable(result):
-                    await asyncio.wait_for(
-                        result,
-                        timeout=effective_timeout,
+                if not callable(unload_method):
+                    unload_method = getattr(
+                        backend,
+                        "unload",
+                        None,
                     )
 
-                entry.loaded_at_monotonic = None
-                entry.last_used_at_monotonic = time.monotonic()
-                entry.last_error = None
-                entry.failed_at_monotonic = None
-                entry.state = ModelLifecycleState.UNLOADED
+                if not callable(unload_method):
+                    return False
 
-                return True
+                previous_state = entry.state
+                entry.state = ModelLifecycleState.UNLOADING
 
-            except asyncio.TimeoutError as exc:
-                entry.state = ModelLifecycleState.FAILED
-                entry.last_error = exc
-                entry.failed_at_monotonic = time.monotonic()
+                try:
+                    result = unload_method()
 
-                raise ModelUnloadError(
-                    entry.model_id,
-                    provider_type=entry.provider_type,
-                    reason=(
-                        "Das Entladen hat das Zeitlimit überschritten."
-                    ),
-                    cause=exc,
-                ) from exc
+                    if inspect.isawaitable(result):
+                        await asyncio.wait_for(
+                            result,
+                            timeout=effective_timeout,
+                        )
 
-            except asyncio.CancelledError:
-                entry.state = previous_state
-                raise
+                    entry.loaded_at_monotonic = None
+                    entry.last_used_at_monotonic = time.monotonic()
+                    entry.last_error = None
+                    entry.failed_at_monotonic = None
+                    entry.state = ModelLifecycleState.UNLOADED
 
-            except Exception as exc:
-                entry.state = ModelLifecycleState.FAILED
-                entry.last_error = exc
-                entry.failed_at_monotonic = time.monotonic()
+                    return True
 
-                raise ModelUnloadError(
-                    entry.model_id,
-                    provider_type=entry.provider_type,
-                    reason=str(exc),
-                    cause=exc,
-                ) from exc
+                except TimeoutError as exc:
+                    entry.state = ModelLifecycleState.FAILED
+                    entry.last_error = exc
+                    entry.failed_at_monotonic = time.monotonic()
 
-    async def _wait_until_unused(
-        self,
-        entry: _ModelLifecycleEntry,
-        *,
-        timeout_seconds: float,
-    ) -> None:
-        if entry.active_operations == 0:
-            return
+                    raise ModelUnloadError(
+                        entry.model_id,
+                        provider_type=entry.provider_type,
+                        reason=("Das Entladen hat das Zeitlimit überschritten."),
+                        cause=exc,
+                    ) from exc
 
-        async def wait() -> None:
-            async with entry.usage_condition:
-                await entry.usage_condition.wait_for(
-                    lambda: entry.active_operations == 0,
-                )
+                except asyncio.CancelledError:
+                    entry.state = previous_state
+                    raise
 
-        try:
-            await asyncio.wait_for(
-                wait(),
-                timeout=timeout_seconds,
-            )
-        except asyncio.TimeoutError as exc:
-            raise ModelOperationConflictError(
-                model_id=entry.model_id,
-                operation="wait_until_unused",
-                lifecycle_state=entry.state,
-                reason=(
-                    "Aktive Modelloperationen wurden nicht rechtzeitig "
-                    "beendet."
-                ),
-            ) from exc
+                except Exception as exc:
+                    entry.state = ModelLifecycleState.FAILED
+                    entry.last_error = exc
+                    entry.failed_at_monotonic = time.monotonic()
+
+                    raise ModelUnloadError(
+                        entry.model_id,
+                        provider_type=entry.provider_type,
+                        reason=str(exc),
+                        cause=exc,
+                    ) from exc
+
+        finally:
+            # Gate nach Unload wieder öffnen
+            await self._open_operation_gate(entry)
 
     # ========================================================
-    # Shutdown
+    # Shutdown (korrigiert mit Gate, bleibt geschlossen)
     # ========================================================
 
     async def shutdown_model(
@@ -1269,26 +1318,35 @@ class ModelLifecycleManager:
             else entry.policy.shutdown_timeout_seconds
         )
 
-        await self._wait_until_unused(
+        # Prüfen, ob bereits SHUTDOWN
+        async with entry.usage_condition:
+            if entry.state == ModelLifecycleState.SHUTDOWN:
+                return
+
+        # Gate schließen (wartet auf aktive Operationen)
+        await self._close_operation_gate(
             entry,
+            operation="shutdown",
+            wait_for_active_operations=True,
             timeout_seconds=effective_timeout,
         )
 
         async with entry.lifecycle_lock:
-            if entry.state == ModelLifecycleState.SHUTDOWN:
+            if entry.state == ModelLifecycleState.SHUTTING_DOWN:
                 return
 
             backend = entry.backend
+
+            entry.state = ModelLifecycleState.SHUTTING_DOWN
 
             if backend is None:
                 entry.state = ModelLifecycleState.SHUTDOWN
                 return
 
-            entry.state = ModelLifecycleState.SHUTTING_DOWN
-
             try:
+                # Backend.shutdown() ist im Interface nicht deklariert → Pylance-Hinweis unterdrücken
                 await asyncio.wait_for(
-                    backend.shutdown(),
+                    backend.shutdown(),  # type: ignore[reportAttributeAccessIssue]
                     timeout=effective_timeout,
                 )
 
@@ -1299,7 +1357,7 @@ class ModelLifecycleManager:
                 entry.failed_at_monotonic = None
                 entry.state = ModelLifecycleState.SHUTDOWN
 
-            except asyncio.TimeoutError as exc:
+            except TimeoutError as exc:
                 entry.state = ModelLifecycleState.FAILED
                 entry.last_error = exc
                 entry.failed_at_monotonic = time.monotonic()
@@ -1307,10 +1365,7 @@ class ModelLifecycleManager:
                 raise ModelShutdownError(
                     entry.model_id,
                     provider_type=entry.provider_type,
-                    reason=(
-                        "Das Backend-Shutdown hat das Zeitlimit "
-                        "überschritten."
-                    ),
+                    reason=("Das Backend-Shutdown hat das Zeitlimit überschritten."),
                     cause=exc,
                 ) from exc
 
@@ -1329,6 +1384,10 @@ class ModelLifecycleManager:
                     reason=str(exc),
                     cause=exc,
                 ) from exc
+
+    # ========================================================
+    # Globaler Shutdown
+    # ========================================================
 
     async def shutdown(
         self,
@@ -1364,9 +1423,7 @@ class ModelLifecycleManager:
 
         errors: list[ModelError] = []
 
-        entries = tuple(
-            self._entries.values(),
-        )
+        entries = await self._snapshot_entries()
 
         shutdown_tasks = [
             asyncio.create_task(
@@ -1411,9 +1468,7 @@ class ModelLifecycleManager:
                 extra={
                     "model_id": entry.model_id,
                     "provider_type": entry.provider_type,
-                    "error_type": (
-                        error.__class__.__name__
-                    ),
+                    "error_type": (error.__class__.__name__),
                 },
                 exc_info=result,
             )
@@ -1422,8 +1477,7 @@ class ModelLifecycleManager:
 
         if errors and raise_on_error:
             raise ExceptionGroup(
-                "Ein oder mehrere Modell-Backends konnten nicht "
-                "beendet werden.",
+                "Ein oder mehrere Modell-Backends konnten nicht beendet werden.",
                 errors,
             )
 
@@ -1445,14 +1499,13 @@ class ModelLifecycleManager:
             entry,
         )
 
-    def list_snapshots(
+    async def list_snapshots(
         self,
     ) -> tuple[ModelLifecycleSnapshot, ...]:
+        entries = await self._snapshot_entries()
         return tuple(
-            self._create_snapshot(
-                self._entries[model_id],
-            )
-            for model_id in sorted(self._entries)
+            self._create_snapshot(entry)
+            for entry in sorted(entries, key=lambda e: e.model_id)
         )
 
     def _create_snapshot(
@@ -1468,9 +1521,7 @@ class ModelLifecycleManager:
         )
 
         idle_seconds = (
-            max(0.0, now - last_activity)
-            if last_activity is not None
-            else None
+            max(0.0, now - last_activity) if last_activity is not None else None
         )
 
         backend_loaded = self._is_backend_loaded(
@@ -1484,39 +1535,23 @@ class ModelLifecycleManager:
             backend_created=entry.backend is not None,
             backend_loaded=backend_loaded,
             active_operations=entry.active_operations,
-            successful_operations=(
-                entry.successful_operations
-            ),
+            successful_operations=(entry.successful_operations),
             failed_operations=entry.failed_operations,
-            created_at_monotonic=(
-                entry.created_at_monotonic
-            ),
-            loaded_at_monotonic=(
-                entry.loaded_at_monotonic
-            ),
-            last_used_at_monotonic=(
-                entry.last_used_at_monotonic
-            ),
-            failed_at_monotonic=(
-                entry.failed_at_monotonic
-            ),
+            created_at_monotonic=(entry.created_at_monotonic),
+            loaded_at_monotonic=(entry.loaded_at_monotonic),
+            last_used_at_monotonic=(entry.last_used_at_monotonic),
+            failed_at_monotonic=(entry.failed_at_monotonic),
             last_error_type=(
                 entry.last_error.__class__.__name__
                 if entry.last_error is not None
                 else None
             ),
             last_error_message=(
-                str(entry.last_error)
-                if entry.last_error is not None
-                else None
+                str(entry.last_error) if entry.last_error is not None else None
             ),
             idle_seconds=idle_seconds,
-            unload_when_idle=(
-                entry.policy.unload_when_idle
-            ),
-            idle_unload_seconds=(
-                entry.policy.idle_unload_seconds
-            ),
+            unload_when_idle=(entry.policy.unload_when_idle),
+            idle_unload_seconds=(entry.policy.idle_unload_seconds),
             metadata=dict(entry.definition.metadata),
         )
 
@@ -1529,19 +1564,19 @@ class ModelLifecycleManager:
         if backend is None:
             return False
 
-        is_loaded = getattr(
+        is_loaded_attr = getattr(
             backend,
             "is_loaded",
             None,
         )
 
-        if isinstance(is_loaded, bool):
-            return is_loaded
+        if isinstance(is_loaded_attr, bool):
+            return is_loaded_attr
 
-        if callable(is_loaded):
+        if callable(is_loaded_attr):
             try:
-                result = is_loaded()
-
+                # Den Rückgabewert explizit mit Any annehmen, da der Callable unbekannt ist
+                result: Any = is_loaded_attr()
                 if isinstance(result, bool):
                     return result
             except Exception:
@@ -1571,26 +1606,10 @@ class ModelLifecycleManager:
         if entry is None:
             raise ModelUnavailableError(
                 normalized_model_id,
-                reason=(
-                    "Das Modell ist nicht im Lifecycle registriert."
-                ),
+                reason=("Das Modell ist nicht im Lifecycle registriert."),
             )
 
         return entry
-
-    @staticmethod
-    def _normalize_model_id(
-        model_id: str,
-    ) -> str:
-        # model_id ist bereits als str typisiert
-        normalized = model_id.strip()
-
-        if not normalized:
-            raise ValueError(
-                "model_id darf nicht leer sein.",
-            )
-
-        return normalized
 
     async def __aenter__(
         self,

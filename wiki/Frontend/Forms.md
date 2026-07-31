@@ -190,27 +190,27 @@ Form
 
 Common field types include:
 
-| Type | Description |
-|------|-------------|
-| text | Single-line text |
-| textarea | Multi-line text |
-| password | Password input |
-| email | Email address |
-| url | URL |
-| number | Numeric input |
-| checkbox | Boolean |
-| switch | Toggle |
-| select | Dropdown |
-| multiselect | Multiple values |
-| radio | Radio buttons |
-| date | Date |
-| datetime | Date & time |
-| time | Time |
-| color | Color picker |
-| file | File upload |
-| image | Image upload |
-| markdown | Markdown editor |
-| json | JSON editor |
+| Type        | Description      |
+| ----------- | ---------------- |
+| text        | Single-line text |
+| textarea    | Multi-line text  |
+| password    | Password input   |
+| email       | Email address    |
+| url         | URL              |
+| number      | Numeric input    |
+| checkbox    | Boolean          |
+| switch      | Toggle           |
+| select      | Dropdown         |
+| multiselect | Multiple values  |
+| radio       | Radio buttons    |
+| date        | Date             |
+| datetime    | Date & time      |
+| time        | Time             |
+| color       | Color picker     |
+| file        | File upload      |
+| image       | Image upload     |
+| markdown    | Markdown editor  |
+| json        | JSON editor      |
 
 New field types can be introduced through the Component Registry.
 
@@ -277,7 +277,7 @@ Example:
 The project name must be unique within the workspace.
 ```
 
-Help text should explain *why*, not merely repeat the label.
+Help text should explain _why_, not merely repeat the label.
 
 ---
 

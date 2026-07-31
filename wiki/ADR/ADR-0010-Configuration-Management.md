@@ -209,14 +209,14 @@ Configuration exists at multiple hierarchical scopes.
 
 Supported scopes include:
 
-| Scope | Purpose |
-|--------|---------|
-| SYSTEM | Global defaults |
-| NODE | Hierarchy node defaults |
+| Scope   | Purpose                        |
+| ------- | ------------------------------ |
+| SYSTEM  | Global defaults                |
+| NODE    | Hierarchy node defaults        |
 | PROJECT | Project-specific configuration |
-| CHAT | Chat-specific configuration |
-| USER | User preferences |
-| REQUEST | Temporary request overrides |
+| CHAT    | Chat-specific configuration    |
+| USER    | User preferences               |
+| REQUEST | Temporary request overrides    |
 
 ---
 

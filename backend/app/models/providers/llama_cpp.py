@@ -24,7 +24,6 @@ from app.contracts.model_backend import (
     StreamEventType,
 )
 
-
 logger = logging.getLogger(__name__)
 
 ProviderDependencies: TypeAlias = Mapping[str, object]
@@ -54,8 +53,7 @@ class LlamaInstanceProtocol(Protocol):
         top_p: float,
         stop: list[str] | None,
         stream: bool,
-    ) -> Iterator[object]:
-        ...
+    ) -> Iterator[object]: ...
 
 
 class LlamaFactoryProtocol(Protocol):
@@ -64,8 +62,7 @@ class LlamaFactoryProtocol(Protocol):
     def __call__(
         self,
         **kwargs: object,
-    ) -> LlamaInstanceProtocol:
-        ...
+    ) -> LlamaInstanceProtocol: ...
 
 
 LlamaFactory: TypeAlias = LlamaFactoryProtocol
@@ -145,6 +142,16 @@ _LLAMA_FACTORY: Final[LlamaFactory | None] = _load_llama_factory()
 class LlamaCppProvider(BaseModelBackend):
     """Lokales Chat-Backend für GGUF-Modelle über llama-cpp-python."""
 
+    def get_model_info(
+        self,
+    ) -> ModelInfo:
+        """
+        Liefert die Beschreibung des durch diese Providerinstanz
+        repräsentierten Modells.
+        """
+
+        return self._create_model_info()
+
     def __init__(
         self,
         config: JsonMapping,
@@ -214,8 +221,7 @@ class LlamaCppProvider(BaseModelBackend):
 
         if resolved_model_id != self._model_id:
             raise LlamaCppModelNotFoundError(
-                f"Das llama.cpp-Modell '{resolved_model_id}' "
-                "ist nicht freigegeben.",
+                f"Das llama.cpp-Modell '{resolved_model_id}' ist nicht freigegeben.",
             )
 
         return self._create_model_info()
@@ -331,7 +337,7 @@ class LlamaCppProvider(BaseModelBackend):
                 end_data["finish_reason"] = finish_reason
 
             yield StreamEvent.create(
-                type=StreamEventType.END,
+                type=StreamEventType.COMPLETE,
                 data=end_data,
             )
 
@@ -388,8 +394,7 @@ class LlamaCppProvider(BaseModelBackend):
     ) -> None:
         if model_id != self._model_id:
             raise LlamaCppModelNotFoundError(
-                f"Das llama.cpp-Modell '{model_id}' "
-                "ist nicht freigegeben.",
+                f"Das llama.cpp-Modell '{model_id}' ist nicht freigegeben.",
             )
 
         if request.tools:
@@ -673,11 +678,7 @@ def _normalize_stop_sequences(
     if value is None:
         return None
 
-    normalized = [
-        item.strip()
-        for item in value
-        if item.strip()
-    ]
+    normalized = [item.strip() for item in value if item.strip()]
 
     return normalized or None
 

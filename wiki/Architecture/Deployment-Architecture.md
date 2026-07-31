@@ -219,15 +219,15 @@ Characteristics:
 
 # Deployment Comparison
 
-| Feature | Development | Intranet | Internet |
-|----------|-------------|-----------|-----------|
-| HTTPS | Optional | Recommended | Required |
-| Authentication | Simplified | Required | Required |
-| Authorization | Required | Required | Required |
-| Audit Log | Optional | Enabled | Enabled |
-| Rate Limiting | Optional | Optional | Required |
-| Debug Logging | Enabled | Limited | Disabled |
-| CORS | Relaxed | Restricted | Strict |
+| Feature        | Development | Intranet    | Internet |
+| -------------- | ----------- | ----------- | -------- |
+| HTTPS          | Optional    | Recommended | Required |
+| Authentication | Simplified  | Required    | Required |
+| Authorization  | Required    | Required    | Required |
+| Audit Log      | Optional    | Enabled     | Enabled  |
+| Rate Limiting  | Optional    | Optional    | Required |
+| Debug Logging  | Enabled     | Limited     | Disabled |
+| CORS           | Relaxed     | Restricted  | Strict   |
 
 ---
 

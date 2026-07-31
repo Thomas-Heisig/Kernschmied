@@ -148,11 +148,7 @@ The manifest is validated before registration.
     "id": "qwen2.5:7b",
     "display_name": "Qwen 2.5 7B",
     "provider": "ollama",
-    "capabilities": [
-      "chat",
-      "streaming",
-      "tool_calling"
-    ],
+    "capabilities": ["chat", "streaming", "tool_calling"],
     "context_length": 32768,
     "available": true
   }
@@ -165,14 +161,14 @@ The exact schema may evolve through versioned contracts.
 
 # Model Fields
 
-| Field | Description |
-|--------|-------------|
-| id | Stable model identifier |
-| display_name | Human-readable name |
-| provider | Provider identifier |
-| capabilities | Supported features |
+| Field          | Description               |
+| -------------- | ------------------------- |
+| id             | Stable model identifier   |
+| display_name   | Human-readable name       |
+| provider       | Provider identifier       |
+| capabilities   | Supported features        |
 | context_length | Maximum supported context |
-| available | Runtime availability |
+| available      | Runtime availability      |
 
 Additional metadata may be added without breaking compatibility.
 
@@ -257,7 +253,7 @@ Example:
 
 ```json
 {
-    "context_length":32768
+  "context_length": 32768
 }
 ```
 
@@ -273,7 +269,7 @@ Example:
 
 ```json
 {
-    "available":true
+  "available": true
 }
 ```
 

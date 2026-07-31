@@ -1,15 +1,10 @@
 import type { Config } from "tailwindcss";
 
-
-
 export default {
   // Dark Mode über Klasse (manueller Schalter)
   darkMode: "class",
 
-  content: [
-    "./src/**/*.{js,jsx,ts,tsx}",
-    "./public/index.html",
-  ],
+  content: ["./src/**/*.{js,jsx,ts,tsx}", "./public/index.html"],
 
   theme: {
     extend: {
@@ -74,9 +69,9 @@ export default {
         sm: "0.5rem",
         md: "0.75rem",
         lg: "1rem",
-        xl: "1.5rem",      // bisher 1.25rem → weicher
-        "2xl": "2rem",      // bisher 1.75rem → weicher
-        "3xl": "2.5rem",    // neu für besonders weiche Elemente
+        xl: "1.5rem", // bisher 1.25rem → weicher
+        "2xl": "2rem", // bisher 1.75rem → weicher
+        "3xl": "2.5rem", // neu für besonders weiche Elemente
       },
 
       // ─── Schatten (mit Glas-Effekt) ──────────────────────────────
@@ -87,8 +82,7 @@ export default {
         lg: "0 8px 24px rgba(15, 23, 42, 0.08), 0 28px 70px rgba(15, 23, 42, 0.1)",
         xl: "0 18px 50px rgba(15, 23, 42, 0.14), 0 4px 14px rgba(15, 23, 42, 0.08)",
         // Neue Glasschatten
-        glass:
-          "0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)",
+        glass: "0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)",
         "glass-lg":
           "0 16px 48px rgba(0, 0, 0, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06)",
         // Bestehende spezielle Schatten

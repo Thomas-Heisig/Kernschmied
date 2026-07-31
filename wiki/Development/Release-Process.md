@@ -138,11 +138,11 @@ Version numbers communicate platform evolution and compatibility expectations.
 
 Kernschmied follows Semantic Versioning.
 
-| Version Part | Meaning |
-|--------------|---------|
-| Major | Breaking changes |
-| Minor | New compatible functionality |
-| Patch | Compatible fixes and improvements |
+| Version Part | Meaning                           |
+| ------------ | --------------------------------- |
+| Major        | Breaking changes                  |
+| Minor        | New compatible functionality      |
+| Patch        | Compatible fixes and improvements |
 
 Examples:
 

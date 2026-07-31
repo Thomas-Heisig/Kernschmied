@@ -79,11 +79,11 @@ Only operational characteristics differ.
 
 Kernschmied currently defines three deployment profiles.
 
-| Profile | Purpose |
-|----------|---------|
-| development | Local development |
-| intranet | Internal enterprise deployment |
-| internet | Public internet deployment |
+| Profile     | Purpose                        |
+| ----------- | ------------------------------ |
+| development | Local development              |
+| intranet    | Internal enterprise deployment |
+| internet    | Public internet deployment     |
 
 Additional profiles may be introduced in future releases.
 
@@ -264,15 +264,15 @@ Security requirements cannot be disabled.
 
 # Security Comparison
 
-| Feature | Development | Intranet | Internet |
-|-----------|-------------|-----------|-----------|
-| Authentication | Optional | Required | Required |
-| HTTPS | Optional | Recommended | Mandatory |
-| Audit Logging | Optional | Required | Required |
-| Rate Limiting | Optional | Recommended | Required |
-| Secure Cookies | Optional | Recommended | Required |
-| HSTS | Disabled | Optional | Required |
-| Strict CORS | Relaxed | Restricted | Strict |
+| Feature        | Development | Intranet    | Internet  |
+| -------------- | ----------- | ----------- | --------- |
+| Authentication | Optional    | Required    | Required  |
+| HTTPS          | Optional    | Recommended | Mandatory |
+| Audit Logging  | Optional    | Required    | Required  |
+| Rate Limiting  | Optional    | Recommended | Required  |
+| Secure Cookies | Optional    | Recommended | Required  |
+| HSTS           | Disabled    | Optional    | Required  |
+| Strict CORS    | Relaxed     | Restricted  | Strict    |
 
 ---
 
@@ -404,9 +404,9 @@ Example:
 
 ```json
 {
-    "environment": {
-        "profile": "internet"
-    }
+  "environment": {
+    "profile": "internet"
+  }
 }
 ```
 

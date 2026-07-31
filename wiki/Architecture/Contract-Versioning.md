@@ -104,17 +104,17 @@ Removing existing fields is avoided.
 
 The following contracts are versioned independently.
 
-| Contract | Versioned |
-|-----------|-----------|
-| Bootstrap | ✔ |
-| Chat API | ✔ |
-| Configuration API | ✔ |
-| Hierarchy API | ✔ |
-| UI Schema | ✔ |
-| Model Manifest | ✔ |
-| Tool Manifest | ✔ |
-| SSE Stream | ✔ |
-| Configuration Schema | ✔ |
+| Contract             | Versioned |
+| -------------------- | --------- |
+| Bootstrap            | ✔         |
+| Chat API             | ✔         |
+| Configuration API    | ✔         |
+| Hierarchy API        | ✔         |
+| UI Schema            | ✔         |
+| Model Manifest       | ✔         |
+| Tool Manifest        | ✔         |
+| SSE Stream           | ✔         |
+| Configuration Schema | ✔         |
 
 ---
 
@@ -273,11 +273,11 @@ Example:
 
 Meaning:
 
-| Change | Version |
-|----------|----------|
-| Breaking changes | Major |
-| New functionality | Minor |
-| Bug fixes | Patch |
+| Change            | Version |
+| ----------------- | ------- |
+| Breaking changes  | Major   |
+| New functionality | Minor   |
+| Bug fixes         | Patch   |
 
 Application versioning is independent of API contract versions.
 

@@ -311,11 +311,11 @@ Different configuration sections may use different merge strategies.
 
 Supported strategies include:
 
-| Strategy | Description |
-|----------|-------------|
-| Replace | Replace inherited value |
-| Extend | Append inherited collections |
-| Deep Merge | Merge structured objects |
+| Strategy   | Description                  |
+| ---------- | ---------------------------- |
+| Replace    | Replace inherited value      |
+| Extend     | Append inherited collections |
+| Deep Merge | Merge structured objects     |
 
 The merge strategy is defined by the configuration schema.
 

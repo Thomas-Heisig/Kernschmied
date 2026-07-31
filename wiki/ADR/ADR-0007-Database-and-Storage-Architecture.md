@@ -124,13 +124,13 @@ SQLite / PostgreSQL
 
 The persistence layer is built upon:
 
-| Technology | Purpose |
-|------------|---------|
-| SQLAlchemy Async | ORM |
-| AsyncSession | Transactions |
-| Alembic | Schema migrations |
-| SQLite | MVP database |
-| PostgreSQL | Production database |
+| Technology       | Purpose             |
+| ---------------- | ------------------- |
+| SQLAlchemy Async | ORM                 |
+| AsyncSession     | Transactions        |
+| Alembic          | Schema migrations   |
+| SQLite           | MVP database        |
+| PostgreSQL       | Production database |
 
 ---
 

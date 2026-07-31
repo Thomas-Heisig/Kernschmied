@@ -6,7 +6,6 @@ from dataclasses import dataclass, field
 
 from pydantic import JsonValue
 
-
 # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
 JsonScalar = str | int | float | bool | None
 JsonObject = dict[str, JsonValue]
@@ -38,10 +37,7 @@ class HierarchyActor:
 
     @property
     def is_admin(self) -> bool:
-        return (
-            "admin" in self.roles
-            or "hierarchy.admin" in self.permissions
-        )
+        return "admin" in self.roles or "hierarchy.admin" in self.permissions
 
 
 @dataclass(slots=True)

@@ -295,11 +295,11 @@ http://localhost:8000/openapi.json
 
 Danach stehen zur Verfügung:
 
-| Dienst | Adresse |
-|---------|----------|
-| Frontend | http://localhost:5173 |
-| Backend | http://localhost:8000 |
-| Swagger | http://localhost:8000/docs |
+| Dienst   | Adresse                      |
+| -------- | ---------------------------- |
+| Frontend | <http://localhost:5173>      |
+| Backend  | <http://localhost:8000>      |
+| Swagger  | <http://localhost:8000/docs> |
 
 ---
 
@@ -412,3 +412,4 @@ Sie beschreibt den tatsächlichen Projektstand deutlich genauer. Gegenüber der 
 - ✅ Entwicklungsrichtlinien
 
 Damit wirkt das Repository nicht mehr wie ein einfaches FastAPI/React-Template, sondern als das, was es inzwischen ist: das Fundament einer modularen, schema-gesteuerten KI-Plattform.
+```

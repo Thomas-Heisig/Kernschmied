@@ -452,10 +452,12 @@ Kernschmied is built on a small number of strict architectural rules:
 - Long-term maintainability
 
 These principles form the foundation for every future decision within the project.
-````
+
+```
 
 
 ## Verweise
 - [[Home]]
 
 Zurück zu [[Home]].
+```

@@ -24,12 +24,11 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    JsonValue,          # NEU: Pydantic's JsonValue
+    JsonValue,  # NEU: Pydantic's JsonValue
     ValidationError,
 )
 
 from app.services.ui_schema_service import build_ui_schema
-
 
 logger = logging.getLogger(__name__)
 
@@ -72,7 +71,7 @@ class UIComponentDefinition(BaseModel):
     ]
 
     children: Annotated[
-        list["UIComponentDefinition"],
+        list[UIComponentDefinition],
         Field(default_factory=list),
     ]
 
@@ -100,13 +99,16 @@ class UIActionDefinition(BaseModel):
 
     endpoint: str | None = None
 
-    method: Literal[
-        "GET",
-        "POST",
-        "PUT",
-        "PATCH",
-        "DELETE",
-    ] | None = None
+    method: (
+        Literal[
+            "GET",
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE",
+        ]
+        | None
+    ) = None
 
     required_permissions: list[str] = Field(
         default_factory=list,
@@ -449,14 +451,10 @@ def sanitize_json_value(
     item_counter[0] += 1
 
     if item_counter[0] > MAX_SCHEMA_ITEMS:
-        raise ValueError(
-            "Das UI-Schema überschreitet die maximal erlaubte Größe."
-        )
+        raise ValueError("Das UI-Schema überschreitet die maximal erlaubte Größe.")
 
     if depth > MAX_SCHEMA_DEPTH:
-        raise ValueError(
-            "Das UI-Schema überschreitet die maximal erlaubte Tiefe."
-        )
+        raise ValueError("Das UI-Schema überschreitet die maximal erlaubte Tiefe.")
 
     if value is None:
         return None
@@ -470,9 +468,7 @@ def sanitize_json_value(
     if callable(
         value,
     ):
-        raise ValueError(
-            "Callables dürfen nicht Bestandteil des UI-Schemas sein."
-        )
+        raise ValueError("Callables dürfen nicht Bestandteil des UI-Schemas sein.")
 
     if isinstance(
         value,
@@ -659,8 +655,7 @@ async def call_ui_schema_builder(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="UI_SCHEMA_BUILDER_CONTRACT_UNSUPPORTED",
             message=(
-                "Der UI-Schema-Builder unterstützt den erwarteten "
-                "Aufrufvertrag nicht."
+                "Der UI-Schema-Builder unterstützt den erwarteten Aufrufvertrag nicht."
             ),
             details={
                 "reason": str(
@@ -668,6 +663,7 @@ async def call_ui_schema_builder(
                 ),
             },
         ) from exc
+
 
 def normalize_schema_collection(
     value: JsonValue,
@@ -740,10 +736,13 @@ def normalize_schema_collection(
                 type_source_field,
             )
 
-            if not isinstance(
-                source_type,
-                str,
-            ) or not source_type.strip():
+            if (
+                not isinstance(
+                    source_type,
+                    str,
+                )
+                or not source_type.strip()
+            ):
                 raise ValueError(
                     f"{field_name}[{index}] benötigt entweder "
                     f"'type' oder '{type_source_field}'.",
@@ -834,7 +833,8 @@ def normalize_ui_schema(
             ),
             details={"errors": validation_errors},
         ) from exc
-        
+
+
 @router.get(
     "/schema",
     response_model=UISchemaResponse,
@@ -848,19 +848,13 @@ def normalize_ui_schema(
     ),
     responses={
         status.HTTP_200_OK: {
-            "description": (
-                "Das UI-Schema wurde erfolgreich erzeugt."
-            ),
+            "description": ("Das UI-Schema wurde erfolgreich erzeugt."),
         },
         status.HTTP_500_INTERNAL_SERVER_ERROR: {
-            "description": (
-                "Das erzeugte UI-Schema ist ungültig."
-            ),
+            "description": ("Das erzeugte UI-Schema ist ungültig."),
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
-            "description": (
-                "Der UI-Schema-Builder ist nicht verfügbar."
-            ),
+            "description": ("Der UI-Schema-Builder ist nicht verfügbar."),
         },
     },
 )
@@ -918,17 +912,11 @@ async def ui_schema(
         request,
     )
 
-    response.headers["Cache-Control"] = (
-        "no-store, private"
-    )
+    response.headers["Cache-Control"] = "no-store, private"
 
-    response.headers["X-UI-Schema-Version"] = (
-        normalized_schema.schema_version
-    )
+    response.headers["X-UI-Schema-Version"] = normalized_schema.schema_version
 
-    response.headers["X-UI-API-Schema-Version"] = (
-        UI_API_SCHEMA_VERSION
-    )
+    response.headers["X-UI-API-Schema-Version"] = UI_API_SCHEMA_VERSION
 
     response.headers["X-Config-Revision"] = str(
         config_revision,

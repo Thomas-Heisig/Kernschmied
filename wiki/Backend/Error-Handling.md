@@ -107,17 +107,17 @@ Clients should depend on the `code` field rather than parsing human-readable mes
 
 Errors generally fall into several categories.
 
-| Category | Examples |
-|----------|----------|
-| Validation | Invalid request data |
-| Authentication | Missing credentials |
-| Authorization | Insufficient permissions |
-| Configuration | Invalid runtime configuration |
-| Registry | Unknown model or tool |
-| Provider | AI provider unavailable |
-| Database | Persistence failure |
-| Network | External communication failure |
-| Internal | Unexpected application error |
+| Category       | Examples                       |
+| -------------- | ------------------------------ |
+| Validation     | Invalid request data           |
+| Authentication | Missing credentials            |
+| Authorization  | Insufficient permissions       |
+| Configuration  | Invalid runtime configuration  |
+| Registry       | Unknown model or tool          |
+| Provider       | AI provider unavailable        |
+| Database       | Persistence failure            |
+| Network        | External communication failure |
+| Internal       | Unexpected application error   |
 
 Each category maps to appropriate HTTP status codes and structured error codes.
 
@@ -337,12 +337,12 @@ This guarantees consistent client behavior.
 
 Every error response follows the same structure.
 
-| Field | Description |
-|--------|-------------|
-| `code` | Machine-readable error identifier |
-| `message` | Human-readable description |
-| `details` | Optional structured metadata |
-| `request_id` | Correlation identifier |
+| Field        | Description                       |
+| ------------ | --------------------------------- |
+| `code`       | Machine-readable error identifier |
+| `message`    | Human-readable description        |
+| `details`    | Optional structured metadata      |
+| `request_id` | Correlation identifier            |
 
 Additional fields may be introduced through versioned contracts.
 
@@ -352,16 +352,16 @@ Additional fields may be introduced through versioned contracts.
 
 Typical mappings include:
 
-| Status | Meaning |
-|---------|----------|
-| 400 | Validation error |
-| 401 | Authentication required |
-| 403 | Authorization denied |
-| 404 | Resource not found |
-| 409 | Conflict |
-| 422 | Semantic validation failure |
-| 500 | Internal server error |
-| 503 | Service unavailable |
+| Status | Meaning                     |
+| ------ | --------------------------- |
+| 400    | Validation error            |
+| 401    | Authentication required     |
+| 403    | Authorization denied        |
+| 404    | Resource not found          |
+| 409    | Conflict                    |
+| 422    | Semantic validation failure |
+| 500    | Internal server error       |
+| 503    | Service unavailable         |
 
 The response body provides more detailed information than the status code alone.
 

@@ -177,13 +177,13 @@ Return Result
 
 The API Client supports the standard HTTP methods.
 
-| Method | Purpose |
-|----------|---------|
-| GET | Read data |
-| POST | Create resources |
-| PUT | Replace resources |
-| PATCH | Partial updates |
-| DELETE | Remove resources |
+| Method | Purpose           |
+| ------ | ----------------- |
+| GET    | Read data         |
+| POST   | Create resources  |
+| PUT    | Replace resources |
+| PATCH  | Partial updates   |
+| DELETE | Remove resources  |
 
 ---
 
@@ -192,19 +192,19 @@ The API Client supports the standard HTTP methods.
 Instead of:
 
 ```tsx
-fetch("/api/models")
+fetch("/api/models");
 ```
 
 Components should use:
 
 ```tsx
-api.get("/models")
+api.get("/models");
 ```
 
 or
 
 ```tsx
-api.post("/chat", request)
+api.post("/chat", request);
 ```
 
 The implementation details remain hidden.
@@ -268,8 +268,7 @@ All public API methods should use TypeScript types.
 Example:
 
 ```tsx
-const hierarchy =
-    await api.get<HierarchyTree>("/hierarchy");
+const hierarchy = await api.get<HierarchyTree>("/hierarchy");
 ```
 
 Strong typing improves maintainability and IDE support.

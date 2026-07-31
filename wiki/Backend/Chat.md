@@ -398,18 +398,18 @@ Streaming allows clients to render responses incrementally.
 
 Typical SSE events include:
 
-| Event | Purpose |
-|--------|----------|
-| `start` | Stream initialized |
-| `token` | Incremental model output |
-| `reasoning` | Optional reasoning information |
-| `tool_call` | Tool invocation |
-| `tool_result` | Tool execution result |
-| `message` | Final assistant message |
-| `usage` | Token usage information |
-| `complete` | Stream finished |
-| `error` | Structured error |
-| `heartbeat` | Keep-alive event |
+| Event         | Purpose                        |
+| ------------- | ------------------------------ |
+| `start`       | Stream initialized             |
+| `token`       | Incremental model output       |
+| `reasoning`   | Optional reasoning information |
+| `tool_call`   | Tool invocation                |
+| `tool_result` | Tool execution result          |
+| `message`     | Final assistant message        |
+| `usage`       | Token usage information        |
+| `complete`    | Stream finished                |
+| `error`       | Structured error               |
+| `heartbeat`   | Keep-alive event               |
 
 Additional event types may be introduced through versioned contracts.
 

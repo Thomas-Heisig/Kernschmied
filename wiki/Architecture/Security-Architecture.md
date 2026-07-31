@@ -188,11 +188,11 @@ Each layer has an independent responsibility.
 
 Security behavior depends on the configured deployment profile.
 
-| Profile | Intended Environment | Security Level |
-|----------|----------------------|----------------|
-| Development | Local development | Relaxed |
-| Intranet | Internal organization | High |
-| Internet | Public access | Maximum |
+| Profile     | Intended Environment  | Security Level |
+| ----------- | --------------------- | -------------- |
+| Development | Local development     | Relaxed        |
+| Intranet    | Internal organization | High           |
+| Internet    | Public access         | Maximum        |
 
 Security requirements increase with deployment exposure.
 

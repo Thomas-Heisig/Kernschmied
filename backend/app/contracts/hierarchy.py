@@ -4,8 +4,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import BaseModel, ConfigDict, Field, JsonValue          # NEU: Pydantic's JsonValue
-
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    JsonValue,
+)  # NEU: Pydantic's JsonValue
 
 # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
 JsonScalar = str | int | float | bool | None
@@ -105,7 +109,7 @@ class HierarchyNode(BaseModel):
     available_actions: StringList
 
     children: Annotated[
-        list["HierarchyNode"],
+        list[HierarchyNode],
         Field(default_factory=list),
     ]
 

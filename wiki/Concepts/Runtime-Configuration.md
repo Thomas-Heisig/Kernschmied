@@ -316,12 +316,12 @@ Configuration sections may define different merge strategies.
 
 Common strategies include:
 
-| Strategy | Description |
-|----------|-------------|
-| Replace | Replace inherited value |
-| Append | Extend inherited collection |
-| Deep Merge | Merge structured objects |
-| Disable | Remove inherited configuration |
+| Strategy   | Description                    |
+| ---------- | ------------------------------ |
+| Replace    | Replace inherited value        |
+| Append     | Extend inherited collection    |
+| Deep Merge | Merge structured objects       |
+| Disable    | Remove inherited configuration |
 
 Merge behavior is determined by configuration schemas rather than application code.
 

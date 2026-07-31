@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "id": "heisig-naturstein-modern",
+  "name": "Heisig Naturstein Modern",
+  "entry_file": "index.html",
+  "source_directory": "source",
+  "preview_enabled": true,
+  "editing_enabled": true,
+  "allowed_file_extensions": [
+    ".html",
+    ".css",
+    ".js",
+    ".json",
+    ".txt",
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".svg"
+  ]
+}

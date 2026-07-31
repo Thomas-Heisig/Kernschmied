@@ -120,14 +120,14 @@ The frontend architecture should provide:
 
 The frontend is based on:
 
-| Technology | Purpose |
-|------------|---------|
-| React | UI |
-| TypeScript | Type safety |
-| Vite | Build |
-| Tailwind CSS | Styling |
-| Fetch API | HTTP |
-| Server-Sent Events | Streaming |
+| Technology         | Purpose     |
+| ------------------ | ----------- |
+| React              | UI          |
+| TypeScript         | Type safety |
+| Vite               | Build       |
+| Tailwind CSS       | Styling     |
+| Fetch API          | HTTP        |
+| Server-Sent Events | Streaming   |
 
 ---
 
@@ -275,7 +275,7 @@ The backend communicates:
 
 ```json
 {
-    "action": "refresh"
+  "action": "refresh"
 }
 ```
 

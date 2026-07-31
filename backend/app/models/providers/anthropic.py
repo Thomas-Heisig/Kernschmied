@@ -1,3 +1,5 @@
+# F:\Kernschmied\backend\app\models\providers\anthropic.py
+
 from __future__ import annotations
 
 import logging
@@ -25,7 +27,6 @@ from app.contracts.model_backend import (
     StreamEventType,
     Usage,
 )
-
 
 logger = logging.getLogger(__name__)
 
@@ -77,8 +78,7 @@ class AnthropicRequestError(AnthropicProviderError):
         self.status_code = status_code
 
         super().__init__(
-            f"Anthropic-Anfrage für Modell '{model_id}' "
-            f"fehlgeschlagen: {reason}",
+            f"Anthropic-Anfrage für Modell '{model_id}' fehlgeschlagen: {reason}",
         )
 
 
@@ -140,9 +140,7 @@ class AnthropicProvider(BaseModelBackend):
                 ),
             )
         else:
-            self._model_ids = (
-                self._default_model,
-            )
+            self._model_ids = (self._default_model,)
 
         if self._default_model not in self._model_ids:
             self._model_ids = (
@@ -250,8 +248,7 @@ class AnthropicProvider(BaseModelBackend):
 
         except Exception:
             logger.exception(
-                "Der Anthropic-Client konnte nicht sauber "
-                "geschlossen werden.",
+                "Der Anthropic-Client konnte nicht sauber geschlossen werden.",
                 extra={
                     "backend": self.backend_name,
                 },
@@ -354,9 +351,7 @@ class AnthropicProvider(BaseModelBackend):
                         content=text,
                     )
 
-                final_message = (
-                    await response_stream.get_final_message()
-                )
+                final_message = await response_stream.get_final_message()
 
             usage = _create_usage(
                 input_tokens=final_message.usage.input_tokens,
@@ -369,17 +364,14 @@ class AnthropicProvider(BaseModelBackend):
             }
 
             if final_message.stop_reason is not None:
-                end_data["stop_reason"] = (
-                    final_message.stop_reason
-                )
+                end_data["stop_reason"] = final_message.stop_reason
 
             if final_message.stop_sequence is not None:
-                end_data["stop_sequence"] = (
-                    final_message.stop_sequence
-                )
+                end_data["stop_sequence"] = final_message.stop_sequence
 
+            # Korrektur: StreamEventType.END existiert nicht, verwende COMPLETE
             yield StreamEvent.create(
-                type=StreamEventType.END,
+                type=StreamEventType.COMPLETE,
                 usage=usage,
                 data=end_data,
             )
@@ -494,8 +486,7 @@ class AnthropicProvider(BaseModelBackend):
             yield StreamEvent.create(
                 type=StreamEventType.ERROR,
                 content=(
-                    "Bei der Anthropic-Anfrage ist ein "
-                    "unerwarteter Fehler aufgetreten."
+                    "Bei der Anthropic-Anfrage ist ein unerwarteter Fehler aufgetreten."
                 ),
                 data={
                     "backend": self.backend_name,
@@ -571,16 +562,11 @@ class AnthropicProvider(BaseModelBackend):
 
         normalized_model_id = requested_model_id.strip()
 
-        model_id = (
-            normalized_model_id
-            if normalized_model_id
-            else self._default_model
-        )
+        model_id = normalized_model_id if normalized_model_id else self._default_model
 
         if model_id not in self._model_ids:
             raise AnthropicModelNotFoundError(
-                f"Das Anthropic-Modell '{model_id}' "
-                "ist nicht freigegeben.",
+                f"Das Anthropic-Modell '{model_id}' ist nicht freigegeben.",
             )
 
         return model_id
@@ -702,10 +688,7 @@ def _format_tool_result(
             f"Name: {message.name.strip()}",
         )
 
-    if (
-        message.tool_call_id is not None
-        and message.tool_call_id.strip()
-    ):
+    if message.tool_call_id is not None and message.tool_call_id.strip():
         identifiers.append(
             f"Aufruf-ID: {message.tool_call_id.strip()}",
         )
@@ -715,10 +698,7 @@ def _format_tool_result(
             identifiers,
         )
 
-        return (
-            f"Tool-Ergebnis ({header}):\n"
-            f"{content}"
-        )
+        return f"Tool-Ergebnis ({header}):\n{content}"
 
     return f"Tool-Ergebnis:\n{content}"
 
@@ -732,10 +712,12 @@ def _create_usage(
     Übersetzt Anthropic-Nutzungsdaten in den Backendvertrag.
     """
 
+    # Korrektur: Verwende korrekte Feldnamen
     return Usage(
-        prompt_tokens=input_tokens,
-        completion_tokens=output_tokens,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
         total_tokens=input_tokens + output_tokens,
+        metadata={},  # Anthropic liefert keine zusätzlichen Metadaten
     )
 
 
@@ -982,10 +964,13 @@ def _read_non_negative_int(
     ):
         return default
 
-    if isinstance(
-        value,
-        int,
-    ) and value >= 0:
+    if (
+        isinstance(
+            value,
+            int,
+        )
+        and value >= 0
+    ):
         return value
 
     return default

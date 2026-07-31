@@ -1,0 +1,18 @@
+COMMAND: python -c from main import app
+
+schema = app.openapi()
+
+assert isinstance(schema, dict)
+assert schema.get("openapi")
+assert schema.get("info")
+assert isinstance(schema.get("paths"), dict)
+
+print("OpenAPI:", schema["openapi"])
+print("Titel:", schema["info"].get("title"))
+print("Pfade:", len(schema["paths"]))
+WORKING DIRECTORY: F:\Kernschmied\backend
+EXIT CODE: 0
+
+OpenAPI: 3.1.0
+Titel: Kernschmied
+Pfade: 10

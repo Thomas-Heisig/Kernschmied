@@ -17,9 +17,7 @@ class ChatRepository(Repository[Chat]):
         return await self.session.get(Chat, chat_id)
 
     async def get_by_node_id(self, node_id: str) -> Chat | None:
-        return await self.session.scalar(
-            select(Chat).where(Chat.node_id == node_id)
-        )
+        return await self.session.scalar(select(Chat).where(Chat.node_id == node_id))
 
     async def add_chat(self, chat: Chat) -> Chat:
         self.session.add(chat)

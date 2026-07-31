@@ -13,7 +13,7 @@ If your question is not answered here, please open a GitHub Issue or Discussion.
 
 Repository:
 
-https://github.com/Thomas-Heisig/Kernschmied
+<https://github.com/Thomas-Heisig/Kernschmied>
 
 ---
 
@@ -419,7 +419,7 @@ Examples:
 
 GitHub Issues:
 
-https://github.com/Thomas-Heisig/Kernschmied/issues
+<https://github.com/Thomas-Heisig/Kernschmied/issues>
 
 ---
 
@@ -427,7 +427,7 @@ https://github.com/Thomas-Heisig/Kernschmied/issues
 
 GitHub Discussions (if enabled):
 
-https://github.com/Thomas-Heisig/Kernschmied/discussions
+<https://github.com/Thomas-Heisig/Kernschmied/discussions>
 
 ---
 
@@ -435,7 +435,7 @@ https://github.com/Thomas-Heisig/Kernschmied/discussions
 
 Repository:
 
-https://github.com/Thomas-Heisig/Kernschmied
+<https://github.com/Thomas-Heisig/Kernschmied>
 
 ---
 

@@ -117,10 +117,10 @@ The manifest serves as the bridge between implementation and runtime.
 
 Current manifest types include:
 
-| Manifest | Purpose |
-|----------|---------|
+| Manifest     | Purpose             |
+| ------------ | ------------------- |
 | `model.json` | AI model definition |
-| `tool.json` | Tool definition |
+| `tool.json`  | Tool definition     |
 
 Future versions may introduce:
 

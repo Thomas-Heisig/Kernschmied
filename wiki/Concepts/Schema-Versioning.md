@@ -150,14 +150,14 @@ Schema compatibility is intentional and predictable.
 
 Typical compatibility rules include:
 
-| Change | Compatible |
-|---------|------------|
-| Add optional field | Yes |
-| Add optional metadata | Yes |
-| Remove required field | No |
-| Rename required field | No |
-| Change data type | No |
-| Remove enum value | Usually No |
+| Change                | Compatible |
+| --------------------- | ---------- |
+| Add optional field    | Yes        |
+| Add optional metadata | Yes        |
+| Remove required field | No         |
+| Rename required field | No         |
+| Change data type      | No         |
+| Remove enum value     | Usually No |
 
 Breaking changes require a new schema version.
 

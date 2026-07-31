@@ -11,6 +11,7 @@ from collections.abc import (
     Sized,
 )
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Protocol, TypeVar, cast
 
 from fastapi import FastAPI
@@ -20,24 +21,39 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.config.service import ConfigService
-from app.registries.model_registry import ModelRegistry
-from app.registries.tool_registry import ToolRegistry
-from app.storage.database import init_database
-
-# ============================================================
-# Korrekter Import: ModelProviderRegistry
-# ============================================================
+from app.models.lifecycle import ModelLifecycleManager
 from app.models.providers import ModelProviderRegistry
 from app.models.providers.ollama import create_ollama_backend
-from app.models.lifecycle import ModelLifecycleManager
 from app.models.service import ModelService
-from app.services.chat_service import ChatService, NullChatRepository
-
+from app.registries.model_registry import ModelRegistry
+from app.registries.tool_registry import ToolRegistry
+from app.services.chat_service import (
+    ChatService,
+    NullChatRepository,
+)
+from app.storage.database import init_database
 
 logger = logging.getLogger(__name__)
 
+# ============================================================
+# TypeVar für generische Bootstrap-Schritte
+# ============================================================
 
 T = TypeVar("T")
+
+
+# ============================================================
+# Modulkonfiguration
+# ============================================================
+
+SOURCE_FILE = "backend/app/core/bootstrap.py"
+LOG_AREA = "application-bootstrap"
+
+BACKEND_ROOT = Path(__file__).resolve().parents[2]
+
+MODEL_MANIFEST_DIRECTORY = (BACKEND_ROOT / "model_paths").resolve()
+
+DEFAULT_MODEL_ID = "ollama-qwen2.5-7b"
 
 
 # ============================================================
@@ -70,13 +86,17 @@ class BootstrapStepError(BootstrapError):
         )
 
 
-class ApplicationAlreadyBootstrappedError(BootstrapError):
+class ApplicationAlreadyBootstrappedError(
+    BootstrapError,
+):
     """
     Die Anwendung wurde bereits vollständig initialisiert.
     """
 
 
-class ApplicationNotBootstrappedError(BootstrapError):
+class ApplicationNotBootstrappedError(
+    BootstrapError,
+):
     """
     Ein Dienst wurde vor Abschluss des Bootstraps angefordert.
     """
@@ -88,8 +108,7 @@ class ApplicationNotBootstrappedError(BootstrapError):
 
 
 class SyncOrAsyncCallableProtocol(Protocol):
-    def __call__(self) -> object:
-        ...
+    def __call__(self) -> object: ...
 
 
 # ============================================================
@@ -105,7 +124,8 @@ class InMemoryHierarchyRepository:
     Einfache In-Memory-Hierarchie für den MVP.
 
     Diese Implementierung wird später durch ein persistentes
-    SQLAlchemy-Repository ersetzt, ohne den Servicevertrag zu ändern.
+    SQLAlchemy-Repository ersetzt, ohne den Servicevertrag zu
+    verändern.
     """
 
     async def get_tree(
@@ -116,9 +136,9 @@ class InMemoryHierarchyRepository:
         """
         Liefert die aktuelle MVP-Beispielhierarchie.
 
-        `root_id` und `max_depth` sind bereits Bestandteil des
-        Repository-Vertrags, werden von der statischen MVP-
-        Implementierung jedoch noch nicht ausgewertet.
+        `root_id` und `max_depth` gehören bereits zum Vertrag,
+        werden in dieser statischen MVP-Implementierung jedoch
+        noch nicht ausgewertet.
         """
 
         del root_id
@@ -179,6 +199,43 @@ class InMemoryHierarchyRepository:
                                 },
                             ],
                         },
+                        {
+                            "id": "websites",
+                            "type": "website_collection",
+                            "name": "Webseiten",
+                            "parent_id": "workspace-1",
+                            "sort_order": 1,
+                            "selectable": True,
+                            "disabled": False,
+                            "status": None,
+                            "metadata": {},
+                            "revision": 1,
+                            "actions": [],
+                            "children": [
+                                {
+                                    "id": "heisig-naturstein-modern",
+                                    "type": "website",
+                                    "name": "Heisig Naturstein Modern",
+                                    "parent_id": "websites",
+                                    "sort_order": 0,
+                                    "selectable": True,
+                                    "disabled": False,
+                                    "status": "available",
+                                    "metadata": {
+                                        "entry_file": "index.html",
+                                        "preview_url": (
+                                            "/selfhtml/"
+                                            "heisig-naturstein-modern/"
+                                            "index.html"
+                                        ),
+                                        "website_kind": "static",
+                                    },
+                                    "revision": 1,
+                                    "actions": [],
+                                    "children": [],
+                                },
+                            ],
+                        },
                     ],
                 },
             ],
@@ -189,8 +246,8 @@ class MinimalHierarchyService:
     """
     Minimaler Hierarchie-Service für den MVP.
 
-    Der Service kapselt das Repository, damit API-Endpunkte später
-    nicht direkt von der konkreten Speicherimplementierung abhängen.
+    Der Service kapselt das Repository, sodass API-Endpunkte
+    nicht von der konkreten Speicherimplementierung abhängen.
     """
 
     def __init__(
@@ -220,8 +277,9 @@ class BootstrapResult:
     """
     Ergebnis eines erfolgreichen Anwendungs-Bootstraps.
 
-    Alle Dienste werden erst nach erfolgreicher Initialisierung
-    gemeinsam in `app.state` veröffentlicht.
+    Die Dienste werden erst gemeinsam in `app.state`
+    veröffentlicht, nachdem alle erforderlichen Schritte
+    erfolgreich abgeschlossen wurden.
     """
 
     session_factory: async_sessionmaker[AsyncSession]
@@ -247,15 +305,31 @@ async def bootstrap_application(
     """
     Initialisiert alle zentralen Anwendungsdienste.
 
-    Die Dienste werden erst veröffentlicht, wenn alle erforderlichen
+    Dienste werden erst veröffentlicht, wenn alle zwingenden
     Bootstrap-Schritte erfolgreich abgeschlossen wurden.
     """
+
+    _log_info(
+        "Application bootstrap requested",
+        bootstrap_event="bootstrap-requested",
+        force=force,
+        already_bootstrapped=is_application_bootstrapped(app),
+        model_manifest_directory=str(
+            MODEL_MANIFEST_DIRECTORY,
+        ),
+        default_model_id=DEFAULT_MODEL_ID,
+    )
 
     if is_application_bootstrapped(app):
         if not force:
             raise ApplicationAlreadyBootstrappedError(
                 "Die Anwendung wurde bereits initialisiert.",
             )
+
+        _log_warning(
+            "Existing application bootstrap will be replaced",
+            bootstrap_event="forced-bootstrap-restart",
+        )
 
         await shutdown_application(
             app,
@@ -265,39 +339,58 @@ async def bootstrap_application(
     app.state.bootstrap_error = None
 
     session_factory: async_sessionmaker[AsyncSession] | None = None
+
     config_service: ConfigService | None = None
     model_registry: ModelRegistry | None = None
     tool_registry: ToolRegistry | None = None
 
     hierarchy_repository: InMemoryHierarchyRepository | None = None
+
     hierarchy_service: MinimalHierarchyService | None = None
 
     model_service: ModelService | None = None
     chat_service: ChatService | None = None
 
     try:
-        # ========================================================
+        # ====================================================
         # 1. Datenbank
-        # ========================================================
+        # ====================================================
 
         session_factory = await _run_bootstrap_step(
             step="database.initialize",
             operation=init_database,
         )
 
-        # ========================================================
+        # ====================================================
         # 2. Hierarchie
-        # ========================================================
+        # ====================================================
 
-        hierarchy_repository = InMemoryHierarchyRepository()
+        async def initialize_hierarchy() -> None:
+            nonlocal hierarchy_repository
+            nonlocal hierarchy_service
 
-        hierarchy_service = MinimalHierarchyService(
-            hierarchy_repository,
+            hierarchy_repository = InMemoryHierarchyRepository()
+
+            hierarchy_service = MinimalHierarchyService(
+                hierarchy_repository,
+            )
+
+        await _run_bootstrap_step(
+            step="hierarchy.initialize",
+            operation=initialize_hierarchy,
         )
 
-        # ========================================================
+        if hierarchy_repository is None or hierarchy_service is None:
+            raise BootstrapStepError(
+                step="hierarchy.initialize",
+                reason=(
+                    "Der Hierarchie-Service wurde nicht vollständig initialisiert."
+                ),
+            )
+
+        # ====================================================
         # 3. Konfiguration
-        # ========================================================
+        # ====================================================
 
         config_service = ConfigService(
             session_factory,
@@ -308,20 +401,20 @@ async def bootstrap_application(
             operation=config_service.seed_defaults,
         )
 
-        # ========================================================
-        # 4. Modell-Registry
-        # ========================================================
+        # ====================================================
+        # 4. Modellkatalog
+        # ====================================================
 
         model_registry = ModelRegistry()
 
         await _run_bootstrap_step(
-            step="models.discover",
+            step="models.discover_catalog",
             operation=model_registry.discover,
         )
 
-        # ========================================================
+        # ====================================================
         # 5. Tool-Registry
-        # ========================================================
+        # ====================================================
 
         tool_registry = ToolRegistry()
 
@@ -330,93 +423,162 @@ async def bootstrap_application(
             operation=tool_registry.discover,
         )
 
-        # ========================================================
-        # 6. ModelService (Lifecycle-Manager)
-        # ========================================================
+        # ====================================================
+        # 6. ModelService und Provider
+        # ====================================================
 
-        # Provider-Registry instanziieren und Ollama registrieren
         provider_registry = ModelProviderRegistry()
 
-        logger.info("Registering Ollama provider...")
-        provider_registry.register(
-            provider_type="ollama",
-            factory=create_ollama_backend,
+        await _run_bootstrap_step(
+            step="models.register_providers",
+            operation=lambda: _register_model_providers(
+                provider_registry,
+            ),
         )
 
-        # Prüfen, ob die Registrierung erfolgreich war
-        if not provider_registry.has("ollama"):
-            raise RuntimeError(
-                "Ollama provider registration failed – provider not found in registry"
-            )
-
-        logger.info("Ollama provider registered successfully")
-
         lifecycle = ModelLifecycleManager()
-
-        # Default-Modell-ID (muss mit der ID im Manifest übereinstimmen)
-        default_model_id = "ollama-qwen2.5-7b"
 
         model_service = ModelService(
             provider_registry=provider_registry,
             lifecycle=lifecycle,
-            allowed_manifest_directories=["model_paths"],
-            default_model_id=default_model_id,
+            allowed_manifest_directories=[
+                str(
+                    MODEL_MANIFEST_DIRECTORY,
+                ),
+            ],
+            default_model_id=DEFAULT_MODEL_ID,
         )
 
+        # Start des ModelService (Methode muss in ModelService existieren)
         await _run_bootstrap_step(
             step="models.start_service",
-            operation=model_service.start,
+            operation=model_service.start,  # type: ignore[attr-defined]
         )
 
-        # ========================================================
-        # 7. Modelle in den Service laden (DISCOVERY)
-        # ========================================================
+        # ====================================================
+        # 7. Modellmanifeste laden
+        # ====================================================
 
         async def load_manifests() -> None:
-            logger.info("Starting model discovery and registration...")
-            report = await model_service.discover_and_register(
-                base_directories=["model_paths"],
-                replace=True,
-                continue_on_error=False,
-            )
-            logger.info(
-                "Model discovery completed: registered=%d, failed=%d, skipped=%d",
-                report.registered_count,
-                report.failed_count,
-                report.skipped_count,
-            )
-            # Prüfe, ob das Default-Modell tatsächlich registriert ist
-            if not model_service.has_model(default_model_id):
-                logger.error(
-                    "Default model '%s' not found in ModelService after discovery",
-                    default_model_id,
-                )
+            if model_service is None:  # type: ignore
                 raise RuntimeError(
-                    f"Default model '{default_model_id}' could not be registered"
+                    "Der ModelService wurde noch nicht erstellt.",
                 )
 
-            # Logge alle registrierten Modell-IDs
-            model_ids = model_service.list_model_ids()
-            logger.info("Models registered in ModelService: %s", model_ids)
+            if not MODEL_MANIFEST_DIRECTORY.exists():
+                raise RuntimeError(
+                    "Das Modellmanifest-Verzeichnis existiert "
+                    f"nicht: {MODEL_MANIFEST_DIRECTORY}",
+                )
+
+            if not MODEL_MANIFEST_DIRECTORY.is_dir():
+                raise RuntimeError(
+                    "Der Modellmanifest-Pfad ist kein "
+                    f"Verzeichnis: {MODEL_MANIFEST_DIRECTORY}",
+                )
+
+            _log_info(
+                "Starting model manifest discovery",
+                bootstrap_event="model-discovery-started",
+                manifest_directory=str(
+                    MODEL_MANIFEST_DIRECTORY,
+                ),
+                default_model_id=DEFAULT_MODEL_ID,
+            )
+
+            report = await model_service.discover_and_register(
+                base_directories=[
+                    str(
+                        MODEL_MANIFEST_DIRECTORY,
+                    ),
+                ],
+                replace=True,
+                continue_on_error=True,
+            )
+
+            _log_info(
+                "Model manifest discovery completed",
+                bootstrap_event="model-discovery-completed",
+                registered_count=report.registered_count,
+                failed_count=report.failed_count,
+                skipped_count=report.skipped_count,
+            )
+
+            if report.failed_count > 0:
+                _log_warning(
+                    "Some model manifests could not be registered",
+                    bootstrap_event=("model-discovery-partial-failure"),
+                    registered_count=report.registered_count,
+                    failed_count=report.failed_count,
+                    skipped_count=report.skipped_count,
+                )
+
+            has_default = await model_service.has_model(
+                DEFAULT_MODEL_ID,
+            )
+            if not has_default:
+                model_ids = await model_service.list_model_ids()
+
+                _log_error(
+                    "Default model is unavailable after discovery",
+                    bootstrap_event="default-model-missing",
+                    default_model_id=DEFAULT_MODEL_ID,
+                    registered_model_ids=model_ids,
+                )
+
+                raise RuntimeError(
+                    "Das Standardmodell "
+                    f"'{DEFAULT_MODEL_ID}' konnte nicht "
+                    "registriert werden."
+                )
+
+            model_ids = await model_service.list_model_ids()
+
+            _log_info(
+                "Models available in ModelService",
+                bootstrap_event="models-available",
+                model_count=len(model_ids),
+                model_ids=model_ids,
+                default_model_id=DEFAULT_MODEL_ID,
+            )
 
         await _run_bootstrap_step(
             step="models.load_manifests",
             operation=load_manifests,
         )
 
-        # ========================================================
+        # ====================================================
         # 8. ChatService
-        # ========================================================
+        # ====================================================
 
-        chat_service = ChatService(
-            model_service=model_service,
-            default_model_id=default_model_id,
-            repository=NullChatRepository(),
+        async def initialize_chat_service() -> None:
+            nonlocal chat_service
+
+            if model_service is None:  # type: ignore
+                raise RuntimeError(
+                    "Der ModelService ist nicht verfügbar.",
+                )
+
+            chat_service = ChatService(
+                model_service=model_service,
+                default_model_id=DEFAULT_MODEL_ID,
+                repository=NullChatRepository(),
+            )
+
+        await _run_bootstrap_step(
+            step="chat.initialize_service",
+            operation=initialize_chat_service,
         )
 
-        # ========================================================
+        if chat_service is None:
+            raise BootstrapStepError(
+                step="chat.initialize_service",
+                reason=("Der ChatService wurde nicht vollständig initialisiert."),
+            )
+
+        # ====================================================
         # 9. Dienste atomar veröffentlichen
-        # ========================================================
+        # ====================================================
 
         result = BootstrapResult(
             session_factory=session_factory,
@@ -434,35 +596,26 @@ async def bootstrap_application(
             result=result,
         )
 
-        # Shutdown-Callbacks registrieren
-        _register_shutdown_callbacks(
-            app,
-            model_service,
-            chat_service,
-            hierarchy_service,
-        )
-
         app.state.bootstrap_complete = True
         app.state.bootstrap_error = None
 
-        logger.info(
+        model_ids = await model_service.list_model_ids()
+        _log_info(
             "Application bootstrap completed",
-            extra={
-                "config_revision": config_service.revision,
-                "config_definition_count": (
-                    config_service.definition_count
-                ),
-                "config_cache_size": config_service.cache_size,
-                "model_count": _registry_item_count(
-                    model_registry,
-                ),
-                "tool_count": _registry_item_count(
-                    tool_registry,
-                ),
-                "hierarchy_service_available": True,
-                "model_service_available": True,
-                "chat_service_available": True,
-            },
+            bootstrap_event="bootstrap-completed",
+            config_revision=config_service.revision,
+            config_definition_count=(config_service.definition_count),
+            config_cache_size=config_service.cache_size,
+            model_registry_count=_registry_item_count(
+                model_registry,
+            ),
+            tool_registry_count=_registry_item_count(
+                tool_registry,
+            ),
+            model_service_count=len(model_ids),
+            hierarchy_service_available=True,
+            model_service_available=True,
+            chat_service_available=True,
         )
 
         return result
@@ -473,8 +626,11 @@ async def bootstrap_application(
             exc,
         )
 
-        logger.exception(
+        _log_exception(
             "Application bootstrap failed",
+            bootstrap_event="bootstrap-failed",
+            error_type=type(exc).__name__,
+            error_message=str(exc),
         )
 
         await _cleanup_partial_bootstrap(
@@ -507,9 +663,15 @@ async def shutdown_application(
     """
     Beendet zentrale Anwendungsdienste in umgekehrter Reihenfolge.
 
-    Fehler einzelner Shutdown-Schritte werden protokolliert, verhindern
-    aber nicht das Aufräumen der übrigen Ressourcen.
+    Fehler einzelner Shutdown-Schritte werden protokolliert,
+    verhindern jedoch nicht das Aufräumen der übrigen Ressourcen.
     """
+
+    _log_info(
+        "Application shutdown started",
+        bootstrap_event="shutdown-started",
+        was_bootstrapped=is_application_bootstrapped(app),
+    )
 
     tool_registry: object = getattr(
         app.state,
@@ -541,7 +703,7 @@ async def shutdown_application(
         None,
     )
 
-    model_service: object = getattr(
+    model_service_value: object = getattr(
         app.state,
         "model_service",
         None,
@@ -563,14 +725,17 @@ async def shutdown_application(
         session_factory_value,
     )
 
+    model_service = _coerce_model_service(
+        model_service_value,
+    )
+
     await _safe_shutdown(
         name="chat_service",
         resource=chat_service,
     )
 
-    await _safe_shutdown(
-        name="model_service",
-        resource=model_service,
+    await _shutdown_model_service(
+        model_service,
     )
 
     await _safe_shutdown(
@@ -609,8 +774,9 @@ async def shutdown_application(
     app.state.bootstrap_complete = False
     app.state.bootstrap_error = None
 
-    logger.info(
+    _log_info(
         "Application shutdown completed",
+        bootstrap_event="shutdown-completed",
     )
 
 
@@ -782,6 +948,47 @@ def get_chat_service(
 
 
 # ============================================================
+# Modell-Provider
+# ============================================================
+
+
+async def _register_model_providers(
+    provider_registry: ModelProviderRegistry,
+) -> None:
+    """
+    Registriert die fest freigegebenen Modell-Provider.
+
+    Dynamische Erkennung führt nicht zu einer automatischen
+    Freigabe unbekannter Provider.
+    """
+
+    _log_info(
+        "Registering model provider",
+        bootstrap_event="provider-registration-started",
+        provider_type="ollama",
+    )
+
+    provider_registry.register(
+        provider_type="ollama",
+        factory=create_ollama_backend,
+    )
+
+    if not provider_registry.has(
+        "ollama",
+    ):
+        raise RuntimeError(
+            "Der Ollama-Provider wurde nach der Registrierung "
+            "nicht in der Provider-Registry gefunden."
+        )
+
+    _log_info(
+        "Model provider registered",
+        bootstrap_event="provider-registration-completed",
+        provider_type="ollama",
+    )
+
+
+# ============================================================
 # Interne Bootstrap-Hilfsfunktionen
 # ============================================================
 
@@ -791,22 +998,27 @@ async def _run_bootstrap_step(
     step: str,
     operation: Callable[[], Awaitable[T]],
 ) -> T:
-    logger.info(
+    """
+    Führt einen einzelnen Bootstrap-Schritt aus und wandelt
+    dessen Fehler in einen strukturierten BootstrapStepError um.
+    """
+
+    _log_info(
         "Starting bootstrap step",
-        extra={
-            "bootstrap_step": step,
-        },
+        bootstrap_event="bootstrap-step-started",
+        bootstrap_step=step,
     )
 
     try:
         result = await operation()
 
     except Exception as exc:
-        logger.exception(
+        _log_exception(
             "Bootstrap step failed",
-            extra={
-                "bootstrap_step": step,
-            },
+            bootstrap_event="bootstrap-step-failed",
+            bootstrap_step=step,
+            error_type=type(exc).__name__,
+            error_message=str(exc),
         )
 
         raise BootstrapStepError(
@@ -816,11 +1028,10 @@ async def _run_bootstrap_step(
             ),
         ) from exc
 
-    logger.info(
+    _log_info(
         "Bootstrap step completed",
-        extra={
-            "bootstrap_step": step,
-        },
+        bootstrap_event="bootstrap-step-completed",
+        bootstrap_step=step,
     )
 
     return result
@@ -834,25 +1045,41 @@ def _publish_services(
     """
     Veröffentlicht vollständig initialisierte Dienste logisch atomar.
 
-    FastAPI `app.state` bietet keine echte Transaktion. Deshalb werden
-    Dienste erst nach Abschluss aller vorbereitenden Schritte gesetzt.
+    `app.state` bietet keine echte Transaktion. Deshalb werden
+    alle Referenzen erst nach Abschluss der vorbereitenden
+    Bootstrap-Schritte gesetzt.
     """
 
     app.state.session_factory = result.session_factory
+
     app.state.config_service = result.config_service
+
     app.state.model_registry = result.model_registry
+
     app.state.tool_registry = result.tool_registry
 
-    app.state.hierarchy_repository = (
-        result.hierarchy_repository
-    )
+    app.state.hierarchy_repository = result.hierarchy_repository
 
-    app.state.hierarchy_service = (
-        result.hierarchy_service
-    )
+    app.state.hierarchy_service = result.hierarchy_service
 
     app.state.model_service = result.model_service
+
     app.state.chat_service = result.chat_service
+
+    _log_info(
+        "Application services published",
+        bootstrap_event="services-published",
+        published_services=[
+            "session_factory",
+            "config_service",
+            "model_registry",
+            "tool_registry",
+            "hierarchy_repository",
+            "hierarchy_service",
+            "model_service",
+            "chat_service",
+        ],
+    )
 
 
 def _clear_services(
@@ -861,6 +1088,8 @@ def _clear_services(
     """
     Entfernt veröffentlichte Dienstreferenzen aus `app.state`.
     """
+
+    removed_services: list[str] = []
 
     for attribute in (
         "chat_service",
@@ -871,80 +1100,27 @@ def _clear_services(
         "model_registry",
         "config_service",
         "session_factory",
+        "shutdown_callbacks",
     ):
-        if hasattr(
+        if not hasattr(
             app.state,
             attribute,
         ):
-            delattr(
-                app.state,
-                attribute,
-            )
+            continue
 
-
-def _register_shutdown_callbacks(
-    app: FastAPI,
-    model_service: ModelService,
-    chat_service: ChatService,
-    hierarchy_service: MinimalHierarchyService,
-) -> None:
-    """
-    Registriert Shutdown-Callbacks für Dienste, die sie unterstützen.
-    """
-
-    # ModelService.shutdown: Wrapper, der den Rückgabewert ignoriert
-    if hasattr(model_service, "shutdown") and callable(model_service.shutdown):
-
-        async def shutdown_model_service() -> None:
-            await model_service.shutdown(raise_on_error=False)
-
-        _register_shutdown_callback(
-            app,
-            shutdown_model_service,
-            "model_service.shutdown",
+        delattr(
+            app.state,
+            attribute,
         )
 
-    # ChatService hat aktuell keine shutdown-Methode – überspringen
-    # MinimalHierarchyService hat keine shutdown-Methode – überspringen
-
-
-def _register_shutdown_callback(
-    app: FastAPI,
-    callback: Callable[[], Awaitable[None] | None],
-    name: str,
-) -> None:
-    """
-    Registriert einen einzelnen Shutdown-Callback.
-    """
-
-    callbacks_value = getattr(
-        app.state,
-        "shutdown_callbacks",
-        None,
-    )
-
-    if callbacks_value is None:
-        callbacks: list[Callable[[], Awaitable[None] | None]] = []
-        app.state.shutdown_callbacks = callbacks
-    elif isinstance(
-        callbacks_value,
-        list,
-    ):
-        callbacks = cast(
-            list[Callable[[], Awaitable[None] | None]],
-            callbacks_value,
+        removed_services.append(
+            attribute,
         )
-    else:
-        logger.warning(
-            "app.state.shutdown_callbacks has invalid type, ignoring callback",
-            extra={"callback_name": name},
-        )
-        return
 
-    callbacks.append(callback)
-    logger.debug(
-        "Shutdown callback registered",
-        extra={"callback_name": name},
+    _log_debug(
+        "Application service references cleared",
+        bootstrap_event="services-cleared",
+        removed_services=removed_services,
     )
 
 
@@ -961,14 +1137,18 @@ async def _cleanup_partial_bootstrap(
     Räumt Ressourcen nach einem fehlgeschlagenen Bootstrap auf.
     """
 
+    _log_warning(
+        "Partial bootstrap cleanup started",
+        bootstrap_event="partial-cleanup-started",
+    )
+
     await _safe_shutdown(
         name="chat_service",
         resource=chat_service,
     )
 
-    await _safe_shutdown(
-        name="model_service",
-        resource=model_service,
+    await _shutdown_model_service(
+        model_service,
     )
 
     await _safe_shutdown(
@@ -990,6 +1170,57 @@ async def _cleanup_partial_bootstrap(
         session_factory,
     )
 
+    _log_info(
+        "Partial bootstrap cleanup completed",
+        bootstrap_event="partial-cleanup-completed",
+    )
+
+
+async def _shutdown_model_service(
+    model_service: ModelService | None,
+) -> None:
+    """
+    Beendet den ModelService mit seinem konkreten Vertrag.
+
+    Die generische Shutdown-Funktion kann keine Argumente an
+    `ModelService.shutdown()` übergeben. Deshalb wird der
+    ModelService ausdrücklich behandelt.
+    """
+
+    if model_service is None:
+        return
+
+    _log_debug(
+        "Resource shutdown started",
+        bootstrap_event="resource-shutdown-started",
+        resource_name="model_service",
+        shutdown_method="shutdown",
+    )
+
+    try:
+        await model_service.shutdown(  # type: ignore[attr-defined]
+            raise_on_error=False,
+        )
+
+    except Exception as exc:
+        _log_exception(
+            "Model service shutdown failed",
+            bootstrap_event="resource-shutdown-failed",
+            resource_name="model_service",
+            shutdown_method="shutdown",
+            error_type=type(exc).__name__,
+            error_message=str(exc),
+        )
+
+        return
+
+    _log_debug(
+        "Resource shutdown completed",
+        bootstrap_event="resource-shutdown-completed",
+        resource_name="model_service",
+        shutdown_method="shutdown",
+    )
+
 
 async def _safe_shutdown(
     *,
@@ -997,9 +1228,11 @@ async def _safe_shutdown(
     resource: object,
 ) -> None:
     """
-    Ruft den ersten verfügbaren Shutdown-Mechanismus einer Ressource auf.
+    Ruft den ersten verfügbaren Shutdown-Mechanismus einer
+    Ressource auf.
 
-    Unterstützt synchrone und asynchrone Methoden.
+    Unterstützt synchrone und asynchrone Methoden ohne
+    erforderliche Argumente.
     """
 
     if resource is None:
@@ -1026,37 +1259,50 @@ async def _safe_shutdown(
             method_value,
         )
 
+        _log_debug(
+            "Resource shutdown started",
+            bootstrap_event="resource-shutdown-started",
+            resource_name=name,
+            shutdown_method=method_name,
+        )
+
         try:
             result: object = method()
 
-            if inspect.isawaitable(
-                result,
-            ):
+            if inspect.isawaitable(result):
                 await result
 
-        except Exception:
-            logger.exception(
+        except Exception as exc:
+            _log_exception(
                 "Resource shutdown failed",
-                extra={
-                    "resource_name": name,
-                    "shutdown_method": method_name,
-                },
+                bootstrap_event="resource-shutdown-failed",
+                resource_name=name,
+                shutdown_method=method_name,
+                error_type=type(exc).__name__,
+                error_message=str(exc),
             )
+
+            return
+
+        _log_debug(
+            "Resource shutdown completed",
+            bootstrap_event="resource-shutdown-completed",
+            resource_name=name,
+            shutdown_method=method_name,
+        )
 
         return
 
 
 async def _dispose_session_factory(
-    session_factory: (
-        async_sessionmaker[AsyncSession] | None
-    ),
+    session_factory: async_sessionmaker[AsyncSession] | None,
 ) -> None:
     """
     Gibt die zugrunde liegende SQLAlchemy-Engine frei.
 
-    `async_sessionmaker` besitzt selbst normalerweise keine
-    `dispose()`-Methode. Die Engine ist typischerweise über
-    `session_factory.kw["bind"]` erreichbar.
+    `async_sessionmaker` besitzt normalerweise keine eigene
+    `dispose()`-Methode. Die Engine wird deshalb über das
+    gebundene SQLAlchemy-Objekt ermittelt.
     """
 
     if session_factory is None:
@@ -1097,11 +1343,21 @@ async def _dispose_session_factory(
     if not callable(
         dispose_value,
     ):
+        _log_debug(
+            "Database engine has no dispose method",
+            bootstrap_event="database-dispose-skipped",
+        )
+
         return
 
     dispose = cast(
         SyncOrAsyncCallableProtocol,
         dispose_value,
+    )
+
+    _log_debug(
+        "Database engine disposal started",
+        bootstrap_event="database-dispose-started",
     )
 
     try:
@@ -1112,10 +1368,20 @@ async def _dispose_session_factory(
         ):
             await result
 
-    except Exception:
-        logger.exception(
+    except Exception as exc:
+        _log_exception(
             "Database engine disposal failed",
+            bootstrap_event="database-dispose-failed",
+            error_type=type(exc).__name__,
+            error_message=str(exc),
         )
+
+        return
+
+    _log_debug(
+        "Database engine disposal completed",
+        bootstrap_event="database-dispose-completed",
+    )
 
 
 def _coerce_session_factory(
@@ -1130,6 +1396,18 @@ def _coerce_session_factory(
     )
 
 
+def _coerce_model_service(
+    value: object,
+) -> ModelService | None:
+    if value is None:
+        return None
+
+    return cast(
+        ModelService,
+        value,
+    )
+
+
 def _get_required_state_service(
     *,
     app: FastAPI,
@@ -1138,6 +1416,13 @@ def _get_required_state_service(
     if not is_application_bootstrapped(
         app,
     ):
+        _log_warning(
+            "Service requested before bootstrap completion",
+            bootstrap_event="service-access-rejected",
+            requested_service=attribute,
+            reason="application-not-bootstrapped",
+        )
+
         raise ApplicationNotBootstrappedError(
             "Die Anwendung wurde noch nicht vollständig initialisiert.",
         )
@@ -1149,6 +1434,12 @@ def _get_required_state_service(
     )
 
     if service is None:
+        _log_error(
+            "Published application service is unavailable",
+            bootstrap_event="service-access-failed",
+            requested_service=attribute,
+        )
+
         raise ApplicationNotBootstrappedError(
             f"Der Anwendungsdienst '{attribute}' ist nicht verfügbar.",
         )
@@ -1160,8 +1451,8 @@ def _registry_item_count(
     registry: object,
 ) -> int | None:
     """
-    Ermittelt die Anzahl registrierter Elemente, ohne einen bestimmten
-    Registry-Vertrag zu erzwingen.
+    Ermittelt die Anzahl registrierter Elemente, ohne einen
+    bestimmten Registry-Vertrag vorauszusetzen.
 
     Unterstützte Formen:
 
@@ -1208,15 +1499,12 @@ def _registry_item_count(
             typed_mapping,
         )
 
-    if (
-        isinstance(
-            items,
-            Sized,
-        )
-        and not isinstance(
-            items,
-            str | bytes | bytearray,
-        )
+    if isinstance(
+        items,
+        Sized,
+    ) and not isinstance(
+        items,
+        str | bytes | bytearray,
     ):
         return len(
             items,
@@ -1246,7 +1534,16 @@ def _registry_item_count(
         try:
             result: object = method()
 
-        except Exception:
+        except Exception as exc:
+            _log_warning(
+                "Registry count lookup failed",
+                bootstrap_event="registry-count-failed",
+                registry_type=type(registry).__name__,
+                method_name=method_name,
+                error_type=type(exc).__name__,
+                error_message=str(exc),
+            )
+
             return None
 
         if inspect.isawaitable(
@@ -1265,3 +1562,82 @@ def _registry_item_count(
         return None
 
     return None
+
+
+# ============================================================
+# Strukturierte Logging-Hilfsfunktionen
+# ============================================================
+
+
+def _log_context(
+    **values: object,
+) -> dict[str, object]:
+    """
+    Ergänzt jedes Log um stabile Kontextfelder.
+    """
+
+    return {
+        "source": SOURCE_FILE,
+        "area": LOG_AREA,
+        **values,
+    }
+
+
+def _log_debug(
+    message: str,
+    **context: object,
+) -> None:
+    logger.debug(
+        message,
+        extra=_log_context(
+            **context,
+        ),
+    )
+
+
+def _log_info(
+    message: str,
+    **context: object,
+) -> None:
+    logger.info(
+        message,
+        extra=_log_context(
+            **context,
+        ),
+    )
+
+
+def _log_warning(
+    message: str,
+    **context: object,
+) -> None:
+    logger.warning(
+        message,
+        extra=_log_context(
+            **context,
+        ),
+    )
+
+
+def _log_error(
+    message: str,
+    **context: object,
+) -> None:
+    logger.error(
+        message,
+        extra=_log_context(
+            **context,
+        ),
+    )
+
+
+def _log_exception(
+    message: str,
+    **context: object,
+) -> None:
+    logger.exception(
+        message,
+        extra=_log_context(
+            **context,
+        ),
+    )

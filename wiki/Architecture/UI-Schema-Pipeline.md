@@ -2,7 +2,7 @@
 
 The **UI Schema Pipeline** defines how user interface definitions are created, validated, transported, cached, interpreted, and rendered within the Kernschmied platform.
 
-Unlike traditional web applications where user interfaces are tightly coupled to frontend code, Kernschmied uses a **schema-driven architecture**. The backend describes *what* should be rendered, while the frontend decides *how* to render it using a fixed set of trusted components.
+Unlike traditional web applications where user interfaces are tightly coupled to frontend code, Kernschmied uses a **schema-driven architecture**. The backend describes _what_ should be rendered, while the frontend decides _how_ to render it using a fixed set of trusted components.
 
 This separation enables dynamic interfaces without allowing arbitrary code execution or uncontrolled frontend behavior.
 

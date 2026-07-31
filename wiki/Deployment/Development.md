@@ -532,15 +532,15 @@ The workflow emphasizes short feedback cycles.
 
 Compared to Internet deployments, Development typically provides:
 
-| Feature | Development |
-|----------|-------------|
-| HTTPS | Optional |
-| Authentication | Simplified |
-| Logging | Verbose |
-| Debug Endpoints | Enabled |
-| Local Models | Common |
-| SQLite | Recommended |
-| Automatic Reload | Enabled |
+| Feature          | Development |
+| ---------------- | ----------- |
+| HTTPS            | Optional    |
+| Authentication   | Simplified  |
+| Logging          | Verbose     |
+| Debug Endpoints  | Enabled     |
+| Local Models     | Common      |
+| SQLite           | Recommended |
+| Automatic Reload | Enabled     |
 
 Despite these operational differences, application contracts remain identical.
 

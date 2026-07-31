@@ -29,7 +29,6 @@ from app.contracts.model_backend import (
     StreamEventType,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -86,8 +85,7 @@ class TensorProtocol(Protocol):
     def to(
         self,
         device: object,
-    ) -> TensorProtocol:
-        ...
+    ) -> TensorProtocol: ...
 
 
 @runtime_checkable
@@ -101,8 +99,7 @@ class TokenizerProtocol(Protocol):
         text: str,
         *,
         return_tensors: str,
-    ) -> Mapping[str, object]:
-        ...
+    ) -> Mapping[str, object]: ...
 
 
 @runtime_checkable
@@ -114,8 +111,7 @@ class ModelProtocol(Protocol):
     def generate(
         self,
         **kwargs: object,
-    ) -> object:
-        ...
+    ) -> object: ...
 
 
 @runtime_checkable
@@ -128,8 +124,7 @@ class PretrainedFactoryProtocol(Protocol):
         self,
         pretrained_model_name_or_path: str,
         **kwargs: object,
-    ) -> object:
-        ...
+    ) -> object: ...
 
 
 @runtime_checkable
@@ -140,8 +135,7 @@ class ObjectIterableProtocol(Protocol):
 
     def __iter__(
         self,
-    ) -> Iterator[object]:
-        ...
+    ) -> Iterator[object]: ...
 
 
 @runtime_checkable
@@ -152,13 +146,11 @@ class TorchCudaProtocol(Protocol):
 
     def is_available(
         self,
-    ) -> bool:
-        ...
+    ) -> bool: ...
 
     def empty_cache(
         self,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 StreamerFactory: TypeAlias = Callable[..., object]
@@ -186,8 +178,7 @@ class TransformersBindings:
         self.cuda = cuda
 
 
-def _load_transformers_bindings(
-) -> TransformersBindings | None:
+def _load_transformers_bindings() -> TransformersBindings | None:
     """
     Lädt Torch und Transformers ausschließlich über fest bekannte Namen.
 
@@ -324,19 +315,25 @@ class TransformersProvider(
     - Es wird immer nur das explizit konfigurierte Modell angeboten.
     """
 
+    def get_model_info(
+        self,
+    ) -> ModelInfo:
+        """
+        Liefert die Modellbeschreibung dieser Providerinstanz.
+        """
+
+        return self._create_model_info()
+
     def __init__(
         self,
         config: JsonMapping,
     ) -> None:
-        self._model_path = (
-            _read_optional_string(
-                config,
-                "path",
-            )
-            or _read_optional_string(
-                config,
-                "model_name",
-            )
+        self._model_path = _read_optional_string(
+            config,
+            "path",
+        ) or _read_optional_string(
+            config,
+            "model_name",
         )
 
         configured_model_id = _read_optional_string(
@@ -352,11 +349,7 @@ class TransformersProvider(
                 self._model_path,
             ).name.strip()
 
-            self._model_id = (
-                path_name
-                if path_name
-                else DEFAULT_MODEL_ID
-            )
+            self._model_id = path_name if path_name else DEFAULT_MODEL_ID
 
         else:
             self._model_id = DEFAULT_MODEL_ID
@@ -447,8 +440,7 @@ class TransformersProvider(
 
         if resolved_model_id != self._model_id:
             raise TransformersModelNotFoundError(
-                f"Das Transformers-Modell '{resolved_model_id}' "
-                "ist nicht freigegeben.",
+                f"Das Transformers-Modell '{resolved_model_id}' ist nicht freigegeben.",
             )
 
         return self._create_model_info()
@@ -578,9 +570,7 @@ class TransformersProvider(
             }
 
             if attention_mask is not None:
-                generation_arguments["attention_mask"] = (
-                    attention_mask
-                )
+                generation_arguments["attention_mask"] = attention_mask
 
             top_p = _normalize_optional_top_p(
                 request.top_p,
@@ -595,9 +585,7 @@ class TransformersProvider(
             )
 
             if pad_token_id is not None:
-                generation_arguments["pad_token_id"] = (
-                    pad_token_id
-                )
+                generation_arguments["pad_token_id"] = pad_token_id
 
             generation_task = asyncio.create_task(
                 asyncio.to_thread(
@@ -627,7 +615,7 @@ class TransformersProvider(
             await generation_task
 
             yield StreamEvent.create(
-                type=StreamEventType.END,
+                type=StreamEventType.COMPLETE,
                 data={
                     "backend": self.backend_name,
                     "model": model_id,
@@ -718,20 +706,14 @@ class TransformersProvider(
         ausgelagert.
         """
 
-        if (
-            self._model is not None
-            and self._tokenizer is not None
-        ):
+        if self._model is not None and self._tokenizer is not None:
             return (
                 self._model,
                 self._tokenizer,
             )
 
         async with self._load_lock:
-            if (
-                self._model is not None
-                and self._tokenizer is not None
-            ):
+            if self._model is not None and self._tokenizer is not None:
                 return (
                     self._model,
                     self._tokenizer,
@@ -739,8 +721,7 @@ class TransformersProvider(
 
             if self._model_path is None:
                 raise TransformersConfigurationError(
-                    "Für den Transformers-Provider fehlt "
-                    "'model_name' oder 'path'.",
+                    "Für den Transformers-Provider fehlt 'model_name' oder 'path'.",
                 )
 
             bindings = _require_transformers_bindings()
@@ -792,16 +773,11 @@ class TransformersProvider(
     ) -> str:
         normalized_model_id = requested_model_id.strip()
 
-        model_id = (
-            normalized_model_id
-            if normalized_model_id
-            else self._model_id
-        )
+        model_id = normalized_model_id if normalized_model_id else self._model_id
 
         if model_id != self._model_id:
             raise TransformersModelNotFoundError(
-                f"Das Transformers-Modell '{model_id}' "
-                "ist nicht freigegeben.",
+                f"Das Transformers-Modell '{model_id}' ist nicht freigegeben.",
             )
 
         return model_id
@@ -845,12 +821,10 @@ class TransformersProvider(
 # ============================================================
 
 
-def _require_transformers_bindings(
-) -> TransformersBindings:
+def _require_transformers_bindings() -> TransformersBindings:
     if _TRANSFORMERS_BINDINGS is None:
         raise TransformersConfigurationError(
-            "Der Transformers-Provider benötigt die Pakete "
-            "'torch' und 'transformers'.",
+            "Der Transformers-Provider benötigt die Pakete 'torch' und 'transformers'.",
         )
 
     return _TRANSFORMERS_BINDINGS
@@ -875,8 +849,7 @@ def _require_tokenizer(
         TokenizerProtocol,
     ):
         raise TransformersConfigurationError(
-            "AutoTokenizer.from_pretrained() lieferte keinen "
-            "verwendbaren Tokenizer.",
+            "AutoTokenizer.from_pretrained() lieferte keinen verwendbaren Tokenizer.",
         )
 
     return value
@@ -926,8 +899,7 @@ def _require_tensor_from_mapping(
         TensorProtocol,
     ):
         raise TransformersConfigurationError(
-            f"Der Tokenizer lieferte keinen gültigen Tensor "
-            f"für '{key}'.",
+            f"Der Tokenizer lieferte keinen gültigen Tensor für '{key}'.",
         )
 
     return value
@@ -1071,10 +1043,13 @@ def _create_prompt(
             )
 
         else:
-            if isinstance(
-                rendered,
-                str,
-            ) and rendered:
+            if (
+                isinstance(
+                    rendered,
+                    str,
+                )
+                and rendered
+            ):
                 return rendered
 
     prompt_parts: list[str] = []
@@ -1124,8 +1099,7 @@ def _convert_messages(
 
     if not result:
         raise TransformersConfigurationError(
-            "Die Transformers-Anfrage enthält keine "
-            "verwendbare Nachricht.",
+            "Die Transformers-Anfrage enthält keine verwendbare Nachricht.",
         )
 
     return result

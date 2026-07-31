@@ -89,12 +89,12 @@ Every REST error follows the same structure.
 
 # Fields
 
-| Field | Description |
-|--------|-------------|
-| code | Stable machine-readable identifier |
-| message | Human-readable description |
-| details | Optional structured information |
-| request_id | Unique request identifier |
+| Field      | Description                        |
+| ---------- | ---------------------------------- |
+| code       | Stable machine-readable identifier |
+| message    | Human-readable description         |
+| details    | Optional structured information    |
+| request_id | Unique request identifier          |
 
 ---
 
@@ -168,17 +168,17 @@ This identifier simplifies diagnostics and support.
 
 Kernschmied follows standard HTTP semantics.
 
-| Status | Meaning |
-|---------|----------|
-| 400 | Bad Request |
-| 401 | Unauthorized |
-| 403 | Forbidden |
-| 404 | Not Found |
-| 409 | Conflict |
-| 422 | Validation Error |
-| 429 | Too Many Requests |
-| 500 | Internal Server Error |
-| 503 | Service Unavailable |
+| Status | Meaning               |
+| ------ | --------------------- |
+| 400    | Bad Request           |
+| 401    | Unauthorized          |
+| 403    | Forbidden             |
+| 404    | Not Found             |
+| 409    | Conflict              |
+| 422    | Validation Error      |
+| 429    | Too Many Requests     |
+| 500    | Internal Server Error |
+| 503    | Service Unavailable   |
 
 ---
 
@@ -186,18 +186,18 @@ Kernschmied follows standard HTTP semantics.
 
 Typical platform error codes include:
 
-| Code | Description |
-|------|-------------|
-| validation_error | Invalid request |
-| authentication_required | Authentication missing |
-| authorization_failed | Permission denied |
-| resource_not_found | Requested object does not exist |
-| configuration_error | Invalid configuration |
-| model_not_found | Unknown model |
-| tool_not_found | Unknown tool |
-| provider_timeout | Provider timeout |
-| provider_unavailable | Provider offline |
-| internal_error | Unexpected server error |
+| Code                    | Description                     |
+| ----------------------- | ------------------------------- |
+| validation_error        | Invalid request                 |
+| authentication_required | Authentication missing          |
+| authorization_failed    | Permission denied               |
+| resource_not_found      | Requested object does not exist |
+| configuration_error     | Invalid configuration           |
+| model_not_found         | Unknown model                   |
+| tool_not_found          | Unknown tool                    |
+| provider_timeout        | Provider timeout                |
+| provider_unavailable    | Provider offline                |
+| internal_error          | Unexpected server error         |
 
 These codes are stable public contracts.
 

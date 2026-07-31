@@ -130,12 +130,12 @@ Transient runtime objects are not persisted.
 
 The backend uses:
 
-| Technology | Purpose |
-|------------|---------|
+| Technology       | Purpose                   |
+| ---------------- | ------------------------- |
 | SQLAlchemy Async | ORM and query abstraction |
-| Alembic | Schema migrations |
-| SQLite | Development database |
-| PostgreSQL | Production database |
+| Alembic          | Schema migrations         |
+| SQLite           | Development database      |
+| PostgreSQL       | Production database       |
 
 The ORM layer hides database-specific implementation details.
 

@@ -20,7 +20,6 @@ from app.auth.permissions import (
     has_role,
 )
 
-
 AuthDependency: TypeAlias = Callable[
     ...,
     Awaitable[UserContext],
@@ -110,10 +109,7 @@ async def get_current_user(
             request=request,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code="INVALID_AUTH_CONTEXT",
-            message=(
-                "Der serverseitige Authentifizierungskontext "
-                "ist ungültig."
-            ),
+            message=("Der serverseitige Authentifizierungskontext ist ungültig."),
         ) from exc
 
 
@@ -132,9 +128,7 @@ async def require_authenticated_user(
             request=request,
             status_code=status.HTTP_401_UNAUTHORIZED,
             code="AUTHENTICATION_REQUIRED",
-            message=(
-                "Für diese Aktion ist eine Anmeldung erforderlich."
-            ),
+            message=("Für diese Aktion ist eine Anmeldung erforderlich."),
         )
 
     if not user.active:
@@ -160,9 +154,7 @@ def normalize_permission(
     normalized = permission.strip().casefold()
 
     if not normalized:
-        raise ValueError(
-            "Eine Berechtigung darf nicht leer sein."
-        )
+        raise ValueError("Eine Berechtigung darf nicht leer sein.")
 
     return normalized
 
@@ -184,9 +176,7 @@ def normalize_permissions(
             )
 
     if not normalized_permissions:
-        raise ValueError(
-            "Mindestens eine Berechtigung muss angegeben werden."
-        )
+        raise ValueError("Mindestens eine Berechtigung muss angegeben werden.")
 
     return tuple(
         normalized_permissions,
@@ -199,9 +189,7 @@ def normalize_role(
     normalized = role.strip().casefold()
 
     if not normalized:
-        raise ValueError(
-            "Eine Rolle darf nicht leer sein."
-        )
+        raise ValueError("Eine Rolle darf nicht leer sein.")
 
     return normalized
 
@@ -225,14 +213,9 @@ def require_permission(
                 request=request,
                 status_code=status.HTTP_403_FORBIDDEN,
                 code="PERMISSION_DENIED",
-                message=(
-                    "Für diese Aktion fehlt die erforderliche "
-                    "Berechtigung."
-                ),
+                message=("Für diese Aktion fehlt die erforderliche Berechtigung."),
                 details={
-                    "required_permission": (
-                        normalized_permission
-                    ),
+                    "required_permission": (normalized_permission),
                 },
             )
 
@@ -260,10 +243,7 @@ def require_all_permissions(
                 request=request,
                 status_code=status.HTTP_403_FORBIDDEN,
                 code="PERMISSIONS_DENIED",
-                message=(
-                    "Für diese Aktion fehlen erforderliche "
-                    "Berechtigungen."
-                ),
+                message=("Für diese Aktion fehlen erforderliche Berechtigungen."),
                 details={
                     "required_permissions": list(
                         normalized_permissions,
@@ -297,8 +277,7 @@ def require_any_permission(
                 status_code=status.HTTP_403_FORBIDDEN,
                 code="PERMISSIONS_DENIED",
                 message=(
-                    "Für diese Aktion fehlt eine der erforderlichen "
-                    "Berechtigungen."
+                    "Für diese Aktion fehlt eine der erforderlichen Berechtigungen."
                 ),
                 details={
                     "required_permissions": list(
@@ -332,9 +311,7 @@ def require_role(
                 request=request,
                 status_code=status.HTTP_403_FORBIDDEN,
                 code="ROLE_REQUIRED",
-                message=(
-                    "Für diese Aktion fehlt die erforderliche Rolle."
-                ),
+                message=("Für diese Aktion fehlt die erforderliche Rolle."),
                 details={
                     "required_role": normalized_role,
                 },

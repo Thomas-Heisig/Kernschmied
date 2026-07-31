@@ -98,13 +98,8 @@ function isSafeColor(value: string | undefined): boolean {
   return false;
 }
 
-export function isKnownIconName(
-  value: unknown,
-): value is KnownIconName {
-  return (
-    typeof value === "string" &&
-    value in ICON_REGISTRY
-  );
+export function isKnownIconName(value: unknown): value is KnownIconName {
+  return typeof value === "string" && value in ICON_REGISTRY;
 }
 
 export function getIconComponent(
@@ -123,9 +118,7 @@ export function getIconComponent(
 }
 
 export function listKnownIcons(): readonly KnownIconName[] {
-  return Object.keys(
-    ICON_REGISTRY,
-  ) as KnownIconName[];
+  return Object.keys(ICON_REGISTRY) as KnownIconName[];
 }
 
 export function DynamicIcon({
@@ -143,11 +136,7 @@ export function DynamicIcon({
       className={className}
       title={title}
       aria-hidden={title ? undefined : true}
-      style={
-        isSafeColor(color)
-          ? { color }
-          : undefined
-      }
+      style={isSafeColor(color) ? { color } : undefined}
     />
   );
 }

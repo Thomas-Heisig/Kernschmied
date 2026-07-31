@@ -119,10 +119,7 @@ Example:
   "conversation_id": "chat-42",
   "hierarchy_node_id": "project-15",
   "model_id": "qwen2.5:7b",
-  "tool_ids": [
-    "calculator",
-    "filesystem"
-  ],
+  "tool_ids": ["calculator", "filesystem"],
   "metadata": {
     "language": "en"
   }
@@ -133,14 +130,14 @@ Example:
 
 # Request Fields
 
-| Field | Required | Description |
-|--------|----------|-------------|
-| message | ✔ | User prompt |
-| conversation_id | Optional | Existing chat |
-| hierarchy_node_id | Optional | Context node |
-| model_id | Optional | Requested model |
-| tool_ids | Optional | Allowed tools |
-| metadata | Optional | Additional context |
+| Field             | Required | Description        |
+| ----------------- | -------- | ------------------ |
+| message           | ✔        | User prompt        |
+| conversation_id   | Optional | Existing chat      |
+| hierarchy_node_id | Optional | Context node       |
+| model_id          | Optional | Requested model    |
+| tool_ids          | Optional | Allowed tools      |
+| metadata          | Optional | Additional context |
 
 ---
 
@@ -152,7 +149,7 @@ Example:
 
 ```json
 {
-    "message":"Write a REST API."
+  "message": "Write a REST API."
 }
 ```
 
@@ -170,7 +167,7 @@ Example:
 
 ```json
 {
-    "conversation_id":"chat-4711"
+  "conversation_id": "chat-4711"
 }
 ```
 
@@ -184,7 +181,7 @@ Example:
 
 ```json
 {
-    "hierarchy_node_id":"project-7"
+  "hierarchy_node_id": "project-7"
 }
 ```
 
@@ -205,7 +202,7 @@ Example:
 
 ```json
 {
-    "model_id":"qwen2.5:7b"
+  "model_id": "qwen2.5:7b"
 }
 ```
 
@@ -221,10 +218,7 @@ Example:
 
 ```json
 {
-    "tool_ids":[
-        "calculator",
-        "web_search"
-    ]
+  "tool_ids": ["calculator", "web_search"]
 }
 ```
 
@@ -244,8 +238,8 @@ Typical examples:
 
 ```json
 {
-    "language":"en",
-    "temperature":0.3
+  "language": "en",
+  "temperature": 0.3
 }
 ```
 
@@ -309,18 +303,18 @@ complete
 
 Supported events:
 
-| Event | Purpose |
-|---------|---------|
-| start | Generation started |
-| token | Token stream |
-| message | Complete message |
-| reasoning | Reasoning information |
-| tool_call | Tool invocation |
-| tool_result | Tool result |
-| usage | Token statistics |
-| heartbeat | Keep connection alive |
-| complete | Finished |
-| error | Failure |
+| Event       | Purpose               |
+| ----------- | --------------------- |
+| start       | Generation started    |
+| token       | Token stream          |
+| message     | Complete message      |
+| reasoning   | Reasoning information |
+| tool_call   | Tool invocation       |
+| tool_result | Tool result           |
+| usage       | Token statistics      |
+| heartbeat   | Keep connection alive |
+| complete    | Finished              |
+| error       | Failure               |
 
 ---
 
@@ -586,10 +580,10 @@ Example:
 
 ```json
 {
-  "code":"validation_error",
-  "message":"Invalid request.",
-  "details":{},
-  "request_id":"..."
+  "code": "validation_error",
+  "message": "Invalid request.",
+  "details": {},
+  "request_id": "..."
 }
 ```
 

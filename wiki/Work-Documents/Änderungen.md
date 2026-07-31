@@ -1,6 +1,5 @@
 Die Datei enthält nun eine strukturierte Developer-Protokollierung für die gesamte Frontend-Pipeline. Die Protokolle werden nur ausgegeben, wenn Vite im Entwicklungsmodus läuft.
 
-
 F:\Kernschmied\frontend\src\components\chat\GenericChatView.tsx
 
 Wesentliche Korrekturen:
@@ -52,16 +51,15 @@ Die Protokolle enthalten bewusst nicht den vollständigen Nachrichtentext, sonde
 Für die weiteren Pipeline-Dateien sollte dieselbe Struktur verwendet werden:
 
 {
-  timestamp: string;
-  source: string;
-  area: string;
-  step: string;
-  requestId?: string;
-  conversationId?: string;
-  messageId?: string;
-  sequence?: number;
+timestamp: string;
+source: string;
+area: string;
+step: string;
+requestId?: string;
+conversationId?: string;
+messageId?: string;
+sequence?: number;
 }
-
 
 // F:\Kernschmied\frontend\src\api\client.ts
 
@@ -110,47 +108,46 @@ import { API_BASE_URL } from "../../api/client";
 wird ersetzt durch:
 
 import {
-  ApiError,
-  apiPostStream,
+ApiError,
+apiPostStream,
 } from "../../api/client";
 
 Der direkte fetch()-Block wird anschließend durch den zentralen Stream-Aufruf ersetzt:
 
 const streamHandle =
-  await apiPostStream(
-    "/chat/stream",
-    requestPayload,
-    {
-      headers: {
-        Accept:
-          "text/event-stream",
-      },
-      signal:
-        abortController.signal,
-      timeoutMs: null,
-      expectedContentType:
-        "text/event-stream",
-    },
-  );
+await apiPostStream(
+"/chat/stream",
+requestPayload,
+{
+headers: {
+Accept:
+"text/event-stream",
+},
+signal:
+abortController.signal,
+timeoutMs: null,
+expectedContentType:
+"text/event-stream",
+},
+);
 
 try {
-  await processSseStream(
-    streamHandle.response,
-    assistantMessageId,
-    abortController.signal,
-  );
+await processSseStream(
+streamHandle.response,
+assistantMessageId,
+abortController.signal,
+);
 } finally {
-  streamHandle.dispose();
+streamHandle.dispose();
 }
 
 Bei der Fehlerauswertung kann dadurch direkt auf den strukturierten Fehler zugegriffen werden:
 
 const message =
-  caughtError instanceof ApiError
-    ? caughtError.message
-    : caughtError instanceof Error
-      ? caughtError.message
-      : "Die Nachricht konnte nicht gesendet werden.";
+caughtError instanceof ApiError
+? caughtError.message
+: caughtError instanceof Error
+? caughtError.message
+: "Die Nachricht konnte nicht gesendet werden.";
 
 Damit liegt die komplette HTTP-Transportlogik nun zentral im API-Client. GenericChatView bleibt für Eingabe, SSE-Auswertung und Darstellung verantwortlich.
-

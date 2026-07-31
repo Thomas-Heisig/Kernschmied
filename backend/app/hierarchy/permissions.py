@@ -3,7 +3,6 @@ from __future__ import annotations
 from app.database.models.hierarchy_node import HierarchyNodeModel
 from app.hierarchy.models import HierarchyActor
 
-
 READ_ACTION = "read"
 RENAME_ACTION = "rename"
 CREATE_CHILD_ACTION = "create_child"
@@ -62,8 +61,4 @@ class HierarchyPermissionService:
         if node.type == "chat":
             possible_actions.append(EXPORT_ACTION)
 
-        return [
-            action
-            for action in possible_actions
-            if self.can(actor, action, node)
-        ]
+        return [action for action in possible_actions if self.can(actor, action, node)]

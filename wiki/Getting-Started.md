@@ -324,17 +324,17 @@ Typical workflow:
 
 # Where to Find Things
 
-| Topic | Documentation |
-|-------|---------------|
-| Installation | [[Installation]] |
-| Architecture | [[Architecture]] |
-| Backend | [[Backend-Overview]] |
-| Frontend | [[Frontend-Overview]] |
-| API | [[Bootstrap]] |
-| Hierarchy | [[Hierarchy]] |
-| Configuration | [[Configuration]] |
-| Security | [[Security]] |
-| Testing | [[Testing]] |
+| Topic         | Documentation         |
+| ------------- | --------------------- |
+| Installation  | [[Installation]]      |
+| Architecture  | [[Architecture]]      |
+| Backend       | [[Backend-Overview]]  |
+| Frontend      | [[Frontend-Overview]] |
+| API           | [[Bootstrap]]         |
+| Hierarchy     | [[Hierarchy]]         |
+| Configuration | [[Configuration]]     |
+| Security      | [[Security]]          |
+| Testing       | [[Testing]]           |
 
 ---
 

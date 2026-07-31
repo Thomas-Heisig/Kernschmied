@@ -11,7 +11,6 @@ from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 from app.core.security_profile import get_security_profile
 
-
 router = APIRouter()
 
 
@@ -327,9 +326,13 @@ def get_environment() -> str:
         raw_environment,
     )
 
-    normalized = str(
-        enum_value,
-    ).strip().lower()
+    normalized = (
+        str(
+            enum_value,
+        )
+        .strip()
+        .lower()
+    )
 
     return normalized or "development"
 
@@ -372,13 +375,9 @@ async def health(
         config_service,
     )
 
-    response.headers["Cache-Control"] = (
-        "no-store, no-cache, must-revalidate"
-    )
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
     response.headers["Pragma"] = "no-cache"
-    response.headers["X-Health-Schema-Version"] = (
-        HEALTH_SCHEMA_VERSION
-    )
+    response.headers["X-Health-Schema-Version"] = HEALTH_SCHEMA_VERSION
     response.headers["X-API-Version"] = API_VERSION
     response.headers["X-Config-Revision"] = str(
         revision,

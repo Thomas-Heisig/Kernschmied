@@ -9,10 +9,9 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    JsonValue,          # NEU: Pydantic's JsonValue
+    JsonValue,  # NEU: Pydantic's JsonValue
     field_validator,
 )
-
 
 # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
 JsonScalar = str | int | float | bool | None
@@ -31,9 +30,7 @@ def normalize_string_collection_value(
         value,
         str,
     ):
-        values = (
-            value,
-        )
+        values = (value,)
 
     else:
         normalized_sequence = as_object_sequence(
@@ -48,9 +45,13 @@ def normalize_string_collection_value(
     result: list[str] = []
 
     for item in values:
-        normalized = str(
-            item,
-        ).strip().casefold()
+        normalized = (
+            str(
+                item,
+            )
+            .strip()
+            .casefold()
+        )
 
         if not normalized:
             continue
@@ -167,9 +168,7 @@ def normalize_json_value(
     max_depth: int = 16,
 ) -> JsonValue:
     if depth > max_depth:
-        raise ValueError(
-            "Die Metadaten überschreiten die maximal erlaubte Tiefe."
-        )
+        raise ValueError("Die Metadaten überschreiten die maximal erlaubte Tiefe.")
 
     if value is None:
         return None
@@ -342,9 +341,7 @@ class UserContext(BaseModel):
             value,
             str,
         ):
-            values = (
-                value,
-            )
+            values = (value,)
 
         else:
             normalized_sequence = as_object_sequence(
@@ -359,9 +356,13 @@ class UserContext(BaseModel):
         result: list[str] = []
 
         for item in values:
-            normalized = str(
-                item,
-            ).strip().casefold()
+            normalized = (
+                str(
+                    item,
+                )
+                .strip()
+                .casefold()
+            )
 
             if not normalized:
                 continue
@@ -416,12 +417,8 @@ class UserContext(BaseModel):
             name=name,
             authenticated=True,
             active=True,
-            roles=(
-                "admin",
-            ),
-            permissions=(
-                "*",
-            ),
+            roles=("admin",),
+            permissions=("*",),
             authentication_method="development",
         )
 
@@ -456,18 +453,14 @@ class UserContext(BaseModel):
         )
 
         if user_id is None:
-            raise ValueError(
-                "Der Principal besitzt keine Benutzer-ID."
-            )
+            raise ValueError("Der Principal besitzt keine Benutzer-ID.")
 
         normalized_user_id = str(
             user_id,
         ).strip()
 
         if not normalized_user_id:
-            raise ValueError(
-                "Der Principal besitzt keine gültige Benutzer-ID."
-            )
+            raise ValueError("Der Principal besitzt keine gültige Benutzer-ID.")
 
         raw_name = read_principal_value(
             principal,

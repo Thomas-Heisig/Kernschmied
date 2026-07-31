@@ -69,8 +69,8 @@ function UnsupportedSchemaComponent({
       </h3>
 
       <p className="mb-2 text-text-soft dark:text-gray-300">
-        Für den vom Backend gelieferten Schema-Typ existiert
-        derzeit keine registrierte React-Komponente.
+        Für den vom Backend gelieferten Schema-Typ existiert derzeit keine
+        registrierte React-Komponente.
       </p>
 
       <div className="rounded-lg bg-surface-muted px-3 py-2 text-text dark:bg-slate-800/60 dark:text-gray-200">
@@ -81,9 +81,7 @@ function UnsupportedSchemaComponent({
       </div>
 
       {message && (
-        <p className="mt-3 text-text-soft dark:text-gray-300">
-          {message}
-        </p>
+        <p className="mt-3 text-text-soft dark:text-gray-300">{message}</p>
       )}
 
       {isDevelopment && schema !== undefined && (

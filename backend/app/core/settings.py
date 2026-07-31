@@ -20,7 +20,6 @@ from pydantic_settings import (
     SettingsConfigDict,
 )
 
-
 # ============================================================
 # Projektpfade
 # ============================================================
@@ -36,13 +35,9 @@ DEFAULT_DATA_DIRECTORY: Final[Path] = BACKEND_DIRECTORY / "data"
 DEFAULT_CONFIG_DIRECTORY: Final[Path] = PROJECT_DIRECTORY / "config"
 DEFAULT_MANIFEST_DIRECTORY: Final[Path] = PROJECT_DIRECTORY / "extensions"
 
-DEFAULT_BOOTSTRAP_CONFIG_FILE: Final[Path] = (
-    DEFAULT_CONFIG_DIRECTORY / "bootstrap.json"
-)
+DEFAULT_BOOTSTRAP_CONFIG_FILE: Final[Path] = DEFAULT_CONFIG_DIRECTORY / "bootstrap.json"
 
-DEFAULT_SQLITE_DATABASE_FILE: Final[Path] = (
-    DEFAULT_DATA_DIRECTORY / "kernschmied.db"
-)
+DEFAULT_SQLITE_DATABASE_FILE: Final[Path] = DEFAULT_DATA_DIRECTORY / "kernschmied.db"
 
 
 # ============================================================
@@ -131,10 +126,7 @@ def _sqlite_database_url(
 ) -> str:
     resolved_path = database_file.expanduser().resolve()
 
-    return (
-        "sqlite+aiosqlite:///"
-        f"{resolved_path.as_posix()}"
-    )
+    return f"sqlite+aiosqlite:///{resolved_path.as_posix()}"
 
 
 def _normalize_path(
@@ -154,11 +146,7 @@ def _normalize_string_tuple(
     values: tuple[str, ...] | list[str] | str,
 ) -> tuple[str, ...]:
     if isinstance(values, str):
-        values = tuple(
-            part.strip()
-            for part in values.split(",")
-            if part.strip()
-        )
+        values = tuple(part.strip() for part in values.split(",") if part.strip())
 
     normalized: list[str] = []
 
@@ -436,9 +424,7 @@ class Settings(BaseSettings):
     )
 
     model_manifest_directories: tuple[Path, ...] = Field(
-        default_factory=lambda: (
-            DEFAULT_MANIFEST_DIRECTORY / "models",
-        ),
+        default_factory=lambda: (DEFAULT_MANIFEST_DIRECTORY / "models",),
         validation_alias=AliasChoices(
             "MODEL_MANIFEST_DIRECTORIES",
             "model_manifest_directories",
@@ -446,9 +432,7 @@ class Settings(BaseSettings):
     )
 
     tool_manifest_directories: tuple[Path, ...] = Field(
-        default_factory=lambda: (
-            DEFAULT_MANIFEST_DIRECTORY / "tools",
-        ),
+        default_factory=lambda: (DEFAULT_MANIFEST_DIRECTORY / "tools",),
         validation_alias=AliasChoices(
             "TOOL_MANIFEST_DIRECTORIES",
             "tool_manifest_directories",
@@ -787,16 +771,9 @@ class Settings(BaseSettings):
             return ()
 
         if isinstance(value, str):
-            value = tuple(
-                part.strip()
-                for part in value.split(",")
-                if part.strip()
-            )
+            value = tuple(part.strip() for part in value.split(",") if part.strip())
 
-        return tuple(
-            _normalize_path(item)
-            for item in value
-        )
+        return tuple(_normalize_path(item) for item in value)
 
     @field_validator("database_url")
     @classmethod
@@ -865,16 +842,14 @@ class Settings(BaseSettings):
 
         if cert_configured != key_configured:
             raise ValueError(
-                "TLS_CERT_FILE und TLS_KEY_FILE müssen gemeinsam "
-                "konfiguriert werden.",
+                "TLS_CERT_FILE und TLS_KEY_FILE müssen gemeinsam konfiguriert werden.",
             )
 
     def _validate_proxy_configuration(
         self,
     ) -> None:
         if (
-            self.forwarded_header_mode
-            == ForwardedHeaderMode.TRUSTED_PROXIES
+            self.forwarded_header_mode == ForwardedHeaderMode.TRUSTED_PROXIES
             and not self.trusted_proxies
             and self.trusted_proxy_count == 0
         ):
@@ -883,13 +858,8 @@ class Settings(BaseSettings):
                 "TRUSTED_PROXIES oder TRUSTED_PROXY_COUNT.",
             )
 
-        if (
-            self.forwarded_header_mode
-            == ForwardedHeaderMode.DISABLED
-            and (
-                self.trusted_proxies
-                or self.trusted_proxy_count > 0
-            )
+        if self.forwarded_header_mode == ForwardedHeaderMode.DISABLED and (
+            self.trusted_proxies or self.trusted_proxy_count > 0
         ):
             raise ValueError(
                 "TRUSTED_PROXIES und TRUSTED_PROXY_COUNT dürfen nur "
@@ -899,11 +869,7 @@ class Settings(BaseSettings):
     def _validate_bootstrap_token(
         self,
     ) -> None:
-        token = (
-            self.bootstrap_admin_token
-            .get_secret_value()
-            .strip()
-        )
+        token = self.bootstrap_admin_token.get_secret_value().strip()
 
         if self.bootstrap_admin_token_enabled and not token:
             raise ValueError(
@@ -911,13 +877,9 @@ class Settings(BaseSettings):
                 "BOOTSTRAP_ADMIN_TOKEN.",
             )
 
-        if (
-            token
-            and len(token) < 32
-        ):
+        if token and len(token) < 32:
             raise ValueError(
-                "BOOTSTRAP_ADMIN_TOKEN muss mindestens 32 Zeichen lang "
-                "sein.",
+                "BOOTSTRAP_ADMIN_TOKEN muss mindestens 32 Zeichen lang sein.",
             )
 
     def _validate_environment_security(
@@ -926,33 +888,17 @@ class Settings(BaseSettings):
         if self.app_environment == AppEnvironment.DEVELOPMENT:
             return
 
-        secret_key = (
-            self.secret_key
-            .get_secret_value()
-            .strip()
-        )
+        secret_key = self.secret_key.get_secret_value().strip()
 
-        encryption_key = (
-            self.config_encryption_key
-            .get_secret_value()
-            .strip()
-        )
+        encryption_key = self.config_encryption_key.get_secret_value().strip()
 
-        if (
-            secret_key.lower()
-            in INSECURE_SECRET_VALUES
-            or len(secret_key) < 32
-        ):
+        if secret_key.lower() in INSECURE_SECRET_VALUES or len(secret_key) < 32:
             raise ValueError(
                 "SECRET_KEY muss in Intranet- und Internetprofilen "
                 "sicher gesetzt und mindestens 32 Zeichen lang sein.",
             )
 
-        if (
-            encryption_key.lower()
-            in INSECURE_SECRET_VALUES
-            or len(encryption_key) < 32
-        ):
+        if encryption_key.lower() in INSECURE_SECRET_VALUES or len(encryption_key) < 32:
             raise ValueError(
                 "CONFIG_ENCRYPTION_KEY muss in Intranet- und "
                 "Internetprofilen sicher gesetzt und mindestens "
@@ -977,10 +923,7 @@ class Settings(BaseSettings):
             self.public_base_url,
         )
 
-        if (
-            self.app_environment == AppEnvironment.INTERNET
-            and parsed.scheme != "https"
-        ):
+        if self.app_environment == AppEnvironment.INTERNET and parsed.scheme != "https":
             raise ValueError(
                 "PUBLIC_BASE_URL muss im Internetprofil HTTPS verwenden.",
             )
@@ -990,10 +933,7 @@ class Settings(BaseSettings):
     ) -> None:
         wildcard_present = "*" in self.cors_allowed_origins
 
-        if (
-            wildcard_present
-            and self.cors_allow_credentials
-        ):
+        if wildcard_present and self.cors_allow_credentials:
             raise ValueError(
                 "CORS_ALLOWED_ORIGINS='*' darf nicht mit "
                 "CORS_ALLOW_CREDENTIALS=true kombiniert werden.",
@@ -1008,8 +948,7 @@ class Settings(BaseSettings):
             and wildcard_present
         ):
             raise ValueError(
-                "Wildcard-CORS ist im Intranet- und Internetprofil "
-                "nicht zulässig.",
+                "Wildcard-CORS ist im Intranet- und Internetprofil nicht zulässig.",
             )
 
     # --------------------------------------------------------
@@ -1042,65 +981,41 @@ class Settings(BaseSettings):
 
     @property
     def effective_upload_directory(self) -> Path:
-        return (
-            self.upload_directory
-            or self.data_directory / "uploads"
-        )
+        return self.upload_directory or self.data_directory / "uploads"
 
     @property
     def effective_temporary_directory(self) -> Path:
-        return (
-            self.temporary_directory
-            or self.data_directory / "tmp"
-        )
+        return self.temporary_directory or self.data_directory / "tmp"
 
     @property
     def api_docs_enabled(self) -> bool:
         if self.expose_api_docs is not None:
             return self.expose_api_docs
 
-        return (
-            self.app_environment
-            != AppEnvironment.INTERNET
-        )
+        return self.app_environment != AppEnvironment.INTERNET
 
     @property
     def detailed_errors_enabled(self) -> bool:
         if self.expose_detailed_errors is not None:
             return self.expose_detailed_errors
 
-        return (
-            self.app_environment
-            == AppEnvironment.DEVELOPMENT
-        )
+        return self.app_environment == AppEnvironment.DEVELOPMENT
 
     @property
     def tls_configured(self) -> bool:
-        return (
-            self.tls_cert_file is not None
-            and self.tls_key_file is not None
-        )
+        return self.tls_cert_file is not None and self.tls_key_file is not None
 
     @property
     def is_development(self) -> bool:
-        return (
-            self.app_environment
-            == AppEnvironment.DEVELOPMENT
-        )
+        return self.app_environment == AppEnvironment.DEVELOPMENT
 
     @property
     def is_intranet(self) -> bool:
-        return (
-            self.app_environment
-            == AppEnvironment.INTRANET
-        )
+        return self.app_environment == AppEnvironment.INTRANET
 
     @property
     def is_internet(self) -> bool:
-        return (
-            self.app_environment
-            == AppEnvironment.INTERNET
-        )
+        return self.app_environment == AppEnvironment.INTERNET
 
     # --------------------------------------------------------
     # Lifecycle
@@ -1132,9 +1047,7 @@ class Settings(BaseSettings):
         Prüft konfigurierte Dateien, ohne sie automatisch zu erzeugen.
         """
 
-        required_files: list[
-            tuple[str, Path | None]
-        ] = [
+        required_files: list[tuple[str, Path | None]] = [
             (
                 "TLS_CERT_FILE",
                 self.tls_cert_file,
@@ -1152,8 +1065,7 @@ class Settings(BaseSettings):
         missing_files = [
             f"{name}: {path}"
             for name, path in required_files
-            if path is not None
-            and not path.is_file()
+            if path is not None and not path.is_file()
         ]
 
         if missing_files:
@@ -1182,9 +1094,7 @@ class Settings(BaseSettings):
             "backend_port": self.backend_port,
             "workers": self.workers,
             "database_scheme": self.database_scheme,
-            "database_migration_mode": (
-                self.database_migration_mode.value
-            ),
+            "database_migration_mode": (self.database_migration_mode.value),
             "data_directory": str(
                 self.data_directory,
             ),
@@ -1198,12 +1108,8 @@ class Settings(BaseSettings):
                 self.effective_temporary_directory,
             ),
             "tls_configured": self.tls_configured,
-            "forwarded_header_mode": (
-                self.forwarded_header_mode.value
-            ),
-            "trusted_proxy_count": (
-                self.trusted_proxy_count
-            ),
+            "forwarded_header_mode": (self.forwarded_header_mode.value),
+            "trusted_proxy_count": (self.trusted_proxy_count),
             "configured_trusted_proxies": len(
                 self.trusted_proxies,
             ),
@@ -1214,12 +1120,8 @@ class Settings(BaseSettings):
                 self.allowed_hosts,
             ),
             "api_docs_enabled": self.api_docs_enabled,
-            "detailed_errors_enabled": (
-                self.detailed_errors_enabled
-            ),
-            "bootstrap_admin_token_enabled": (
-                self.bootstrap_admin_token_enabled
-            ),
+            "detailed_errors_enabled": (self.detailed_errors_enabled),
+            "bootstrap_admin_token_enabled": (self.bootstrap_admin_token_enabled),
         }
 
     @property

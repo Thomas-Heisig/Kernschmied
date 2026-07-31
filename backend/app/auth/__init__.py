@@ -20,7 +20,6 @@ from app.auth.permissions import (
     permission_matches,
 )
 
-
 __all__ = [
     "AuthenticatedUser",
     "AuthenticationContextMiddleware",

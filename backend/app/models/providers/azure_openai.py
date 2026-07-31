@@ -28,7 +28,6 @@ from app.contracts.model_backend import (
     Usage,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -168,9 +167,7 @@ class AzureOpenAIProvider(BaseModelBackend):
                 ),
             )
         else:
-            self._deployment_ids = (
-                self._default_deployment,
-            )
+            self._deployment_ids = (self._default_deployment,)
 
         if self._default_deployment not in self._deployment_ids:
             self._deployment_ids = (
@@ -196,6 +193,17 @@ class AzureOpenAIProvider(BaseModelBackend):
     def backend_name(self) -> str:
         return "azure_openai"
 
+    # ========================================================
+    # Implementierung der abstrakten Methode get_model_info
+    # ========================================================
+
+    def get_model_info(self) -> ModelInfo:
+        """
+        Gibt die Modellinformationen des Backends zurück.
+        Für Azure OpenAI verwenden wir das Standard-Deployment.
+        """
+        return self._create_model_info(self._default_deployment)
+
     async def is_available(self) -> bool:
         """
         Prüft ausschließlich die erforderliche lokale Konfiguration.
@@ -203,10 +211,7 @@ class AzureOpenAIProvider(BaseModelBackend):
         Es wird bewusst keine Netzwerk- oder Testanfrage ausgeführt.
         """
 
-        return (
-            self._endpoint is not None
-            and self._api_key is not None
-        )
+        return self._endpoint is not None and self._api_key is not None
 
     async def list_models(
         self,
@@ -239,8 +244,7 @@ class AzureOpenAIProvider(BaseModelBackend):
 
         if deployment_id not in self._deployment_ids:
             raise AzureOpenAIModelNotFoundError(
-                f"Das Azure-OpenAI-Deployment '{deployment_id}' "
-                "ist nicht freigegeben.",
+                f"Das Azure-OpenAI-Deployment '{deployment_id}' ist nicht freigegeben.",
             )
 
         return self._create_model_info(
@@ -276,8 +280,7 @@ class AzureOpenAIProvider(BaseModelBackend):
 
         except Exception:
             logger.exception(
-                "Der Azure-OpenAI-Client konnte nicht sauber "
-                "geschlossen werden.",
+                "Der Azure-OpenAI-Client konnte nicht sauber geschlossen werden.",
                 extra={
                     "backend": self.backend_name,
                 },
@@ -389,10 +392,8 @@ class AzureOpenAIProvider(BaseModelBackend):
 
                 if chunk.usage is not None:
                     usage = _create_usage(
-                        prompt_tokens=chunk.usage.prompt_tokens,
-                        completion_tokens=(
-                            chunk.usage.completion_tokens
-                        ),
+                        input_tokens=chunk.usage.prompt_tokens,
+                        output_tokens=chunk.usage.completion_tokens,
                         total_tokens=chunk.usage.total_tokens,
                     )
 
@@ -426,8 +427,9 @@ class AzureOpenAIProvider(BaseModelBackend):
             if finish_reason is not None:
                 end_data["finish_reason"] = finish_reason
 
+            # Korrektur: StreamEventType.END durch COMPLETE ersetzen
             yield StreamEvent.create(
-                type=StreamEventType.END,
+                type=StreamEventType.COMPLETE,
                 usage=usage,
                 data=end_data,
             )
@@ -614,15 +616,12 @@ class AzureOpenAIProvider(BaseModelBackend):
         normalized_model_id = requested_model_id.strip()
 
         deployment_id = (
-            normalized_model_id
-            if normalized_model_id
-            else self._default_deployment
+            normalized_model_id if normalized_model_id else self._default_deployment
         )
 
         if deployment_id not in self._deployment_ids:
             raise AzureOpenAIModelNotFoundError(
-                f"Das Azure-OpenAI-Deployment '{deployment_id}' "
-                "ist nicht freigegeben.",
+                f"Das Azure-OpenAI-Deployment '{deployment_id}' ist nicht freigegeben.",
             )
 
         return deployment_id
@@ -700,9 +699,7 @@ def _convert_messages(
 
         if message.role is MessageRole.TOOL:
             tool_call_id = (
-                message.tool_call_id.strip()
-                if message.tool_call_id is not None
-                else ""
+                message.tool_call_id.strip() if message.tool_call_id is not None else ""
             )
 
             if tool_call_id:
@@ -735,8 +732,7 @@ def _convert_messages(
 
     if not converted_messages:
         raise AzureOpenAIConfigurationError(
-            "Die Azure-OpenAI-Anfrage enthält keine "
-            "verwendbare Nachricht.",
+            "Die Azure-OpenAI-Anfrage enthält keine verwendbare Nachricht.",
         )
 
     return converted_messages
@@ -758,26 +754,25 @@ def _format_tool_result_as_text(
     if not normalized_name:
         return f"Tool-Ergebnis:\n{content}"
 
-    return (
-        f"Tool-Ergebnis von '{normalized_name}':\n"
-        f"{content}"
-    )
+    return f"Tool-Ergebnis von '{normalized_name}':\n{content}"
 
 
 def _create_usage(
     *,
-    prompt_tokens: int,
-    completion_tokens: int,
+    input_tokens: int,
+    output_tokens: int,
     total_tokens: int,
 ) -> Usage:
     """
     Übersetzt OpenAI-Nutzungsdaten in den Backendvertrag.
-    """
 
+    Korrigierte Feldnamen: input_tokens, output_tokens, total_tokens.
+    """
     return Usage(
-        prompt_tokens=prompt_tokens,
-        completion_tokens=completion_tokens,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
         total_tokens=total_tokens,
+        metadata={},  # OpenAI liefert keine zusätzlichen Metadaten
     )
 
 
@@ -1025,10 +1020,13 @@ def _read_non_negative_int(
     ):
         return default
 
-    if isinstance(
-        value,
-        int,
-    ) and value >= 0:
+    if (
+        isinstance(
+            value,
+            int,
+        )
+        and value >= 0
+    ):
         return value
 
     return default

@@ -82,16 +82,16 @@ The core platform defines extension mechanisms but remains independent of indivi
 
 The platform currently supports several categories of extensions.
 
-| Category | Description |
-|----------|-------------|
-| Models | AI model providers |
-| Tools | Callable tools |
-| UI Schemas | Dynamic user interfaces |
-| Configuration | Runtime behavior |
-| Hierarchy | Organizational structure |
-| Prompts | Context inheritance |
-| Actions | Frontend actions |
-| Components | Frontend rendering |
+| Category      | Description              |
+| ------------- | ------------------------ |
+| Models        | AI model providers       |
+| Tools         | Callable tools           |
+| UI Schemas    | Dynamic user interfaces  |
+| Configuration | Runtime behavior         |
+| Hierarchy     | Organizational structure |
+| Prompts       | Context inheritance      |
+| Actions       | Frontend actions         |
+| Components    | Frontend rendering       |
 
 Each category has its own validation rules and lifecycle.
 

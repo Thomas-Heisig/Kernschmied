@@ -6,19 +6,19 @@ Wir prüfen die komplette Chat-Pipeline **vom Absenden der Eingabe bis zur Darst
 
 Zuerst prüfen wir:
 
-* Eingabefeld und lokalen State
-* Absenden per Formular oder Button
-* Verhinderung leerer Nachrichten
-* Sperre bei laufender Anfrage
-* Erzeugung des vollständigen `ChatRequest`
-* Übergabe von:
+- Eingabefeld und lokalen State
+- Absenden per Formular oder Button
+- Verhinderung leerer Nachrichten
+- Sperre bei laufender Anfrage
+- Erzeugung des vollständigen `ChatRequest`
+- Übergabe von:
 
-  * `message`
-  * `conversation_id`
-  * `hierarchy_node_id`
-  * `model_id`
-  * `tool_ids`
-  * `metadata`
+  - `message`
+  - `conversation_id`
+  - `hierarchy_node_id`
+  - `model_id`
+  - `tool_ids`
+  - `metadata`
 
 Zielvertrag:
 
@@ -36,34 +36,24 @@ export interface ChatRequest {
 Zusätzlich sollte das Frontend vor dem Versand validieren:
 
 ```ts
-export function validateChatRequest(
-  request: ChatRequest,
-): void {
+export function validateChatRequest(request: ChatRequest): void {
   const message = request.message.trim();
 
   if (!message) {
-    throw new Error(
-      "Eine leere Chat-Nachricht kann nicht gesendet werden.",
-    );
+    throw new Error("Eine leere Chat-Nachricht kann nicht gesendet werden.");
   }
 
   if (message.length > 50_000) {
-    throw new Error(
-      "Die Chat-Nachricht überschreitet die zulässige Länge.",
-    );
+    throw new Error("Die Chat-Nachricht überschreitet die zulässige Länge.");
   }
 
   if (
     request.tool_ids &&
     !request.tool_ids.every(
-      (toolId) =>
-        typeof toolId === "string" &&
-        toolId.trim().length > 0,
+      (toolId) => typeof toolId === "string" && toolId.trim().length > 0,
     )
   ) {
-    throw new Error(
-      "Die Tool-IDs sind ungültig.",
-    );
+    throw new Error("Die Tool-IDs sind ungültig.");
   }
 }
 ```
@@ -76,14 +66,14 @@ Der API-Client muss ausschließlich für Transport, Fehlernormalisierung und SSE
 
 Zu prüfen:
 
-* korrekte Backend-URL
-* korrekter API-Pfad
-* `Content-Type: application/json`
-* `Accept: text/event-stream`
-* `AbortSignal`
-* Behandlung von Nicht-200-Antworten
-* strukturierte Backend-Fehler
-* Stream-Reader und UTF-8-Decodierung
+- korrekte Backend-URL
+- korrekter API-Pfad
+- `Content-Type: application/json`
+- `Accept: text/event-stream`
+- `AbortSignal`
+- Behandlung von Nicht-200-Antworten
+- strukturierte Backend-Fehler
+- Stream-Reader und UTF-8-Decodierung
 
 Erforderliche Fehlerstruktur:
 
@@ -324,10 +314,10 @@ class StreamContext:
 
 Dabei muss klar getrennt werden zwischen:
 
-* angefordertem Modell
-* tatsächlich aufgelöstem Modell
-* angeforderten Tools
-* tatsächlich autorisierten Tools
+- angefordertem Modell
+- tatsächlich aufgelöstem Modell
+- angeforderten Tools
+- tatsächlich autorisierten Tools
 
 ---
 
@@ -337,12 +327,12 @@ Jede Benutzeraktion muss serverseitig geprüft werden.
 
 Zu prüfen:
 
-* Darf der Benutzer den Hierarchieknoten verwenden?
-* Darf er den Chat öffnen?
-* Darf er das gewünschte Modell verwenden?
-* Darf er die angeforderten Tools verwenden?
-* Sind Modell und Tools aktiviert?
-* Sind sie im aktuellen Betriebsprofil erlaubt?
+- Darf der Benutzer den Hierarchieknoten verwenden?
+- Darf er den Chat öffnen?
+- Darf er das gewünschte Modell verwenden?
+- Darf er die angeforderten Tools verwenden?
+- Sind Modell und Tools aktiviert?
+- Sind sie im aktuellen Betriebsprofil erlaubt?
 
 Zielstruktur:
 
@@ -397,12 +387,12 @@ class ResolvedChatConfiguration:
 
 Zu prüfen:
 
-* Config-Revision wird mitgeführt
-* ungültige Konfiguration führt zu strukturiertem Fehler
-* Secrets werden nicht aus Fachkonfiguration gelesen
-* unbekannte Prompt-Ebenen werden abgelehnt
-* keine globale Cache-Magie
-* Cache berücksichtigt die Config-Revision
+- Config-Revision wird mitgeführt
+- ungültige Konfiguration führt zu strukturiertem Fehler
+- Secrets werden nicht aus Fachkonfiguration gelesen
+- unbekannte Prompt-Ebenen werden abgelehnt
+- keine globale Cache-Magie
+- Cache berücksichtigt die Config-Revision
 
 ---
 
@@ -420,13 +410,13 @@ model_backend = model_registry.require_backend(
 
 Fehlerfälle:
 
-* Modell nicht gefunden
-* Modell deaktiviert
-* Manifest ungültig
-* Provider konnte nicht initialisiert werden
-* Provider unterstützt Chat nicht
-* Provider unterstützt Streaming nicht
-* Modell ist im Betriebsprofil nicht erlaubt
+- Modell nicht gefunden
+- Modell deaktiviert
+- Manifest ungültig
+- Provider konnte nicht initialisiert werden
+- Provider unterstützt Chat nicht
+- Provider unterstützt Streaming nicht
+- Modell ist im Betriebsprofil nicht erlaubt
 
 Beispiel:
 
@@ -533,13 +523,13 @@ class ChatStreamEvent(BaseModel):
 
 Jedes Ereignis sollte besitzen:
 
-* `schema_version`
-* `event`
-* `sequence`
-* `request_id`
-* `conversation_id`
-* optional `message_id`
-* typisierte Nutzdaten
+- `schema_version`
+- `event`
+- `sequence`
+- `request_id`
+- `conversation_id`
+- optional `message_id`
+- typisierte Nutzdaten
 
 ---
 
@@ -580,13 +570,13 @@ async def encode_sse_stream(
 
 Häufige Fehler:
 
-* fehlende Leerzeile nach einem Ereignis
-* JSON über mehrere unzulässig verarbeitete Zeilen
-* Vermischung von Eventname und Payload
-* nicht serialisierbare Objekte
-* `None` an unerwarteten Stellen
-* fehlende Sequenznummer
-* Stream endet ohne `complete` oder `error`
+- fehlende Leerzeile nach einem Ereignis
+- JSON über mehrere unzulässig verarbeitete Zeilen
+- Vermischung von Eventname und Payload
+- nicht serialisierbare Objekte
+- `None` an unerwarteten Stellen
+- fehlende Sequenznummer
+- Stream endet ohne `complete` oder `error`
 
 ---
 
@@ -639,12 +629,9 @@ while (true) {
     break;
   }
 
-  buffer += decoder.decode(
-    result.value,
-    {
-      stream: true,
-    },
-  );
+  buffer += decoder.decode(result.value, {
+    stream: true,
+  });
 
   const blocks = buffer.split(/\r?\n\r?\n/);
   buffer = blocks.pop() ?? "";
@@ -724,12 +711,7 @@ Empfohlene Statuswerte:
 
 ```ts
 export type ChatRequestStatus =
-  | "idle"
-  | "connecting"
-  | "streaming"
-  | "completed"
-  | "failed"
-  | "cancelled";
+  "idle" | "connecting" | "streaming" | "completed" | "failed" | "cancelled";
 ```
 
 Eine Assistentennachricht sollte bereits beim `start`-Event angelegt werden. `token`-Events ergänzen ausschließlich diese Nachricht.
@@ -746,10 +728,10 @@ Nur ein geschlossenes Netzwerk-Streaming reicht nicht als Erfolgskriterium.
 
 Das Frontend sollte unterscheiden:
 
-* `complete` empfangen: erfolgreich
-* `error` empfangen: fachlicher oder technischer Fehler
-* Verbindung ohne Abschluss geschlossen: unvollständiger Stream
-* Benutzerabbruch: `cancelled`
+- `complete` empfangen: erfolgreich
+- `error` empfangen: fachlicher oder technischer Fehler
+- Verbindung ohne Abschluss geschlossen: unvollständiger Stream
+- Benutzerabbruch: `cancelled`
 
 ---
 
@@ -757,13 +739,13 @@ Das Frontend sollte unterscheiden:
 
 Zu prüfen:
 
-* Benutzernachricht wird nur einmal gespeichert
-* Assistentennachricht wird eindeutig zugeordnet
-* Teilantworten werden kontrolliert gespeichert
-* abgebrochene Antworten erhalten Status
-* Tool-Aufrufe werden nachvollziehbar gespeichert
-* Conversation-ID wird beim ersten Chat erzeugt und zurückgegeben
-* Transaktion bleibt nicht während des gesamten Modellstreams offen
+- Benutzernachricht wird nur einmal gespeichert
+- Assistentennachricht wird eindeutig zugeordnet
+- Teilantworten werden kontrolliert gespeichert
+- abgebrochene Antworten erhalten Status
+- Tool-Aufrufe werden nachvollziehbar gespeichert
+- Conversation-ID wird beim ersten Chat erzeugt und zurückgegeben
+- Transaktion bleibt nicht während des gesamten Modellstreams offen
 
 Empfohlener Ablauf:
 

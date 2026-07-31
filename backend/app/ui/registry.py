@@ -20,13 +20,11 @@ class UnknownUITypeError(UIRegistryError):
     """Ein unbekannter Komponenten- oder Aktionstyp wurde angefordert."""
 
 
-def _create_component_registry(
-) -> dict[str, UIComponentDefinition]:
+def _create_component_registry() -> dict[str, UIComponentDefinition]:
     return {}
 
 
-def _create_action_registry(
-) -> dict[str, UIActionDefinition]:
+def _create_action_registry() -> dict[str, UIActionDefinition]:
     return {}
 
 
@@ -66,13 +64,10 @@ class UIRegistry:
 
         if normalized in self._components:
             raise DuplicateUITypeError(
-                f"Die UI-Komponente '{normalized}' "
-                "ist bereits registriert.",
+                f"Die UI-Komponente '{normalized}' ist bereits registriert.",
             )
 
-        self._components[
-            normalized
-        ] = definition
+        self._components[normalized] = definition
 
     def register_action(
         self,
@@ -85,13 +80,10 @@ class UIRegistry:
 
         if normalized in self._actions:
             raise DuplicateUITypeError(
-                f"Die UI-Aktion '{normalized}' "
-                "ist bereits registriert.",
+                f"Die UI-Aktion '{normalized}' ist bereits registriert.",
             )
 
-        self._actions[
-            normalized
-        ] = definition
+        self._actions[normalized] = definition
 
     def require_component(
         self,
@@ -103,8 +95,7 @@ class UIRegistry:
 
         if normalized not in self._components:
             raise UnknownUITypeError(
-                f"Die UI-Komponente '{normalized}' "
-                "ist nicht freigegeben.",
+                f"Die UI-Komponente '{normalized}' ist nicht freigegeben.",
             )
 
         return normalized
@@ -119,8 +110,7 @@ class UIRegistry:
 
         if normalized not in self._actions:
             raise UnknownUITypeError(
-                f"Die UI-Aktion '{normalized}' "
-                "ist nicht freigegeben.",
+                f"Die UI-Aktion '{normalized}' ist nicht freigegeben.",
             )
 
         return normalized
@@ -133,9 +123,7 @@ class UIRegistry:
             component_type,
         )
 
-        return self._components[
-            normalized
-        ]
+        return self._components[normalized]
 
     def get_action(
         self,
@@ -145,9 +133,7 @@ class UIRegistry:
             action_type,
         )
 
-        return self._actions[
-            normalized
-        ]
+        return self._actions[normalized]
 
     def get_component_definitions(
         self,
@@ -196,19 +182,24 @@ class UIRegistry:
 
 
 def _create_component_definition(component_type: str) -> UIComponentDefinition:
-    return UIComponentDefinition.model_validate({
-        "id": component_type,          # <-- ID = component_type
-        "component_type": component_type,
-        # Weitere Felder nach Bedarf
-    })
-    
+    return UIComponentDefinition.model_validate(
+        {
+            "id": component_type,  # <-- ID = component_type
+            "component_type": component_type,
+            # Weitere Felder nach Bedarf
+        }
+    )
+
 
 def _create_action_definition(action_type: str) -> UIActionDefinition:
-    return UIActionDefinition.model_validate({
-        "id": action_type,             # <-- ID = action_type
-        "action_type": action_type,
-        "label": action_type.replace("_", " ").title(),
-    })
+    return UIActionDefinition.model_validate(
+        {
+            "id": action_type,  # <-- ID = action_type
+            "action_type": action_type,
+            "label": action_type.replace("_", " ").title(),
+        }
+    )
+
 
 def create_default_ui_registry() -> UIRegistry:
     """Erstellt die feste Standard-Registry der Anwendung."""

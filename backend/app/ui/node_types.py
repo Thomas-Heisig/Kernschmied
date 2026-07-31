@@ -11,9 +11,7 @@ def create_default_node_types() -> dict[str, NodeTypeDefinition]:
             label="Benutzer",
             icon="UserCircle",
             color="#6366f1",
-            allowed_child_types=(
-                "workspace",
-            ),
+            allowed_child_types=("workspace",),
             allowed_actions=(
                 "rename",
                 "create_child",
@@ -23,9 +21,7 @@ def create_default_node_types() -> dict[str, NodeTypeDefinition]:
             label="Bereich",
             icon="Building2",
             color="#f59e0b",
-            allowed_child_types=(
-                "project",
-            ),
+            allowed_child_types=("project",),
             allowed_actions=(
                 "rename",
                 "delete",
@@ -37,9 +33,7 @@ def create_default_node_types() -> dict[str, NodeTypeDefinition]:
             label="Projekt",
             icon="FolderKanban",
             color="#3b82f6",
-            allowed_child_types=(
-                "chat",
-            ),
+            allowed_child_types=("chat",),
             allowed_actions=(
                 "rename",
                 "delete",

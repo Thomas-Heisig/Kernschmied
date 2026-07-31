@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Protocol, cast
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import (
     SchemaError,
+)
+from jsonschema.exceptions import (
     ValidationError as JsonSchemaValidationError,
 )
 from pydantic import (
@@ -21,14 +23,12 @@ class JsonSchemaValidatorProtocol(Protocol):
     def validate(
         self,
         instance: object,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
-
-class ConfigScope(str, Enum):
+class ConfigScope(StrEnum):
     """
-    Unterstützte fachliche Konfigurationsebenen.
+    Unterstützte fachliche Konfigurations-Ebenen.
 
     Die Enum-Reihenfolge definiert ausdrücklich keine Priorität.
     Die Prioritätsreihenfolge wird zentral im ConfigResolver festgelegt.
@@ -42,7 +42,7 @@ class ConfigScope(str, Enum):
     REQUEST = "request"
 
 
-class ConfigMergeStrategy(str, Enum):
+class ConfigMergeStrategy(StrEnum):
     """
     Unterstützte Strategien zur Zusammenführung mehrerer Scope-Werte.
     """
@@ -52,7 +52,7 @@ class ConfigMergeStrategy(str, Enum):
     DEEP_MERGE = "deep_merge"
 
 
-class ConfigValueType(str, Enum):
+class ConfigValueType(StrEnum):
     """
     Grobe fachliche Typisierung für generische Administrationsoberflächen.
 
@@ -68,7 +68,7 @@ class ConfigValueType(str, Enum):
     NULL = "null"
 
 
-class ConfigUIComponent(str, Enum):
+class ConfigUIComponent(StrEnum):
     """
     Bekannte generische UI-Komponenten.
 
@@ -93,7 +93,7 @@ class ConfigUIComponent(str, Enum):
     HIDDEN = "hidden"
 
 
-class ConfigVisibility(str, Enum):
+class ConfigVisibility(StrEnum):
     """
     Sichtbarkeit einer Definition in administrativen Oberflächen.
     """
@@ -104,7 +104,7 @@ class ConfigVisibility(str, Enum):
     INTERNAL = "internal"
 
 
-class ConfigValueSource(str, Enum):
+class ConfigValueSource(StrEnum):
     """
     Optionale Quelle dynamischer Auswahlwerte.
 
@@ -354,9 +354,7 @@ class ConfigDefinition(BaseModel):
         min_length=1,
     )
 
-    merge_strategy: ConfigMergeStrategy = (
-        ConfigMergeStrategy.REPLACE
-    )
+    merge_strategy: ConfigMergeStrategy = ConfigMergeStrategy.REPLACE
 
     value_type: ConfigValueType | None = None
 
@@ -442,8 +440,7 @@ class ConfigDefinition(BaseModel):
             )
         except SchemaError as exc:
             raise ValueError(
-                f"Ungültiges JSON-Schema für '{self.full_key}': "
-                f"{exc.message}",
+                f"Ungültiges JSON-Schema für '{self.full_key}': {exc.message}",
             ) from exc
 
     def _validate_default_value(self) -> None:
@@ -462,10 +459,7 @@ class ConfigDefinition(BaseModel):
             )
 
         except JsonSchemaValidationError as exc:
-            path = ".".join(
-                str(part)
-                for part in exc.absolute_path
-            )
+            path = ".".join(str(part) for part in exc.absolute_path)
 
             location = path or "<root>"
 
@@ -478,12 +472,8 @@ class ConfigDefinition(BaseModel):
         schema_type = self.value_schema.get("type")
 
         if self.merge_strategy == ConfigMergeStrategy.EXTEND:
-            valid_array_schema = (
-                schema_type == "array"
-                or (
-                    isinstance(schema_type, list)
-                    and "array" in schema_type
-                )
+            valid_array_schema = schema_type == "array" or (
+                isinstance(schema_type, list) and "array" in schema_type
             )
 
             if not valid_array_schema:
@@ -493,12 +483,8 @@ class ConfigDefinition(BaseModel):
                 )
 
         if self.merge_strategy == ConfigMergeStrategy.DEEP_MERGE:
-            valid_object_schema = (
-                schema_type == "object"
-                or (
-                    isinstance(schema_type, list)
-                    and "object" in schema_type
-                )
+            valid_object_schema = schema_type == "object" or (
+                isinstance(schema_type, list) and "object" in schema_type
             )
 
             if not valid_object_schema:
@@ -628,9 +614,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="general",
         key="instance_name",
         display_name="Instanzname",
-        description=(
-            "Anzeigename dieser Kernschmied-Installation."
-        ),
+        description=("Anzeigename dieser Kernschmied-Installation."),
         value_schema={
             "type": "string",
             "minLength": 1,
@@ -657,9 +641,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="general",
         key="default_language",
         display_name="Standardsprache",
-        description=(
-            "Standardsprache der Anwendung und generierter Inhalte."
-        ),
+        description=("Standardsprache der Anwendung und generierter Inhalte."),
         value_schema={
             "type": "string",
             "enum": [
@@ -694,7 +676,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "language",
         },
     ),
-
     # ============================================================
     # Uploads
     # ============================================================
@@ -702,9 +683,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="uploads",
         key="max_size_mb",
         display_name="Maximale Uploadgröße",
-        description=(
-            "Maximale Größe einer einzelnen hochgeladenen Datei."
-        ),
+        description=("Maximale Größe einer einzelnen hochgeladenen Datei."),
         value_schema={
             "type": "integer",
             "minimum": 1,
@@ -723,8 +702,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             order=10,
             unit="MB",
             help_text=(
-                "Die technische Servergrenze darf hierdurch nicht "
-                "überschritten werden."
+                "Die technische Servergrenze darf hierdurch nicht überschritten werden."
             ),
         ),
         tags={
@@ -736,9 +714,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="uploads",
         key="allowed_types",
         display_name="Erlaubte Dateitypen",
-        description=(
-            "Liste der erlaubten MIME-Typen für Datei-Uploads."
-        ),
+        description=("Liste der erlaubten MIME-Typen für Datei-Uploads."),
         value_schema={
             "type": "array",
             "items": {
@@ -774,7 +750,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "security",
         },
     ),
-
     # ============================================================
     # Modelle
     # ============================================================
@@ -831,9 +806,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="models",
         key="temperature",
         display_name="Temperatur",
-        description=(
-            "Steuert die Zufälligkeit der Modellausgabe."
-        ),
+        description=("Steuert die Zufälligkeit der Modellausgabe."),
         value_schema={
             "type": "number",
             "minimum": 0,
@@ -860,8 +833,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             section="Generierung",
             order=20,
             help_text=(
-                "Niedrige Werte liefern stabilere, hohe Werte kreativere "
-                "Antworten."
+                "Niedrige Werte liefern stabilere, hohe Werte kreativere Antworten."
             ),
         ),
         tags={
@@ -873,9 +845,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="models",
         key="max_output_tokens",
         display_name="Maximale Ausgabetokens",
-        description=(
-            "Maximale Anzahl erzeugter Tokens pro Modellantwort."
-        ),
+        description=("Maximale Anzahl erzeugter Tokens pro Modellantwort."),
         value_schema={
             "type": "integer",
             "minimum": 1,
@@ -912,9 +882,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="models",
         key="ollama_host",
         display_name="Ollama-Endpunkt",
-        description=(
-            "Lokale Basis-URL der Ollama-Installation."
-        ),
+        description=("Lokale Basis-URL der Ollama-Installation."),
         value_schema={
             "type": "string",
             "format": "uri",
@@ -946,7 +914,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "infrastructure",
         },
     ),
-
     # ============================================================
     # Tools
     # ============================================================
@@ -954,9 +921,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="tools",
         key="enabled",
         display_name="Tools aktivieren",
-        description=(
-            "Erlaubt grundsätzlich die Nutzung freigegebener Tools."
-        ),
+        description=("Erlaubt grundsätzlich die Nutzung freigegebener Tools."),
         value_schema={
             "type": "boolean",
         },
@@ -989,8 +954,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         key="allowed_tool_ids",
         display_name="Freigegebene Tools",
         description=(
-            "Liste der für den jeweiligen Scope fachlich freigegebenen "
-            "Tool-IDs."
+            "Liste der für den jeweiligen Scope fachlich freigegebenen Tool-IDs."
         ),
         value_schema={
             "type": "array",
@@ -1073,7 +1037,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "security",
         },
     ),
-
     # ============================================================
     # Chat
     # ============================================================
@@ -1081,9 +1044,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="chat",
         key="streaming_enabled",
         display_name="Streaming aktivieren",
-        description=(
-            "Aktiviert SSE-Streaming für Chat-Antworten."
-        ),
+        description=("Aktiviert SSE-Streaming für Chat-Antworten."),
         value_schema={
             "type": "boolean",
         },
@@ -1139,7 +1100,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "limits",
         },
     ),
-
     # ============================================================
     # Prompt-Vererbung
     # ============================================================
@@ -1221,7 +1181,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "inheritance",
         },
     ),
-
     # ============================================================
     # UI
     # ============================================================
@@ -1229,9 +1188,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="ui",
         key="theme",
         display_name="Darstellung",
-        description=(
-            "Bevorzugte Darstellung des Frontends."
-        ),
+        description=("Bevorzugte Darstellung des Frontends."),
         value_schema={
             "type": "string",
             "enum": [
@@ -1309,7 +1266,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "advanced",
         },
     ),
-
     # ============================================================
     # Sicherheit
     # ============================================================
@@ -1352,9 +1308,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
                 ConfigOption(
                     value="none",
                     label="Keine Authentifizierung",
-                    description=(
-                        "Nur für lokale Entwicklung zulässig."
-                    ),
+                    description=("Nur für lokale Entwicklung zulässig."),
                 ),
                 ConfigOption(
                     value="api_key",
@@ -1383,9 +1337,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="security",
         key="session_timeout_minutes",
         display_name="Session-Zeitlimit",
-        description=(
-            "Maximale Dauer einer inaktiven Sitzung."
-        ),
+        description=("Maximale Dauer einer inaktiven Sitzung."),
         value_schema={
             "type": "integer",
             "minimum": 5,
@@ -1467,10 +1419,7 @@ CONFIG_DEFINITION_MAP: dict[
 CONFIG_DEFINITION_KEY_MAP: dict[
     str,
     ConfigDefinition,
-] = {
-    definition.full_key: definition
-    for definition in CONFIG_DEFINITIONS
-}
+] = {definition.full_key: definition for definition in CONFIG_DEFINITIONS}
 
 
 def get_config_definition(
@@ -1493,8 +1442,7 @@ def get_config_definition(
         ]
     except KeyError as exc:
         raise KeyError(
-            f"Unbekannte Konfiguration "
-            f"'{normalized_group}.{normalized_key}'.",
+            f"Unbekannte Konfiguration '{normalized_group}.{normalized_key}'.",
         ) from exc
 
 
@@ -1508,9 +1456,7 @@ def get_config_definition_by_full_key(
     normalized_key = full_key.strip()
 
     try:
-        return CONFIG_DEFINITION_KEY_MAP[
-            normalized_key
-        ]
+        return CONFIG_DEFINITION_KEY_MAP[normalized_key]
     except KeyError as exc:
         raise KeyError(
             f"Unbekannte Konfiguration '{normalized_key}'.",
@@ -1531,29 +1477,16 @@ def list_config_definitions(
     result: list[ConfigDefinition] = []
 
     for definition in CONFIG_DEFINITIONS:
-        if (
-            group is not None
-            and definition.group != group
-        ):
+        if group is not None and definition.group != group:
             continue
 
-        if (
-            scope is not None
-            and scope not in definition.allowed_scopes
-        ):
+        if scope is not None and scope not in definition.allowed_scopes:
             continue
 
-        if (
-            not include_internal
-            and definition.visibility
-            == ConfigVisibility.INTERNAL
-        ):
+        if not include_internal and definition.visibility == ConfigVisibility.INTERNAL:
             continue
 
-        if (
-            not include_deprecated
-            and definition.deprecated
-        ):
+        if not include_deprecated and definition.deprecated:
             continue
 
         result.append(definition)
@@ -1584,8 +1517,7 @@ def validate_definition_registry() -> None:
     for definition in CONFIG_DEFINITIONS:
         if definition.full_key in seen_keys:
             raise RuntimeError(
-                "Doppelte Konfigurationsdefinition: "
-                f"'{definition.full_key}'.",
+                f"Doppelte Konfigurationsdefinition: '{definition.full_key}'.",
             )
 
         seen_keys.add(

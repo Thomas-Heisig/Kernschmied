@@ -33,7 +33,6 @@ from typing import Any, ClassVar, Final
 
 from app.core.exceptions import ApplicationError
 
-
 # ============================================================
 # Fehlercodes
 # ============================================================
@@ -57,38 +56,22 @@ class ModelErrorCode(StrEnum):
 
     MODEL_MANIFEST_INVALID = "MODEL_MANIFEST_INVALID"
     MODEL_MANIFEST_NOT_FOUND = "MODEL_MANIFEST_NOT_FOUND"
-    MODEL_MANIFEST_UNSUPPORTED_VERSION = (
-        "MODEL_MANIFEST_UNSUPPORTED_VERSION"
-    )
+    MODEL_MANIFEST_UNSUPPORTED_VERSION = "MODEL_MANIFEST_UNSUPPORTED_VERSION"
     MODEL_MANIFEST_DUPLICATE = "MODEL_MANIFEST_DUPLICATE"
-    MODEL_MANIFEST_SECURITY_VIOLATION = (
-        "MODEL_MANIFEST_SECURITY_VIOLATION"
-    )
+    MODEL_MANIFEST_SECURITY_VIOLATION = "MODEL_MANIFEST_SECURITY_VIOLATION"
 
     MODEL_PROVIDER_UNKNOWN = "MODEL_PROVIDER_UNKNOWN"
     MODEL_PROVIDER_DUPLICATE = "MODEL_PROVIDER_DUPLICATE"
     MODEL_PROVIDER_IMPORT_FAILED = "MODEL_PROVIDER_IMPORT_FAILED"
     MODEL_PROVIDER_FACTORY_INVALID = "MODEL_PROVIDER_FACTORY_INVALID"
     MODEL_PROVIDER_CREATION_FAILED = "MODEL_PROVIDER_CREATION_FAILED"
-    MODEL_PROVIDER_CONFIGURATION_INVALID = (
-        "MODEL_PROVIDER_CONFIGURATION_INVALID"
-    )
-    MODEL_PROVIDER_DEPENDENCY_MISSING = (
-        "MODEL_PROVIDER_DEPENDENCY_MISSING"
-    )
-    MODEL_PROVIDER_CONNECTION_FAILED = (
-        "MODEL_PROVIDER_CONNECTION_FAILED"
-    )
-    MODEL_PROVIDER_AUTHENTICATION_FAILED = (
-        "MODEL_PROVIDER_AUTHENTICATION_FAILED"
-    )
-    MODEL_PROVIDER_PERMISSION_DENIED = (
-        "MODEL_PROVIDER_PERMISSION_DENIED"
-    )
+    MODEL_PROVIDER_CONFIGURATION_INVALID = "MODEL_PROVIDER_CONFIGURATION_INVALID"
+    MODEL_PROVIDER_DEPENDENCY_MISSING = "MODEL_PROVIDER_DEPENDENCY_MISSING"
+    MODEL_PROVIDER_CONNECTION_FAILED = "MODEL_PROVIDER_CONNECTION_FAILED"
+    MODEL_PROVIDER_AUTHENTICATION_FAILED = "MODEL_PROVIDER_AUTHENTICATION_FAILED"
+    MODEL_PROVIDER_PERMISSION_DENIED = "MODEL_PROVIDER_PERMISSION_DENIED"
     MODEL_PROVIDER_RATE_LIMITED = "MODEL_PROVIDER_RATE_LIMITED"
-    MODEL_PROVIDER_RESPONSE_INVALID = (
-        "MODEL_PROVIDER_RESPONSE_INVALID"
-    )
+    MODEL_PROVIDER_RESPONSE_INVALID = "MODEL_PROVIDER_RESPONSE_INVALID"
     MODEL_PROVIDER_SERVER_ERROR = "MODEL_PROVIDER_SERVER_ERROR"
 
     MODEL_LOAD_FAILED = "MODEL_LOAD_FAILED"
@@ -99,13 +82,9 @@ class ModelErrorCode(StrEnum):
 
     MODEL_REQUEST_INVALID = "MODEL_REQUEST_INVALID"
     MODEL_MESSAGE_INVALID = "MODEL_MESSAGE_INVALID"
-    MODEL_CONTEXT_LIMIT_EXCEEDED = (
-        "MODEL_CONTEXT_LIMIT_EXCEEDED"
-    )
+    MODEL_CONTEXT_LIMIT_EXCEEDED = "MODEL_CONTEXT_LIMIT_EXCEEDED"
     MODEL_OUTPUT_LIMIT_EXCEEDED = "MODEL_OUTPUT_LIMIT_EXCEEDED"
-    MODEL_CAPABILITY_NOT_SUPPORTED = (
-        "MODEL_CAPABILITY_NOT_SUPPORTED"
-    )
+    MODEL_CAPABILITY_NOT_SUPPORTED = "MODEL_CAPABILITY_NOT_SUPPORTED"
 
     MODEL_GENERATION_FAILED = "MODEL_GENERATION_FAILED"
     MODEL_GENERATION_TIMEOUT = "MODEL_GENERATION_TIMEOUT"
@@ -118,9 +97,7 @@ class ModelErrorCode(StrEnum):
 
     MODEL_TOOL_CALL_INVALID = "MODEL_TOOL_CALL_INVALID"
     MODEL_TOOL_CALL_UNSUPPORTED = "MODEL_TOOL_CALL_UNSUPPORTED"
-    MODEL_STRUCTURED_OUTPUT_INVALID = (
-        "MODEL_STRUCTURED_OUTPUT_INVALID"
-    )
+    MODEL_STRUCTURED_OUTPUT_INVALID = "MODEL_STRUCTURED_OUTPUT_INVALID"
 
     MODEL_ACCESS_DENIED = "MODEL_ACCESS_DENIED"
     MODEL_OPERATION_CONFLICT = "MODEL_OPERATION_CONFLICT"
@@ -145,9 +122,7 @@ class ModelError(ApplicationError):
     status_code: ClassVar[int] = int(
         HTTPStatus.INTERNAL_SERVER_ERROR,
     )
-    default_message: ClassVar[str] = (
-        "Im Modellsystem ist ein Fehler aufgetreten."
-    )
+    default_message: ClassVar[str] = "Im Modellsystem ist ein Fehler aufgetreten."
     expose_details: ClassVar[bool] = True
 
     def __init__(
@@ -177,9 +152,7 @@ class ModelNotFoundError(ModelError):
     status_code: ClassVar[int] = int(
         HTTPStatus.NOT_FOUND,
     )
-    default_message: ClassVar[str] = (
-        "Das angeforderte Modell wurde nicht gefunden."
-    )
+    default_message: ClassVar[str] = "Das angeforderte Modell wurde nicht gefunden."
 
     def __init__(
         self,
@@ -202,9 +175,7 @@ class ModelNotRegisteredError(ModelError):
     status_code: ClassVar[int] = int(
         HTTPStatus.NOT_FOUND,
     )
-    default_message: ClassVar[str] = (
-        "Das angeforderte Modell ist nicht registriert."
-    )
+    default_message: ClassVar[str] = "Das angeforderte Modell ist nicht registriert."
 
     def __init__(
         self,
@@ -227,9 +198,7 @@ class DuplicateModelRegistrationError(ModelError):
     status_code: ClassVar[int] = int(
         HTTPStatus.CONFLICT,
     )
-    default_message: ClassVar[str] = (
-        "Das Modell ist bereits registriert."
-    )
+    default_message: ClassVar[str] = "Das Modell ist bereits registriert."
 
     def __init__(
         self,
@@ -252,9 +221,7 @@ class ModelDisabledError(ModelError):
     status_code: ClassVar[int] = int(
         HTTPStatus.CONFLICT,
     )
-    default_message: ClassVar[str] = (
-        "Das angeforderte Modell ist deaktiviert."
-    )
+    default_message: ClassVar[str] = "Das angeforderte Modell ist deaktiviert."
 
     def __init__(
         self,
@@ -316,9 +283,7 @@ class ModelNotReadyError(ModelError):
     status_code: ClassVar[int] = int(
         HTTPStatus.SERVICE_UNAVAILABLE,
     )
-    default_message: ClassVar[str] = (
-        "Das Modell ist noch nicht einsatzbereit."
-    )
+    default_message: ClassVar[str] = "Das Modell ist noch nicht einsatzbereit."
 
     def __init__(
         self,
@@ -353,9 +318,7 @@ class ModelManifestError(ModelError):
     status_code: ClassVar[int] = int(
         HTTPStatus.UNPROCESSABLE_ENTITY,
     )
-    default_message: ClassVar[str] = (
-        "Das Modellmanifest ist ungültig."
-    )
+    default_message: ClassVar[str] = "Das Modellmanifest ist ungültig."
 
 
 class ModelManifestNotFoundError(ModelManifestError):
@@ -363,9 +326,7 @@ class ModelManifestNotFoundError(ModelManifestError):
     status_code: ClassVar[int] = int(
         HTTPStatus.NOT_FOUND,
     )
-    default_message: ClassVar[str] = (
-        "Das Modellmanifest wurde nicht gefunden."
-    )
+    default_message: ClassVar[str] = "Das Modellmanifest wurde nicht gefunden."
 
     def __init__(
         self,
@@ -390,9 +351,7 @@ class InvalidModelManifestError(ModelManifestError):
         self,
         *,
         manifest_path: str | None = None,
-        validation_errors: Sequence[
-            Mapping[str, Any] | str
-        ] | None = None,
+        validation_errors: Sequence[Mapping[str, Any] | str] | None = None,
         message: str | None = None,
         request_id: str | None = None,
         cause: BaseException | None = None,
@@ -407,11 +366,7 @@ class InvalidModelManifestError(ModelManifestError):
 
         if self.validation_errors:
             details["validation_errors"] = [
-                (
-                    dict(error)
-                    if isinstance(error, Mapping)
-                    else str(error)
-                )
+                (dict(error) if isinstance(error, Mapping) else str(error))
                 for error in self.validation_errors
             ]
 
@@ -424,9 +379,7 @@ class InvalidModelManifestError(ModelManifestError):
 
 
 class UnsupportedModelManifestVersionError(ModelManifestError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_MANIFEST_UNSUPPORTED_VERSION.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_MANIFEST_UNSUPPORTED_VERSION.value
     status_code: ClassVar[int] = int(
         HTTPStatus.UNPROCESSABLE_ENTITY,
     )
@@ -489,9 +442,7 @@ class DuplicateModelManifestError(ModelManifestError):
 
 
 class ModelManifestSecurityError(ModelManifestError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_MANIFEST_SECURITY_VIOLATION.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_MANIFEST_SECURITY_VIOLATION.value
     status_code: ClassVar[int] = int(
         HTTPStatus.FORBIDDEN,
     )
@@ -568,9 +519,7 @@ class DuplicateModelProviderError(ModelProviderError):
     status_code: ClassVar[int] = int(
         HTTPStatus.CONFLICT,
     )
-    default_message: ClassVar[str] = (
-        "Der Modell-Provider ist bereits registriert."
-    )
+    default_message: ClassVar[str] = "Der Modell-Provider ist bereits registriert."
 
     def __init__(
         self,
@@ -593,9 +542,7 @@ class ModelProviderImportError(ModelProviderError):
     status_code: ClassVar[int] = int(
         HTTPStatus.SERVICE_UNAVAILABLE,
     )
-    default_message: ClassVar[str] = (
-        "Der Modell-Provider konnte nicht geladen werden."
-    )
+    default_message: ClassVar[str] = "Der Modell-Provider konnte nicht geladen werden."
 
     def __init__(
         self,
@@ -628,15 +575,11 @@ class ModelProviderImportError(ModelProviderError):
 
 
 class InvalidModelProviderFactoryError(ModelProviderError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_PROVIDER_FACTORY_INVALID.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_PROVIDER_FACTORY_INVALID.value
     status_code: ClassVar[int] = int(
         HTTPStatus.INTERNAL_SERVER_ERROR,
     )
-    default_message: ClassVar[str] = (
-        "Die Modell-Provider-Factory ist ungültig."
-    )
+    default_message: ClassVar[str] = "Die Modell-Provider-Factory ist ungültig."
 
     def __init__(
         self,
@@ -660,15 +603,11 @@ class InvalidModelProviderFactoryError(ModelProviderError):
 
 
 class ModelProviderCreationError(ModelProviderError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_PROVIDER_CREATION_FAILED.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_PROVIDER_CREATION_FAILED.value
     status_code: ClassVar[int] = int(
         HTTPStatus.INTERNAL_SERVER_ERROR,
     )
-    default_message: ClassVar[str] = (
-        "Der Modell-Provider konnte nicht erzeugt werden."
-    )
+    default_message: ClassVar[str] = "Der Modell-Provider konnte nicht erzeugt werden."
 
     def __init__(
         self,
@@ -701,9 +640,7 @@ class ModelProviderCreationError(ModelProviderError):
 
 
 class InvalidModelProviderConfigurationError(ModelProviderError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_PROVIDER_CONFIGURATION_INVALID.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_PROVIDER_CONFIGURATION_INVALID.value
     status_code: ClassVar[int] = int(
         HTTPStatus.UNPROCESSABLE_ENTITY,
     )
@@ -747,9 +684,7 @@ class InvalidModelProviderConfigurationError(ModelProviderError):
 
 
 class ModelProviderDependencyError(ModelProviderError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_PROVIDER_DEPENDENCY_MISSING.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_PROVIDER_DEPENDENCY_MISSING.value
     status_code: ClassVar[int] = int(
         HTTPStatus.SERVICE_UNAVAILABLE,
     )
@@ -786,15 +721,11 @@ class ModelProviderDependencyError(ModelProviderError):
 
 
 class ModelProviderConnectionError(ModelProviderError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_PROVIDER_CONNECTION_FAILED.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_PROVIDER_CONNECTION_FAILED.value
     status_code: ClassVar[int] = int(
         HTTPStatus.BAD_GATEWAY,
     )
-    default_message: ClassVar[str] = (
-        "Der Modell-Provider konnte nicht erreicht werden."
-    )
+    default_message: ClassVar[str] = "Der Modell-Provider konnte nicht erreicht werden."
 
     def __init__(
         self,
@@ -832,9 +763,7 @@ class ModelProviderConnectionError(ModelProviderError):
 
 
 class ModelProviderAuthenticationError(ModelProviderError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_PROVIDER_AUTHENTICATION_FAILED.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_PROVIDER_AUTHENTICATION_FAILED.value
     status_code: ClassVar[int] = int(
         HTTPStatus.BAD_GATEWAY,
     )
@@ -873,15 +802,11 @@ class ModelProviderAuthenticationError(ModelProviderError):
 
 
 class ModelProviderPermissionError(ModelProviderError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_PROVIDER_PERMISSION_DENIED.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_PROVIDER_PERMISSION_DENIED.value
     status_code: ClassVar[int] = int(
         HTTPStatus.BAD_GATEWAY,
     )
-    default_message: ClassVar[str] = (
-        "Der Modell-Provider hat den Zugriff verweigert."
-    )
+    default_message: ClassVar[str] = "Der Modell-Provider hat den Zugriff verweigert."
 
     def __init__(
         self,
@@ -918,9 +843,7 @@ class ModelProviderRateLimitError(ModelProviderError):
     status_code: ClassVar[int] = int(
         HTTPStatus.TOO_MANY_REQUESTS,
     )
-    default_message: ClassVar[str] = (
-        "Der Modell-Provider hat die Anfrage begrenzt."
-    )
+    default_message: ClassVar[str] = "Der Modell-Provider hat die Anfrage begrenzt."
 
     def __init__(
         self,
@@ -958,9 +881,7 @@ class ModelProviderRateLimitError(ModelProviderError):
 
 
 class InvalidModelProviderResponseError(ModelProviderError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_PROVIDER_RESPONSE_INVALID.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_PROVIDER_RESPONSE_INVALID.value
     status_code: ClassVar[int] = int(
         HTTPStatus.BAD_GATEWAY,
     )
@@ -1004,9 +925,7 @@ class InvalidModelProviderResponseError(ModelProviderError):
 
 
 class ModelProviderServerError(ModelProviderError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_PROVIDER_SERVER_ERROR.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_PROVIDER_SERVER_ERROR.value
     status_code: ClassVar[int] = int(
         HTTPStatus.BAD_GATEWAY,
     )
@@ -1070,9 +989,7 @@ class ModelLoadError(ModelLifecycleError):
     status_code: ClassVar[int] = int(
         HTTPStatus.SERVICE_UNAVAILABLE,
     )
-    default_message: ClassVar[str] = (
-        "Das Modell konnte nicht geladen werden."
-    )
+    default_message: ClassVar[str] = "Das Modell konnte nicht geladen werden."
 
     def __init__(
         self,
@@ -1109,9 +1026,7 @@ class ModelUnloadError(ModelLifecycleError):
     status_code: ClassVar[int] = int(
         HTTPStatus.INTERNAL_SERVER_ERROR,
     )
-    default_message: ClassVar[str] = (
-        "Das Modell konnte nicht entladen werden."
-    )
+    default_message: ClassVar[str] = "Das Modell konnte nicht entladen werden."
 
     def __init__(
         self,
@@ -1148,9 +1063,7 @@ class ModelAlreadyLoadedError(ModelLifecycleError):
     status_code: ClassVar[int] = int(
         HTTPStatus.CONFLICT,
     )
-    default_message: ClassVar[str] = (
-        "Das Modell ist bereits geladen."
-    )
+    default_message: ClassVar[str] = "Das Modell ist bereits geladen."
 
     def __init__(
         self,
@@ -1173,9 +1086,7 @@ class ModelNotLoadedError(ModelLifecycleError):
     status_code: ClassVar[int] = int(
         HTTPStatus.CONFLICT,
     )
-    default_message: ClassVar[str] = (
-        "Das Modell ist nicht geladen."
-    )
+    default_message: ClassVar[str] = "Das Modell ist nicht geladen."
 
     def __init__(
         self,
@@ -1198,9 +1109,7 @@ class ModelShutdownError(ModelLifecycleError):
     status_code: ClassVar[int] = int(
         HTTPStatus.INTERNAL_SERVER_ERROR,
     )
-    default_message: ClassVar[str] = (
-        "Das Modell-Backend konnte nicht beendet werden."
-    )
+    default_message: ClassVar[str] = "Das Modell-Backend konnte nicht beendet werden."
 
     def __init__(
         self,
@@ -1242,9 +1151,7 @@ class ModelRequestError(ModelError):
     status_code: ClassVar[int] = int(
         HTTPStatus.UNPROCESSABLE_ENTITY,
     )
-    default_message: ClassVar[str] = (
-        "Die Modellanfrage ist ungültig."
-    )
+    default_message: ClassVar[str] = "Die Modellanfrage ist ungültig."
 
 
 class InvalidModelRequestError(ModelRequestError):
@@ -1254,9 +1161,7 @@ class InvalidModelRequestError(ModelRequestError):
         model_id: str | None = None,
         field: str | None = None,
         reason: str | None = None,
-        validation_errors: Sequence[
-            Mapping[str, Any] | str
-        ] | None = None,
+        validation_errors: Sequence[Mapping[str, Any] | str] | None = None,
         request_id: str | None = None,
         cause: BaseException | None = None,
     ) -> None:
@@ -1278,11 +1183,7 @@ class InvalidModelRequestError(ModelRequestError):
 
         if self.validation_errors:
             details["validation_errors"] = [
-                (
-                    dict(error)
-                    if isinstance(error, Mapping)
-                    else str(error)
-                )
+                (dict(error) if isinstance(error, Mapping) else str(error))
                 for error in self.validation_errors
             ]
 
@@ -1295,9 +1196,7 @@ class InvalidModelRequestError(ModelRequestError):
 
 class InvalidModelMessageError(ModelRequestError):
     code: ClassVar[str] = ModelErrorCode.MODEL_MESSAGE_INVALID.value
-    default_message: ClassVar[str] = (
-        "Eine Nachricht der Modellanfrage ist ungültig."
-    )
+    default_message: ClassVar[str] = "Eine Nachricht der Modellanfrage ist ungültig."
 
     def __init__(
         self,
@@ -1329,9 +1228,7 @@ class InvalidModelMessageError(ModelRequestError):
 
 
 class ModelContextLimitError(ModelRequestError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_CONTEXT_LIMIT_EXCEEDED.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_CONTEXT_LIMIT_EXCEEDED.value
     status_code: ClassVar[int] = int(
         HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
     )
@@ -1369,9 +1266,7 @@ class ModelContextLimitError(ModelRequestError):
             details["prompt_tokens"] = prompt_tokens
 
         if reserved_output_tokens is not None:
-            details["reserved_output_tokens"] = (
-                reserved_output_tokens
-            )
+            details["reserved_output_tokens"] = reserved_output_tokens
 
         super().__init__(
             details=details,
@@ -1384,9 +1279,7 @@ class ModelOutputLimitError(ModelRequestError):
     status_code: ClassVar[int] = int(
         HTTPStatus.UNPROCESSABLE_ENTITY,
     )
-    default_message: ClassVar[str] = (
-        "Die angeforderte Ausgabelänge ist nicht zulässig."
-    )
+    default_message: ClassVar[str] = "Die angeforderte Ausgabelänge ist nicht zulässig."
 
     def __init__(
         self,
@@ -1411,9 +1304,7 @@ class ModelOutputLimitError(ModelRequestError):
 
 
 class ModelCapabilityNotSupportedError(ModelRequestError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_CAPABILITY_NOT_SUPPORTED.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_CAPABILITY_NOT_SUPPORTED.value
     status_code: ClassVar[int] = int(
         HTTPStatus.UNPROCESSABLE_ENTITY,
     )
@@ -1457,9 +1348,7 @@ class ModelGenerationError(ModelError):
     status_code: ClassVar[int] = int(
         HTTPStatus.BAD_GATEWAY,
     )
-    default_message: ClassVar[str] = (
-        "Die Modellgenerierung ist fehlgeschlagen."
-    )
+    default_message: ClassVar[str] = "Die Modellgenerierung ist fehlgeschlagen."
 
     def __init__(
         self,
@@ -1530,9 +1419,7 @@ class ModelGenerationTimeoutError(ModelGenerationError):
 class ModelGenerationCancelledError(ModelGenerationError):
     code: ClassVar[str] = ModelErrorCode.MODEL_GENERATION_CANCELLED.value
     status_code: ClassVar[int] = 499
-    default_message: ClassVar[str] = (
-        "Die Modellgenerierung wurde abgebrochen."
-    )
+    default_message: ClassVar[str] = "Die Modellgenerierung wurde abgebrochen."
 
 
 class ModelStreamError(ModelError):
@@ -1540,9 +1427,7 @@ class ModelStreamError(ModelError):
     status_code: ClassVar[int] = int(
         HTTPStatus.BAD_GATEWAY,
     )
-    default_message: ClassVar[str] = (
-        "Der Modellstream ist fehlgeschlagen."
-    )
+    default_message: ClassVar[str] = "Der Modellstream ist fehlgeschlagen."
 
     def __init__(
         self,
@@ -1584,9 +1469,7 @@ class ModelStreamTimeoutError(ModelStreamError):
     status_code: ClassVar[int] = int(
         HTTPStatus.GATEWAY_TIMEOUT,
     )
-    default_message: ClassVar[str] = (
-        "Der Modellstream hat das Zeitlimit überschritten."
-    )
+    default_message: ClassVar[str] = "Der Modellstream hat das Zeitlimit überschritten."
 
     def __init__(
         self,
@@ -1610,9 +1493,7 @@ class ModelStreamTimeoutError(ModelStreamError):
 
 
 class ModelStreamProtocolError(ModelStreamError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_STREAM_PROTOCOL_ERROR.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_STREAM_PROTOCOL_ERROR.value
     status_code: ClassVar[int] = int(
         HTTPStatus.BAD_GATEWAY,
     )
@@ -1647,9 +1528,7 @@ class ModelStreamProtocolError(ModelStreamError):
 class ModelStreamCancelledError(ModelStreamError):
     code: ClassVar[str] = ModelErrorCode.MODEL_STREAM_CANCELLED.value
     status_code: ClassVar[int] = 499
-    default_message: ClassVar[str] = (
-        "Der Modellstream wurde abgebrochen."
-    )
+    default_message: ClassVar[str] = "Der Modellstream wurde abgebrochen."
 
 
 # ============================================================
@@ -1699,12 +1578,8 @@ class InvalidModelToolCallError(ModelRequestError):
 
 
 class ModelToolCallUnsupportedError(ModelRequestError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_TOOL_CALL_UNSUPPORTED.value
-    )
-    default_message: ClassVar[str] = (
-        "Das Modell unterstützt keine Tool-Aufrufe."
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_TOOL_CALL_UNSUPPORTED.value
+    default_message: ClassVar[str] = "Das Modell unterstützt keine Tool-Aufrufe."
 
     def __init__(
         self,
@@ -1730,9 +1605,7 @@ class ModelToolCallUnsupportedError(ModelRequestError):
 
 
 class InvalidStructuredModelOutputError(ModelError):
-    code: ClassVar[str] = (
-        ModelErrorCode.MODEL_STRUCTURED_OUTPUT_INVALID.value
-    )
+    code: ClassVar[str] = ModelErrorCode.MODEL_STRUCTURED_OUTPUT_INVALID.value
     status_code: ClassVar[int] = int(
         HTTPStatus.BAD_GATEWAY,
     )
@@ -1745,9 +1618,7 @@ class InvalidStructuredModelOutputError(ModelError):
         *,
         model_id: str,
         schema_name: str | None = None,
-        validation_errors: Sequence[
-            Mapping[str, Any] | str
-        ] | None = None,
+        validation_errors: Sequence[Mapping[str, Any] | str] | None = None,
         request_id: str | None = None,
         cause: BaseException | None = None,
     ) -> None:
@@ -1764,11 +1635,7 @@ class InvalidStructuredModelOutputError(ModelError):
 
         if self.validation_errors:
             details["validation_errors"] = [
-                (
-                    dict(error)
-                    if isinstance(error, Mapping)
-                    else str(error)
-                )
+                (dict(error) if isinstance(error, Mapping) else str(error))
                 for error in self.validation_errors
             ]
 
@@ -1789,9 +1656,7 @@ class ModelAccessDeniedError(ModelError):
     status_code: ClassVar[int] = int(
         HTTPStatus.FORBIDDEN,
     )
-    default_message: ClassVar[str] = (
-        "Der Zugriff auf das Modell wurde verweigert."
-    )
+    default_message: ClassVar[str] = "Der Zugriff auf das Modell wurde verweigert."
 
     def __init__(
         self,
@@ -1864,9 +1729,7 @@ class ModelOperationConflictError(ModelError):
 # ============================================================
 
 
-_PROVIDER_ERROR_NAME_MAP: Final[
-    dict[str, type[ModelError]]
-] = {
+_PROVIDER_ERROR_NAME_MAP: Final[dict[str, type[ModelError]]] = {
     "authenticationerror": ModelProviderAuthenticationError,
     "permissionerror": ModelProviderPermissionError,
     "ratelimiterror": ModelProviderRateLimitError,
@@ -2072,7 +1935,7 @@ __all__ = [
     "ModelToolCallUnsupportedError",
     "ModelUnavailableError",
     "ModelUnloadError",
-    "UnsupportedModelManifestVersionError",
     "UnknownModelProviderError",
+    "UnsupportedModelManifestVersionError",
     "translate_provider_error",
 ]

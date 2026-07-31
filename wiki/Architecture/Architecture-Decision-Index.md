@@ -77,14 +77,14 @@ Some may later be superseded by newer decisions.
 
 The following status values are used.
 
-| Status | Meaning |
-|----------|----------|
-| Proposed | Under discussion |
-| Accepted | Official architecture |
-| Implemented | Fully implemented |
-| Superseded | Replaced by another ADR |
-| Deprecated | No longer recommended |
-| Archived | Historical documentation |
+| Status      | Meaning                  |
+| ----------- | ------------------------ |
+| Proposed    | Under discussion         |
+| Accepted    | Official architecture    |
+| Implemented | Fully implemented        |
+| Superseded  | Replaced by another ADR  |
+| Deprecated  | No longer recommended    |
+| Archived    | Historical documentation |
 
 ---
 

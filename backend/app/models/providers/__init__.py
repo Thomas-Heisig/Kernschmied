@@ -1,3 +1,5 @@
+# F:\Kernschmied\backend\app\models\providers\__init__.py
+
 """
 Kontrollierte Modell-Provider von Kernschmied.
 
@@ -32,9 +34,10 @@ Architekturregeln:
 
 from __future__ import annotations
 
+import asyncio
 import importlib
 import inspect
-from collections.abc import Mapping
+from collections.abc import Awaitable, Mapping
 from dataclasses import dataclass
 from typing import Final, Protocol, TypeAlias
 
@@ -42,7 +45,6 @@ from app.contracts.model_backend import (
     BaseModelBackend,
     JsonMapping,
 )
-
 
 # ============================================================
 # Typen
@@ -56,12 +58,8 @@ class ModelProviderFactory(Protocol):
     """
     Stabiler Aufrufvertrag einer Modell-Provider-Factory.
 
-    Der Rückgabewert ist absichtlich zunächst `object`.
-
-    Eine dynamisch importierte Python-Funktion kann ihren tatsächlichen
-    Rückgabetyp zur Laufzeit nicht garantieren. Die Registry validiert
-    deshalb das Ergebnis jeder Factory explizit, bevor es als
-    BaseModelBackend akzeptiert wird.
+    Die Factory kann entweder synchron oder asynchron sein.
+    Die Registry behandelt beide Fälle korrekt.
     """
 
     def __call__(
@@ -69,8 +67,7 @@ class ModelProviderFactory(Protocol):
         *,
         provider_config: JsonMapping,
         dependencies: ProviderDependencies | None = None,
-    ) -> object:
-        ...
+    ) -> BaseModelBackend | Awaitable[BaseModelBackend]: ...
 
 
 # ============================================================
@@ -100,8 +97,7 @@ class InvalidModelProviderTypeError(
         self.provider_type = provider_type
 
         super().__init__(
-            f"Ungültiger Modell-Provider-Typ "
-            f"'{provider_type}': {message}",
+            f"Ungültiger Modell-Provider-Typ '{provider_type}': {message}",
         )
 
 
@@ -120,8 +116,7 @@ class UnknownModelProviderError(
         self.provider_type = provider_type
 
         super().__init__(
-            f"Der Modell-Provider '{provider_type}' "
-            "ist nicht registriert.",
+            f"Der Modell-Provider '{provider_type}' ist nicht registriert.",
         )
 
 
@@ -139,8 +134,7 @@ class DuplicateModelProviderError(
         self.provider_type = provider_type
 
         super().__init__(
-            f"Der Modell-Provider '{provider_type}' "
-            "wurde mehrfach registriert.",
+            f"Der Modell-Provider '{provider_type}' wurde mehrfach registriert.",
         )
 
 
@@ -213,8 +207,7 @@ class InvalidModelProviderFactoryError(
         self.provider_type = provider_type
 
         super().__init__(
-            f"Ungültige Factory für Modell-Provider "
-            f"'{provider_type}': {message}",
+            f"Ungültige Factory für Modell-Provider '{provider_type}': {message}",
         )
 
 
@@ -245,44 +238,51 @@ class ModelProviderCreationError(
 # ============================================================
 
 
-def _validate_backend_result(
+async def _validate_and_resolve_backend_result(
     *,
     provider_type: str,
-    result: object,
+    result: BaseModelBackend | Awaitable[BaseModelBackend],
 ) -> BaseModelBackend:
     """
-    Validiert das Ergebnis eines Provider-Factory-Aufrufs.
+    Validiert das Ergebnis eines Provider-Factory-Aufrufs und löst
+    bei Bedarf das Awaitable auf.
 
     Die Prüfung erfolgt zentral, damit sowohl lazy importierte als auch
     direkt registrierte Factorys denselben Sicherheitsgrenzen
     unterliegen.
     """
 
-    if inspect.isawaitable(
-        result,
-    ):
-        raise InvalidModelProviderFactoryError(
-            provider_type=provider_type,
-            message=(
-                "Die Factory hat ein Awaitable zurückgegeben. "
-                "Provider-Factories müssen synchron eine "
-                "BaseModelBackend-Instanz zurückgeben."
-            ),
-        )
+    # Zunächst auflösen, falls asynchron
+    if inspect.isawaitable(result):
+        try:
+            resolved = await result
+        except asyncio.CancelledError:
+            raise
+        except Exception as exc:
+            raise ModelProviderCreationError(
+                provider_type=provider_type,
+                cause=exc,
+            ) from exc
+    else:
+        resolved = result
 
     if not isinstance(
-        result,
+        resolved,
         BaseModelBackend,
-    ):
+    ):  # type: ignore
+        # Hier kann es sich um ein Protokoll handeln – zur Laufzeit prüfen wir
+        # ob es die erforderlichen Methoden hat.
+        # Da BaseModelBackend eine abstrakte Basisklasse ist, funktioniert
+        # isinstance aber sicher.
+        # Falls es ein Protocol wäre, müsste runtime_checkable gesetzt sein.
+        # Da es aber ABC ist, ist die Prüfung korrekt.
+
         raise InvalidModelProviderFactoryError(
             provider_type=provider_type,
-            message=(
-                "Die Factory hat keine BaseModelBackend-Instanz "
-                "zurückgegeben."
-            ),
+            message=("Die Factory hat keine BaseModelBackend-Instanz zurückgegeben."),
         )
 
-    return result
+    return resolved
 
 
 def _copy_provider_config(
@@ -294,10 +294,7 @@ def _copy_provider_config(
     Die enthaltenen Werte bleiben auf JSON-kompatible Werte begrenzt.
     """
 
-    return {
-        key: value
-        for key, value in provider_config.items()
-    }
+    return {key: value for key, value in provider_config.items()}
 
 
 def _copy_dependencies(
@@ -423,23 +420,34 @@ class LazyModelProviderFactory:
         ):
             raise InvalidModelProviderFactoryError(
                 provider_type=self.provider_type,
-                message=(
-                    f"'{self.factory_name}' ist nicht aufrufbar."
-                ),
+                message=(f"'{self.factory_name}' ist nicht aufrufbar."),
             )
 
         def resolved_factory(
             *,
             provider_config: JsonMapping,
             dependencies: ProviderDependencies | None = None,
-        ) -> object:
-            return candidate(
+        ) -> BaseModelBackend | Awaitable[BaseModelBackend]:
+            # Der tatsächliche Rückgabetyp ist dynamisch – er kann
+            # BaseModelBackend oder Awaitable[BaseModelBackend] sein.
+            # Der Aufrufer (Registry) wird das später auflösen.
+            raw_result = candidate(
                 provider_config=_copy_provider_config(
                     provider_config,
                 ),
                 dependencies=_copy_dependencies(
                     dependencies,
                 ),
+            )
+            # raw_result kann entweder BaseModelBackend oder Awaitable sein.
+            # Wir geben es unverändert weiter – der Registry-Code prüft es.
+            # Um Pylance zufriedenzustellen, typisieren wir es als Union.
+            # Da der Union-Typ korrekt ist, hilft ein cast.
+            from typing import cast
+
+            return cast(
+                BaseModelBackend | Awaitable[BaseModelBackend],
+                raw_result,
             )
 
         return resolved_factory
@@ -449,12 +457,12 @@ class LazyModelProviderFactory:
         *,
         provider_config: JsonMapping,
         dependencies: ProviderDependencies | None = None,
-    ) -> object:
+    ) -> BaseModelBackend | Awaitable[BaseModelBackend]:
         """
         Löst die eigentliche Factory auf und führt sie aus.
 
         Die abschließende Backend-Typprüfung übernimmt die Registry
-        zentral in `_validate_backend_result`.
+        zentral in `_validate_and_resolve_backend_result`.
         """
 
         factory = self.resolve()
@@ -484,11 +492,13 @@ class ModelProviderRegistry:
 
     def __init__(
         self,
-        factories: Mapping[
-            str,
-            ModelProviderFactory,
-        ]
-        | None = None,
+        factories: (
+            Mapping[
+                str,
+                ModelProviderFactory,
+            ]
+            | None
+        ) = None,
     ) -> None:
         self._factories: dict[
             str,
@@ -531,9 +541,7 @@ class ModelProviderRegistry:
                 message="Die Factory muss aufrufbar sein.",
             )
 
-        self._factories[
-            normalized_provider_type
-        ] = factory
+        self._factories[normalized_provider_type] = factory
 
     def register_lazy(
         self,
@@ -623,7 +631,7 @@ class ModelProviderRegistry:
 
         return factory
 
-    def create(
+    async def create(
         self,
         *,
         provider_type: str,
@@ -639,6 +647,8 @@ class ModelProviderRegistry:
         - lädt keinen beliebigen Python-Code,
         - verändert die ursprüngliche Provider-Konfiguration nicht,
         - validiert den zurückgegebenen Backend-Typ.
+
+        Die Methode ist async, da Factorys asynchron sein können.
         """
 
         normalized_provider_type = self.normalize_provider_type(
@@ -664,7 +674,9 @@ class ModelProviderRegistry:
                 cause=exc,
             ) from exc
 
-        return _validate_backend_result(
+        # result kann BaseModelBackend oder Awaitable[BaseModelBackend] sein.
+        # Wir lassen die Validierungsfunktion das auflösen.
+        return await _validate_and_resolve_backend_result(
             provider_type=normalized_provider_type,
             result=result,
         )
@@ -694,9 +706,7 @@ class ModelProviderRegistry:
         descriptions: list[dict[str, object]] = []
 
         for provider_type in self.list_provider_types():
-            factory = self._factories[
-                provider_type
-            ]
+            factory = self._factories[provider_type]
 
             if isinstance(
                 factory,
@@ -778,15 +788,10 @@ class ModelProviderRegistry:
             )
 
         allowed_characters: Final[frozenset[str]] = frozenset(
-            "abcdefghijklmnopqrstuvwxyz"
-            "0123456789"
-            "._-",
+            "abcdefghijklmnopqrstuvwxyz0123456789._-",
         )
 
-        if any(
-            character not in allowed_characters
-            for character in normalized
-        ):
+        if any(character not in allowed_characters for character in normalized):
             raise InvalidModelProviderTypeError(
                 provider_type,
                 (
@@ -813,10 +818,44 @@ class BuiltinProviderDefinition:
     module_name: str
     factory_name: str
 
+    def __post_init__(self) -> None:
+        normalized_provider_type = ModelProviderRegistry.normalize_provider_type(
+            self.provider_type,
+        )
 
-BUILTIN_PROVIDER_DEFINITIONS: Final[
-    tuple[BuiltinProviderDefinition, ...]
-] = (
+        module_name = self.module_name.strip()
+        factory_name = self.factory_name.strip()
+
+        if not module_name:
+            raise ValueError(
+                "module_name darf nicht leer sein.",
+            )
+
+        if not factory_name:
+            raise ValueError(
+                "factory_name darf nicht leer sein.",
+            )
+
+        object.__setattr__(
+            self,
+            "provider_type",
+            normalized_provider_type,
+        )
+
+        object.__setattr__(
+            self,
+            "module_name",
+            module_name,
+        )
+
+        object.__setattr__(
+            self,
+            "factory_name",
+            factory_name,
+        )
+
+
+BUILTIN_PROVIDER_DEFINITIONS: Final[tuple[BuiltinProviderDefinition, ...]] = (
     BuiltinProviderDefinition(
         provider_type="anthropic",
         module_name="app.models.providers.anthropic",

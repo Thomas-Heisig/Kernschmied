@@ -10,13 +10,12 @@ from typing import Final, Protocol, cast
 
 from jsonschema import Draft202012Validator
 from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
-from pydantic import JsonValue          # NEU: Pydantic's JsonValue
+from pydantic import JsonValue  # NEU: Pydantic's JsonValue
 
 from app.config.definitions import (
     ConfigDefinition,
     ConfigScope,
 )
-
 
 # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
 JsonScalar = str | int | float | bool | None
@@ -37,8 +36,7 @@ class JsonSchemaValidatorProtocol(Protocol):
     def validate(
         self,
         instance: object,
-    ) -> None:
-        ...
+    ) -> None: ...
 
 
 class ConfigResolverError(Exception):
@@ -56,8 +54,7 @@ class ConfigDefinitionNotFoundError(ConfigResolverError):
         self.key = key
 
         super().__init__(
-            f"Für den Konfigurationsschlüssel '{key}' "
-            "existiert keine Definition.",
+            f"Für den Konfigurationsschlüssel '{key}' existiert keine Definition.",
         )
 
 
@@ -93,11 +90,7 @@ class ConfigMergeError(ConfigResolverError):
         self.override_type = override_type
         self.scope = scope
 
-        scope_message = (
-            f" im Scope '{scope.value}'"
-            if scope is not None
-            else ""
-        )
+        scope_message = f" im Scope '{scope.value}'" if scope is not None else ""
 
         super().__init__(
             f"Die Merge-Strategie '{strategy}' kann für '{key}'"
@@ -118,18 +111,10 @@ class ConfigResolvedValueValidationError(ConfigResolverError):
         self.reason = reason
         self.path = path
 
-        path_text = (
-            ".".join(
-                str(part)
-                for part in path
-            )
-            if path
-            else "<root>"
-        )
+        path_text = ".".join(str(part) for part in path) if path else "<root>"
 
         super().__init__(
-            f"Der aufgelöste Wert für '{key}' ist ungültig "
-            f"an '{path_text}': {reason}",
+            f"Der aufgelöste Wert für '{key}' ist ungültig an '{path_text}': {reason}",
         )
 
 
@@ -149,14 +134,7 @@ class ConfigValueTypeError(ConfigResolverError):
         self.value_type = value_type
         self.path = path
 
-        path_text = (
-            ".".join(
-                str(part)
-                for part in path
-            )
-            if path
-            else "<root>"
-        )
+        path_text = ".".join(str(part) for part in path) if path else "<root>"
 
         super().__init__(
             "Konfigurationswerte müssen JSON-kompatibel sein. "
@@ -411,10 +389,7 @@ def deep_merge(
     - Eingabewerte werden nicht verändert.
     - Rückgabewerte werden tief kopiert.
     """
-    result: JsonObject = {
-        key: clone_json_value(value)
-        for key, value in base.items()
-    }
+    result: JsonObject = {key: clone_json_value(value) for key, value in base.items()}
 
     for key, override_value in override.items():
         if key not in result:
@@ -431,10 +406,7 @@ def deep_merge(
             override_value,
         )
 
-        if (
-            existing_mapping is not None
-            and override_mapping is not None
-        ):
+        if existing_mapping is not None and override_mapping is not None:
             result[key] = deep_merge(
                 existing_mapping,
                 override_mapping,
@@ -503,18 +475,14 @@ class ConfigResolver:
 
             if definition_key in definition_map:
                 raise ValueError(
-                    "Doppelte Konfigurationsdefinition für "
-                    f"'{definition_key}'.",
+                    f"Doppelte Konfigurationsdefinition für '{definition_key}'.",
                 )
 
             merge_strategy = _normalize_merge_strategy(
                 definition.merge_strategy,
             )
 
-            if (
-                merge_strategy
-                not in self.SUPPORTED_MERGE_STRATEGIES
-            ):
+            if merge_strategy not in self.SUPPORTED_MERGE_STRATEGIES:
                 raise ValueError(
                     "Unbekannte Merge-Strategie "
                     f"'{merge_strategy}' für '{definition_key}'.",
@@ -773,10 +741,7 @@ class ConfigResolver:
         }
 
         if include_defaults:
-            keys = (
-                definition_keys
-                | provided_definition_keys
-            )
+            keys = definition_keys | provided_definition_keys
         else:
             keys = provided_definition_keys
 
@@ -791,11 +756,9 @@ class ConfigResolver:
 
             empty_scope_values: dict[ConfigScope, object] = {}
 
-            scope_values: Mapping[ConfigScope, object] = (
-                values_by_key.get(
-                    short_key,
-                    empty_scope_values,
-                )
+            scope_values: Mapping[ConfigScope, object] = values_by_key.get(
+                short_key,
+                empty_scope_values,
             )
 
             resolved[short_key] = self.resolve(
@@ -846,10 +809,7 @@ class ConfigResolver:
                 override,
             )
 
-            if (
-                base_list is not None
-                and override_list is not None
-            ):
+            if base_list is not None and override_list is not None:
                 merged_values: list[JsonValue] = [
                     clone_json_value(
                         item,
@@ -883,10 +843,7 @@ class ConfigResolver:
                 override,
             )
 
-            if (
-                base_mapping is not None
-                and override_mapping is not None
-            ):
+            if base_mapping is not None and override_mapping is not None:
                 return deep_merge(
                     base_mapping,
                     override_mapping,
@@ -961,20 +918,14 @@ class ConfigResolver:
             )
 
         missing_scopes: list[ConfigScope] = [
-            scope
-            for scope in ConfigScope
-            if scope not in normalized
+            scope for scope in ConfigScope if scope not in normalized
         ]
 
         if missing_scopes:
-            missing_names = ", ".join(
-                scope.value
-                for scope in missing_scopes
-            )
+            missing_names = ", ".join(scope.value for scope in missing_scopes)
 
             raise ConfigScopeOrderError(
-                "Die Scope-Reihenfolge ist unvollständig. "
-                f"Fehlend: {missing_names}.",
+                f"Die Scope-Reihenfolge ist unvollständig. Fehlend: {missing_names}.",
             )
 
         return tuple(

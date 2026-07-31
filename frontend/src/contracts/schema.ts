@@ -31,11 +31,11 @@ export const KNOWN_ACTION_KINDS = [
   // ============================================================
   // Chat-bezogene Aktionen
   // ============================================================
-  "create_chat",        // Neuen Chat im aktuellen Kontext erstellen
-  "rename_chat",        // Chat umbenennen
-  "delete_chat",        // Chat löschen
-  "archive_chat",       // Chat archivieren
-  "export_chat",        // Chat exportieren (z.B. als JSON, PDF)
+  "create_chat", // Neuen Chat im aktuellen Kontext erstellen
+  "rename_chat", // Chat umbenennen
+  "delete_chat", // Chat löschen
+  "archive_chat", // Chat archivieren
+  "export_chat", // Chat exportieren (z.B. als JSON, PDF)
 
   // ============================================================
   // Workspace-/Projekt-bezogene Aktionen
@@ -50,23 +50,19 @@ export const KNOWN_ACTION_KINDS = [
   // ============================================================
   // Allgemeine Aktionen
   // ============================================================
-  "refresh",            // Aktuelle Ansicht neu laden
-  "settings",           // Einstellungen öffnen
-  "help",               // Hilfe anzeigen
-  "logout",             // Abmelden (wird über Auth behandelt)
+  "refresh", // Aktuelle Ansicht neu laden
+  "settings", // Einstellungen öffnen
+  "help", // Hilfe anzeigen
+  "logout", // Abmelden (wird über Auth behandelt)
 ] as const;
 
-export type KnownActionKind = typeof KNOWN_ACTION_KINDS[number];
+export type KnownActionKind = (typeof KNOWN_ACTION_KINDS)[number];
 
 // ============================================================
 // JSON-Typen
 // ============================================================
 
-export type JsonScalar =
-  | string
-  | number
-  | boolean
-  | null;
+export type JsonScalar = string | number | boolean | null;
 
 /**
  * Rekursive Typdefinition für JSON-Werte.
@@ -75,10 +71,7 @@ export type JsonScalar =
  * ohne einen separaten `JsonObject`-Alias, der auf `JsonValue` verweist.
  * Dadurch wird die zirkuläre Referenz vermieden.
  */
-export type JsonValue =
-  | JsonScalar
-  | { [key: string]: JsonValue }
-  | JsonValue[];
+export type JsonValue = JsonScalar | { [key: string]: JsonValue } | JsonValue[];
 
 /**
  * Alias für ein JSON-Objekt, das ausschließlich `JsonValue`-Werte enthält.
@@ -104,12 +97,7 @@ export interface UIComponentDefinition {
   enabled?: boolean;
 }
 
-export type UIActionMethod =
-  | "GET"
-  | "POST"
-  | "PUT"
-  | "PATCH"
-  | "DELETE";
+export type UIActionMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export interface UIActionDefinition {
   id: string;
@@ -145,14 +133,13 @@ export interface UIFormDefinition {
  * transportieren und anzeigen, aber unbekannte Komponenten und
  * Aktionen niemals automatisch ausführen.
  */
-export type UISchemaRegistry =
-  Record<string, JsonObject>;
+export type UISchemaRegistry = Record<string, JsonObject>;
 
 export interface UISchemaDocument {
   schema_name: string;
   schema_version: string;
 
-  node_types: UISchemaRegistry;     // ← jetzt als Registry
+  node_types: UISchemaRegistry; // ← jetzt als Registry
   forms: UISchemaRegistry;
   components: UISchemaRegistry;
   actions: UISchemaRegistry;
@@ -204,9 +191,7 @@ export interface UISchemaParseFailure {
   issues: SchemaValidationIssue[];
 }
 
-export type UISchemaParseResult =
-  | UISchemaParseSuccess
-  | UISchemaParseFailure;
+export type UISchemaParseResult = UISchemaParseSuccess | UISchemaParseFailure;
 
 export interface UISchemaResponseParseSuccess {
   valid: true;
@@ -223,21 +208,14 @@ export interface UISchemaResponseParseFailure {
 }
 
 export type UISchemaResponseParseResult =
-  | UISchemaResponseParseSuccess
-  | UISchemaResponseParseFailure;
+  UISchemaResponseParseSuccess | UISchemaResponseParseFailure;
 
 // ============================================================
 // Laufzeit-Typprüfungen
 // ============================================================
 
-export function isRecord(
-  value: unknown,
-): value is Record<string, unknown> {
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    !Array.isArray(value)
-  );
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
 export function isJsonValue(
@@ -267,33 +245,18 @@ export function isJsonValue(
   seen.add(value);
 
   if (Array.isArray(value)) {
-    return value.every((entry) =>
-      isJsonValue(entry, seen),
-    );
+    return value.every((entry) => isJsonValue(entry, seen));
   }
 
-  return Object.values(value).every((entry) =>
-    isJsonValue(entry, seen),
-  );
+  return Object.values(value).every((entry) => isJsonValue(entry, seen));
 }
 
-function isNonEmptyString(
-  value: unknown,
-): value is string {
-  return (
-    typeof value === "string" &&
-    value.trim().length > 0
-  );
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
 }
 
-function isNonNegativeInteger(
-  value: unknown,
-): value is number {
-  return (
-    typeof value === "number" &&
-    Number.isInteger(value) &&
-    value >= 0
-  );
+function isNonNegativeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
 function addIssue(
@@ -323,8 +286,7 @@ function validateJsonObject(
     addIssue(issues, {
       path,
       code: "invalid_json_value",
-      message:
-        `${path} enthält einen nicht unterstützten JSON-Wert.`,
+      message: `${path} enthält einen nicht unterstützten JSON-Wert.`,
       received: value,
     });
 
@@ -343,8 +305,7 @@ function validateRegistry(
     addIssue(issues, {
       path,
       code: "expected_registry",
-      message:
-        `${path} muss ein Registry-Objekt sein.`,
+      message: `${path} muss ein Registry-Objekt sein.`,
       received: value,
     });
 
@@ -353,18 +314,14 @@ function validateRegistry(
 
   let valid = true;
 
-  for (
-    const [registryKey, registryValue]
-    of Object.entries(value)
-  ) {
+  for (const [registryKey, registryValue] of Object.entries(value)) {
     if (!registryKey.trim()) {
       valid = false;
 
       addIssue(issues, {
         path,
         code: "empty_registry_key",
-        message:
-          `${path} enthält einen leeren Registry-Schlüssel.`,
+        message: `${path} enthält einen leeren Registry-Schlüssel.`,
       });
 
       continue;
@@ -376,8 +333,7 @@ function validateRegistry(
       addIssue(issues, {
         path: `${path}.${registryKey}`,
         code: "expected_registry_entry",
-        message:
-          `${path}.${registryKey} muss ein Objekt sein.`,
+        message: `${path}.${registryKey} muss ein Objekt sein.`,
         received: registryValue,
       });
 
@@ -390,8 +346,7 @@ function validateRegistry(
       addIssue(issues, {
         path: `${path}.${registryKey}`,
         code: "invalid_json_value",
-        message:
-          `${path}.${registryKey} enthält ungültige JSON-Werte.`,
+        message: `${path}.${registryKey} enthält ungültige JSON-Werte.`,
         received: registryValue,
       });
     }
@@ -429,8 +384,7 @@ function validateOptionalBooleanRecord(
       addIssue(issues, {
         path: `${path}.${key}`,
         code: "expected_boolean",
-        message:
-          `${path}.${key} muss ein boolescher Wert sein.`,
+        message: `${path}.${key} muss ein boolescher Wert sein.`,
         received: entry,
       });
     }
@@ -439,17 +393,14 @@ function validateOptionalBooleanRecord(
   return valid;
 }
 
-export function validateUISchema(
-  value: unknown,
-): SchemaValidationIssue[] {
+export function validateUISchema(value: unknown): SchemaValidationIssue[] {
   const issues: SchemaValidationIssue[] = [];
 
   if (!isRecord(value)) {
     addIssue(issues, {
       path: "$",
       code: "expected_object",
-      message:
-        "Das UI-Schema muss ein Objekt sein.",
+      message: "Das UI-Schema muss ein Objekt sein.",
       received: value,
     });
 
@@ -460,8 +411,7 @@ export function validateUISchema(
     addIssue(issues, {
       path: "$.schema_name",
       code: "invalid_schema_name",
-      message:
-        "schema_name muss eine nicht leere Zeichenfolge sein.",
+      message: "schema_name muss eine nicht leere Zeichenfolge sein.",
       received: value.schema_name,
     });
   }
@@ -470,41 +420,20 @@ export function validateUISchema(
     addIssue(issues, {
       path: "$.schema_version",
       code: "invalid_schema_version",
-      message:
-        "schema_version muss eine nicht leere Zeichenfolge sein.",
+      message: "schema_version muss eine nicht leere Zeichenfolge sein.",
       received: value.schema_version,
     });
   }
 
-  validateJsonObject(
-    value.node_types,
-    "$.node_types",
-    issues,
-  );
+  validateJsonObject(value.node_types, "$.node_types", issues);
 
-  validateRegistry(
-    value.forms,
-    "$.forms",
-    issues,
-  );
+  validateRegistry(value.forms, "$.forms", issues);
 
-  validateRegistry(
-    value.components,
-    "$.components",
-    issues,
-  );
+  validateRegistry(value.components, "$.components", issues);
 
-  validateRegistry(
-    value.actions,
-    "$.actions",
-    issues,
-  );
+  validateRegistry(value.actions, "$.actions", issues);
 
-  validateJsonObject(
-    value.metadata,
-    "$.metadata",
-    issues,
-  );
+  validateJsonObject(value.metadata, "$.metadata", issues);
 
   if (
     value.minimum_client_version !== undefined &&
@@ -519,37 +448,25 @@ export function validateUISchema(
     });
   }
 
-  if (
-    value.revision !== undefined &&
-    !isNonNegativeInteger(value.revision)
-  ) {
+  if (value.revision !== undefined && !isNonNegativeInteger(value.revision)) {
     addIssue(issues, {
       path: "$.revision",
       code: "invalid_revision",
-      message:
-        "revision muss eine nicht negative Ganzzahl sein.",
+      message: "revision muss eine nicht negative Ganzzahl sein.",
       received: value.revision,
     });
   }
 
-  validateOptionalBooleanRecord(
-    value.feature_flags,
-    "$.feature_flags",
-    issues,
-  );
+  validateOptionalBooleanRecord(value.feature_flags, "$.feature_flags", issues);
 
   return issues;
 }
 
-export function isUISchema(
-  value: unknown,
-): value is UISchema {
+export function isUISchema(value: unknown): value is UISchema {
   return validateUISchema(value).length === 0;
 }
 
-export function parseUISchema(
-  value: unknown,
-): UISchemaParseResult {
+export function parseUISchema(value: unknown): UISchemaParseResult {
   const issues = validateUISchema(value);
 
   if (issues.length > 0) {
@@ -576,8 +493,7 @@ export function validateUISchemaResponse(
     addIssue(issues, {
       path: "$",
       code: "expected_response_object",
-      message:
-        "Die UI-Schema-Antwort muss ein Objekt sein.",
+      message: "Die UI-Schema-Antwort muss ein Objekt sein.",
       received: value,
     });
 
@@ -588,8 +504,7 @@ export function validateUISchemaResponse(
     addIssue(issues, {
       path: "$.api_schema_version",
       code: "invalid_api_schema_version",
-      message:
-        "api_schema_version muss eine nicht leere Zeichenfolge sein.",
+      message: "api_schema_version muss eine nicht leere Zeichenfolge sein.",
       received: value.api_schema_version,
     });
   }
@@ -598,8 +513,7 @@ export function validateUISchemaResponse(
     addIssue(issues, {
       path: "$.ui_schema_version",
       code: "invalid_ui_schema_version",
-      message:
-        "ui_schema_version muss eine nicht leere Zeichenfolge sein.",
+      message: "ui_schema_version muss eine nicht leere Zeichenfolge sein.",
       received: value.ui_schema_version,
     });
   }
@@ -608,8 +522,7 @@ export function validateUISchemaResponse(
     addIssue(issues, {
       path: "$.config_revision",
       code: "invalid_config_revision",
-      message:
-        "config_revision muss eine nicht negative Ganzzahl sein.",
+      message: "config_revision muss eine nicht negative Ganzzahl sein.",
       received: value.config_revision,
     });
   }
@@ -622,22 +535,17 @@ export function validateUISchemaResponse(
     addIssue(issues, {
       path: "$.request_id",
       code: "invalid_request_id",
-      message:
-        "request_id muss null oder eine nicht leere Zeichenfolge sein.",
+      message: "request_id muss null oder eine nicht leere Zeichenfolge sein.",
       received: value.request_id,
     });
   }
 
-  const schemaIssues =
-    validateUISchema(value.schema);
+  const schemaIssues = validateUISchema(value.schema);
 
   for (const issue of schemaIssues) {
     addIssue(issues, {
       ...issue,
-      path:
-        issue.path === "$"
-          ? "$.schema"
-          : `$.schema${issue.path.slice(1)}`,
+      path: issue.path === "$" ? "$.schema" : `$.schema${issue.path.slice(1)}`,
     });
   }
 
@@ -645,8 +553,7 @@ export function validateUISchemaResponse(
     isNonEmptyString(value.ui_schema_version) &&
     isRecord(value.schema) &&
     isNonEmptyString(value.schema.schema_version) &&
-    value.ui_schema_version !==
-      value.schema.schema_version
+    value.ui_schema_version !== value.schema.schema_version
   ) {
     addIssue(issues, {
       path: "$.ui_schema_version",
@@ -654,10 +561,8 @@ export function validateUISchemaResponse(
       message:
         "ui_schema_version stimmt nicht mit schema.schema_version überein.",
       received: {
-        ui_schema_version:
-          value.ui_schema_version,
-        schema_version:
-          value.schema.schema_version,
+        ui_schema_version: value.ui_schema_version,
+        schema_version: value.schema.schema_version,
       },
     });
   }
@@ -665,19 +570,14 @@ export function validateUISchemaResponse(
   return issues;
 }
 
-export function isUISchemaResponse(
-  value: unknown,
-): value is UISchemaResponse {
-  return (
-    validateUISchemaResponse(value).length === 0
-  );
+export function isUISchemaResponse(value: unknown): value is UISchemaResponse {
+  return validateUISchemaResponse(value).length === 0;
 }
 
 export function parseUISchemaResponse(
   value: unknown,
 ): UISchemaResponseParseResult {
-  const issues =
-    validateUISchemaResponse(value);
+  const issues = validateUISchemaResponse(value);
 
   if (issues.length > 0) {
     return {
@@ -688,8 +588,7 @@ export function parseUISchemaResponse(
     };
   }
 
-  const response =
-    value as UISchemaResponse;
+  const response = value as UISchemaResponse;
 
   return {
     valid: true,

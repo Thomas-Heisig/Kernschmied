@@ -1,3 +1,5 @@
+# F:\Kernschmied\backend\app\models\providers\google_gemini.py
+
 from __future__ import annotations
 
 import logging
@@ -7,7 +9,6 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-
 from typing import Protocol, TypeAlias, cast
 
 from google import genai
@@ -27,12 +28,12 @@ from app.contracts.model_backend import (
     Usage,
 )
 
-
 logger = logging.getLogger(__name__)
 
 
 GeminiContentList: TypeAlias = list[types.Content]
 ProviderDependencies: TypeAlias = Mapping[str, object]
+
 
 class GeminiAsyncModelsProtocol(Protocol):
     """
@@ -50,10 +51,8 @@ class GeminiAsyncModelsProtocol(Protocol):
         model: str,
         contents: GeminiContentList,
         config: types.GenerateContentConfig,
-    ) -> Awaitable[
-        AsyncIterator[types.GenerateContentResponse]
-    ]:
-        ...
+    ) -> Awaitable[AsyncIterator[types.GenerateContentResponse]]: ...
+
 
 DEFAULT_MODEL = "gemini-2.5-flash"
 DEFAULT_MAX_TOKENS = 4096
@@ -101,8 +100,7 @@ class GoogleGeminiRequestError(
         self.retryable = retryable
 
         super().__init__(
-            f"Gemini-Anfrage für Modell '{model_id}' "
-            f"fehlgeschlagen: {reason}",
+            f"Gemini-Anfrage für Modell '{model_id}' fehlgeschlagen: {reason}",
         )
 
 
@@ -158,9 +156,7 @@ class GoogleGeminiProvider(BaseModelBackend):
                 ),
             )
         else:
-            self._model_ids = (
-                self._default_model,
-            )
+            self._model_ids = (self._default_model,)
 
         if self._default_model not in self._model_ids:
             self._model_ids = (
@@ -181,6 +177,17 @@ class GoogleGeminiProvider(BaseModelBackend):
     @property
     def backend_name(self) -> str:
         return "google_gemini"
+
+    # ========================================================
+    # Implementierung der abstrakten Methode get_model_info
+    # ========================================================
+
+    def get_model_info(self) -> ModelInfo:
+        """
+        Gibt die Modellinformationen des Backends zurück.
+        Für Gemini verwenden wir das Standardmodell.
+        """
+        return self._create_model_info(self._default_model)
 
     async def is_available(self) -> bool:
         """
@@ -222,8 +229,7 @@ class GoogleGeminiProvider(BaseModelBackend):
 
         if normalized_model_id not in self._model_ids:
             raise GoogleGeminiModelNotFoundError(
-                f"Das Gemini-Modell '{normalized_model_id}' "
-                "ist nicht freigegeben.",
+                f"Das Gemini-Modell '{normalized_model_id}' ist nicht freigegeben.",
             )
 
         return self._create_model_info(
@@ -259,8 +265,7 @@ class GoogleGeminiProvider(BaseModelBackend):
 
         except Exception:
             logger.exception(
-                "Der asynchrone Gemini-Client konnte nicht sauber "
-                "geschlossen werden.",
+                "Der asynchrone Gemini-Client konnte nicht sauber geschlossen werden.",
                 extra={
                     "backend": self.backend_name,
                 },
@@ -271,8 +276,7 @@ class GoogleGeminiProvider(BaseModelBackend):
 
         except Exception:
             logger.exception(
-                "Der synchrone Gemini-Client konnte nicht sauber "
-                "geschlossen werden.",
+                "Der synchrone Gemini-Client konnte nicht sauber geschlossen werden.",
                 extra={
                     "backend": self.backend_name,
                 },
@@ -329,18 +333,15 @@ class GoogleGeminiProvider(BaseModelBackend):
             response_id: str | None = None
 
             async for chunk in response_stream:
-                if (
-                    response_id is None
-                    and chunk.response_id is not None
-                ):
+                if response_id is None and chunk.response_id is not None:
                     response_id = chunk.response_id
 
                 if chunk.usage_metadata is not None:
                     usage = _create_usage(
-                        prompt_tokens=_normalize_token_count(
+                        input_tokens=_normalize_token_count(
                             chunk.usage_metadata.prompt_token_count,
                         ),
-                        completion_tokens=_normalize_token_count(
+                        output_tokens=_normalize_token_count(
                             chunk.usage_metadata.candidates_token_count,
                         ),
                         total_tokens=_normalize_token_count(
@@ -376,8 +377,9 @@ class GoogleGeminiProvider(BaseModelBackend):
             if finish_reason is not None:
                 end_data["finish_reason"] = finish_reason
 
+            # Korrektur: StreamEventType.END durch COMPLETE ersetzen
             yield StreamEvent.create(
-                type=StreamEventType.END,
+                type=StreamEventType.COMPLETE,
                 usage=usage,
                 data=end_data,
             )
@@ -442,8 +444,7 @@ class GoogleGeminiProvider(BaseModelBackend):
             yield StreamEvent.create(
                 type=StreamEventType.ERROR,
                 content=(
-                    "Bei der Gemini-Anfrage ist ein "
-                    "unerwarteter Fehler aufgetreten."
+                    "Bei der Gemini-Anfrage ist ein unerwarteter Fehler aufgetreten."
                 ),
                 data={
                     "backend": self.backend_name,
@@ -509,16 +510,11 @@ class GoogleGeminiProvider(BaseModelBackend):
 
         normalized_model_id = requested_model_id.strip()
 
-        model_id = (
-            normalized_model_id
-            if normalized_model_id
-            else self._default_model
-        )
+        model_id = normalized_model_id if normalized_model_id else self._default_model
 
         if model_id not in self._model_ids:
             raise GoogleGeminiModelNotFoundError(
-                f"Das Gemini-Modell '{model_id}' "
-                "ist nicht freigegeben.",
+                f"Das Gemini-Modell '{model_id}' ist nicht freigegeben.",
             )
 
         return model_id
@@ -675,10 +671,7 @@ def _format_tool_result(
             identifiers,
         )
 
-        return (
-            f"Tool-Ergebnis ({header}):\n"
-            f"{content}"
-        )
+        return f"Tool-Ergebnis ({header}):\n{content}"
 
     return f"Tool-Ergebnis:\n{content}"
 
@@ -742,26 +735,25 @@ def _read_finish_reason(
 
 def _create_usage(
     *,
-    prompt_tokens: int,
-    completion_tokens: int,
+    input_tokens: int,
+    output_tokens: int,
     total_tokens: int,
 ) -> Usage:
     """
     Übersetzt Gemini-Nutzungsdaten in den Backendvertrag.
-    """
 
+    Korrigierte Feldnamen: input_tokens, output_tokens, total_tokens.
+    """
     calculated_total = total_tokens
 
     if calculated_total == 0:
-        calculated_total = (
-            prompt_tokens
-            + completion_tokens
-        )
+        calculated_total = input_tokens + output_tokens
 
     return Usage(
-        prompt_tokens=prompt_tokens,
-        completion_tokens=completion_tokens,
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
         total_tokens=calculated_total,
+        metadata={},  # Gemini liefert keine zusätzlichen Metadaten
     )
 
 
@@ -832,10 +824,7 @@ def _is_retryable_api_error(
         "timed out",
     )
 
-    return any(
-        marker in normalized_message
-        for marker in retryable_markers
-    )
+    return any(marker in normalized_message for marker in retryable_markers)
 
 
 def _resolve_max_tokens(

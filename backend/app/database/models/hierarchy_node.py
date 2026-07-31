@@ -2,24 +2,23 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from pydantic import JsonValue
 from sqlalchemy import (
+    JSON,
     Boolean,
     DateTime,
     ForeignKey,
     Index,
     Integer,
-    JSON,
     String,
     Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
-
 
 # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
 JsonScalar = str | int | float | bool | None
@@ -32,7 +31,7 @@ def utc_now() -> datetime:
     """
 
     return datetime.now(
-        timezone.utc,
+        UTC,
     )
 
 

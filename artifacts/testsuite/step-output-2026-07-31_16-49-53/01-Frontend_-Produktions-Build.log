@@ -1,0 +1,12 @@
+COMMAND: npm run build
+WORKING DIRECTORY: F:\Kernschmied\frontend
+EXIT CODE: 1
+
+> dynamic-chat-frontend@0.1.0 build
+> tsc -b && vite build
+
+src/app/AppProviders.tsx(16,3): error TS2322: Type '({ children }: ThemeProviderProps) => Element' is not assignable to type 'ApplicationProvider'.
+  Type '({ children }: ThemeProviderProps) => Element' is not assignable to type 'FunctionComponent<{ children?: ReactNode; }>'.
+    Types of parameters '__0' and 'props' are incompatible.
+      Type '{ children?: ReactNode; }' is not assignable to type 'ThemeProviderProps'.
+        Property 'children' is optional in type '{ children?: ReactNode; }' but required in type 'ThemeProviderProps'.

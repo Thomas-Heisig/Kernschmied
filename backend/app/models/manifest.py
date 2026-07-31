@@ -44,7 +44,6 @@ from app.models.errors import (
     UnsupportedModelManifestVersionError,
 )
 
-
 # ============================================================
 # JSON-Typen
 # ============================================================
@@ -250,8 +249,7 @@ class ModelSecretReference(ManifestBaseModel):
             )
         ):
             raise ValueError(
-                "Der Name einer Secret-Referenz enthält unzulässige "
-                "Steuerzeichen.",
+                "Der Name einer Secret-Referenz enthält unzulässige Steuerzeichen.",
             )
 
         return normalized
@@ -336,8 +334,7 @@ class ModelProviderManifest(ManifestBaseModel):
 
             if normalized_key in result:
                 raise ValueError(
-                    f"Der Secret-Schlüssel '{normalized_key}' ist "
-                    "mehrfach vorhanden.",
+                    f"Der Secret-Schlüssel '{normalized_key}' ist mehrfach vorhanden.",
                 )
 
             result[normalized_key] = reference
@@ -348,10 +345,7 @@ class ModelProviderManifest(ManifestBaseModel):
     def validate_secret_separation(
         self,
     ) -> Self:
-        config_keys = {
-            key.lower()
-            for key in self.config
-        }
+        config_keys = {key.lower() for key in self.config}
 
         for secret_name in self.secrets:
             if secret_name in config_keys:
@@ -415,8 +409,7 @@ class ModelLimitsManifest(ManifestBaseModel):
             and self.max_input_tokens > self.context_window
         ):
             raise ValueError(
-                "max_input_tokens darf context_window nicht "
-                "überschreiten.",
+                "max_input_tokens darf context_window nicht überschreiten.",
             )
 
         if (
@@ -425,8 +418,7 @@ class ModelLimitsManifest(ManifestBaseModel):
             and self.max_output_tokens > self.context_window
         ):
             raise ValueError(
-                "max_output_tokens darf context_window nicht "
-                "überschreiten.",
+                "max_output_tokens darf context_window nicht überschreiten.",
             )
 
         return self
@@ -476,18 +468,12 @@ class ModelLifecycleManifest(ManifestBaseModel):
                 "eager_load erfordert eager_create=true.",
             )
 
-        if (
-            self.unload_when_idle
-            and self.idle_unload_seconds is None
-        ):
+        if self.unload_when_idle and self.idle_unload_seconds is None:
             raise ValueError(
                 "unload_when_idle erfordert idle_unload_seconds.",
             )
 
-        if (
-            not self.unload_when_idle
-            and self.idle_unload_seconds is not None
-        ):
+        if not self.unload_when_idle and self.idle_unload_seconds is not None:
             raise ValueError(
                 "idle_unload_seconds darf nur zusammen mit "
                 "unload_when_idle=true gesetzt werden.",
@@ -720,8 +706,7 @@ class ModelManifest(ManifestBaseModel):
 
         if len(normalized) > MAX_METADATA_ENTRIES:
             raise ValueError(
-                f"metadata darf höchstens {MAX_METADATA_ENTRIES} "
-                "Einträge enthalten.",
+                f"metadata darf höchstens {MAX_METADATA_ENTRIES} Einträge enthalten.",
             )
 
         _validate_no_secret_values(
@@ -744,33 +729,23 @@ class ModelManifest(ManifestBaseModel):
         ):
             if (
                 required_capability in capabilities
-                and ModelManifestCapability.CHAT.value
-                not in capabilities
+                and ModelManifestCapability.CHAT.value not in capabilities
             ):
                 raise ValueError(
-                    f"Die Capability '{required_capability}' "
-                    "erfordert 'chat'.",
+                    f"Die Capability '{required_capability}' erfordert 'chat'.",
                 )
 
-        if (
-            self.status == ModelManifestStatus.DISABLED
-            and self.enabled
-        ):
+        if self.status == ModelManifestStatus.DISABLED and self.enabled:
             raise ValueError(
-                "Ein Manifest mit status='disabled' muss enabled=false "
-                "verwenden.",
+                "Ein Manifest mit status='disabled' muss enabled=false verwenden.",
             )
 
-        if (
-            self.runtime == ModelRuntimeKind.LOCAL
-            and self.provider.type
-            in {
-                "openai",
-                "anthropic",
-                "azure_openai",
-                "google_gemini",
-            }
-        ):
+        if self.runtime == ModelRuntimeKind.LOCAL and self.provider.type in {
+            "openai",
+            "anthropic",
+            "azure_openai",
+            "google_gemini",
+        }:
             raise ValueError(
                 f"Der Provider '{self.provider.type}' ist nicht mit "
                 "runtime='local' vereinbar.",
@@ -780,10 +755,7 @@ class ModelManifest(ManifestBaseModel):
 
     @property
     def is_enabled(self) -> bool:
-        return (
-            self.enabled
-            and self.status != ModelManifestStatus.DISABLED
-        )
+        return self.enabled and self.status != ModelManifestStatus.DISABLED
 
     @property
     def is_deprecated(self) -> bool:
@@ -904,9 +876,13 @@ class LoadedModelManifest(ManifestBaseModel):
         cls,
         value: object,
     ) -> Path:
-        return Path(
-            str(value),
-        ).expanduser().resolve()
+        return (
+            Path(
+                str(value),
+            )
+            .expanduser()
+            .resolve()
+        )
 
     @model_validator(mode="after")
     def validate_paths(
@@ -938,9 +914,13 @@ def load_model_manifest(
     allowed_base_directories: Sequence[str | Path] | None = None,
     maximum_file_size_bytes: int = MAX_MANIFEST_FILE_SIZE_BYTES,
 ) -> LoadedModelManifest:
-    path = Path(
-        manifest_path,
-    ).expanduser().resolve()
+    path = (
+        Path(
+            manifest_path,
+        )
+        .expanduser()
+        .resolve()
+    )
 
     if not path.is_file():
         raise ModelManifestNotFoundError(
@@ -951,8 +931,7 @@ def load_model_manifest(
         raise InvalidModelManifestError(
             manifest_path=str(path),
             message=(
-                f"Ein Modellmanifest muss "
-                f"'{DEFAULT_MODEL_MANIFEST_FILENAME}' heißen."
+                f"Ein Modellmanifest muss '{DEFAULT_MODEL_MANIFEST_FILENAME}' heißen."
             ),
         )
 
@@ -971,10 +950,7 @@ def load_model_manifest(
     except OSError as exc:
         raise InvalidModelManifestError(
             manifest_path=str(path),
-            message=(
-                "Die Größe des Modellmanifests konnte nicht gelesen "
-                "werden."
-            ),
+            message=("Die Größe des Modellmanifests konnte nicht gelesen werden."),
             cause=exc,
         ) from exc
 
@@ -1072,9 +1048,13 @@ def load_model_manifest_directory(
     allowed_base_directories: Sequence[str | Path] | None = None,
     maximum_file_size_bytes: int = MAX_MANIFEST_FILE_SIZE_BYTES,
 ) -> LoadedModelManifest:
-    directory_path = Path(
-        directory,
-    ).expanduser().resolve()
+    directory_path = (
+        Path(
+            directory,
+        )
+        .expanduser()
+        .resolve()
+    )
 
     return load_model_manifest(
         directory_path / DEFAULT_MODEL_MANIFEST_FILENAME,
@@ -1097,9 +1077,13 @@ def discover_model_manifest_paths(
     discovered: set[Path] = set()
 
     for raw_base_directory in base_directories:
-        base_directory = Path(
-            raw_base_directory,
-        ).expanduser().resolve()
+        base_directory = (
+            Path(
+                raw_base_directory,
+            )
+            .expanduser()
+            .resolve()
+        )
 
         if not base_directory.is_dir():
             continue
@@ -1119,10 +1103,7 @@ def discover_model_manifest_paths(
                 if not candidate.is_file():
                     continue
 
-                if (
-                    candidate.is_symlink()
-                    and not follow_symlinks
-                ):
+                if candidate.is_symlink() and not follow_symlinks:
                     continue
 
                 resolved_candidate = candidate.resolve()
@@ -1204,16 +1185,19 @@ def write_model_manifest(
     overwrite: bool = False,
     allowed_base_directories: Sequence[str | Path] | None = None,
 ) -> Path:
-    path = Path(
-        manifest_path,
-    ).expanduser().resolve()
+    path = (
+        Path(
+            manifest_path,
+        )
+        .expanduser()
+        .resolve()
+    )
 
     if path.name.lower() != DEFAULT_MODEL_MANIFEST_FILENAME:
         raise InvalidModelManifestError(
             manifest_path=str(path),
             message=(
-                f"Ein Modellmanifest muss "
-                f"'{DEFAULT_MODEL_MANIFEST_FILENAME}' heißen."
+                f"Ein Modellmanifest muss '{DEFAULT_MODEL_MANIFEST_FILENAME}' heißen."
             ),
         )
 
@@ -1370,11 +1354,8 @@ def _validate_provider_config_security(
             ):
                 continue
 
-            if (
-                isinstance(nested_value, str)
-                and nested_value.lower().startswith(
-                    _ALLOWED_SECRET_REFERENCE_PREFIXES,
-                )
+            if isinstance(nested_value, str) and nested_value.lower().startswith(
+                _ALLOWED_SECRET_REFERENCE_PREFIXES,
             ):
                 continue
 
@@ -1415,10 +1396,7 @@ def _validate_no_secret_values(
             normalized_key,
         ):
             raise ModelManifestSecurityError(
-                reason=(
-                    f"'{path}.{key}' darf keine Secret-Informationen "
-                    "enthalten."
-                ),
+                reason=(f"'{path}.{key}' darf keine Secret-Informationen enthalten."),
             )
 
         if isinstance(nested_value, dict):
@@ -1441,21 +1419,15 @@ def _validate_no_secret_values(
 def _looks_like_secret_key(
     key: str,
 ) -> bool:
-    compact_key = (
-        key.replace(
-            "-",
-            "_",
-        )
-        .replace(
-            ".",
-            "_",
-        )
+    compact_key = key.replace(
+        "-",
+        "_",
+    ).replace(
+        ".",
+        "_",
     )
 
-    return any(
-        fragment in compact_key
-        for fragment in _SECRET_KEY_FRAGMENTS
-    )
+    return any(fragment in compact_key for fragment in _SECRET_KEY_FRAGMENTS)
 
 
 def _validate_path_within_allowed_directories(
@@ -1474,8 +1446,7 @@ def _validate_path_within_allowed_directories(
     )
 
     allowed_directories = tuple(
-        Path(directory).expanduser().resolve()
-        for directory in allowed_base_directories
+        Path(directory).expanduser().resolve() for directory in allowed_base_directories
     )
 
     if not any(
@@ -1565,6 +1536,7 @@ def _serialize_validation_errors(
 
     return result
 
+
 def _make_json_compatible_object(
     value: object,
 ) -> JsonObject:
@@ -1634,19 +1606,16 @@ def _make_json_compatible_value(
 
         return result
 
-    if (
-        isinstance(
-            value,
-            Sequence,
-        )
-        and not isinstance(
-            value,
-            (
-                str,
-                bytes,
-                bytearray,
-            ),
-        )
+    if isinstance(
+        value,
+        Sequence,
+    ) and not isinstance(
+        value,
+        (
+            str,
+            bytes,
+            bytearray,
+        ),
     ):
         typed_sequence = cast(
             Sequence[object],
@@ -1674,6 +1643,8 @@ def _make_json_compatible_value(
     return str(
         value,
     )
+
+
 def _normalize_error_location(
     value: object,
 ) -> tuple[str, ...]:
@@ -1685,21 +1656,17 @@ def _normalize_error_location(
             value,
         )
     except ValidationError:
-        return (
-            str(value),
-        )
+        return (str(value),)
 
-    return tuple(
-        str(part)
-        for part in parts
-    )
+    return tuple(str(part) for part in parts)
 
 
 __all__ = [
     "CURRENT_MODEL_MANIFEST_VERSION",
     "DEFAULT_MODEL_MANIFEST_FILENAME",
-    "LoadedModelManifest",
     "MAX_MANIFEST_FILE_SIZE_BYTES",
+    "SUPPORTED_MODEL_MANIFEST_VERSIONS",
+    "LoadedModelManifest",
     "ModelLifecycleManifest",
     "ModelLimitsManifest",
     "ModelManifest",
@@ -1710,7 +1677,6 @@ __all__ = [
     "ModelRuntimeKind",
     "ModelSecretReference",
     "ModelSecretSource",
-    "SUPPORTED_MODEL_MANIFEST_VERSIONS",
     "discover_model_manifest_paths",
     "dump_model_manifest",
     "load_discovered_model_manifests",

@@ -95,17 +95,17 @@ This keeps clients independent of AI vendors.
 
 The backend exposes several categories of contracts.
 
-| Contract | Purpose |
-|----------|---------|
-| REST API | Request and response payloads |
-| SSE | Streaming events |
-| Bootstrap | Application metadata |
-| Configuration | Runtime configuration |
-| Hierarchy | Generic hierarchy |
-| UI Schema | Schema-driven frontend |
-| Models | Model metadata |
-| Tools | Tool metadata |
-| Errors | Structured error responses |
+| Contract      | Purpose                       |
+| ------------- | ----------------------------- |
+| REST API      | Request and response payloads |
+| SSE           | Streaming events              |
+| Bootstrap     | Application metadata          |
+| Configuration | Runtime configuration         |
+| Hierarchy     | Generic hierarchy             |
+| UI Schema     | Schema-driven frontend        |
+| Models        | Model metadata                |
+| Tools         | Tool metadata                 |
+| Errors        | Structured error responses    |
 
 Each category evolves independently.
 

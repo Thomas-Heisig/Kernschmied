@@ -11,11 +11,9 @@ from app.ui.node_types import create_default_node_types
 class UISchemaRepository(Protocol):
     """Abstraktion für fachlich konfigurierbare UI-Schema-Daten."""
 
-    async def get_node_types(self) -> Mapping[str, NodeTypeDefinition]:
-        ...
+    async def get_node_types(self) -> Mapping[str, NodeTypeDefinition]: ...
 
-    async def get_config_revision(self) -> int:
-        ...
+    async def get_config_revision(self) -> int: ...
 
 
 class InMemoryUISchemaRepository:

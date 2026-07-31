@@ -20,12 +20,12 @@ The frontend treats streaming as a generic transport mechanism. It is independen
 
 Several technologies were evaluated.
 
-| Technology | Advantages | Disadvantages |
-|------------|------------|---------------|
-| Polling | Simple | High latency, unnecessary traffic |
-| Long Polling | Better than polling | More complex |
-| WebSockets | Bidirectional | Higher complexity, unnecessary for current requirements |
-| **Server-Sent Events (SSE)** | Simple, HTTP-native, automatic reconnection support | One-way communication |
+| Technology                   | Advantages                                          | Disadvantages                                           |
+| ---------------------------- | --------------------------------------------------- | ------------------------------------------------------- |
+| Polling                      | Simple                                              | High latency, unnecessary traffic                       |
+| Long Polling                 | Better than polling                                 | More complex                                            |
+| WebSockets                   | Bidirectional                                       | Higher complexity, unnecessary for current requirements |
+| **Server-Sent Events (SSE)** | Simple, HTTP-native, automatic reconnection support | One-way communication                                   |
 
 For the current architecture, SSE provides the best balance between simplicity, performance, and maintainability.
 

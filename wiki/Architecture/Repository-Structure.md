@@ -125,16 +125,16 @@ Each top-level directory has a dedicated responsibility.
 
 # Top-Level Directories
 
-| Directory | Purpose |
-|-----------|----------|
-| backend | FastAPI application |
-| frontend | React application |
-| docs | Technical documentation |
-| wiki | GitHub Wiki source |
-| tests | Automated tests |
-| scripts | Development utilities |
-| examples | Example configurations |
-| .github | CI/CD workflows |
+| Directory | Purpose                 |
+| --------- | ----------------------- |
+| backend   | FastAPI application     |
+| frontend  | React application       |
+| docs      | Technical documentation |
+| wiki      | GitHub Wiki source      |
+| tests     | Automated tests         |
+| scripts   | Development utilities   |
+| examples  | Example configurations  |
+| .github   | CI/CD workflows         |
 
 ---
 
@@ -539,13 +539,13 @@ Scripts should never contain application logic.
 
 Recommended naming conventions:
 
-| Item | Convention |
-|------|------------|
-| Python modules | `snake_case.py` |
-| React components | `PascalCase.tsx` |
-| TypeScript utilities | `camelCase.ts` |
-| Markdown files | `Title-Case.md` |
-| Directories | `lowercase` |
+| Item                 | Convention       |
+| -------------------- | ---------------- |
+| Python modules       | `snake_case.py`  |
+| React components     | `PascalCase.tsx` |
+| TypeScript utilities | `camelCase.ts`   |
+| Markdown files       | `Title-Case.md`  |
+| Directories          | `lowercase`      |
 
 Consistency improves discoverability.
 

@@ -2,7 +2,7 @@
 
 > **Version:** 1.0  
 > **Status:** Living Documentation  
-> **Repository:** https://github.com/Thomas-Heisig/Kernschmied
+> **Repository:** <https://github.com/Thomas-Heisig/Kernschmied>
 
 ---
 
@@ -234,15 +234,15 @@ Typical workflow:
 
 GitHub Repository:
 
-https://github.com/Thomas-Heisig/Kernschmied
+<https://github.com/Thomas-Heisig/Kernschmied>
 
 Issue Tracker:
 
-https://github.com/Thomas-Heisig/Kernschmied/issues
+<https://github.com/Thomas-Heisig/Kernschmied/issues>
 
 Discussions:
 
-https://github.com/Thomas-Heisig/Kernschmied/discussions *(optional)*
+<https://github.com/Thomas-Heisig/Kernschmied/discussions> _(optional)_
 
 ---
 

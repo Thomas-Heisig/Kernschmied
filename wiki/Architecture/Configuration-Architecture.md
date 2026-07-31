@@ -400,10 +400,10 @@ Different configuration types require different merge behavior.
 
 Supported merge strategies include:
 
-| Strategy | Description |
-|----------|-------------|
-| replace | Complete replacement |
-| extend | Append values |
+| Strategy   | Description          |
+| ---------- | -------------------- |
+| replace    | Complete replacement |
+| extend     | Append values        |
 | deep_merge | Merge nested objects |
 
 The merge strategy is defined by the configuration schema.

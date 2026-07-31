@@ -185,7 +185,7 @@ Example:
 
 ```json
 {
-    "id":"project"
+  "id": "project"
 }
 ```
 
@@ -222,9 +222,9 @@ Example:
 
 ```json
 {
-    "name":"email",
-    "label":"Email",
-    "component":"text"
+  "name": "email",
+  "label": "Email",
+  "component": "text"
 }
 ```
 
@@ -289,8 +289,8 @@ Example:
 
 ```json
 {
-    "id":"save",
-    "type":"submit"
+  "id": "save",
+  "type": "submit"
 }
 ```
 
@@ -377,8 +377,8 @@ Example:
 
 ```json
 {
-    "name":"created_at",
-    "readonly":true
+  "name": "created_at",
+  "readonly": true
 }
 ```
 
@@ -414,7 +414,7 @@ Example:
 
 ```json
 {
-    "schema_version":1
+  "schema_version": 1
 }
 ```
 
@@ -507,12 +507,12 @@ Example:
 
 ```json
 {
-  "code":"resource_not_found",
-  "message":"UI schema not found.",
-  "details":{
-    "schema":"project"
+  "code": "resource_not_found",
+  "message": "UI schema not found.",
+  "details": {
+    "schema": "project"
   },
-  "request_id":"8d4c6a12"
+  "request_id": "8d4c6a12"
 }
 ```
 

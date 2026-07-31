@@ -153,18 +153,18 @@ Errors terminate the stream immediately.
 
 The platform defines the following standard events.
 
-| Event | Purpose |
-|--------|----------|
-| start | Generation started |
-| token | Incremental text |
-| message | Complete assistant message |
-| reasoning | Optional reasoning information |
-| tool_call | Tool execution begins |
-| tool_result | Tool execution completed |
-| usage | Token usage statistics |
-| heartbeat | Keep-alive event |
-| complete | Stream finished |
-| error | Stream terminated بسبب error |
+| Event       | Purpose                        |
+| ----------- | ------------------------------ |
+| start       | Generation started             |
+| token       | Incremental text               |
+| message     | Complete assistant message     |
+| reasoning   | Optional reasoning information |
+| tool_call   | Tool execution begins          |
+| tool_result | Tool execution completed       |
+| usage       | Token usage statistics         |
+| heartbeat   | Keep-alive event               |
+| complete    | Stream finished                |
+| error       | Stream terminated بسبب error   |
 
 ---
 
