@@ -63,7 +63,7 @@ ProviderDependencies: TypeAlias = Mapping[
 
 
 DEFAULT_BASE_URL = "http://127.0.0.1:11434"
-DEFAULT_MODEL = "qwen2.5:7b"
+DEFAULT_MODEL = "qwen2.5-coder:7b"
 DEFAULT_TIMEOUT_SECONDS = 120.0
 DEFAULT_MAX_TOKENS = 4096
 

@@ -194,7 +194,7 @@ Example:
 ```json
 {
   "key": "chat.default_model",
-  "value": "qwen2.5:7b"
+  "value": "qwen2.5-coder:7b
 }
 ```
 

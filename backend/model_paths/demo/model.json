@@ -10,7 +10,7 @@
     "type": "ollama",
     "config": {
       "base_url": "http://127.0.0.1:11434",
-      "default_model": "qwen2.5:7b",
+      "default_model": "qwen2.5-coder:7b",
       "timeout_seconds": 120
     },
     "secrets": {}

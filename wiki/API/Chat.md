@@ -118,7 +118,7 @@ Example:
   "message": "Explain dependency injection.",
   "conversation_id": "chat-42",
   "hierarchy_node_id": "project-15",
-  "model_id": "qwen2.5:7b",
+  "model_id": "qwen2.5-coder:7b",
   "tool_ids": ["calculator", "filesystem"],
   "metadata": {
     "language": "en"
@@ -202,7 +202,7 @@ Example:
 
 ```json
 {
-  "model_id": "qwen2.5:7b"
+  "model_id": "qwen2.5-coder:7b"
 }
 ```
 

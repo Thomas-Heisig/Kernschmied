@@ -145,7 +145,7 @@ The manifest is validated before registration.
 ```json
 [
   {
-    "id": "qwen2.5:7b",
+    "id": "qwen2.5-coder:7b",
     "display_name": "Qwen 2.5 7B",
     "provider": "ollama",
     "capabilities": ["chat", "streaming", "tool_calling"],
@@ -181,7 +181,7 @@ Every model has a unique identifier.
 Example:
 
 ```text
-qwen2.5:7b
+qwen2.5-coder:7b
 ```
 
 The identifier is used throughout the platform:

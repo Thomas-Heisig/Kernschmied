@@ -31,6 +31,8 @@ Abwärtskompatibilität erhalten.
 
 from __future__ import annotations
 
+from typing import cast
+
 import asyncio
 import inspect
 import json
@@ -1323,12 +1325,24 @@ class ChatService:
                         "Das Modell hat während der Generierung einen Fehler gemeldet."
                     )
 
+                    logger.error(
+                        "Model provider returned an error event: "
+                        "request_id=%s conversation_id=%s model_id=%s "
+                        "error_message=%s payload=%r",
+                        context.request_id,
+                        conversation_id,
+                        model_id,
+                        error_message,
+                        payload,
+                    )
+
                     raise ChatGenerationError(
                         error_message,
-                        request_id=(context.request_id),
+                        request_id=context.request_id,
                         details={
-                            "conversation_id": (conversation_id),
+                            "conversation_id": conversation_id,
                             "model_id": model_id,
+                            "provider_error": error_message,
                             "model_event": payload,
                         },
                     )
@@ -1885,16 +1899,19 @@ class ChatService:
             if raw_usage is None:
                 return ()
 
-            normalized_usage = _normalize_json_object(
-                raw_usage,
-            )
+            usage = None
+
+            if isinstance(raw_usage, Mapping):
+                usage = _normalize_json_object(
+                    raw_usage,
+                )
 
             return (
                 ChatStreamEvent(
                     event=ChatEventType.USAGE,
                     sequence=start_sequence,
                     data={
-                        "usage": normalized_usage,
+                        "usage": usage,
                     },
                     request_id=request_id,
                     conversation_id=conversation_id,
@@ -1941,41 +1958,62 @@ class ChatService:
     def _stream_event_payload(
         model_event: StreamEvent,
     ) -> JsonObject:
+        """
+        Überführt ein Modellereignis in ein flaches, JSON-kompatibles
+        Service-Payload.
+
+        Die Einträge aus StreamEvent.data werden auf der obersten Ebene
+        zusammengeführt. Stabile StreamEvent-Felder haben Vorrang.
+        """
+
         payload: JsonObject = {}
 
-        attribute_names: tuple[
-            str,
-            ...,
-        ] = (
-            "text",
-            "content",
-            "delta",
-            "message",
-            "finish_reason",
-            "usage",
-            "metadata",
+        raw_data = getattr(
+            model_event,
             "data",
-            "error",
-            "tool_call",
-            "tool_result",
-            "reasoning",
+            None,
         )
 
-        # Use a dictionary comprehension to build the payload from attributes
-        payload = {
-            attr: _normalize_json_value(getattr(model_event, attr))
-            for attr in attribute_names
-            if hasattr(model_event, attr) and getattr(model_event, attr) is not None
-        }
+        if isinstance(raw_data, Mapping):
+            typed_raw_data = cast(
+                Mapping[object, object],
+                raw_data,
+            )
 
-        # Special handling for nested structures that need explicit normalization/merging
-        metadata = getattr(model_event, "metadata", None)
-        if metadata is not None:
-            payload["metadata"] = _normalize_json_object(metadata)
+            payload.update(
+                _normalize_json_object(
+                    typed_raw_data,
+                ),
+            )
 
-        data = getattr(model_event, "data", None)
-        if data is not None:
-            payload["data"] = _normalize_json_object(data)
+        content = getattr(
+            model_event,
+            "content",
+            None,
+        )
+
+        if isinstance(content, str):
+            payload["content"] = content
+
+        usage = getattr(
+            model_event,
+            "usage",
+            None,
+        )
+
+        if hasattr(usage, "__dict__"):
+            raw_usage_mapping = cast(
+                Mapping[object, object],
+                vars(usage),
+            )
+
+            payload["usage"] = _normalize_json_object(
+                raw_usage_mapping,
+            )
+        else:
+            payload["usage"] = _normalize_json_value(
+                usage,
+            )
 
         return payload
 

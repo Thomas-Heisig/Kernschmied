@@ -66,7 +66,7 @@ Model Registry
 
 ↓
 
-qwen2.5:7b
+qwen2.5-coder:7b
 
 ↓
 

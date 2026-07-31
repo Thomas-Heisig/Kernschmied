@@ -1,6 +1,7 @@
 # F:\Kernschmied\backend\app\core\bootstrap.py
 
 from __future__ import annotations
+from typing import cast
 
 import inspect
 import logging
@@ -8,7 +9,6 @@ from collections.abc import (
     Awaitable,
     Callable,
     Mapping,
-    Sized,
 )
 from dataclasses import dataclass
 from pathlib import Path
@@ -1451,119 +1451,41 @@ def _registry_item_count(
     registry: object,
 ) -> int | None:
     """
-    Ermittelt die Anzahl registrierter Elemente, ohne einen
-    bestimmten Registry-Vertrag vorauszusetzen.
+    Ermittelt die Anzahl registrierter Elemente ausschließlich über
+    synchron verfügbare Zustände.
 
-    Unterstützte Formen:
-
-    - registry.count
-    - registry.item_count
-    - registry.items
-    - registry.list()
-    - registry.list_models()
-    - registry.list_tools()
+    Asynchrone Registry-Methoden dürfen hier nicht aufgerufen werden,
+    weil dadurch nicht erwartete Coroutine-Objekte entstehen.
     """
 
     for attribute_name in (
         "count",
         "item_count",
     ):
-        value: object = getattr(
+        value = getattr(
             registry,
             attribute_name,
             None,
         )
 
-        if isinstance(
-            value,
-            int,
-        ):
+        if isinstance(value, int):
             return value
 
-    items: object = getattr(
+    items = getattr(
         registry,
         "items",
         None,
     )
 
-    if isinstance(
-        items,
-        Mapping,
-    ):
-        typed_mapping = cast(
+    if isinstance(items, Mapping):
+        typed_items = cast(
             Mapping[object, object],
             items,
         )
 
-        return len(
-            typed_mapping,
-        )
-
-    if isinstance(
-        items,
-        Sized,
-    ) and not isinstance(
-        items,
-        str | bytes | bytearray,
-    ):
-        return len(
-            items,
-        )
-
-    for method_name in (
-        "list",
-        "list_models",
-        "list_tools",
-    ):
-        method_value: object = getattr(
-            registry,
-            method_name,
-            None,
-        )
-
-        if not callable(
-            method_value,
-        ):
-            continue
-
-        method = cast(
-            SyncOrAsyncCallableProtocol,
-            method_value,
-        )
-
-        try:
-            result: object = method()
-
-        except Exception as exc:
-            _log_warning(
-                "Registry count lookup failed",
-                bootstrap_event="registry-count-failed",
-                registry_type=type(registry).__name__,
-                method_name=method_name,
-                error_type=type(exc).__name__,
-                error_message=str(exc),
-            )
-
-            return None
-
-        if inspect.isawaitable(
-            result,
-        ):
-            return None
-
-        if isinstance(
-            result,
-            Sized,
-        ):
-            return len(
-                result,
-            )
+        return len(typed_items)
 
         return None
-
-    return None
-
-
 # ============================================================
 # Strukturierte Logging-Hilfsfunktionen
 # ============================================================

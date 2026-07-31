@@ -160,7 +160,7 @@ Example response:
 {
   "revision": 42,
   "configuration": {
-    "default_model": "qwen2.5:7b",
+    "default_model": "qwen2.5-coder:7b",
     "streaming": true,
     "default_temperature": 0.3
   }
