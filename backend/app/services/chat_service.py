@@ -31,7 +31,6 @@ Abwärtskompatibilität erhalten.
 
 from __future__ import annotations
 
-from typing import cast
 
 import asyncio
 import inspect
@@ -68,7 +67,9 @@ from app.contracts.model_backend import (
     StreamEvent,
     StreamEventType,
     ToolDefinition,
+    Usage,
 )
+
 from app.models.errors import (
     ModelError,
     ModelGenerationCancelledError,
@@ -137,14 +138,6 @@ def _normalize_json_object(
         value,
     )
 
-
-def _normalize_json_value(
-    value: object,
-) -> JsonValue:
-    """Normalisiert einen Wert in einen JSON-kompatiblen Wert."""
-    return _JSON_VALUE_ADAPTER.validate_python(
-        value,
-    )
 
 
 def _event_type_value(
@@ -1959,64 +1952,39 @@ class ChatService:
         model_event: StreamEvent,
     ) -> JsonObject:
         """
-        Überführt ein Modellereignis in ein flaches, JSON-kompatibles
-        Service-Payload.
+        Überführt ein Modellereignis in ein flaches,
+        JSON-kompatibles Service-Payload.
 
-        Die Einträge aus StreamEvent.data werden auf der obersten Ebene
-        zusammengeführt. Stabile StreamEvent-Felder haben Vorrang.
+        StreamEvent.data wird auf der obersten Ebene übernommen.
+        Der providerunabhängige Usage-Vertrag wird ausdrücklich in
+        ein JSON-Objekt übersetzt.
         """
-
         payload: JsonObject = {}
 
-        raw_data = getattr(
-            model_event,
-            "data",
-            None,
+        payload.update(
+            _normalize_json_object(
+                model_event.data,
+            ),
         )
 
-        if isinstance(raw_data, Mapping):
-            typed_raw_data = cast(
-                Mapping[object, object],
-                raw_data,
-            )
-
-            payload.update(
-                _normalize_json_object(
-                    typed_raw_data,
-                ),
-            )
-
-        content = getattr(
-            model_event,
-            "content",
-            None,
-        )
+        content = model_event.content
 
         if isinstance(content, str):
             payload["content"] = content
 
-        usage = getattr(
-            model_event,
-            "usage",
-            None,
-        )
+        usage = model_event.usage
 
-        if hasattr(usage, "__dict__"):
-            raw_usage_mapping = cast(
-                Mapping[object, object],
-                vars(usage),
-            )
-
-            payload["usage"] = _normalize_json_object(
-                raw_usage_mapping,
-            )
-        else:
-            payload["usage"] = _normalize_json_value(
-                usage,
-            )
+        if isinstance(usage, Usage):
+            payload["usage"] = {
+                "input_tokens": usage.input_tokens,
+                "output_tokens": usage.output_tokens,
+                "total_tokens": usage.total_tokens,
+                "metadata": dict(
+                    usage.metadata,
+                ),
+            }  # Removed the trailing comma and extra closing brace
 
         return payload
-
     # ========================================================
     # Response-Aufbereitung
     # ========================================================
