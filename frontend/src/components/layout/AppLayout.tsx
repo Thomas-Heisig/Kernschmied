@@ -7,16 +7,14 @@ interface AppLayoutProps {
   children: ReactNode;
   hierarchySidebar: ReactNode;
   contextSidebar: ReactNode;
-
   theme: "light" | "dark";
-
   schemaVersion?: string;
   applicationVersion?: string;
   environment?: string;
   userName?: string;
-
   onToggleTheme: () => void;
   onOpenSettings: () => void;
+  onOpenDocumentation: () => void;
 }
 
 export function AppLayout({
@@ -30,6 +28,7 @@ export function AppLayout({
   userName,
   onToggleTheme,
   onOpenSettings,
+  onOpenDocumentation,
 }: AppLayoutProps) {
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-surface-muted text-text dark:bg-slate-950 dark:text-white">
@@ -41,21 +40,18 @@ export function AppLayout({
         userName={userName}
         onToggleTheme={onToggleTheme}
         onOpenSettings={onOpenSettings}
+        onOpenDocumentation={onOpenDocumentation}
       />
-
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {hierarchySidebar}
-
         <main
           className="flex min-h-0 min-w-0 flex-1 overflow-hidden"
           aria-label="Anwendungsbereich"
         >
           {children}
         </main>
-
         {contextSidebar}
       </div>
-
       <AppFooter schemaVersion={schemaVersion} />
     </div>
   );

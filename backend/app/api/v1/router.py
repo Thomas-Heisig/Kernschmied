@@ -8,6 +8,7 @@ from app.api.v1 import (
     bootstrap,
     chat,
     configs,
+    documentation,
     health,
     hierarchy,
     models,
@@ -18,7 +19,6 @@ from app.api.v1 import (
 API_VERSION = "v1"
 
 api_router = APIRouter()
-
 
 # ---------------------------------------------------------------------------
 # System- und Betriebsendpunkte
@@ -36,9 +36,8 @@ api_router.include_router(
     tags=["System / Bootstrap"],
 )
 
-
 # ---------------------------------------------------------------------------
-# Schema- und Navigationsendpunkte
+# Schema-, Navigations- und Dokumentationsendpunkte
 # ---------------------------------------------------------------------------
 
 api_router.include_router(
@@ -53,6 +52,11 @@ api_router.include_router(
     tags=["Hierarchy"],
 )
 
+api_router.include_router(
+    documentation.router,
+    prefix="/documentation",
+    tags=["Documentation"],
+)
 
 # ---------------------------------------------------------------------------
 # Dynamische Registries
@@ -70,7 +74,6 @@ api_router.include_router(
     tags=["Registry / Tools"],
 )
 
-
 # ---------------------------------------------------------------------------
 # Fachliche Laufzeitendpunkte
 # ---------------------------------------------------------------------------
@@ -80,7 +83,6 @@ api_router.include_router(
     prefix="/chat",
     tags=["Chat"],
 )
-
 
 # ---------------------------------------------------------------------------
 # Administrative Endpunkte

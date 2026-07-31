@@ -14,7 +14,7 @@
   {
     "group": "models",
     "key": "default_model",
-    "value": "demo-model",
+    "value": "ollama-qwen2.5-coder-7b",
     "description": "Standardmodell"
   },
   {

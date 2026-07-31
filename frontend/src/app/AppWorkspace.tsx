@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 
+import { DocumentationDialog } from "../components/documentation";
 import {
   AppContextSidebar,
   AppHierarchySidebar,
@@ -9,37 +10,28 @@ import { SettingsDialog } from "../components/settings";
 import { SelectedNodeWorkspace } from "../components/workspace";
 
 type HierarchySidebarProps = ComponentProps<typeof AppHierarchySidebar>;
-
 type ContextSidebarProps = ComponentProps<typeof AppContextSidebar>;
-
 type LayoutProps = ComponentProps<typeof AppLayout>;
 
 interface AppWorkspaceProps {
   schema: HierarchySidebarProps["schema"];
   root: HierarchySidebarProps["root"];
-
   selectedNode: ContextSidebarProps["node"];
-
   selectedNodeId: HierarchySidebarProps["selectedNodeId"];
-
   expandedNodeIds: HierarchySidebarProps["expandedNodeIds"];
-
   theme: LayoutProps["theme"];
-
   applicationVersion?: string;
   environment?: string;
   userName?: string;
-
   isSettingsOpen: boolean;
-
+  isDocumentationOpen: boolean;
   onSelectNode: HierarchySidebarProps["onSelect"];
-
   onExpandedNodeIdsChange: HierarchySidebarProps["onExpandedNodeIdsChange"];
-
   onToggleTheme: LayoutProps["onToggleTheme"];
-
   onOpenSettings: () => void;
   onCloseSettings: () => void;
+  onOpenDocumentation: () => void;
+  onCloseDocumentation: () => void;
 }
 
 export function AppWorkspace({
@@ -53,11 +45,14 @@ export function AppWorkspace({
   environment,
   userName,
   isSettingsOpen,
+  isDocumentationOpen,
   onSelectNode,
   onExpandedNodeIdsChange,
   onToggleTheme,
   onOpenSettings,
   onCloseSettings,
+  onOpenDocumentation,
+  onCloseDocumentation,
 }: AppWorkspaceProps) {
   return (
     <>
@@ -69,6 +64,7 @@ export function AppWorkspace({
         userName={userName}
         onToggleTheme={onToggleTheme}
         onOpenSettings={onOpenSettings}
+        onOpenDocumentation={onOpenDocumentation}
         hierarchySidebar={
           <AppHierarchySidebar
             root={root}
@@ -88,8 +84,11 @@ export function AppWorkspace({
       >
         <SelectedNodeWorkspace node={selectedNode} />
       </AppLayout>
-
       <SettingsDialog isOpen={isSettingsOpen} onClose={onCloseSettings} />
+      <DocumentationDialog
+        isOpen={isDocumentationOpen}
+        onClose={onCloseDocumentation}
+      />
     </>
   );
 }

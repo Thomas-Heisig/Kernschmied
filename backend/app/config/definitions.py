@@ -766,7 +766,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "minLength": 1,
             "maxLength": 255,
         },
-        default_value="demo-model",
+        default_value="ollama-qwen2.5-coder-7b",
         allowed_scopes={
             ConfigScope.SYSTEM,
             ConfigScope.NODE,

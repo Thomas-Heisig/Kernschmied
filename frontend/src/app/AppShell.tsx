@@ -14,6 +14,7 @@ import { useAppBootstrap } from "./useAppBootstrap";
 
 export function AppShell() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isDocumentationOpen, setIsDocumentationOpen] = useState(false);
 
   const {
     state,
@@ -30,6 +31,14 @@ export function AppShell() {
 
   const handleCloseSettings = useCallback((): void => {
     setIsSettingsOpen(false);
+  }, []);
+
+  const handleOpenDocumentation = useCallback((): void => {
+    setIsDocumentationOpen(true);
+  }, []);
+
+  const handleCloseDocumentation = useCallback((): void => {
+    setIsDocumentationOpen(false);
   }, []);
 
   if (state.status === "idle" || state.status === "loading") {
@@ -61,7 +70,6 @@ export function AppShell() {
   }
 
   const selectedHierarchyNode = selectSelectedNode(state);
-
   const selectedNode = selectedHierarchyNode
     ? {
         id: selectedHierarchyNode.id,
@@ -79,11 +87,14 @@ export function AppShell() {
       expandedNodeIds={selectExpandedNodeIds(state)}
       theme={theme}
       isSettingsOpen={isSettingsOpen}
+      isDocumentationOpen={isDocumentationOpen}
       onSelectNode={selectHierarchyNode}
       onExpandedNodeIdsChange={replaceExpandedNodeIds}
       onToggleTheme={toggleTheme}
       onOpenSettings={handleOpenSettings}
       onCloseSettings={handleCloseSettings}
+      onOpenDocumentation={handleOpenDocumentation}
+      onCloseDocumentation={handleCloseDocumentation}
     />
   );
 }

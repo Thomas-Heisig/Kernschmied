@@ -1,0 +1,16 @@
+backend/app/api/v1/documentation.py
+backend/app/api/v1/router.py
+frontend/src/api/documentation.ts
+frontend/src/contracts/documentation.ts
+frontend/src/components/documentation/DocumentationDialog.tsx
+frontend/src/components/documentation/MarkdownDocument.tsx
+frontend/src/components/documentation/index.ts
+frontend/src/components/layout/AppHeader.tsx
+frontend/src/components/layout/AppLayout.tsx
+frontend/src/app/AppShell.tsx
+frontend/src/app/AppWorkspace.tsx
+wiki/User-Manual/Overview.md
+wiki/User-Manual/Chat.md
+wiki/User-Manual/Hierarchy.md
+wiki/User-Manual/Settings.md
+wiki/User-Manual/Troubleshooting.md

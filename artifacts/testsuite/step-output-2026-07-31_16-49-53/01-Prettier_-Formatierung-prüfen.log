@@ -1,7 +1,0 @@
-COMMAND: npx --no-install prettier frontend wiki docs *.md *.json *.yml *.yaml --check --ignore-unknown
-WORKING DIRECTORY: F:\Kernschmied
-EXIT CODE: 2
-
-Checking formatting...
-[[31merror[39m] No files matching the pattern were found: "*.yaml".
-All matched files use Prettier code style!
