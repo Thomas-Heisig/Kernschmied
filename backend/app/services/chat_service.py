@@ -1311,7 +1311,7 @@ class ChatService:
                     "usage",
                 )
 
-                if raw_usage is not None:
+                if isinstance(raw_usage, Mapping):
                     usage = _normalize_json_object(
                         raw_usage,
                     )
@@ -1332,6 +1332,19 @@ class ChatService:
                             "model_event": payload,
                         },
                     )
+
+                _log_info(
+                    "Model stream event received",
+                    chat_event="model-stream-event-received",
+                    request_id=context.request_id,
+                    conversation_id=conversation_id,
+                    message_id=assistant_message_id,
+                    model_id=model_id,
+                    model_event_type=model_event_type,
+                    payload_keys=list(
+                        payload.keys(),
+                    ),
+                )
 
                 mapped_events = self._map_model_stream_event(
                     model_event=model_event,
@@ -1755,10 +1768,15 @@ class ChatService:
         message_id: str,
         model_id: str,
         start_sequence: int,
-    ) -> tuple[
-        ChatStreamEvent,
-        ...,
-    ]:
+    ) -> tuple[ChatStreamEvent, ...]:
+        """
+        Übersetzt den stabilen Modell-Stream-Vertrag in Chat-Ereignisse.
+
+        START und COMPLETE werden nicht erneut als Chat-Ereignisse ausgegeben,
+        weil der ChatService selbst bereits ein START- und ein abschließendes
+        COMPLETE-Ereignis erzeugt.
+        """
+
         event_type_value = _event_type_value(
             model_event.type,
         )
@@ -1767,13 +1785,20 @@ class ChatService:
             model_event,
         )
 
-        if event_type_value == StreamEventType.TOKEN.value:
-            text = _extract_text(payload)
+        if event_type_value == StreamEventType.START.value:
+            return ()
 
-            # Entferne 'created_at_monotonic' falls vorhanden
+        if event_type_value == StreamEventType.TOKEN.value:
+            text = _extract_text(
+                payload,
+            )
+
             safe_payload = {
-                k: v for k, v in payload.items() if k != "created_at_monotonic"
+                key: value
+                for key, value in payload.items()
+                if key != "created_at_monotonic"
             }
+
             safe_payload["text"] = text
 
             return (
@@ -1782,22 +1807,23 @@ class ChatService:
                     sequence=start_sequence,
                     data=safe_payload,
                     request_id=request_id,
-                    conversation_id=(conversation_id),
+                    conversation_id=conversation_id,
                     message_id=message_id,
                     model_id=model_id,
                 ),
             )
 
-        if event_type_value in {
-            "message",
-            "content",
-            "response",
-        }:
-            text = _extract_text(payload)
+        if event_type_value == StreamEventType.MESSAGE.value:
+            text = _extract_text(
+                payload,
+            )
 
             safe_payload = {
-                k: v for k, v in payload.items() if k != "created_at_monotonic"
+                key: value
+                for key, value in payload.items()
+                if key != "created_at_monotonic"
             }
+
             safe_payload["content"] = text
 
             return (
@@ -1806,24 +1832,20 @@ class ChatService:
                     sequence=start_sequence,
                     data=safe_payload,
                     request_id=request_id,
-                    conversation_id=(conversation_id),
+                    conversation_id=conversation_id,
                     message_id=message_id,
                     model_id=model_id,
                 ),
             )
 
-        if event_type_value in {
-            "reasoning",
-            "thinking",
-            "thought",
-        }:
+        if event_type_value == StreamEventType.REASONING.value:
             return (
                 ChatStreamEvent(
-                    event=(ChatEventType.REASONING),
+                    event=ChatEventType.REASONING,
                     sequence=start_sequence,
                     data=payload,
                     request_id=request_id,
-                    conversation_id=(conversation_id),
+                    conversation_id=conversation_id,
                     message_id=message_id,
                     model_id=model_id,
                 ),
@@ -1832,11 +1854,11 @@ class ChatService:
         if event_type_value == StreamEventType.TOOL_CALL.value:
             return (
                 ChatStreamEvent(
-                    event=(ChatEventType.TOOL_CALL),
+                    event=ChatEventType.TOOL_CALL,
                     sequence=start_sequence,
                     data=payload,
                     request_id=request_id,
-                    conversation_id=(conversation_id),
+                    conversation_id=conversation_id,
                     message_id=message_id,
                     model_id=model_id,
                 ),
@@ -1845,67 +1867,72 @@ class ChatService:
         if event_type_value == StreamEventType.TOOL_RESULT.value:
             return (
                 ChatStreamEvent(
-                    event=(ChatEventType.TOOL_RESULT),
+                    event=ChatEventType.TOOL_RESULT,
                     sequence=start_sequence,
                     data=payload,
                     request_id=request_id,
-                    conversation_id=(conversation_id),
+                    conversation_id=conversation_id,
                     message_id=message_id,
                     model_id=model_id,
                 ),
             )
 
-        if event_type_value in {
-            "heartbeat",
-            "keepalive",
-            "keep_alive",
-        }:
+        if event_type_value == StreamEventType.USAGE.value:
+            raw_usage = payload.get(
+                "usage",
+            )
+
+            if raw_usage is None:
+                return ()
+
+            normalized_usage = _normalize_json_object(
+                raw_usage,
+            )
+
             return (
                 ChatStreamEvent(
-                    event=(ChatEventType.HEARTBEAT),
+                    event=ChatEventType.USAGE,
                     sequence=start_sequence,
-                    data=payload,
+                    data={
+                        "usage": normalized_usage,
+                    },
                     request_id=request_id,
-                    conversation_id=(conversation_id),
+                    conversation_id=conversation_id,
                     message_id=message_id,
                     model_id=model_id,
                 ),
             )
 
-        if event_type_value == "end":  # ehemals StreamEventType.END.value
-            events: list[ChatStreamEvent] = []
-
-            raw_usage = payload.get("usage")
-
-            if raw_usage is not None:
-                normalized_usage = _normalize_json_object(raw_usage)  # entfernt path=
-
-                events.append(
-                    ChatStreamEvent(
-                        event=(ChatEventType.USAGE),
-                        sequence=start_sequence,
-                        data={"usage": normalized_usage},
-                        request_id=request_id,
-                        conversation_id=(conversation_id),
-                        message_id=message_id,
-                        model_id=model_id,
-                    )
-                )
-
-            return tuple(events)
-
-        if event_type_value == StreamEventType.ERROR.value:
+        if event_type_value == StreamEventType.COMPLETE.value:
+            # Das öffentliche COMPLETE-Ereignis wird nach Ende des
+            # Modellstreams zentral durch ChatService.stream() erzeugt.
             return ()
 
-        # Fallback for unsupported events
+        if event_type_value == StreamEventType.HEARTBEAT.value:
+            return (
+                ChatStreamEvent(
+                    event=ChatEventType.HEARTBEAT,
+                    sequence=start_sequence,
+                    data=payload,
+                    request_id=request_id,
+                    conversation_id=conversation_id,
+                    message_id=message_id,
+                    model_id=model_id,
+                ),
+            )
+
+        if event_type_value == StreamEventType.ERROR.value:
+            # ERROR wird bereits vor dem Mapping in stream() behandelt.
+            return ()
+
         _log_warning(
             "Unsupported model stream event ignored",
-            chat_event=("unsupported-model-event"),
+            chat_event="unsupported-model-event",
             request_id=request_id,
-            conversation_id=(conversation_id),
+            conversation_id=conversation_id,
             message_id=message_id,
             model_id=model_id,
-            model_event_type=(event_type_value),
+            model_event_type=event_type_value,
         )
 
         return ()

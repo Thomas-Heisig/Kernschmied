@@ -1461,6 +1461,35 @@ def register_routes(
         }
 
     @application.get(
+    "/debug/identity",
+    include_in_schema=False,
+)
+    async def debug_identity(
+        request: Request,
+    ) -> dict[str, object]:
+        user = getattr(request.state, "user", None)
+        principal = getattr(request.state, "principal", None)
+
+        return {
+            "environment": runtime_config.environment.value,
+            "development_auth_fallback_enabled": (
+                runtime_config.development_auth_fallback_enabled
+            ),
+            "user_type": type(user).__name__ if user is not None else None,
+            "user_id": (
+                getattr(user, "id", None)
+                or getattr(user, "user_id", None)
+                or getattr(user, "subject", None)
+            ),
+            "user": repr(user),
+            "principal_type": (
+                type(principal).__name__
+                if principal is not None
+                else None
+            ),
+        }
+
+    @application.get(
         "/health/live",
         tags=["System"],
         summary="Liveness-Prüfung",
