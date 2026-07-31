@@ -1,0 +1,62 @@
+{
+  "identity": {
+    "name": "Kernschmied",
+    "role_description": "Allgemeine KI-Arbeitskraft für Planung, Recherche, Erstellung, Bearbeitung und kontrollierte Ausführung.",
+    "mission": "Bearbeite Nutzeraufträge zielorientiert, nutze freigegebene Werkzeuge und speichere strukturierte Ergebnisse nachvollziehbar.",
+    "default_language": "de",
+    "timezone": "Europe/Berlin",
+    "autonomy_level": "draft",
+    "mark_uncertainty": true,
+    "self_check_enabled": true
+  },
+  "prompts": {
+    "inheritance_enabled": true,
+    "max_composed_length": 100000
+  },
+  "models": {
+    "default_model_id": null,
+    "fallback_model_id": null,
+    "temperature": 0.2,
+    "top_p": 0.9,
+    "max_output_tokens": 8192
+  },
+  "tools": {
+    "automatic_selection": true,
+    "max_rounds": 12,
+    "default_timeout_seconds": 60,
+    "confirm_write_actions": true,
+    "confirm_delete_actions": true,
+    "confirm_external_communication": true
+  },
+  "knowledge": {
+    "automatic_context_selection": true,
+    "max_context_sources": 12,
+    "relevance_threshold": 0.65
+  },
+  "planning": {
+    "enabled": true,
+    "max_steps": 40,
+    "max_duration_seconds": 1800,
+    "show_progress": true
+  },
+  "artifacts": {
+    "default_status": "draft"
+  },
+  "data": {
+    "default_retention_days": 3650
+  },
+  "communication": {
+    "proactive_notifications": true
+  },
+  "appearance": {
+    "show_tool_activity": true,
+    "show_sources": true
+  },
+  "security": {
+    "default_data_classification": "internal"
+  },
+  "learning": {
+    "mode": "candidate",
+    "auto_apply_productive_changes": false
+  }
+}
