@@ -72,26 +72,19 @@ export function useConfigOptions(
       .then((data) => {
         if (cancelled) return;
 
+        // Support structured responses that include full ConfigEntryResponse items
         let items: any[] = [];
 
         if (Array.isArray(data)) items = data;
-        else if (Array.isArray((data as any).items))
-          items = (data as any).items;
-        else if (Array.isArray((data as any).providers))
-          items = (data as any).providers;
+        else if (Array.isArray((data as any).items)) items = (data as any).items;
+        else if (Array.isArray((data as any).providers)) items = (data as any).providers;
         else items = [];
 
         const mapped = items.map((it) => {
           if (it && typeof it === "object") {
-            const value =
-              it.value ??
-              it.id ??
-              it.model_id ??
-              it.provider_id ??
-              it.name ??
-              JSON.stringify(it);
-            const label =
-              it.label ?? it.name ?? it.display_name ?? String(value);
+            // If the remote endpoint returned full entries, prefer `value` and `label` fields.
+            const value = it.value ?? it.id ?? it.model_id ?? it.provider_id ?? it.name ?? JSON.stringify(it);
+            const label = it.label ?? it.name ?? it.display_name ?? String(value);
             return { value, label } as SettingsFieldOption;
           }
 
