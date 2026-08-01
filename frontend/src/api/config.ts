@@ -4,13 +4,16 @@ import type {
   StructuredApiError,
   SystemConfigSnapshot,
   UpdateSystemConfigRequest,
+  ConfigListResponse,
+  ConfigGroupResponse,
+  ConfigEntryResponse,
 } from "../contracts/config";
 
-interface ConfigApiResponse {
-  values?: unknown;
-  config?: unknown;
-  revision?: unknown;
-  config_revision?: unknown;
+interface LoadedConfig {
+  response: ConfigListResponse;
+  values: ConfigObject;
+  entriesByFullKey: Record<string, ConfigEntryResponse>;
+  revision: number | null;
 }
 
 export class ConfigApiError extends Error {
@@ -60,7 +63,12 @@ export async function loadSystemConfig(
 
   const payload = await readJsonResponse(response);
 
-  return normalizeConfigSnapshot(payload);
+  const loaded = normalizeConfigSnapshot(payload);
+
+  return {
+    values: loaded.values,
+    revision: loaded.revision,
+  } as SystemConfigSnapshot;
 }
 
 export async function updateSystemConfig(
@@ -111,27 +119,43 @@ function normalizeConfigSnapshot(payload: unknown): SystemConfigSnapshot {
     });
   }
 
-  const response = payload as ConfigApiResponse;
+  const response = payload as ConfigListResponse;
 
-  const rawValues = response.values ?? response.config ?? payload;
-
-  const rawRevision = response.revision ?? response.config_revision ?? null;
-
-  if (!isConfigObject(rawValues)) {
+  if (!Array.isArray(response.groups)) {
     throw new ConfigApiError({
-      code: "invalid_config_values",
-      message: "Die Serverantwort enthält keine gültige Konfiguration.",
+      code: "invalid_config_response",
+      message: "Die Serverantwort entspricht nicht dem erwarteten ConfigListResponse-Format.",
       status: 500,
     });
   }
 
+  const values: ConfigObject = {};
+  const entriesByFullKey: Record<string, ConfigEntryResponse> = {};
+
+  for (const group of response.groups as ConfigGroupResponse[]) {
+    const groupId = (group.id || "").toString().trim().toLowerCase();
+    if (!groupId) continue;
+    values[groupId] = values[groupId] ?? {};
+
+    for (const entry of group.entries as ConfigEntryResponse[]) {
+      const key = (entry.key || "").toString().trim();
+      if (!key) continue;
+      (values[groupId] as Record<string, unknown>)[key] = entry.value;
+      entriesByFullKey[`${groupId}.${key}`] = entry;
+    }
+  }
+
+  const rawRevision = (response.revision ?? response.revision) ?? null;
+
   return {
-    values: rawValues,
+    response: response as ConfigListResponse,
+    values,
+    entriesByFullKey,
     revision:
       typeof rawRevision === "number" && Number.isInteger(rawRevision)
         ? rawRevision
         : null,
-  };
+  } as unknown as SystemConfigSnapshot;
 }
 
 async function createConfigApiError(
