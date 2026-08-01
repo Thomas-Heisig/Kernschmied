@@ -714,6 +714,26 @@ def structured_error_response(
             ),
         )
 
+    # Add CORS headers for error responses when the request Origin is allowed.
+    try:
+        origin = request.headers.get("origin")
+        if origin:
+            runtime_cfg = get_runtime_config(request.app)
+            # Normalize allowed origins into a set for quick membership test
+            allowed = set(runtime_cfg.cors_origins or ())
+            # include development defaults if present in runtime config logic
+            # If origin is explicitly allowed, mirror it back as per CORSMiddleware
+            if origin in allowed:
+                response_headers["Access-Control-Allow-Origin"] = origin
+                response_headers["Access-Control-Allow-Credentials"] = "true"
+                response_headers["Access-Control-Expose-Headers"] = ", ".join(
+                    CORS_EXPOSED_HEADERS
+                )
+                response_headers["Vary"] = "Origin"
+    except Exception:
+        # Best-effort: do not let CORS header logic break error handling
+        pass
+
     content: dict[str, object] = {
         "code": code,
         "message": message,
