@@ -27,6 +27,8 @@ export interface SchemaRendererProps {
     action: UIActionDefinition,
     context: SchemaRenderContext,
   ) => void | Promise<unknown>;
+  // Optional explicit action definitions supplied by the caller or context.
+  actionDefinitions?: Readonly<Record<string, UIActionDefinition>>;
 }
 
 /**
@@ -43,6 +45,7 @@ export default function SchemaRenderer({
   context,
   onChange,
   onAction,
+  actionDefinitions,
 }: SchemaRendererProps) {
   const ctx: SchemaRenderContext = useMemo(
     () => ({ ...(context ?? {}), nodeId: context?.nodeId ?? undefined }),
@@ -52,11 +55,9 @@ export default function SchemaRenderer({
   const handleAction = useCallback(
     async (actionRef: string | UIActionDefinition) => {
       let actionDef: UIActionDefinition | undefined;
-
       if (typeof actionRef === "string") {
-        // try to resolve via registry name
-        actionDef = (schema as any)?.schema?.actions?.[actionRef] as
-          UIActionDefinition | undefined;
+        // Prefer explicit actionDefinitions passed via props
+        actionDef = actionDefinitions?.[actionRef];
       } else {
         actionDef = actionRef;
       }
@@ -108,13 +109,63 @@ export default function SchemaRenderer({
       );
     }
 
+    // Respect explicit visibility flag on node definitions
+    if (nodeDef.visible === false) return null;
+
     const renderer = getComponentRenderer(nodeDef.type);
     const children = (nodeDef.children ?? []).map((c, i) =>
       renderNode(c as UIComponentDefinition, i),
     );
 
-    // Inputs and controls must be controlled using onChange
-    const primitiveOnChange = (v: unknown) => onChange?.(v);
+    // Inputs and controls must be controlled using onChange.
+    // Support per-field binding via `props.path` (dot-separated or array).
+    const getValueFromPath = (root: unknown, path?: string | string[]) => {
+      if (!path) return root;
+      const parts = typeof path === "string" ? path.split(".") : path;
+      let cur: unknown = root;
+      for (const p of parts) {
+        if (!cur || typeof cur !== "object" || Array.isArray(cur)) return undefined;
+        cur = (cur as Record<string, unknown>)[p];
+      }
+      return cur;
+    };
+
+    const setValueAtPath = (root: unknown, path?: string | string[], newValue?: unknown) => {
+      if (!path) return newValue;
+      const parts = typeof path === "string" ? path.split(".") : path;
+      const base: Record<string, unknown> =
+        typeof root === "object" && root !== null && !Array.isArray(root)
+          ? { ...(root as Record<string, unknown>) }
+          : {};
+
+      let cur = base;
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i];
+        if (i === parts.length - 1) {
+          cur[p] = newValue;
+        } else {
+          const next = cur[p];
+          if (!next || typeof next !== "object" || Array.isArray(next)) {
+            cur[p] = {};
+          } else {
+            cur[p] = { ...(next as Record<string, unknown>) };
+          }
+          cur = cur[p] as Record<string, unknown>;
+        }
+      }
+
+      return base;
+    };
+
+    const primitiveOnChange = (v: unknown, path?: string | string[]) => {
+      if (!onChange) return;
+      if (path) {
+        const next = setValueAtPath(value, path, v);
+        onChange(next);
+        return;
+      }
+      onChange(v);
+    };
 
     if (!renderer) {
       return (
@@ -136,67 +187,75 @@ export default function SchemaRenderer({
 
     // Controlled inputs
     if (nodeDef.type === "text_input") {
-      const current =
-        typeof value === "string"
-          ? value
-          : ((nodeDef.props?.value as string | undefined) ?? "");
+      const pathProp = nodeDef.props?.path as string | string[] | undefined;
+      const current = getValueFromPath(value, pathProp) ?? (nodeDef.props?.value as string | undefined) ?? "";
+
+      const effectiveDisabled = Boolean(disabled) || Boolean(nodeDef.props?.disabled);
+      const effectiveReadOnly = Boolean(readonly) || Boolean(nodeDef.props?.readonly);
 
       return (
         <input
           className="w-full rounded border px-2 py-1"
           value={String(current)}
           placeholder={String(nodeDef.props?.placeholder ?? "")}
-          disabled={Boolean(disabled) || Boolean(nodeDef.props?.disabled)}
-          readOnly={Boolean(readonly) || Boolean(nodeDef.props?.readonly)}
-          onChange={(e) => primitiveOnChange(e.target.value)}
+          disabled={effectiveDisabled}
+          readOnly={effectiveReadOnly}
+          onChange={(e) => primitiveOnChange(e.target.value, pathProp)}
         />
       );
     }
 
     if (nodeDef.type === "textarea") {
-      const current =
-        typeof value === "string"
-          ? value
-          : ((nodeDef.props?.value as string | undefined) ?? "");
+      const pathProp = nodeDef.props?.path as string | string[] | undefined;
+      const current = getValueFromPath(value, pathProp) ?? (nodeDef.props?.value as string | undefined) ?? "";
+
+      const effectiveDisabled = Boolean(disabled) || Boolean(nodeDef.props?.disabled);
+      const effectiveReadOnly = Boolean(readonly) || Boolean(nodeDef.props?.readonly);
 
       return (
         <textarea
           className="w-full rounded border px-2 py-1"
           value={String(current)}
           placeholder={String(nodeDef.props?.placeholder ?? "")}
-          disabled={Boolean(disabled) || Boolean(nodeDef.props?.disabled)}
-          readOnly={Boolean(readonly) || Boolean(nodeDef.props?.readonly)}
-          onChange={(e) => primitiveOnChange(e.target.value)}
+          disabled={effectiveDisabled}
+          readOnly={effectiveReadOnly}
+          onChange={(e) => primitiveOnChange(e.target.value, pathProp)}
         />
       );
     }
 
     if (nodeDef.type === "number_input") {
-      const current =
-        typeof value === "number" ? value : Number(nodeDef.props?.value ?? 0);
+      const pathProp = nodeDef.props?.path as string | string[] | undefined;
+      const current = getValueFromPath(value, pathProp) ?? Number(nodeDef.props?.value ?? 0);
+
+      const effectiveDisabled = Boolean(disabled) || Boolean(nodeDef.props?.disabled);
+      const effectiveReadOnly = Boolean(readonly) || Boolean(nodeDef.props?.readonly);
 
       return (
         <input
           type="number"
           className="w-full rounded border px-2 py-1"
           value={String(current)}
-          disabled={Boolean(disabled) || Boolean(nodeDef.props?.disabled)}
-          readOnly={Boolean(readonly) || Boolean(nodeDef.props?.readonly)}
-          onChange={(e) => primitiveOnChange(Number(e.target.value))}
+          disabled={effectiveDisabled}
+          readOnly={effectiveReadOnly}
+          onChange={(e) => primitiveOnChange(Number(e.target.value), pathProp)}
         />
       );
     }
 
     if (nodeDef.type === "checkbox") {
-      const checked = Boolean(value ?? nodeDef.props?.checked);
+      const pathProp = nodeDef.props?.path as string | string[] | undefined;
+      const checked = Boolean(getValueFromPath(value, pathProp) ?? nodeDef.props?.checked);
+
+      const effectiveDisabled = Boolean(disabled) || Boolean(nodeDef.props?.disabled);
 
       return (
         <label className="inline-flex items-center gap-2">
           <input
             type="checkbox"
             checked={checked}
-            disabled={Boolean(disabled) || Boolean(nodeDef.props?.disabled)}
-            onChange={(e) => primitiveOnChange(e.target.checked)}
+            disabled={effectiveDisabled}
+            onChange={(e) => primitiveOnChange(e.target.checked, pathProp)}
           />
           <span>{nodeDef.title}</span>
         </label>
@@ -204,23 +263,35 @@ export default function SchemaRenderer({
     }
 
     if (nodeDef.type === "select") {
-      const options = Array.isArray(nodeDef.props?.options)
-        ? nodeDef.props?.options
-        : [];
-      const current = value ?? nodeDef.props?.value;
+      const options = Array.isArray(nodeDef.props?.options) ? (nodeDef.props?.options as unknown[]) : [];
+      const pathProp = nodeDef.props?.path as string | string[] | undefined;
+      const current = getValueFromPath(value, pathProp) ?? nodeDef.props?.value;
+
+      const effectiveDisabled = Boolean(disabled) || Boolean(nodeDef.props?.disabled);
 
       return (
         <select
           className="w-full rounded border px-2 py-1"
           value={String(current ?? "")}
-          disabled={Boolean(disabled) || Boolean(nodeDef.props?.disabled)}
-          onChange={(e) => primitiveOnChange(e.target.value)}
+          disabled={effectiveDisabled}
+          onChange={(e) => primitiveOnChange(e.target.value, pathProp)}
         >
-          {options.map((opt: any, i: number) => (
-            <option key={i} value={opt.value ?? opt}>
-              {opt.label ?? String(opt)}
-            </option>
-          ))}
+          {options.map((opt, i) => {
+            let val: unknown = opt;
+            let label: string = String(opt);
+
+            if (opt && typeof opt === "object" && !Array.isArray(opt)) {
+              const asObj = opt as Record<string, unknown>;
+              if ("value" in asObj) val = asObj.value;
+              if ("label" in asObj && typeof asObj.label === "string") label = asObj.label as string;
+            }
+
+            return (
+              <option key={i} value={String(val ?? "")}>
+                {label}
+              </option>
+            );
+          })}
         </select>
       );
     }
@@ -229,5 +300,38 @@ export default function SchemaRenderer({
     return renderer(nodeDef, children, { onChange: primitiveOnChange });
   }
 
-  return <div className="space-y-3">{renderNode(schema)}</div>;
+  // Error boundary to ensure a broken renderer doesn't crash the entire UI
+  class SchemaErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+    constructor(props: { children: React.ReactNode }) {
+      super(props);
+      this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError() {
+      return { hasError: true };
+    }
+
+    componentDidCatch(error: unknown) {
+      // eslint-disable-next-line no-console
+      console.error("SchemaRenderer error:", error);
+    }
+
+    render() {
+      if (this.state.hasError) {
+        return (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+            Ein Fehler ist im SchemaRenderer aufgetreten.
+          </div>
+        );
+      }
+
+      return this.props.children as React.ReactNode;
+    }
+  }
+
+  return (
+    <SchemaErrorBoundary>
+      <div className="space-y-3">{renderNode(schema)}</div>
+    </SchemaErrorBoundary>
+  );
 }
