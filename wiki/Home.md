@@ -240,10 +240,9 @@ Issue Tracker:
 
 <https://github.com/Thomas-Heisig/Kernschmied/issues>
 
-Discussions (optional) or Issues as a fallback:
+Use the GitHub Issue tracker to report ideas or discuss options:
 
-- Discussions: <https://github.com/Thomas-Heisig/Kernschmied/discussions> _(may be disabled)_
-- Issues: <https://github.com/Thomas-Heisig/Kernschmied/issues>
+<https://github.com/Thomas-Heisig/Kernschmied/issues>
 
 ---
 

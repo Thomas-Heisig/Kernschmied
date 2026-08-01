@@ -9,7 +9,7 @@ import {
 import { ThemeProvider } from "../theme";
 import { AppStoreProvider } from "../store";
 
-type ApplicationProvider = ComponentType<PropsWithChildren>;
+type ApplicationProvider = ComponentType<any>;
 
 const APPLICATION_PROVIDERS: readonly ApplicationProvider[] = [
   AppStoreProvider,

@@ -249,3 +249,30 @@ export function isOptionalNullableRecord(
 ): value is Record<string, unknown> | null | undefined {
   return value === undefined || value === null || isRecord(value);
 }
+
+/**
+ * Typ für den Anlegenvorgang eines neuen Knotens, wie er vom Frontend an das
+ * Backend gesendet wird. ID und Kinder werden serverseitig erzeugt.
+ */
+export type HierarchyNodeCreate = Omit<HierarchyNode, "id" | "children" | "revision"> & {
+  parent_id?: HierarchyNodeId | null;
+};
+
+/**
+ * Typ für Teilupdates an einem Knoten. Alle Felder sind optional, da nur die
+ * geänderten Werte übertragen werden.
+ */
+export type HierarchyNodeUpdate = Partial<
+  Pick<
+    HierarchyNode,
+    | "name"
+    | "type"
+    | "actions"
+    | "metadata"
+    | "parent_id"
+    | "sort_order"
+    | "selectable"
+    | "disabled"
+    | "status"
+  >
+>;

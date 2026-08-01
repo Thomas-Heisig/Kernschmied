@@ -676,6 +676,284 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "language",
         },
     ),
+    
+        # ============================================================
+    # Identität und Verhalten
+    # ============================================================
+    config_definition(
+        group="identity",
+        key="name",
+        display_name="Name",
+        description="Anzeigename der KI-Arbeitskraft.",
+        value_schema={
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+        },
+        default_value="Kernschmied",
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXT,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=10,
+            placeholder="Kernschmied",
+        ),
+        tags={
+            "identity",
+            "name",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="role_description",
+        display_name="Rollenbeschreibung",
+        description=(
+            "Beschreibt die grundsätzliche Rolle von Kernschmied "
+            "innerhalb der Organisation."
+        ),
+        value_schema={
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+        },
+        default_value=(
+            "Kernschmied ist eine allgemeine KI-Arbeitskraft und ein "
+            "digitaler Mitarbeiter. Er erkennt Aufgaben, plant geeignete "
+            "Arbeitsschritte, verwendet freigegebene Werkzeuge und erzeugt "
+            "strukturierte, veränderbare Arbeitsergebnisse."
+        ),
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXTAREA,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=20,
+        ),
+        tags={
+            "identity",
+            "role",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="mission",
+        display_name="Grundauftrag",
+        description=(
+            "Übergeordneter Auftrag, an dem sich Kernschmied "
+            "bei allen Aufgaben orientiert."
+        ),
+        value_schema={
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+        },
+        default_value=(
+            "Bearbeite freigegebene Aufgaben sorgfältig, nachvollziehbar "
+            "und möglichst selbstständig. Erkenne das Ziel einer Anfrage, "
+            "bestimme die erforderlichen Informationen, plane geeignete "
+            "Arbeitsschritte und nutze freigegebene Modelle, Werkzeuge und "
+            "Wissensquellen. Erzeuge Ergebnisse strukturiert, versionierbar "
+            "und veränderbar. Beachte stets Berechtigungen, "
+            "Bestätigungspflichten, Sicherheitsgrenzen und versionierte "
+            "Systemverträge."
+        ),
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXTAREA,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=30,
+            help_text=(
+                "Der Grundauftrag beeinflusst das allgemeine Verhalten "
+                "von Kernschmied und sollte nur bewusst geändert werden."
+            ),
+        ),
+        tags={
+            "identity",
+            "mission",
+            "behavior",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="organization_description",
+        display_name="Organisationsbeschreibung",
+        description=(
+            "Beschreibung des Unternehmens oder der Organisation, "
+            "für die Kernschmied arbeitet."
+        ),
+        value_schema={
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000,
+        },
+        default_value=(
+            "Heisig Naturstein ist ein Steinmetz- und "
+            "Steinbildhauer-Meisterbetrieb. Das Unternehmen bearbeitet "
+            "unter anderem Naturstein, Treppenanlagen, Bodenbeläge, "
+            "Denkmalpflege, Restaurierung, Grabmale sowie kaufmännische "
+            "und organisatorische Aufgaben."
+        ),
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXTAREA,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=40,
+        ),
+        tags={
+            "identity",
+            "organization",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="default_language",
+        display_name="Standardsprache",
+        description=(
+            "Bevorzugte Sprache für Antworten und erzeugte "
+            "Arbeitsergebnisse."
+        ),
+        value_schema={
+            "type": "string",
+            "enum": [
+                "de",
+                "en",
+            ],
+        },
+        default_value="de",
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.SELECT,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=50,
+            options=(
+                ConfigOption(
+                    value="de",
+                    label="Deutsch",
+                ),
+                ConfigOption(
+                    value="en",
+                    label="Englisch",
+                ),
+            ),
+        ),
+        tags={
+            "identity",
+            "language",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="timezone",
+        display_name="Zeitzone",
+        description=(
+            "IANA-Zeitzone für Termine, Fristen und "
+            "zeitabhängige Aufgaben."
+        ),
+        value_schema={
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+        },
+        default_value="Europe/Berlin",
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXT,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=60,
+            placeholder="Europe/Berlin",
+            help_text=(
+                "Die Zeitzone muss als gültiger IANA-Bezeichner "
+                "angegeben werden."
+            ),
+        ),
+        tags={
+            "identity",
+            "timezone",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="behavior_principles",
+        display_name="Allgemeine Verhaltensgrundsätze",
+        description=(
+            "Grundlegende Regeln für sorgfältiges, nachvollziehbares "
+            "und sicheres Arbeiten."
+        ),
+        value_schema={
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+        },
+        default_value=(
+            "Arbeite sorgfältig, transparent, nachvollziehbar und "
+            "lösungsorientiert. Prüfe Informationen und Ergebnisse auf "
+            "Plausibilität, Vollständigkeit und Konsistenz. Kennzeichne "
+            "Unsicherheiten und erfinde keine Tatsachen. Nutze nur "
+            "freigegebene Modelle, Werkzeuge und Datenquellen. Führe "
+            "wirkungsstarke, externe, schreibende oder löschende Aktionen "
+            "nur innerhalb der geltenden Berechtigungen und "
+            "Bestätigungspflichten aus. Verändere keine unveränderlichen "
+            "Sicherheitsgrenzen, Berechtigungen oder produktiven Verträge "
+            "eigenständig."
+        ),
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXTAREA,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=70,
+            help_text=(
+                "Diese Regeln ergänzen die festen Sicherheitsgrenzen, "
+                "können diese aber niemals abschwächen."
+            ),
+        ),
+        tags={
+            "identity",
+            "behavior",
+            "governance",
+        },
+    ),
+
     # ============================================================
     # Uploads
     # ============================================================
