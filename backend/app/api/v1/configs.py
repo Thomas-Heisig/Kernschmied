@@ -19,7 +19,6 @@ from typing import (
     TypeAlias,
     TypeGuard,
     TypedDict,
-    Any,
     cast,
 )
 from uuid import UUID
