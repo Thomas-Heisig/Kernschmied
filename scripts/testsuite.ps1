@@ -248,7 +248,7 @@ function Test-CommandExists {
 function Prompt-YesNo {
     param(
         [Parameter(Mandatory)] [string]$Message,
-        [bool]$DefaultYes = $true,
+        [bool]$DefaultYes = $false,
         [int]$TimeoutSeconds = 5
     )
 
@@ -371,22 +371,41 @@ function Ensure-RequiredTools {
                 Write-Host "Fehler beim Installieren von $($m.NpmPkg) global: $_" -ForegroundColor Red
                 # Fallback: try local install into frontend directory (if exists)
                 if (Test-Path -LiteralPath $FrontendDirectory) {
-                    Write-Host "Versuche lokale Installation in $FrontendDirectory..." -ForegroundColor Cyan
-                    try {
-                        & npm install $($m.NpmPkg) --prefix $FrontendDirectory --no-fund --no-audit 2>&1 | Write-Host
-                        $binPath = Join-Path $FrontendDirectory 'node_modules\.bin'
-                        if (Test-Path -LiteralPath $binPath) {
-                            $env:PATH = "$binPath;$env:PATH"
-                            Write-Host "Lokale Installation erfolgreich; füge $binPath dem PATH hinzu." -ForegroundColor Green
-                        }
-                        else {
-                            Write-Host "Lokale Installation abgeschlossen, aber Bin-Verzeichnis nicht gefunden: $binPath" -ForegroundColor Yellow
-                        }
-                    }
-                    catch {
-                        Write-Host "Lokale Installation fehlgeschlagen: $_" -ForegroundColor Red
-                        Write-Host "Sie können das Paket manuell installieren: npm install -g $($m.NpmPkg)" -ForegroundColor Yellow
-                    }
+                            # Try local install in project root first, then frontend
+                            $localTargets = @($ProjectRoot, $FrontendDirectory) | Where-Object { Test-Path -LiteralPath $_ }
+
+                            $installed = $false
+
+                            foreach ($target in $localTargets) {
+                                Write-Host "Versuche lokale Installation in $target..." -ForegroundColor Cyan
+                                $attempt = 0
+                                while ($attempt -lt 2 -and -not $installed) {
+                                    try {
+                                        $attempt++
+                                        & npm install $($m.NpmPkg) --prefix $target --no-fund --no-audit 2>&1 | Write-Host
+                                        $binPath = Join-Path $target 'node_modules\.bin'
+                                        if (Test-Path -LiteralPath $binPath) {
+                                            $env:PATH = "$binPath;$env:PATH"
+                                            Write-Host "Lokale Installation erfolgreich; füge $binPath dem PATH hinzu." -ForegroundColor Green
+                                        }
+                                        else {
+                                            Write-Host "Lokale Installation abgeschlossen, aber Bin-Verzeichnis nicht gefunden: $binPath" -ForegroundColor Yellow
+                                        }
+                                        $installed = $true
+                                    }
+                                    catch {
+                                        Write-Host "Lokale Installation in $target fehlgeschlagen (Versuch $attempt): $_" -ForegroundColor Red
+                                        Start-Sleep -Seconds 2
+                                    }
+                                }
+
+                                if ($installed) { break }
+                            }
+
+                            if (-not $installed) {
+                                Write-Host "Alle lokalen Installationsversuche fehlgeschlagen." -ForegroundColor Red
+                                Write-Host "Sie können das Paket manuell installieren: npm install -g $($m.NpmPkg)" -ForegroundColor Yellow
+                            }
                 }
                 else {
                     Write-Host "Frontend-Verzeichnis nicht gefunden; überspringe lokale Installation." -ForegroundColor Yellow
