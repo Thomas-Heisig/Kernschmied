@@ -54,6 +54,8 @@ export function AppFooter({
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const autoRefreshIntervalMs = 30000; // 30s
 
   // bootstrap/health loader (unchanged)
 
@@ -102,6 +104,42 @@ export function AppFooter({
       mounted = false;
     };
   }, []);
+
+  // Auto-refresh when enabled
+  useEffect(() => {
+    if (!autoRefresh) return;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const res = await fetch('/api/v1/bootstrap', { cache: 'no-store' });
+        if (!res.ok) {
+          setOnline(false);
+          setError(`${res.status} ${res.statusText}`);
+          return;
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        setBootstrap(data);
+        setOnline(true);
+        setError(null);
+        setLastChecked(new Date());
+        setRequestId((data as any)?.request_id ?? res.headers.get('X-Request-Id'));
+      } catch (e: any) {
+        if (cancelled) return;
+        setOnline(false);
+        setError(String(e));
+      }
+    };
+
+    const id = window.setInterval(tick, autoRefreshIntervalMs);
+    // do an immediate tick
+    tick();
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [autoRefresh]);
 
   useEffect(() => {
     let mounted = true;
@@ -335,7 +373,7 @@ export function AppFooter({
                   <div className="mt-3 text-xs">
                     <div className="mb-2 text-xs text-text-muted">Request ID: {requestId ?? '—'} · Letzte Prüfung: {lastChecked ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(lastChecked) : '—'}</div>
                     <div className="rounded border p-3 max-h-64 overflow-auto bg-gray-50 dark:bg-slate-900">
-                      <pre className="whitespace-pre-wrap">{JSON.stringify(bootstrap ?? { online, error, versions: bootstrap?.versions }, null, 2)}</pre>
+                      <pre className="whitespace-pre-wrap">{JSON.stringify(bootstrap ?? { online, error, versions: (bootstrap as BootstrapResponse | null)?.versions }, null, 2)}</pre>
                     </div>
                   </div>
                 </div>
