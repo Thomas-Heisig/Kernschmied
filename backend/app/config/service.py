@@ -1466,7 +1466,7 @@ class ConfigService:
             )
 
         enabled = selected.enabled
-        # selectable/available not part of registry entry; check manifest if present
+        # Determine runtime availability/selectability from manifest when present.
         manifest = selected.manifest
 
         selectable = True
@@ -1474,7 +1474,8 @@ class ConfigService:
 
         if manifest is not None:
             selectable = getattr(manifest, "selectable", True)
-            available = getattr(manifest, "is_enabled", True)
+            # prefer explicit 'available' attribute, fall back to 'is_enabled'
+            available = getattr(manifest, "available", getattr(manifest, "is_enabled", True))
 
         if not enabled or not available or not selectable:
             raise ConfigValidationError(
