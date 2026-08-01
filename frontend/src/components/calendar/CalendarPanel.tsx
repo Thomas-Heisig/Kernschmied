@@ -23,26 +23,6 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
   const [editingCalendarId, setEditingCalendarId] = useState<string | null>(null);
   const [editingCalendarName, setEditingCalendarName] = useState<string>('');
 
-  useEffect(() => {
-    if (!editingCalendarId) return;
-    const el = document.getElementById('calendar-edit-input') as HTMLInputElement | null;
-    el?.focus();
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setEditingCalendarId(null);
-        setEditingCalendarName('');
-      }
-      if (e.key === 'Enter') {
-        // find currently editing calendar and trigger save by blurring (user can click save)
-        el?.blur();
-      }
-    };
-
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [editingCalendarId]);
-
   async function reloadCalendars() {
     setCalError(null);
     setLoadingCals(true);
