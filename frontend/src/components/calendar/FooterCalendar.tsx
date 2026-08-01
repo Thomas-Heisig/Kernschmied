@@ -106,7 +106,7 @@ export default function FooterCalendar({
     setError(null);
     try {
       const ev = await getEvent(targetCalendarId!, eventId);
-      setEditingEvent(ev as any);
+      setEditingEvent(ev);
       setEditingEventId(eventId);
     } catch (err: any) {
       setError(String(err));
@@ -116,13 +116,15 @@ export default function FooterCalendar({
   async function saveEventEdits() {
     if (!editingEventId || !targetCalendarId || !editingEvent) return;
     try {
-      await patchEvent(targetCalendarId, editingEventId, {
+      const payload: components['schemas']['EventUpdate'] = {
         title: editingEvent.title,
         description: editingEvent.description ?? undefined,
-        start: editingEvent.start as any,
-        end: editingEvent.end as any,
+        start: editingEvent.start,
+        end: editingEvent.end,
         all_day: editingEvent.all_day ?? false,
-      } as any);
+      };
+
+      await patchEvent(targetCalendarId, editingEventId, payload);
       setEditingEventId(null);
       setEditingEvent(null);
       // reload events
@@ -253,13 +255,17 @@ export default function FooterCalendar({
           <input
             className="w-full rounded border px-2 py-1 text-sm mt-2"
             value={editingEvent.title}
-            onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value } as any)}
+              onChange={(e) =>
+                setEditingEvent((prev) => (prev ? { ...prev, title: e.target.value } : prev))
+              }
           />
           <textarea
             className="w-full rounded border px-2 py-1 text-sm mt-2"
             rows={3}
             value={editingEvent.description ?? ''}
-            onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value } as any)}
+            onChange={(e) =>
+              setEditingEvent((prev) => (prev ? { ...prev, description: e.target.value } : prev))
+            }
           />
           <div className="mt-2 flex gap-2 justify-end">
             <button
