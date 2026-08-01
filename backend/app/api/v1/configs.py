@@ -7,7 +7,6 @@ import logging
 import math
 import re
 from collections.abc import (
-    Awaitable,
     Callable,
     Mapping,
     Sequence,
@@ -21,7 +20,6 @@ from typing import (
     TypedDict,
     cast,
 )
-from uuid import UUID
 from zoneinfo import (
     ZoneInfo,
     ZoneInfoNotFoundError,
@@ -66,26 +64,25 @@ from app.schemas.configuration import (
 # small utilities reused across api modules
 from .tools import read_mapping_value
 
-# Validation helpers are defined in this module (kept local for clarity)
-
-# Service helpers moved to configs_service module
+# Import a small set of service helpers used by this module. We avoid
+# importing symbols that are implemented locally to prevent shadowing.
 from .configs_service import (
     get_config_service,
     resolve_maybe_awaitable,
     get_service_revision,
-    build_config_set_kwargs,
-    call_config_set,
-    read_config_entries,
-    get_settings_field_map,
-    get_config_field_descriptor,
-    add_normalized_entry,
 )
+
+# Validation helpers are defined in this module (kept local for clarity)
+
+# Service helpers moved to configs_service module
+# Service helpers are implemented within this module; avoid importing
+# duplicate symbols from `configs_service` which would shadow local
+# definitions and confuse static analysis.
 
 # Import request/response schema models from local module
 from .configs_schema import (
     ConfigUpdateRequest,
     ConfigUpdateResponse,
-    ConfigErrorDetails,
     ConfigChangeItem,
     BulkConfigUpdateRequest,
 )
@@ -368,21 +365,23 @@ def normalize_optional_identifier(value: object) -> str | None:
     return normalized or None
 
 
-def validate_config_name(value: str, *, field_name: str = "value", request: Request | None = None) -> str:
+def validate_config_name(value: object, *, field_name: str = "value", request: Request | None = None) -> str:
     if not isinstance(value, str):
         raise structured_http_error(
-            request=(request or Request),
+            request=request,
             status_code=HTTP_422_UNPROCESSABLE_CONTENT,
             code="CONFIG_NAME_INVALID",
             message=("Der Konfigurationsname ist ungültig."),
             details={"field": field_name},
         )
 
+    value = cast(str, value)
+
     normalized = value.strip().lower()
 
     if not CONFIG_NAME_PATTERN.fullmatch(normalized):
         raise structured_http_error(
-            request=(request or Request),
+            request=request,
             status_code=HTTP_422_UNPROCESSABLE_CONTENT,
             code="CONFIG_NAME_INVALID",
             message=("Der Konfigurationsname erfüllt nicht das erforderliche Format."),
@@ -419,20 +418,21 @@ def get_actor_id(
     if principal is None:
         return None
 
+    from typing import cast
     actor_id = read_mapping_value(
-        principal,
+        cast(Mapping[object, object], principal),
         "id",
     )
 
     if actor_id is None:
         actor_id = read_mapping_value(
-            principal,
+            cast(Mapping[object, object], principal),
             "user_id",
         )
 
     if actor_id is None:
         actor_id = read_mapping_value(
-            principal,
+            cast(Mapping[object, object], principal),
             "subject",
         )
 
@@ -520,14 +520,15 @@ def get_permissions(
     if principal is None:
         return set()
 
+    from typing import cast
     raw_permissions = read_mapping_value(
-        principal,
+        cast(Mapping[object, object], principal),
         "permissions",
         [],
     )
 
     raw_roles = read_mapping_value(
-        principal,
+        cast(Mapping[object, object], principal),
         "roles",
         [],
     )
@@ -1225,6 +1226,8 @@ def validate_identity_value(
                 },
             )
 
+        validated_value = cast(str, validated_value)
+
         normalized = validated_value.strip()
 
         (
@@ -1283,6 +1286,8 @@ def validate_identity_value(
                 },
             )
 
+        validated_value = cast(str, validated_value)
+
         if not LANGUAGE_CODE_PATTERN.fullmatch(
             validated_value,
         ):
@@ -1314,6 +1319,8 @@ def validate_identity_value(
                     "key": key,
                 },
             )
+
+        validated_value = cast(str, validated_value)
 
         try:
             ZoneInfo(
