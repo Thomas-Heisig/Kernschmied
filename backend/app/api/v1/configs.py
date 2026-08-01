@@ -2321,8 +2321,9 @@ async def bulk_update_config(
     else:
         for raw_group, raw_group_value in payload.values.items():
             # Payload is already validated to Mapping[str, Mapping[str, ConfigValue]]
+            normalized_group = raw_group.strip().lower()
             for raw_key, raw_value in raw_group_value.items():
-                updates[(raw_group.strip().lower(), raw_key.strip().lower())] = raw_value
+                updates[(normalized_group, raw_key.strip().lower())] = raw_value
 
     try:
         # Dispatch to service.set_many (supports validation and atomic commit)
