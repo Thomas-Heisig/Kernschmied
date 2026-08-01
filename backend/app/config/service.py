@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Awaitable, Iterable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from typing import Any, Protocol, cast
@@ -33,6 +33,17 @@ class JsonSchemaValidatorProtocol(Protocol):
         self,
         instance: object,
     ) -> None: ...
+
+
+class ModelRegistryEntry(Protocol):
+    model_id: str
+    provider_type: str | None
+    enabled: bool
+    manifest: Any | None
+
+
+class ModelRegistry(Protocol):
+    def list_entries(self) -> Awaitable[Sequence[ModelRegistryEntry]]: ...
 
 
 CONFIG_STATE_ID = 1
@@ -251,7 +262,7 @@ class ConfigService:
         session_factory: async_sessionmaker[AsyncSession],
         *,
         definitions: Sequence[ConfigDefinition] = CONFIG_DEFINITIONS,
-        model_registry: object | None = None,
+        model_registry: ModelRegistry | None = None,
     ) -> None:
         self.session_factory = session_factory
 
@@ -260,7 +271,7 @@ class ConfigService:
         )
 
         # Optional model registry used for provider/model validation
-        self._model_registry = model_registry
+        self._model_registry: ModelRegistry | None = model_registry
 
         self._cache: dict[tuple[str, str], Any] = {}
 
@@ -1428,10 +1439,10 @@ class ConfigService:
                 message=("Die Modellregistrierung konnte nicht gelesen werden."),
             ) from exc
 
-        selected = None
+        selected: ModelRegistryEntry | None = None
 
         for entry in entries:
-            if getattr(entry, "model_id", None) == model_id:
+            if entry.model_id == model_id:
                 selected = entry
                 break
 
@@ -1441,7 +1452,7 @@ class ConfigService:
                 message=(f"Das Modell '{model_id}' ist nicht registriert."),
             )
 
-        entry_provider = getattr(selected, "provider_type", None)
+        entry_provider = selected.provider_type
 
         if (
             entry_provider is None
@@ -1454,9 +1465,9 @@ class ConfigService:
                 ),
             )
 
-        enabled = getattr(selected, "enabled", True)
+        enabled = selected.enabled
         # selectable/available not part of registry entry; check manifest if present
-        manifest = getattr(selected, "manifest", None)
+        manifest = selected.manifest
 
         selectable = True
         available = True

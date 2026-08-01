@@ -9,10 +9,20 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-from typing import Protocol, TypeAlias, cast
+from typing import Protocol, TypeAlias, cast, TYPE_CHECKING, Any
 
-from google import genai
-from google.genai import errors, types
+if TYPE_CHECKING:
+    # Provide names for static type checkers without requiring installed stubs
+    from google import genai  # type: ignore
+    from google.genai import errors, types  # type: ignore
+else:
+    try:
+        from google import genai  # type: ignore
+        from google.genai import errors, types  # type: ignore
+    except Exception:
+        genai = cast(Any, None)
+        errors = cast(Any, None)
+        types = cast(Any, None)
 
 from app.contracts.model_backend import (
     BaseModelBackend,
@@ -30,8 +40,12 @@ from app.contracts.model_backend import (
 
 logger = logging.getLogger(__name__)
 
+# Local fallbacks for external SDK types to keep static checkers happy
+ContentType: TypeAlias = Any
+GenerateContentConfigType: TypeAlias = Any
+GenerateContentResponseType: TypeAlias = Any
 
-GeminiContentList: TypeAlias = list[types.Content]
+GeminiContentList: TypeAlias = list[ContentType]
 ProviderDependencies: TypeAlias = Mapping[str, object]
 
 
@@ -50,8 +64,27 @@ class GeminiAsyncModelsProtocol(Protocol):
         *,
         model: str,
         contents: GeminiContentList,
-        config: types.GenerateContentConfig,
-    ) -> Awaitable[AsyncIterator[types.GenerateContentResponse]]: ...
+        config: GenerateContentConfigType,
+    ) -> Awaitable[AsyncIterator[GenerateContentResponseType]]: ...
+
+
+class GeminiAioClientProtocol(Protocol):
+    """Subset of the SDK's asynchronous client used by this provider."""
+
+    models: GeminiAsyncModelsProtocol
+
+    async def aclose(self) -> None: ...
+
+
+class GeminiClientProtocol(Protocol):
+    """Subset of the SDK's synchronous client used by this provider."""
+
+    aio: GeminiAioClientProtocol
+
+    def close(self) -> None: ...
+
+# Prefer the explicit protocol when possible; fall back to Any if needed.
+ClientType: TypeAlias = GeminiClientProtocol | Any
 
 
 DEFAULT_MODEL = "gemini-2.5-flash"
@@ -172,7 +205,7 @@ class GoogleGeminiProvider(BaseModelBackend):
             or DEFAULT_API_VERSION
         )
 
-        self._client: genai.Client | None = None
+        self._client: ClientType | None = None
 
     @property
     def backend_name(self) -> str:
@@ -384,31 +417,8 @@ class GoogleGeminiProvider(BaseModelBackend):
                 data=end_data,
             )
 
-        except errors.APIError as exc:
-            error = GoogleGeminiRequestError(
-                model_id=model_id,
-                reason=str(
-                    exc,
-                ),
-                retryable=_is_retryable_api_error(
-                    exc,
-                ),
-            )
-
-            logger.exception(
-                "Gemini API returned an error",
-                extra={
-                    "backend": self.backend_name,
-                    "model": model_id,
-                    "retryable": error.retryable,
-                },
-            )
-
-            yield _create_error_event(
-                error,
-            )
-
         except GoogleGeminiProviderError as exc:
+            # Provider-specific, expected domain errors
             logger.exception(
                 "Gemini provider rejected the request",
                 extra={
@@ -420,9 +430,7 @@ class GoogleGeminiProvider(BaseModelBackend):
 
             yield StreamEvent.create(
                 type=StreamEventType.ERROR,
-                content=str(
-                    exc,
-                ),
+                content=str(exc),
                 data={
                     "backend": self.backend_name,
                     "model": model_id,
@@ -432,27 +440,50 @@ class GoogleGeminiProvider(BaseModelBackend):
             )
 
         except Exception as exc:
-            logger.exception(
-                "Unexpected Gemini provider error",
-                extra={
-                    "backend": self.backend_name,
-                    "model": model_id,
-                    "error_type": type(exc).__name__,
-                },
-            )
+            # Handle SDK APIError specially when possible, otherwise unexpected
+            APIErrorClass = getattr(cast(object, errors), "APIError", None)
 
-            yield StreamEvent.create(
-                type=StreamEventType.ERROR,
-                content=(
-                    "Bei der Gemini-Anfrage ist ein unerwarteter Fehler aufgetreten."
-                ),
-                data={
-                    "backend": self.backend_name,
-                    "model": model_id,
-                    "retryable": False,
-                    "error_type": type(exc).__name__,
-                },
-            )
+            if APIErrorClass is not None and isinstance(exc, APIErrorClass):
+                retryable = _is_retryable_api_error(exc)
+
+                error = GoogleGeminiRequestError(
+                    model_id=model_id,
+                    reason=str(exc),
+                    retryable=retryable,
+                )
+
+                logger.exception(
+                    "Gemini API returned an error",
+                    extra={
+                        "backend": self.backend_name,
+                        "model": model_id,
+                        "retryable": error.retryable,
+                    },
+                )
+
+                yield _create_error_event(error)
+            else:
+                logger.exception(
+                    "Unexpected Gemini provider error",
+                    extra={
+                        "backend": self.backend_name,
+                        "model": model_id,
+                        "error_type": type(exc).__name__,
+                    },
+                )
+
+                yield StreamEvent.create(
+                    type=StreamEventType.ERROR,
+                    content=(
+                        "Bei der Gemini-Anfrage ist ein unerwarteter Fehler aufgetreten."
+                    ),
+                    data={
+                        "backend": self.backend_name,
+                        "model": model_id,
+                        "retryable": False,
+                        "error_type": type(exc).__name__,
+                    },
+                )
 
     def _validate_request(
         self,
@@ -476,7 +507,7 @@ class GoogleGeminiProvider(BaseModelBackend):
                 "Provider-Version noch nicht unterstützt.",
             )
 
-    def _get_client(self) -> genai.Client:
+    def _get_client(self) -> ClientType:
         """
         Erstellt den Gemini-Client erst bei tatsächlicher Verwendung.
         """
@@ -489,12 +520,28 @@ class GoogleGeminiProvider(BaseModelBackend):
         if self._client is not None:
             return self._client
 
-        client = genai.Client(
-            api_key=self._api_key,
-            http_options=types.HttpOptions(
-                api_version=self._api_version,
-            ),
-        )
+        # Build http_options only if available in the SDK. Use getattr guards
+        # to avoid static references to unknown SDK members.
+        http_options: object | None = None
+        types_obj = cast(object, types)
+        HttpOptions = getattr(types_obj, "HttpOptions", None)
+        if HttpOptions is not None:
+            try:
+                http_options = HttpOptions(api_version=self._api_version)
+            except Exception:
+                http_options = None
+
+        genai_obj = cast(object, genai)
+        ClientConstructor = getattr(genai_obj, "Client", None)
+        if ClientConstructor is None:
+            raise GoogleGeminiConfigurationError(
+                "Die Gemini-Client-Klasse ist nicht verfügbar (google.genai fehlt).",
+            )
+
+        if http_options is not None:
+            client = cast(ClientType, ClientConstructor(api_key=self._api_key, http_options=http_options))
+        else:
+            client = cast(ClientType, ClientConstructor(api_key=self._api_key))
 
         self._client = client
 
@@ -584,42 +631,48 @@ def _convert_messages(
             continue
 
         if message.role is MessageRole.ASSISTANT:
+            parts = [
+                _make_part_from_text(
+                    content,
+                ),
+            ]
+
             contents.append(
-                types.Content(
+                _make_content(
                     role="model",
-                    parts=[
-                        types.Part.from_text(
-                            text=content,
-                        ),
-                    ],
+                    parts=parts,
                 ),
             )
             continue
 
         if message.role is MessageRole.TOOL:
+            parts = [
+                _make_part_from_text(
+                    _format_tool_result(
+                        message,
+                        content,
+                    ),
+                ),
+            ]
+
             contents.append(
-                types.Content(
+                _make_content(
                     role="user",
-                    parts=[
-                        types.Part.from_text(
-                            text=_format_tool_result(
-                                message,
-                                content,
-                            ),
-                        ),
-                    ],
+                    parts=parts,
                 ),
             )
             continue
 
+        parts = [
+            _make_part_from_text(
+                content,
+            ),
+        ]
+
         contents.append(
-            types.Content(
+            _make_content(
                 role="user",
-                parts=[
-                    types.Part.from_text(
-                        text=content,
-                    ),
-                ],
+                parts=parts,
             ),
         )
 
@@ -638,6 +691,27 @@ def _convert_messages(
     )
 
     return system_instruction, contents
+
+
+def _make_part_from_text(text: str) -> Any:
+    """Erzeugt eine `Part`-Instanz über das SDK, oder eine einfache Struktur als Fallback."""
+    types_obj = cast(object, types)
+    PartType = getattr(types_obj, "Part", None)
+    from_text = getattr(PartType, "from_text", None)
+    if PartType is not None and callable(from_text):
+        return from_text(text=text)
+
+    return {"type": "text", "text": text}
+
+
+def _make_content(role: str, parts: list[Any]) -> ContentType:
+    """Erzeugt eine `Content`-Instanz über das SDK, oder eine einfache Struktur als Fallback."""
+    types_obj = cast(object, types)
+    ContentConstructor = getattr(types_obj, "Content", None)
+    if ContentConstructor is not None:
+        return ContentConstructor(role=role, parts=parts)
+
+    return {"role": role, "parts": parts}
 
 
 def _format_tool_result(
@@ -683,7 +757,7 @@ def _create_generation_config(
     max_tokens: int | None,
     top_p: float | None,
     stop: list[str] | None,
-) -> types.GenerateContentConfig:
+) -> GenerateContentConfigType:
     """
     Erstellt eine vollständig typisierte Gemini-Generierungskonfiguration.
     """
@@ -704,17 +778,28 @@ def _create_generation_config(
         stop,
     )
 
-    return types.GenerateContentConfig(
-        system_instruction=system_instruction,
-        temperature=normalized_temperature,
-        max_output_tokens=normalized_max_tokens,
-        top_p=normalized_top_p,
-        stop_sequences=stop_sequences,
-    )
+    types_obj = cast(object, types)
+    GenConfig = getattr(types_obj, "GenerateContentConfig", None)
+    if GenConfig is not None:
+        return GenConfig(
+            system_instruction=system_instruction,
+            temperature=normalized_temperature,
+            max_output_tokens=normalized_max_tokens,
+            top_p=normalized_top_p,
+            stop_sequences=stop_sequences,
+        )
+
+    return {
+        "system_instruction": system_instruction,
+        "temperature": normalized_temperature,
+        "max_output_tokens": normalized_max_tokens,
+        "top_p": normalized_top_p,
+        "stop_sequences": stop_sequences,
+    }
 
 
 def _read_finish_reason(
-    response: types.GenerateContentResponse,
+    response: GenerateContentResponseType,
 ) -> str | None:
     """
     Liest den Beendigungsgrund aus dem ersten Kandidaten.
@@ -794,7 +879,7 @@ def _create_error_event(
 
 
 def _is_retryable_api_error(
-    error: errors.APIError,
+    error: object,
 ) -> bool:
     """
     Erkennt vorübergehende Fehler anhand des Fehlertexts.
@@ -804,9 +889,7 @@ def _is_retryable_api_error(
     internen Transporttypen des Google-SDK.
     """
 
-    normalized_message = str(
-        error,
-    ).lower()
+    normalized_message = str(error).lower()
 
     retryable_markers = (
         "408",

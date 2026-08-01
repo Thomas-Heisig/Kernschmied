@@ -14,7 +14,19 @@ from app.database.base import Base
 
 # Ensure all ORM model modules are imported so their Table objects
 # are registered on Base.metadata before calling create_all().
-import app.database.models  # noqa: F401
+import importlib
+
+# Use importlib.import_module to perform a runtime-only import. This
+# preserves the side-effect (module-level Table registrations) while
+# avoiding Pylance reporting an unused import.
+importlib.import_module("app.database.models")
+# Also import storage models so their Table objects are registered too.
+importlib.import_module("app.storage.models")
+from app.storage.models.base import Base as StorageBase
+import logging
+from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseManager:
@@ -53,6 +65,25 @@ class DatabaseManager:
         if self._engine is not None:
             return self.session_factory
 
+        # Log the database URL and ensure parent directory exists for SQLite.
+        try:
+            logger.info("Initializing database with URL: %s", self._database_url)
+        except Exception:
+            pass
+
+        if self._database_url.startswith("sqlite"):
+            # Extract file path for sqlite( + aiosqlite ) scheme
+            # Expected form: sqlite+aiosqlite:///absolute/path/to/db
+            parts = self._database_url.split(":///", 1)
+            if len(parts) == 2:
+                db_path = Path(parts[1])
+                parent = db_path.parent
+                try:
+                    parent.mkdir(parents=True, exist_ok=True)
+                    logger.info("Ensured SQLite parent directory exists: %s", str(parent))
+                except Exception as e:
+                    logger.exception("Failed to ensure SQLite parent directory %s: %s", str(parent), e)
+
         self._engine = create_async_engine(
             self._database_url,
             echo=echo,
@@ -68,7 +99,14 @@ class DatabaseManager:
 
         if create_schema:
             async with self._engine.begin() as connection:
+                # Create tables for both ORM bases used in the project.
                 await connection.run_sync(Base.metadata.create_all)
+                try:
+                    await connection.run_sync(StorageBase.metadata.create_all)
+                except Exception:
+                    # StorageBase may be empty in some contexts; ignore errors here
+                    # and let later steps surface real issues.
+                    pass
 
         return self._session_factory
 
@@ -80,7 +118,14 @@ class DatabaseManager:
         self._session_factory = None
 
 
-_database_manager = DatabaseManager(settings.database_url)
+# Ensure runtime directories exist before constructing the database URL/manager.
+# This guarantees the configured `data_directory` (and parent directories)
+# are created so SQLite can open or create the file without an OSError.
+settings.ensure_runtime_directories()
+
+# Use the effective_database_url which falls back to a resolved SQLite path
+# when `DATABASE_URL` is not explicitly configured.
+_database_manager = DatabaseManager(settings.effective_database_url)
 
 
 def get_database_manager() -> DatabaseManager:

@@ -41,7 +41,7 @@ from pydantic import (
     field_validator,
 )
 
-from app.config.service import ConfigValidationError
+from app.config.service import ConfigValidationError, ConfigService
 from app.core.security_profile import get_security_profile
 from app.schemas.settings_catalog import (
     SettingsControl,
@@ -410,8 +410,8 @@ def structured_http_error(
 
 def get_config_service(
     request: Request,
-) -> object:
-    service: object = getattr(
+) -> ConfigService:
+    service = getattr(
         request.app.state,
         "config_service",
         None,
@@ -425,7 +425,7 @@ def get_config_service(
             message=("Der Konfigurationsdienst ist nicht verfügbar."),
         )
 
-    return service
+    return cast(ConfigService, service)
 
 
 async def resolve_maybe_awaitable(
@@ -489,7 +489,7 @@ def normalize_revision(
 
 
 async def get_service_revision(
-    service: object,
+    service: ConfigService,
     *,
     default: int = 0,
 ) -> int:
@@ -1693,7 +1693,7 @@ def add_normalized_entry(
 
 
 async def read_config_entries(
-    service: object,
+    service: ConfigService,
     request: Request,
 ) -> dict[
     ConfigIdentifier,
@@ -2011,7 +2011,7 @@ def build_config_set_kwargs(
 
 async def call_config_set(
     *,
-    service: object,
+    service: ConfigService,
     group: str,
     key: str,
     value: ConfigValue,
@@ -2189,7 +2189,7 @@ class BulkConfigUpdateRequest(BaseModel):
         str_strip_whitespace=True,
     )
 
-    values: dict = Field(
+    values: Mapping[str, Mapping[str, ConfigValue]] = Field(
         default_factory=dict,
         description="Gruppierte Konfigurationswerte als Objekt { group: { key: value } }",
     )
@@ -2212,7 +2212,7 @@ async def bulk_update_config(
     payload: BulkConfigUpdateRequest,
     request: Request,
     response: Response,
-) -> dict:
+) -> dict[str, object]:
     require_config_permission(
         request,
         "config:write",
@@ -2224,19 +2224,8 @@ async def bulk_update_config(
     updates: dict[tuple[str, str], object] = {}
 
     for raw_group, raw_group_value in payload.values.items():
-        if not isinstance(raw_group, str):
-            continue
-
-        if not isinstance(raw_group_value, Mapping):
-            # ignore non-object group values
-            continue
-
-        for raw_key, raw_value in cast(
-            Mapping[object, object], raw_group_value
-        ).items():
-            if not isinstance(raw_key, str):
-                continue
-
+        # Payload is already validated to Mapping[str, Mapping[str, ConfigValue]]
+        for raw_key, raw_value in raw_group_value.items():
             updates[(raw_group.strip().lower(), raw_key.strip().lower())] = raw_value
 
     try:

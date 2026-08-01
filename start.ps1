@@ -28,18 +28,33 @@ if (-not (Test-Path (Join-Path $Frontend "node_modules"))) {
     npm install
     Pop-Location
 }
+# Prepare log directory and paths
+$LogDir = Join-Path $Root "artifacts\logs"
+if (-not (Test-Path $LogDir)) {
+    New-Item -ItemType Directory -Path $LogDir | Out-Null
+}
 
-Start-Process powershell -ArgumentList @(
-    "-NoExit",
-    "-Command",
-    "Set-Location '$Backend'; & '$VenvPython' -m uvicorn main:app --reload --host 0.0.0.0 --port $BackendPort"
-)
+$BackendLog = Join-Path $LogDir "backend.log"
+$FrontendLog = Join-Path $LogDir "frontend.log"
 
-Start-Process powershell -ArgumentList @(
-    "-NoExit",
-    "-Command",
-    "Set-Location '$Frontend'; npx vite --host 0.0.0.0 --port $FrontendPort"
-)
+# Start backend and frontend as background jobs and redirect stdout/stderr to log files
+Start-Job -Name "Kernschmied-Backend" -ScriptBlock {
+    param($backend, $venv, $port, $log)
+    Set-Location $backend
+    # Redirect all output (stdout+stderr) to the log file
+    & $venv -m uvicorn main:app --reload --host 0.0.0.0 --port $port *>$log 2>&1
+} -ArgumentList $Backend, $VenvPython, $BackendPort, $BackendLog
+
+Start-Job -Name "Kernschmied-Frontend" -ScriptBlock {
+    param($frontend, $port, $log)
+    Set-Location $frontend
+    # Redirect all output (stdout+stderr) to the log file
+    npx vite --host 0.0.0.0 --port $port *>$log 2>&1
+} -ArgumentList $Frontend, $FrontendPort, $FrontendLog
+
+Write-Host "Logs:"
+Write-Host "  Backend -> $BackendLog"
+Write-Host "  Frontend -> $FrontendLog"
 
 Write-Host "Backend: http://localhost:$BackendPort"
 Write-Host "Frontend: http://localhost:$FrontendPort"

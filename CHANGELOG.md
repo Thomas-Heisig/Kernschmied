@@ -1,77 +1,62 @@
-name: Fehlerbericht
-description: Einen reproduzierbaren Fehler in Kernschmied melden
-title: "[Bug]: "
-labels:
+# Changelog
 
-- bug
-  body:
-- type: markdown
-  attributes:
-  value: |
-  Danke für den Fehlerbericht. Bitte keine Secrets, Tokens oder personenbezogenen Daten einfügen. Sicherheitsprobleme müssen gemäß SECURITY.md vertraulich gemeldet werden.
-- type: input
-  id: version
-  attributes:
-  label: Version oder Commit
-  placeholder: z. B. 0.1.0 oder Commit-SHA
-  validations:
-  required: true
-- type: dropdown
-  id: area
-  attributes:
-  label: Betroffener Bereich
-  options: - Backend - Frontend - Bootstrap - Hierarchie - UI-Schema oder SchemaRenderer - Modelle oder Modell-Registry - Tools oder Tool-Registry - Chat oder SSE - Konfiguration - Startskripte - Dokumentation - Unbekannt
-  validations:
-  required: true
-- type: textarea
-  id: description
-  attributes:
-  label: Fehlerbeschreibung
-  description: Was ist passiert?
-  validations:
-  required: true
-- type: textarea
-  id: reproduce
-  attributes:
-  label: Schritte zur Reproduktion
-  placeholder: | 1. Anwendung starten 2. ... 3. Fehler beobachten
-  validations:
-  required: true
-- type: textarea
-  id: expected
-  attributes:
-  label: Erwartetes Verhalten
-  validations:
-  required: true
-- type: textarea
-  id: actual
-  attributes:
-  label: Tatsächliches Verhalten
-  validations:
-  required: true
-- type: textarea
-  id: environment
-  attributes:
-  label: Umgebung
-  placeholder: |
-  Betriebssystem:
-  Python:
-  Node.js:
-  npm:
-  Betriebsprofil:
-  validations:
-  required: true
-- type: textarea
-  id: logs
-  attributes:
-  label: Relevante Logs
-  description: Bitte Secrets, Tokens, Pfade mit persönlichen Daten und personenbezogene Inhalte entfernen.
-  render: shell
-- type: checkboxes
-  id: checks
-  attributes:
-  label: Bestätigung
-  options: - label: Ich habe nach bestehenden Issues gesucht.
-  required: true - label: Der Bericht enthält keine Secrets oder personenbezogenen Daten.
-  required: true - label: Es handelt sich nicht um eine vertraulich zu meldende Sicherheitslücke.
-  required: true
+Alle wesentlichen Änderungen an Kernschmied werden in dieser Datei dokumentiert.
+
+Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1.1.0/). Das Projekt verwendet während der frühen Entwicklung eine an [Semantic Versioning](https://semver.org/lang/de/) angelehnte Versionierung.
+
+## [Unreleased]
+
+### Hinzugefügt
+
+- Bootstrap-zentrierte Frontendarchitektur wird weiter konsolidiert.
+- Schema-gesteuerte Ansichten über einen zentralen `SchemaRenderer` werden erweitert.
+- Generische Komponenten- und Action-Registries werden vervollständigt.
+- Modell- und Tool-Registries werden mit isolierter Fehlerbehandlung weiter integriert.
+- Verträge für Hierarchie, UI-Schema, Modelle, Tools, Chat und Konfiguration werden vereinheitlicht.
+- Strukturierte Fehlerantworten mit Request-ID werden weiter ausgebaut.
+
+### Geändert
+
+- Der ausgewählte Knotentyp `user` soll künftig über den zentralen `SchemaRenderer` dargestellt werden.
+- Frontend-Einstieg und Providerstruktur wurden auf einen zentralen Anwendungseinstieg ausgerichtet.
+- Bootstrap-, Registry- und Schema-Normalisierung werden schrittweise gehärtet.
+
+### Offen
+
+- OpenAPI-Artefakte gegen die tatsächlich laufende FastAPI-Anwendung verifizieren und neu erzeugen.
+- Hierarchie-Endpunkt vollständig gegen `HierarchyTreeResponse` prüfen.
+- Bootstrap als einzigen festen fachlichen Einstiegspunkt im Frontend durchsetzen.
+- Laufzeitvalidierung aller öffentlichen Frontendverträge vervollständigen.
+- ChatRequest und SSE-Ereignisse vollständig vereinheitlichen.
+- Autorisierung, Auditierung und Betriebsprofile vervollständigen.
+
+## [0.1.0] - 2026-07-26
+
+### Hinzugefügt
+
+- FastAPI-Backend mit asynchronem SQLAlchemy-Zugriff.
+- SQLite als lokale Standarddatenbank.
+- Vorbereitung für PostgreSQL ohne grundlegenden Architekturwechsel.
+- React-/TypeScript-/Vite-Frontend mit Tailwind CSS.
+- Generische rekursive Hierarchieansicht.
+- Grundlegender SSE-Chat.
+- Bootstrap-Endpunkt als zentraler Einstiegspunkt der Anwendung.
+- UI-Schema-Endpunkt und schema-gesteuerte Frontendgrundlagen.
+- Modell-Registry und Tool-Registry.
+- Modellprovider-Grundlagen, einschließlich Ollama-Vorbereitung.
+- Datenbankbasierte Fachkonfiguration mit Revisionen.
+- Administrierbare Konfigurationsendpunkte.
+- Strukturierte Architektur für Entwicklung, Intranet und Internetbetrieb.
+- PowerShell-Skripte zum gemeinsamen Starten und Stoppen von Backend und Frontend.
+
+### Architektur
+
+- `.env` ist auf Bootstrap-, Infrastruktur- und Sicherheitswerte begrenzt.
+- Fachkonfiguration wird validiert und versioniert in der Datenbank gespeichert.
+- Neue Modelle und Tools werden über Manifeste und Registries eingebunden.
+- Dynamische Erkennung führt nicht automatisch zur Freigabe.
+- Das Frontend verwendet feste Registries für Komponenten, Aktionen und Icons.
+- Unbekannte dynamische Typen werden sicher abgelehnt oder sichtbar als nicht unterstützt dargestellt.
+
+[Unreleased]: https://github.com/Thomas-Heisig/Kernschmied/compare/master...HEAD
+[0.1.0]: https://github.com/Thomas-Heisig/Kernschmied/releases

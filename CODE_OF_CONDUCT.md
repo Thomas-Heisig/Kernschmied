@@ -1,64 +1,86 @@
-## Zusammenfassung
+# Verhaltenskodex
 
-<!-- Was wird geändert und warum? -->
+## Unser Versprechen
 
-## Art der Änderung
+Wir verpflichten uns, die Teilnahme an diesem Projekt für alle Menschen zu einer belästigungsfreien Erfahrung zu machen – unabhängig von Alter, Körpergröße, sichtbarer oder unsichtbarer Behinderung, ethnischer Herkunft, Geschlechtsmerkmalen, Geschlechtsidentität und -ausdruck, Erfahrungsniveau, Bildung, sozioökonomischem Status, Nationalität, persönlichem Erscheinungsbild, Hautfarbe, Religion sowie sexueller Identität und Orientierung.
 
-- [ ] Fehlerbehebung
-- [ ] Neue Funktion
-- [ ] Refactoring
-- [ ] Vertrags- oder Schemaänderung
-- [ ] Datenbankmigration
-- [ ] Dokumentation
-- [ ] Sicherheitsverbesserung
+Wir handeln und kommunizieren so, dass eine offene, einladende, vielfältige, inklusive und respektvolle Gemeinschaft entsteht.
 
-## Betroffene Bereiche
+## Erwartetes Verhalten
 
-- [ ] Backend
-- [ ] Frontend
-- [ ] Datenbank/Alembic
-- [ ] Bootstrap
-- [ ] Hierarchie
-- [ ] UI-Schema/SchemaRenderer
-- [ ] Modelle
-- [ ] Tools
-- [ ] Chat/SSE
-- [ ] Konfiguration
-- [ ] Dokumentation
+Beispiele für erwünschtes Verhalten sind:
 
-## Verträge und Kompatibilität
+- Respekt und Einfühlungsvermögen gegenüber anderen Personen,
+- konstruktive und sachliche Rückmeldungen,
+- Akzeptanz unterschiedlicher Sichtweisen und Erfahrungen,
+- Verantwortung für eigene Fehler und Bereitschaft zur Korrektur,
+- Konzentration auf das Wohl des Projekts und seiner Gemeinschaft,
+- verständliche Kommunikation ohne persönliche Angriffe.
 
-- [ ] Keine öffentlichen Verträge geändert
-- [ ] Öffentliche Verträge geändert und versioniert
-- [ ] Frontend- und Backendverträge gemeinsam angepasst
-- [ ] OpenAPI aktualisiert und geprüft
-- [ ] Migration oder Kompatibilität dokumentiert
+## Nicht akzeptiertes Verhalten
 
-## Sicherheit
+Nicht akzeptiert werden insbesondere:
 
-- [ ] Serverseitige Autorisierung geprüft
-- [ ] Keine Secrets oder personenbezogenen Daten enthalten
-- [ ] Keine dynamischen Imports oder Aktionen aus ungeprüften Backendwerten
-- [ ] Unbekannte Typen werden sicher behandelt
+- sexualisierte Sprache oder Darstellungen sowie unerwünschte sexuelle Aufmerksamkeit,
+- provozierende, beleidigende oder abwertende Kommentare,
+- persönliche oder politische Angriffe,
+- öffentliche oder private Belästigung,
+- Veröffentlichung privater Informationen ohne ausdrückliche Zustimmung,
+- Drohungen, Einschüchterung oder Aufrufe zu Gewalt,
+- absichtliche Störung von Diskussionen oder Entwicklungsabläufen,
+- Verhalten, das in einem professionellen Umfeld als unangemessen gelten würde.
 
-## Tests
+## Verantwortlichkeiten der Projektleitung
 
-- [ ] Backendtests erfolgreich
-- [ ] Frontendbuild erfolgreich
-- [ ] Frontendtests erfolgreich, sofern vorhanden
-- [ ] Gemeinsamer Start erfolgreich
-- [ ] Manuell geprüft
+Die Projektleitung ist dafür verantwortlich, die Regeln dieses Verhaltenskodex klarzustellen und angemessene sowie faire Maßnahmen bei Verstößen zu ergreifen.
 
-Verwendete Befehle:
+Beiträge, Kommentare, Commits, Code, Issues und andere Inhalte können entfernt, bearbeitet oder abgelehnt werden, wenn sie gegen diesen Verhaltenskodex verstoßen. Personen können zeitweise oder dauerhaft von der Teilnahme ausgeschlossen werden.
 
-```text
-# Befehle hier eintragen
-```
+## Geltungsbereich
 
-## Screenshots
+Dieser Verhaltenskodex gilt in allen Projektbereichen sowie überall dort, wo eine Person das Projekt oder seine Gemeinschaft öffentlich vertritt.
 
-<!-- Bei sichtbaren Frontendänderungen ergänzen. -->
+Dazu gehören insbesondere:
 
-## Risiken und offene Punkte
+- GitHub Issues und Pull Requests,
+- Code-Reviews,
+- Diskussionen,
+- projektbezogene E-Mails,
+- Chats und andere Kommunikationskanäle,
+- öffentliche Auftritte im Namen des Projekts.
 
-<!-- Bekannte Einschränkungen, Folgearbeiten oder mögliche Nebenwirkungen. -->
+## Meldung von Verstößen
+
+Verstöße können vertraulich an die Projektleitung gemeldet werden. Nutze dafür die im Repository angegebene Kontaktmöglichkeit oder die in `SECURITY.md` beschriebene Adresse.
+
+Alle Meldungen werden so vertraulich wie möglich behandelt. Die Privatsphäre und Sicherheit der meldenden Person werden berücksichtigt.
+
+## Durchsetzungsrichtlinien
+
+### 1. Korrektur
+
+**Auswirkung:** Unangemessene Sprache oder Verhalten ohne schwerwiegende Folgen.
+
+**Maßnahme:** Private oder öffentliche Aufforderung zur Korrektur und gegebenenfalls Entschuldigung.
+
+### 2. Verwarnung
+
+**Auswirkung:** Ein wiederholter oder deutlicher Verstoß.
+
+**Maßnahme:** Förmliche Verwarnung mit zeitlich begrenzter Einschränkung der Interaktion.
+
+### 3. Vorübergehender Ausschluss
+
+**Auswirkung:** Schwerwiegender oder wiederholter Verstoß.
+
+**Maßnahme:** Zeitlich begrenzter Ausschluss von allen öffentlichen und privaten Interaktionen im Projekt.
+
+### 4. Dauerhafter Ausschluss
+
+**Auswirkung:** Fortgesetztes problematisches Verhalten, Belästigung, Drohungen oder Angriffe.
+
+**Maßnahme:** Dauerhafter Ausschluss aus der Projektgemeinschaft.
+
+## Quellenhinweis
+
+Dieser Verhaltenskodex basiert auf dem Contributor Covenant, Version 2.1, verfügbar unter https://www.contributor-covenant.org/version/2/1/code_of_conduct.html.

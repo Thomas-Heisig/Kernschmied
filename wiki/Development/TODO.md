@@ -201,9 +201,9 @@ Für alle Arbeiten gelten folgende Grundsätze:
 
 ### Definitionen
 
-- [-] `ConfigUIComponent.PROVIDER_SELECT` ergänzen.
-- [-] `ConfigValueSource.PROVIDERS` ergänzen.
-- [-] `ConfigDynamicOptions` um folgende Felder erweitern:
+- [x] `ConfigUIComponent.PROVIDER_SELECT` ergänzen.
+- [x] `ConfigValueSource.PROVIDERS` ergänzen.
+- [x] `ConfigDynamicOptions` um folgende Felder erweitert:
 
   - `depends_on`
   - `dependency_parameter`
@@ -211,25 +211,24 @@ Für alle Arbeiten gelten folgende Grundsätze:
 - [ ] Abhängigkeitsfelder gemeinsam validieren.
 - [ ] Selbstabhängigkeiten verhindern.
 - [ ] Zukünftig zyklische Abhängigkeiten zwischen mehreren Definitionen erkennen.
-- [-] `models.default_provider` als neue Config-Definition ergänzen.
-- [-] `models.default_model` von `models.default_provider` abhängig machen.
-- [ ] `models.default_model` nullable machen.
+- [x] `models.default_provider` als Config-Definition ergänzt.
+- [x] `models.default_model` von `models.default_provider` abhängig gemacht und nullable gesetzt.
 - [ ] Sicherstellen, dass der Standardwert eine logische Kernschmied-Modell-ID ist.
 - [ ] Providerinterne Namen wie `qwen2.5-coder:7b` nicht direkt als Config-Modell-ID verwenden.
 
 ### Provider-API
 
-- [ ] `ProviderEntry` definieren.
-- [ ] `ProviderListResponse` definieren.
-- [ ] `GET /api/v1/models/providers` implementieren.
-- [ ] Provider aus registrierten Modellen aggregieren.
-- [ ] Anzahl registrierter Modelle je Provider ausgeben.
-- [ ] Anzahl verfügbarer und auswählbarer Modelle ausgeben.
-- [ ] Lesbare Provider-Anzeigenamen ausgeben.
-- [ ] Keine Zugangsdaten oder internen Providerdetails ausgeben.
-- [ ] Leere Registry mit `items=[]` beantworten.
-- [ ] `Cache-Control: no-store, private` setzen.
-- [ ] Route `/providers` vor einer möglichen Route `/{model_id}` registrieren.
+- [x] `ProviderEntry` definiert.
+- [x] `ProviderListResponse` definiert.
+- [x] `GET /api/v1/models/providers` implementiert.
+- [x] Provider werden aus registrierten Modellen aggregiert.
+- [x] Anzahl registrierter Modelle je Provider ausgegeben (0 wenn leer).
+- [x] Anzahl verfügbarer und auswählbarer Modelle ausgegeben.
+- [x] Lesbare Provider-Anzeigenamen ausgegeben.
+- [x] Keine Zugangsdaten oder internen Providerdetails werden ausgegeben.
+- [x] Leere Registry mit `items=[]` beantwortet.
+- [x] `Cache-Control: no-store, private` gesetzt.
+- [x] Route `/providers` vor einer möglichen Route `/{model_id}` registriert.
 
 ### Frontend (2)
 
