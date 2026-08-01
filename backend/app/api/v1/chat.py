@@ -24,6 +24,7 @@ from fastapi import (
     Request,
     status,
 )
+from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 from fastapi.responses import StreamingResponse
 from pydantic import (
     BaseModel,

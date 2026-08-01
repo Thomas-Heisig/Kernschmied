@@ -255,9 +255,9 @@ export default function FooterCalendar({
           <input
             className="w-full rounded border px-2 py-1 text-sm mt-2"
             value={editingEvent.title}
-              onChange={(e) =>
-                setEditingEvent((prev) => (prev ? { ...prev, title: e.target.value } : prev))
-              }
+            onChange={(e) =>
+              setEditingEvent((prev) => (prev ? { ...prev, title: e.target.value } : prev))
+            }
           />
           <textarea
             className="w-full rounded border px-2 py-1 text-sm mt-2"

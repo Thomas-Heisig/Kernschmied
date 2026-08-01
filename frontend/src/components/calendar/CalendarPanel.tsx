@@ -1,74 +1,50 @@
 import React, { useEffect, useState } from 'react';
+import { toast, Toaster } from 'sonner';
 import type { components } from '../../api/openapi-types';
-import {
-  listCalendars,
-  createCalendar,
-  patchCalendar,
-  deleteCalendar,
-  listEvents,
-  createEvent,
-  patchEvent,
-  deleteEvent,
-} from '../../api/fetchCalendarClient';
+import { useCalendars } from '../../hooks/useCalendars';
+import { useEvents } from '../../hooks/useEvents';
 
 export function CalendarPanel({ onClose }: { onClose: () => void }) {
-  const [calendars, setCalendars] = useState<components['schemas']['CalendarOut'][]>([]);
   const [selectedCalendar, setSelectedCalendar] = useState<string | null>(null);
-  const [events, setEvents] = useState<components['schemas']['EventOut'][]>([]);
-  const [loadingEvents, setLoadingEvents] = useState(false);
   const [newCalName, setNewCalName] = useState('');
   const [newEventTitle, setNewEventTitle] = useState('');
-  const [loadingCals, setLoadingCals] = useState(false);
-  const [calError, setCalError] = useState<string | null>(null);
+  const [newEventStart, setNewEventStart] = useState('');
+  const [newEventEnd, setNewEventEnd] = useState('');
   const [editingCalendarId, setEditingCalendarId] = useState<string | null>(null);
   const [editingCalendarName, setEditingCalendarName] = useState<string>('');
 
-  async function reloadCalendars() {
-    setCalError(null);
-    setLoadingCals(true);
-    try {
-      const c = await listCalendars();
-      setCalendars(c || []);
-      if (!selectedCalendar && c && c.length) setSelectedCalendar(c[0].id);
-    } catch (err: any) {
-      setCalError(String(err));
-      setCalendars([]);
-    } finally {
-      setLoadingCals(false);
-    }
-  }
+  const { calendars, loading: loadingCals, error: calError, addCalendar, updateCalendar, removeCalendar, reload } = useCalendars();
+  const { events, loading: loadingEvents, error: eventsError, create: createEventHook, remove: removeEventHook, refresh: refreshEvents } = useEvents(selectedCalendar);
 
   useEffect(() => {
-    void reloadCalendars();
+    if (!selectedCalendar && calendars && calendars.length) setSelectedCalendar(calendars[0].id);
+  }, [calendars]);
+
+  // initialize new event start/end to next full hour and +1h
+  useEffect(() => {
+    const toLocalInput = (d: Date) => {
+      const pad = (n: number) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+        d.getHours()
+      )}:${pad(d.getMinutes())}`;
+    };
+
+    const now = new Date();
+    const next = new Date(now);
+    next.setHours(now.getHours() + 1, 0, 0, 0);
+    const end = new Date(next.getTime() + 60 * 60 * 1000);
+    setNewEventStart(toLocalInput(next));
+    setNewEventEnd(toLocalInput(end));
   }, []);
 
   useEffect(() => {
     let mounted = true;
     if (!selectedCalendar) {
-      setEvents([]);
       return;
     }
 
-    (async () => {
-      setLoadingEvents(true);
-      try {
-        const now = new Date();
-        const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        const end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-        const ev = await listEvents(selectedCalendar, { time_min: start, time_max: end });
-        if (!mounted) return;
-        setEvents(ev || []);
-      } catch (err: any) {
-        if (!mounted) return;
-        setEvents([]);
-        setCalError(String(err));
-        // show quick feedback
-        alert('Ereignisse konnten nicht geladen werden: ' + String(err));
-      } finally {
-        if (!mounted) return;
-        setLoadingEvents(false);
-      }
-    })();
+    // events are handled by useEvents hook; refresh when selectedCalendar changes
+    void refreshEvents();
 
     return () => {
       mounted = false;
@@ -77,6 +53,7 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
 
   return (
     <div className="p-4">
+      <Toaster position="bottom-right" />
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">Kalenderverwaltung</h3>
         <div>
@@ -115,15 +92,14 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                       <button
                         className="text-sm px-2"
                         onClick={async () => {
-                          // save
                           try {
-                            await patchCalendar(c.id, { name: editingCalendarName } as components['schemas']['CalendarUpdate']);
+                            const ok = await updateCalendar(c.id, editingCalendarName);
+                            if (!ok) throw new Error('update failed');
                             setEditingCalendarId(null);
                             setEditingCalendarName('');
-                            await reloadCalendars();
+                            toast.success('Kalender gespeichert');
                           } catch (err: any) {
-                            setCalError(String(err));
-                            alert('Kalender konnte nicht gespeichert werden: ' + String(err));
+                            toast.error('Kalender konnte nicht gespeichert werden: ' + String(err));
                           }
                         }}
                       >
@@ -154,13 +130,9 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                         className="text-sm text-red-600 px-2"
                         onClick={async () => {
                           if (!window.confirm(`Kalender "${c.name}" wirklich löschen?`)) return;
-                          try {
-                            await deleteCalendar(c.id);
-                            await reloadCalendars();
-                          } catch (e: any) {
-                            setCalError(String(e));
-                            alert('Kalender konnte nicht gelöscht werden: ' + String(e));
-                          }
+                          const ok = await removeCalendar(c.id);
+                          if (!ok) toast.error('Kalender konnte nicht gelöscht werden.');
+                          else toast.success('Kalender gelöscht');
                         }}
                       >
                         Löschen
@@ -185,17 +157,14 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
             <div className="mt-2 flex justify-end gap-2">
               <button
                 className="rounded bg-sky-600 px-3 py-1 text-sm text-white"
-                onClick={async () => {
-                  if (!newCalName.trim()) return;
-                  try {
-                    await createCalendar({ name: newCalName.trim() });
-                    setNewCalName('');
-                    await reloadCalendars();
-                  } catch (err: any) {
-                    setCalError(String(err));
-                    alert('Kalender konnte nicht erstellt werden: ' + String(err));
-                  }
-                }}
+                        onClick={async () => {
+                      if (!newCalName.trim()) return;
+                      const ok = await addCalendar(newCalName.trim());
+                      if (ok) {
+                        setNewCalName('');
+                        toast.success('Kalender erstellt');
+                      } else toast.error('Kalender konnte nicht erstellt werden.');
+                    }}
               >
                 Erstellen
               </button>
@@ -209,6 +178,7 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
             <>
               <ul className="mt-2 space-y-2 max-h-64 overflow-auto text-sm">
                 {loadingEvents && <div className="text-sm text-slate-500">Lade Ereignisse …</div>}
+                {eventsError ? <div className="text-sm text-red-600 mt-2">{eventsError}</div> : null}
                 {events.map((e) => (
                   <li key={e.id} className="border-b pb-1">
                     <div className="flex items-center justify-between">
@@ -223,32 +193,9 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                           className="text-sm text-red-600"
                           onClick={async () => {
                             if (!window.confirm(`Ereignis "${e.title}" wirklich löschen?`)) return;
-                            try {
-                              await deleteEvent(selectedCalendar, e.id);
-                              // reload events
-                              const now = new Date();
-                              const start = new Date(
-                                now.getFullYear(),
-                                now.getMonth(),
-                                1,
-                              ).toISOString();
-                              const end = new Date(
-                                now.getFullYear(),
-                                now.getMonth() + 1,
-                                0,
-                                23,
-                                59,
-                                59,
-                              ).toISOString();
-                              const ev = await listEvents(selectedCalendar, {
-                                time_min: start,
-                                time_max: end,
-                              });
-                              setEvents(ev || []);
-                            } catch (err: any) {
-                              setCalError(String(err));
-                              alert('Ereignis konnte nicht gelöscht werden: ' + String(err));
-                            }
+                            const ok = await removeEventHook(e.id);
+                            if (!ok) toast.error('Ereignis konnte nicht gelöscht werden.');
+                            else toast.success('Ereignis gelöscht');
                           }}
                         >
                           Löschen
@@ -266,36 +213,50 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                   value={newEventTitle}
                   onChange={(e) => setNewEventTitle(e.target.value)}
                 />
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <input
+                    type="datetime-local"
+                    className="w-full rounded border px-2 py-1 text-sm"
+                    value={newEventStart}
+                    onChange={(e) => setNewEventStart(e.target.value)}
+                  />
+                  <input
+                    type="datetime-local"
+                    className="w-full rounded border px-2 py-1 text-sm"
+                    value={newEventEnd}
+                    onChange={(e) => setNewEventEnd(e.target.value)}
+                  />
+                </div>
                 <div className="mt-2 flex justify-end gap-2">
                   <button
                     className="rounded bg-sky-600 px-3 py-1 text-sm text-white"
                     onClick={async () => {
                       if (!newEventTitle.trim() || !selectedCalendar) return;
-                      try {
-                        const start = new Date().toISOString();
-                        const end = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-                        await createEvent(selectedCalendar, {
-                          title: newEventTitle.trim(),
-                          description: '',
-                          start,
-                          end,
-                          all_day: false,
-                        });
-                        setNewEventTitle('');
-                        // reload events
-                        const now = new Date();
-                        const s = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-                        const e = new Date(
-                          now.getFullYear(),
-                          now.getMonth() + 1,
-                          0,
-                          23,
-                          59,
-                          59,
-                        ).toISOString();
-                        const ev = await listEvents(selectedCalendar, { time_min: s, time_max: e });
-                        setEvents(ev || []);
-                      } catch {}
+                        try {
+                          // validate start/end
+                          const startIso = new Date(newEventStart).toISOString();
+                          const endIso = new Date(newEventEnd).toISOString();
+                          if (new Date(endIso) <= new Date(startIso)) {
+                            toast.error('Ende muss nach Start liegen.');
+                            return;
+                          }
+
+                          const payload: components['schemas']['EventCreate'] = {
+                            title: newEventTitle.trim(),
+                            description: '',
+                            start: startIso,
+                            end: endIso,
+                            all_day: false,
+                          };
+
+                          const ok = await createEventHook(payload);
+                          if (ok) {
+                            setNewEventTitle('');
+                            toast.success('Ereignis erstellt');
+                          }
+                        } catch (err: any) {
+                          toast.error('Ereignis konnte nicht erstellt werden: ' + String(err));
+                        }
                     }}
                   >
                     Erstellen
