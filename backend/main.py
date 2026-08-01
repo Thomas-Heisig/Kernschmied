@@ -1141,6 +1141,19 @@ def register_exception_handlers(
             error_message=str(exc),
         )
 
+        # In development environment include traceback in details to aid debugging.
+        try:
+            runtime_cfg = get_runtime_config(request.app)
+            is_dev = runtime_cfg.environment == ApplicationEnvironment.DEVELOPMENT
+        except Exception:
+            is_dev = False
+
+        details: dict[str, object] | None = None
+        if is_dev:
+            import traceback as _tb
+
+            details = {"traceback": _tb.format_exc()}
+
         return structured_error_response(
             request=request,
             status_code=(status.HTTP_500_INTERNAL_SERVER_ERROR),
@@ -1148,6 +1161,7 @@ def register_exception_handlers(
             message=(
                 "Bei der Verarbeitung der Anfrage ist ein interner Fehler aufgetreten."
             ),
+            details=details,
         )
 
 
