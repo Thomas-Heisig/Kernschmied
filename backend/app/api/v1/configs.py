@@ -2314,8 +2314,8 @@ async def bulk_update_config(
     # Flatten into mapping of (group,key) -> value. Support either `values` or `changes`.
     updates: dict[tuple[str, str], object] = {}
 
-    if getattr(payload, "changes", None):
-        for change in cast(list[ConfigChangeItem], payload.changes):
+    if payload.changes:
+        for change in payload.changes:
             updates[(change.group.strip().lower(), change.key.strip().lower())] = change.value
     else:
         for raw_group, raw_group_value in payload.values.items():
