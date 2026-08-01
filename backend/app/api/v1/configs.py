@@ -2315,7 +2315,7 @@ async def bulk_update_config(
     updates: dict[tuple[str, str], object] = {}
 
     if getattr(payload, "changes", None):
-        for change in payload.changes:
+        for change in cast(list[ConfigChangeItem], payload.changes):
             updates[(change.group.strip().lower(), change.key.strip().lower())] = change.value
     else:
         for raw_group, raw_group_value in payload.values.items():
