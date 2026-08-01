@@ -1582,6 +1582,34 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
     ),
     config_definition(
         group="ui",
+        key="autosave_enabled",
+        display_name="Autosave",
+        description=(
+            "Änderungen automatisch speichern (Frontend-Autosave)."
+        ),
+        value_schema={
+            "type": "boolean",
+        },
+        default_value=True,
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.BOOLEAN,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.CHECKBOX,
+            category="Oberfläche",
+            section="Allgemein",
+            order=20,
+        ),
+        tags={
+            "ui",
+            "autosave",
+        },
+    ),
+    config_definition(
+        group="ui",
         key="schema_extensions",
         display_name="UI-Schema-Erweiterungen",
         description=(
