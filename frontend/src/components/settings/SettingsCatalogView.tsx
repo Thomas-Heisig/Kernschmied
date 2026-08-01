@@ -940,6 +940,11 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
   return (
     <article
       className={[
+              permissions: {
+                read: "config:read",
+                write: "config:write",
+                reveal_secret: null,
+              },
         "flex min-h-full flex-col rounded-xl border border-slate-200",
         "bg-white p-4 shadow-sm transition",
         "hover:border-slate-300 hover:shadow-md",

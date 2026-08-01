@@ -125,6 +125,12 @@ export interface ConfigEntryResponse {
 
   current_scope: string;
 
+  permissions?: {
+    read: string;
+    write: string;
+    reveal_secret?: string | null;
+  } | null;
+
   ui: ConfigUIResponse;
 
   deprecated?: boolean;

@@ -130,8 +130,8 @@ export function SettingsContent({
     if (entriesByFullKey && typeof entriesByFullKey === "object") {
       const out: Record<string, ConfigValue> = {};
 
-      for (const [full, entry] of Object.entries(entriesByFullKey)) {
-        out[full] = (entry as any).value;
+      for (const [full, entryObj] of Object.entries(entriesByFullKey)) {
+        out[full] = (entryObj as any).value;
       }
 
       return out;
@@ -668,13 +668,13 @@ function SettingsSection({
   const currentPath = [...path, sectionKey];
 
   const label = formatSettingLabel(sectionKey);
-  const fullKey = currentPath.join(".");
+  const sectionFullKey = currentPath.join(".");
 
   if (depth > MAX_RENDER_DEPTH) {
-    const inferredEntry: ConfigEntryResponse = {
+    const inferredEntryMaxDepth: ConfigEntryResponse = {
       group: sectionKey,
       key: sectionKey,
-      full_key: fullKey,
+      full_key: sectionFullKey,
       display_name: label,
       description: "Die maximale Darstellungstiefe wurde erreicht. Der Wert kann als JSON bearbeitet werden.",
       value: value,
@@ -705,9 +705,14 @@ function SettingsSection({
         options: [],
         dynamic_options: null,
       },
+      permissions: {
+        read: "config:read",
+        write: "config:write",
+        reveal_secret: null,
+      },
     };
 
-    return <SettingsField entry={inferredEntry} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
+    return <SettingsField entry={inferredEntryMaxDepth} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
   }
 
     if (!isConfigRecord(value)) {
@@ -715,7 +720,7 @@ function SettingsSection({
       return null;
     }
 
-    const existingEntry = entriesByFullKey ? entriesByFullKey[fullKey] : undefined;
+    const existingEntry = entriesByFullKey ? entriesByFullKey[sectionFullKey] : undefined;
 
     if (existingEntry) {
       return (
@@ -734,10 +739,10 @@ function SettingsSection({
       path: currentPath,
       value,
     });
-    const inferredEntry: ConfigEntryResponse = {
+    const inferredEntryLeaf: ConfigEntryResponse = {
       group: sectionKey,
       key: sectionKey,
-      full_key: fullKey,
+      full_key: sectionFullKey,
       display_name: label,
       description: metadata.description ?? "",
       value: value,
@@ -768,9 +773,14 @@ function SettingsSection({
         options: (metadata.options ?? []).map((o) => ({ value: o.value, label: o.label, description: o.description })),
         dynamic_options: null,
       },
+      permissions: {
+        read: "config:read",
+        write: "config:write",
+        reveal_secret: null,
+      },
     };
 
-    return <SettingsField entry={inferredEntry} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
+    return <SettingsField entry={inferredEntryLeaf} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
   }
 
   const visibleEntries = Object.entries(value)
