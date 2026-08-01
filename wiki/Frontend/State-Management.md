@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 Kernschmied intentionally follows a **minimal, predictable, and explicit state management architecture**.
 
@@ -24,7 +24,7 @@ Business rules always remain on the backend.
 
 ---
 
-# Design Principles
+## Design Principles
 
 The state architecture follows several principles.
 
@@ -39,7 +39,7 @@ The state architecture follows several principles.
 
 ---
 
-# Types of State
+## Types of State
 
 The frontend distinguishes several categories of state.
 
@@ -51,13 +51,14 @@ Frontend State
 ├── Server State
 ├── Session State
 └── Temporary State
+
 ```
 
 Each category has different responsibilities.
 
 ---
 
-# Local UI State
+## Local UI State
 
 Local state belongs to a single component.
 
@@ -82,7 +83,7 @@ Local state should remain inside the component whenever possible.
 
 ---
 
-# Shared Application State
+## Shared Application State
 
 Some state must be shared between multiple components.
 
@@ -100,7 +101,7 @@ This state should be exposed through React Context or dedicated providers.
 
 ---
 
-# Server State
+## Server State
 
 Server state originates from the backend.
 
@@ -119,7 +120,7 @@ Whenever inconsistencies occur, the backend wins.
 
 ---
 
-# Session State
+## Session State
 
 Session state exists only while the application is running.
 
@@ -135,7 +136,7 @@ It is recreated after a browser refresh unless explicitly persisted.
 
 ---
 
-# Temporary State
+## Temporary State
 
 Temporary state has a very short lifetime.
 
@@ -151,7 +152,7 @@ Temporary state should never become part of global application state.
 
 ---
 
-# State Ownership
+## State Ownership
 
 Every piece of state has exactly one owner.
 
@@ -173,13 +174,14 @@ passes via props
 ↓
 
 Children
+
 ```
 
 Duplicating ownership should be avoided.
 
 ---
 
-# State Flow
+## State Flow
 
 State flows in one direction.
 
@@ -209,13 +211,14 @@ API Request
 ↓
 
 Backend
+
 ```
 
 The frontend never bypasses the backend.
 
 ---
 
-# React Context
+## React Context
 
 React Context is used for application-wide state that is relatively stable.
 
@@ -231,7 +234,7 @@ Context should not become a replacement for proper component composition.
 
 ---
 
-# Custom Hooks
+## Custom Hooks
 
 Business-independent logic is encapsulated in custom hooks.
 
@@ -247,13 +250,14 @@ useStreaming()
 useCurrentProject()
 
 useNotifications()
+
 ```
 
 Hooks improve reuse while keeping components focused on rendering.
 
 ---
 
-# API Integration
+## API Integration
 
 State originating from REST endpoints is loaded through dedicated hooks.
 
@@ -281,13 +285,14 @@ Hook
 ↓
 
 Component
+
 ```
 
 The API client remains the only layer responsible for HTTP communication.
 
 ---
 
-# Streaming State
+## Streaming State
 
 Streaming requires additional transient state.
 
@@ -307,6 +312,7 @@ Streaming
 ↓
 
 Completed
+
 ```
 
 Additional information may include:
@@ -320,7 +326,7 @@ Streaming state is isolated from the rest of the application.
 
 ---
 
-# Forms
+## Forms
 
 Forms maintain temporary local state until submitted.
 
@@ -346,13 +352,14 @@ Submit
 ↓
 
 Backend Validation
+
 ```
 
 The backend always performs authoritative validation.
 
 ---
 
-# Derived State
+## Derived State
 
 Derived values should not be stored.
 
@@ -368,28 +375,31 @@ Calculation
 ↓
 
 Rendered Output
+
 ```
 
 Example:
 
 Instead of storing
 
-```
+```text
 filteredProjects
+
 ```
 
 store
 
-```
+```text
 projects
 filterText
+
 ```
 
 and calculate the filtered list when rendering.
 
 ---
 
-# Immutable Updates
+## Immutable Updates
 
 State should always be updated immutably.
 
@@ -403,7 +413,7 @@ Avoid mutating existing objects.
 
 ---
 
-# Asynchronous State
+## Asynchronous State
 
 Async operations generally follow this lifecycle:
 
@@ -421,6 +431,7 @@ Success
 ↓
 
 Idle
+
 ```
 
 or
@@ -435,6 +446,7 @@ Loading
 ↓
 
 Error
+
 ```
 
 Each asynchronous operation should expose:
@@ -445,7 +457,7 @@ Each asynchronous operation should expose:
 
 ---
 
-# Error State
+## Error State
 
 Errors should remain local to the feature that produced them.
 
@@ -457,19 +469,21 @@ Hierarchy Error
 ↓
 
 Hierarchy Component
+
 ```
 
 rather than
 
 ```text
 Global Error Store
+
 ```
 
 unless the error affects the entire application.
 
 ---
 
-# Persistence
+## Persistence
 
 Only selected state should be persisted locally.
 
@@ -490,7 +504,7 @@ Persistent data must never replace backend state.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Good practices include:
 
@@ -505,7 +519,7 @@ Performance optimizations should not reduce readability.
 
 ---
 
-# Anti-Patterns
+## Anti-Patterns
 
 Avoid the following:
 
@@ -520,7 +534,7 @@ Avoid the following:
 
 ---
 
-# Testing
+## Testing
 
 State management should be tested independently from rendering.
 
@@ -537,7 +551,7 @@ UI tests should verify observable behavior rather than implementation details.
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 The current architecture intentionally avoids introducing a large state management library.
 
@@ -559,7 +573,7 @@ Any future solution must preserve:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -594,7 +608,7 @@ Any future solution must preserve:
 
 ---
 
-# Summary
+## Summary
 
 Kernschmied's frontend state management emphasizes simplicity, predictability, and clear ownership.
 

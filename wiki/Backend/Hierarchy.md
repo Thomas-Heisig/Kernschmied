@@ -8,7 +8,7 @@ This approach enables the platform to evolve without changing the backend whenev
 
 ---
 
-# Goals
+## Goals
 
 The Hierarchy Management subsystem is designed to provide:
 
@@ -23,7 +23,7 @@ The Hierarchy Management subsystem is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Generic Instead of Specialized
 
@@ -47,6 +47,7 @@ Schema
 ↓
 
 Runtime Behavior
+
 ```
 
 Business meaning is determined by configuration rather than source code.
@@ -98,13 +99,14 @@ Services
 ↓
 
 Application Logic
+
 ```
 
 This separation keeps the hierarchy reusable across multiple subsystems.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Database
@@ -128,13 +130,14 @@ Application Services
 ↓
 
 Frontend
+
 ```
 
 Each layer has a clearly defined responsibility.
 
 ---
 
-# Hierarchy Node
+## Hierarchy Node
 
 A hierarchy node represents a single element within the tree.
 
@@ -151,7 +154,7 @@ Additional attributes may be introduced through versioned schemas.
 
 ---
 
-# Parent-Child Relationships
+## Parent-Child Relationships
 
 Nodes form a tree using parent references.
 
@@ -166,13 +169,14 @@ Organization
 │
 └── Department B
     └── Workspace
+
 ```
 
 Each node has at most one parent but may contain multiple children.
 
 ---
 
-# Root Node
+## Root Node
 
 Every hierarchy begins with a root node.
 
@@ -196,13 +200,14 @@ Projects
 ↓
 
 Chats
+
 ```
 
 The root provides a deterministic entry point for traversal.
 
 ---
 
-# Schema-Driven Nodes
+## Schema-Driven Nodes
 
 Each node references a schema.
 
@@ -222,13 +227,14 @@ Renderer
 ↓
 
 Behavior
+
 ```
 
 Schemas define presentation, actions, validation rules, and configuration inheritance.
 
 ---
 
-# Node Types
+## Node Types
 
 Node types classify the general purpose of a node.
 
@@ -245,7 +251,7 @@ Applications should treat node types as metadata rather than hardcoded business 
 
 ---
 
-# Metadata
+## Metadata
 
 Nodes may contain additional metadata.
 
@@ -262,7 +268,7 @@ Metadata remains schema-dependent.
 
 ---
 
-# Hierarchy Repository
+## Hierarchy Repository
 
 The repository manages persistence.
 
@@ -278,7 +284,7 @@ Repositories isolate persistence from business logic.
 
 ---
 
-# Hierarchy Service
+## Hierarchy Service
 
 The Hierarchy Service coordinates runtime operations.
 
@@ -294,7 +300,7 @@ Business logic never communicates directly with the repository.
 
 ---
 
-# Hierarchy Resolver
+## Hierarchy Resolver
 
 The Hierarchy Resolver computes relationships required by other subsystems.
 
@@ -310,7 +316,7 @@ The resolver produces deterministic traversal results.
 
 ---
 
-# Traversal
+## Traversal
 
 Hierarchy traversal may proceed upward or downward.
 
@@ -330,6 +336,7 @@ Project
 ↓
 
 Chat
+
 ```
 
 or
@@ -348,13 +355,14 @@ Organization
 ↑
 
 Root
+
 ```
 
 Traversal direction depends on the requesting subsystem.
 
 ---
 
-# Configuration Inheritance
+## Configuration Inheritance
 
 Configuration inheritance relies on hierarchy traversal.
 
@@ -376,13 +384,14 @@ Conversation
 ↓
 
 Resolved Configuration
+
 ```
 
 Each level may contribute additional configuration.
 
 ---
 
-# Prompt Inheritance
+## Prompt Inheritance
 
 Prompt inheritance follows the same hierarchy.
 
@@ -406,13 +415,14 @@ Conversation Prompt
 ↓
 
 Final Prompt
+
 ```
 
 The hierarchy therefore influences AI behavior without requiring provider-specific logic.
 
 ---
 
-# Authorization
+## Authorization
 
 Hierarchy also defines authorization boundaries.
 
@@ -427,7 +437,7 @@ Authorization is enforced entirely on the backend.
 
 ---
 
-# API Representation
+## API Representation
 
 Hierarchy data is exposed through stable REST contracts.
 
@@ -443,7 +453,7 @@ Clients should interpret the hierarchy generically.
 
 ---
 
-# Validation
+## Validation
 
 Hierarchy updates are validated before persistence.
 
@@ -459,7 +469,7 @@ Invalid tree structures are rejected.
 
 ---
 
-# Cycle Prevention
+## Cycle Prevention
 
 The hierarchy always represents a tree.
 
@@ -479,13 +489,14 @@ C
 ↓
 
 A
+
 ```
 
 Cycle detection is performed before updates are committed.
 
 ---
 
-# Performance
+## Performance
 
 Hierarchy operations are optimized through:
 
@@ -498,7 +509,7 @@ Frequently accessed hierarchy information may be cached.
 
 ---
 
-# Revision Tracking
+## Revision Tracking
 
 Hierarchy modifications increment a hierarchy revision.
 
@@ -512,13 +523,14 @@ Hierarchy Updated
 ↓
 
 Revision 9
+
 ```
 
 Clients use revision metadata to determine when cached hierarchy information must be refreshed.
 
 ---
 
-# Integration with UI Schema
+## Integration with UI Schema
 
 The hierarchy determines what the frontend renders.
 
@@ -536,13 +548,14 @@ Schema Renderer
 ↓
 
 User Interface
+
 ```
 
 The frontend does not require knowledge of individual business entities.
 
 ---
 
-# Integration with Chat
+## Integration with Chat
 
 Chat requests reference hierarchy nodes.
 
@@ -557,7 +570,7 @@ before communicating with AI providers.
 
 ---
 
-# Security
+## Security
 
 Hierarchy integrity is protected through:
 
@@ -571,7 +584,7 @@ Clients cannot modify hierarchy relationships directly without passing backend v
 
 ---
 
-# Testing
+## Testing
 
 Hierarchy functionality should be verified through automated tests.
 
@@ -589,7 +602,7 @@ Testing ensures deterministic hierarchy behavior across application updates.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The hierarchy architecture supports future capabilities including:
 
@@ -605,7 +618,7 @@ These features can be introduced without changing existing public contracts.
 
 ---
 
-# Relationship to Other Backend Components
+## Relationship to Other Backend Components
 
 Hierarchy Management supports numerous backend subsystems.
 
@@ -631,13 +644,14 @@ Chat Service
 ↓
 
 Frontend
+
 ```
 
 It provides the structural backbone for runtime behavior throughout the platform.
 
 ---
 
-# Relationship to Architecture
+## Relationship to Architecture
 
 Hierarchy Management integrates closely with:
 
@@ -649,7 +663,7 @@ Hierarchy Management integrates closely with:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -681,7 +695,7 @@ Hierarchy Management integrates closely with:
 
 ---
 
-# Summary
+## Summary
 
 The Hierarchy Management subsystem provides the generic structural foundation of the Kernschmied backend by representing all organizational elements as schema-driven hierarchy nodes rather than hardcoded business entities.
 

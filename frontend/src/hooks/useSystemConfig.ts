@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+// F:\Kernschmied\frontend\src\hooks\useSystemConfig.ts
+
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   ConfigApiError,
   loadSystemConfig,
   updateSystemConfig,
 } from "../api/config";
-import type { ConfigObject } from "../contracts/config";
+import type { ConfigObject, ConfigValue } from "../contracts/config";
 
 export type UseSystemConfigReturn = ReturnType<typeof useSystemConfig>;
 
@@ -30,6 +32,18 @@ interface UseSystemConfigResult {
   reset: () => void;
 }
 
+interface ConfigEntryLike {
+  group: string;
+  key: string;
+  value: ConfigValue;
+}
+
+interface ConfigSnapshotLike {
+  revision: number;
+  values?: unknown;
+  items?: unknown;
+}
+
 export function useSystemConfig(): UseSystemConfigResult {
   const [persistedValues, setPersistedValues] = useState<ConfigObject>({});
 
@@ -47,7 +61,10 @@ export function useSystemConfig(): UseSystemConfigResult {
 
   const saveAbortController = useRef<AbortController | null>(null);
 
-  const isDirty = JSON.stringify(values) !== JSON.stringify(persistedValues);
+  const isDirty = useMemo(
+    () => !configObjectsEqual(values, persistedValues),
+    [values, persistedValues],
+  );
 
   const reload = useCallback(async (): Promise<void> => {
     loadAbortController.current?.abort();
@@ -57,15 +74,22 @@ export function useSystemConfig(): UseSystemConfigResult {
     loadAbortController.current = controller;
 
     setIsLoading(true);
+
     setError(null);
 
     try {
-      const snapshot = await loadSystemConfig(controller.signal);
+      const rawSnapshot = await loadSystemConfig(controller.signal);
 
-      setPersistedValues(snapshot.values);
-      setValuesState(snapshot.values);
-      setRevision(snapshot.revision);
-    } catch (caughtError) {
+      const snapshot = rawSnapshot as ConfigSnapshotLike;
+
+      const loadedValues = normalizeSnapshotValues(snapshot);
+
+      setPersistedValues(loadedValues);
+
+      setValuesState(loadedValues);
+
+      setRevision(normalizeRevision(snapshot.revision));
+    } catch (caughtError: unknown) {
       if (
         caughtError instanceof DOMException &&
         caughtError.name === "AbortError"
@@ -77,6 +101,7 @@ export function useSystemConfig(): UseSystemConfigResult {
     } finally {
       if (loadAbortController.current === controller) {
         setIsLoading(false);
+
         loadAbortController.current = null;
       }
     }
@@ -94,10 +119,11 @@ export function useSystemConfig(): UseSystemConfigResult {
     saveAbortController.current = controller;
 
     setIsSaving(true);
+
     setError(null);
 
     try {
-      const snapshot = await updateSystemConfig(
+      const rawSnapshot = await updateSystemConfig(
         {
           values,
           expected_revision: revision,
@@ -105,12 +131,32 @@ export function useSystemConfig(): UseSystemConfigResult {
         controller.signal,
       );
 
-      setPersistedValues(snapshot.values);
-      setValuesState(snapshot.values);
-      setRevision(snapshot.revision);
+      const snapshot = rawSnapshot as ConfigSnapshotLike;
+
+      /*
+       * Manche Update-Endpunkte liefern nur Revision und Status.
+       * In diesem Fall wird nach erfolgreichem Speichern erneut
+       * vom Backend geladen.
+       */
+      const hasReturnedValues =
+        snapshot.values !== undefined || snapshot.items !== undefined;
+
+      if (!hasReturnedValues) {
+        await reload();
+
+        return true;
+      }
+
+      const savedValues = normalizeSnapshotValues(snapshot);
+
+      setPersistedValues(savedValues);
+
+      setValuesState(savedValues);
+
+      setRevision(normalizeRevision(snapshot.revision));
 
       return true;
-    } catch (caughtError) {
+    } catch (caughtError: unknown) {
       if (
         caughtError instanceof DOMException &&
         caughtError.name === "AbortError"
@@ -124,15 +170,59 @@ export function useSystemConfig(): UseSystemConfigResult {
     } finally {
       if (saveAbortController.current === controller) {
         setIsSaving(false);
+
         saveAbortController.current = null;
       }
     }
-  }, [isDirty, isSaving, revision, values]);
+  }, [isDirty, isSaving, reload, revision, values]);
 
   const reset = useCallback((): void => {
-    setValuesState(persistedValues);
+    setValuesState(cloneConfigObject(persistedValues));
+
     setError(null);
   }, [persistedValues]);
+
+  // Autosave: when enabled, automatically save dirty changes after a short debounce.
+  const autosaveTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    // Determine autosave preference from config values. Default to true.
+    const ui = (values as any)?.ui as Record<string, unknown> | undefined;
+    const autosavePref =
+      ui && typeof ui.autosave_enabled !== "undefined"
+        ? Boolean(ui.autosave_enabled)
+        : true;
+
+    if (!autosavePref) {
+      // If disabled, clear any pending timer and do nothing.
+      if (autosaveTimer.current !== null) {
+        window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+      return;
+    }
+
+    if (isLoading || isSaving || !isDirty) {
+      return;
+    }
+
+    // Debounce save by 1s to avoid rapid calls during typing.
+    if (autosaveTimer.current !== null) {
+      window.clearTimeout(autosaveTimer.current);
+    }
+
+    autosaveTimer.current = window.setTimeout(() => {
+      void save();
+      autosaveTimer.current = null;
+    }, 1000);
+
+    return () => {
+      if (autosaveTimer.current !== null) {
+        window.clearTimeout(autosaveTimer.current);
+        autosaveTimer.current = null;
+      }
+    };
+  }, [values, isDirty, isLoading, isSaving, save]);
 
   const setValues = useCallback((nextValues: ConfigObject): void => {
     setValuesState(nextValues);
@@ -161,6 +251,141 @@ export function useSystemConfig(): UseSystemConfigResult {
   };
 }
 
+function normalizeSnapshotValues(snapshot: ConfigSnapshotLike): ConfigObject {
+  /*
+   * Bevorzugte Frontend-Struktur:
+   *
+   * {
+   *   identity: {
+   *     name: "Kernschmied"
+   *   }
+   * }
+   */
+  if (isConfigObject(snapshot.values)) {
+    return cloneConfigObject(snapshot.values);
+  }
+
+  /*
+   * Backend-Transportstruktur:
+   *
+   * {
+   *   items: [
+   *     {
+   *       group: "identity",
+   *       key: "name",
+   *       value: "Kernschmied"
+   *     }
+   *   ]
+   * }
+   */
+  if (Array.isArray(snapshot.items)) {
+    return buildConfigObject(snapshot.items);
+  }
+
+  /*
+   * Kompatibilität für API-Clients, die items versehentlich
+   * unter values zurückgeben.
+   */
+  if (Array.isArray(snapshot.values)) {
+    return buildConfigObject(snapshot.values);
+  }
+
+  return {};
+}
+
+function buildConfigObject(rawEntries: unknown[]): ConfigObject {
+  const result: ConfigObject = {};
+
+  for (const rawEntry of rawEntries) {
+    if (!isConfigEntryLike(rawEntry)) {
+      continue;
+    }
+
+    const group = rawEntry.group.trim().toLowerCase();
+
+    const key = rawEntry.key.trim().toLowerCase();
+
+    if (!group || !key) {
+      continue;
+    }
+
+    const existingGroup = result[group];
+
+    const groupValues: ConfigObject = isConfigObject(existingGroup)
+      ? existingGroup
+      : {};
+
+    result[group] = {
+      ...groupValues,
+      [key]: rawEntry.value,
+    };
+  }
+
+  return result;
+}
+
+function isConfigEntryLike(value: unknown): value is ConfigEntryLike {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  const record = value as Record<string, unknown>;
+
+  return (
+    typeof record.group === "string" &&
+    typeof record.key === "string" &&
+    isConfigValue(record.value)
+  );
+}
+
+function isConfigObject(value: unknown): value is ConfigObject {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+    return false;
+  }
+
+  return Object.values(value).every(isConfigValue);
+}
+
+function isConfigValue(value: unknown): value is ConfigValue {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "boolean"
+  ) {
+    return true;
+  }
+
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+
+  if (Array.isArray(value)) {
+    return value.every(isConfigValue);
+  }
+
+  if (typeof value === "object" && value !== null) {
+    return Object.values(value).every(isConfigValue);
+  }
+
+  return false;
+}
+
+function cloneConfigObject(values: ConfigObject): ConfigObject {
+  return structuredClone(values);
+}
+
+function configObjectsEqual(left: ConfigObject, right: ConfigObject): boolean {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function normalizeRevision(value: unknown): number | null {
+  if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
+    return value;
+  }
+
+  return null;
+}
+
 function normalizeConfigError(error: unknown): SystemConfigError {
   if (error instanceof ConfigApiError) {
     return {
@@ -180,6 +405,7 @@ function normalizeConfigError(error: unknown): SystemConfigError {
   return {
     code: "unexpected_config_error",
     message:
-      "Beim Verarbeiten der Konfiguration ist ein unbekannter Fehler aufgetreten.",
+      "Beim Verarbeiten der Konfiguration " +
+      "ist ein unbekannter Fehler aufgetreten.",
   };
 }

@@ -8,7 +8,7 @@ The bootstrap endpoint intentionally contains only lightweight metadata. Large r
 
 ---
 
-# Goals
+## Goals
 
 The Bootstrap endpoint is designed to provide:
 
@@ -27,7 +27,7 @@ The bootstrap response should remain small, deterministic and cacheable.
 
 ---
 
-# Endpoint
+## Endpoint
 
 ```http
 GET /api/v1/bootstrap
@@ -35,7 +35,7 @@ GET /api/v1/bootstrap
 
 ---
 
-# Authentication
+## Authentication
 
 Authentication depends on the active deployment profile.
 
@@ -47,7 +47,7 @@ Authentication depends on the active deployment profile.
 
 ---
 
-# Response
+## Response
 
 Example:
 
@@ -109,7 +109,7 @@ Example:
 
 ---
 
-# Response Sections
+## Response Sections
 
 ## Application
 
@@ -277,7 +277,7 @@ This identifier supports diagnostics and support requests.
 
 ---
 
-# Startup Sequence
+## Startup Sequence
 
 Typical startup flow:
 
@@ -307,13 +307,14 @@ Initialize Application
 ↓
 
 Ready
+
 ```
 
 The bootstrap endpoint should always be the first API request.
 
 ---
 
-# Why Not Return Everything?
+## Why Not Return Everything?
 
 Bootstrap intentionally does **not** return:
 
@@ -334,7 +335,7 @@ Reasons:
 
 ---
 
-# Versioning
+## Versioning
 
 The Bootstrap API follows the REST API version.
 
@@ -342,13 +343,14 @@ Current endpoint:
 
 ```text
 /api/v1/bootstrap
+
 ```
 
 The bootstrap payload also contains independent contract versions.
 
 ---
 
-# Error Responses
+## Error Responses
 
 Errors follow the standard platform contract.
 
@@ -365,7 +367,7 @@ Example:
 
 ---
 
-# Caching
+## Caching
 
 The bootstrap response may be cached briefly.
 
@@ -378,7 +380,7 @@ However, clients should invalidate cached information whenever:
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Bootstrap intentionally excludes sensitive information.
 
@@ -394,7 +396,7 @@ The response should be safe for authenticated clients.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The endpoint should:
 
@@ -407,7 +409,7 @@ Bootstrap should typically complete within a few milliseconds.
 
 ---
 
-# Related Endpoints
+## Related Endpoints
 
 After bootstrap, clients typically request:
 
@@ -419,11 +421,12 @@ GET /api/v1/hierarchy
 GET /api/v1/models
 
 GET /api/v1/tools
+
 ```
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 - [[REST-API]]
 - [[Architecture]]
@@ -436,7 +439,7 @@ GET /api/v1/tools
 
 ---
 
-# Summary
+## Summary
 
 The Bootstrap API provides a lightweight initialization contract for every Kernschmied client.
 

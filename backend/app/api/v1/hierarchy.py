@@ -21,6 +21,16 @@ from pydantic import (
     JsonValue,
 )
 
+from app.auth.models import UserContext
+from app.contracts.hierarchy import (
+    HierarchyNode,
+    HierarchyNodeCreate,
+    HierarchyNodeUpdate,
+)
+from app.hierarchy.models import HierarchyActor
+from app.hierarchy.repository import HierarchyRepository
+from app.services.hierarchy_service import create_hierarchy_service
+
 router = APIRouter()
 
 HIERARCHY_SCHEMA_VERSION = "1.0"
@@ -278,6 +288,27 @@ def normalize_hierarchy(
     return normalized
 
 
+def build_actor_from_request(request: Request) -> HierarchyActor:
+    principal: object | None = getattr(request.state, "user", None)
+
+    if principal is None:
+        return HierarchyActor()
+
+    if isinstance(principal, UserContext):
+        user = principal
+    else:
+        try:
+            user = UserContext.from_principal(principal)
+        except Exception:
+            return HierarchyActor()
+
+    return HierarchyActor(
+        user_id=user.id,
+        roles=frozenset(user.roles),
+        permissions=frozenset(user.permissions),
+    )
+
+
 def get_hierarchy_service(
     request: Request,
 ) -> HierarchyServiceProtocol:
@@ -362,3 +393,186 @@ async def hierarchy(
         schema_version=HIERARCHY_SCHEMA_VERSION,
         revision=revision,
     )
+
+
+class _MovePayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    new_parent_id: str | None = Field(
+        default=None,
+        description="Neuer Elternknoten oder null für Root",
+    )
+
+
+@router.post(
+    "",
+    status_code=status.HTTP_201_CREATED,
+    response_model=HierarchyNode,
+    summary="Hierarchieknoten erstellen",
+)
+async def create_hierarchy_node(
+    request: Request,
+    payload: HierarchyNodeCreate,
+) -> HierarchyNode:
+    actor = build_actor_from_request(request)
+
+    session_factory = getattr(request.app.state, "session_factory", None)
+
+    if session_factory is None:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="HIERARCHY_PERSISTENCE_UNAVAILABLE",
+            message="Die Persistenz für Hierarchie ist nicht verfügbar.",
+        )
+
+    async with session_factory() as session:  # type: ignore[arg-type]
+        repository = HierarchyRepository(session)  # type: ignore[arg-type]
+        service = create_hierarchy_service(repository)
+
+        try:
+            node = await service.create_node(payload, actor=actor)
+            return node
+        except PermissionError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                code="PERMISSION_DENIED",
+                message=str(exc),
+            )
+
+
+@router.patch(
+    "/{node_id}",
+    response_model=HierarchyNode,
+    summary="Hierarchieknoten aktualisieren",
+)
+async def update_hierarchy_node(
+    request: Request,
+    node_id: str,
+    payload: HierarchyNodeUpdate,
+) -> HierarchyNode:
+    actor = build_actor_from_request(request)
+
+    session_factory = getattr(request.app.state, "session_factory", None)
+
+    if session_factory is None:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="HIERARCHY_PERSISTENCE_UNAVAILABLE",
+            message="Die Persistenz für Hierarchie ist nicht verfügbar.",
+        )
+
+    async with session_factory() as session:  # type: ignore[arg-type]
+        repository = HierarchyRepository(session)  # type: ignore[arg-type]
+        service = create_hierarchy_service(repository)
+
+        try:
+            node = await service.update_node(node_id, payload, actor=actor)
+            return node
+        except LookupError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_404_NOT_FOUND,
+                code="HIERARCHY_NODE_NOT_FOUND",
+                message=str(exc),
+            )
+        except PermissionError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                code="PERMISSION_DENIED",
+                message=str(exc),
+            )
+
+
+@router.post(
+    "/{node_id}/move",
+    response_model=HierarchyNode,
+    summary="Hierarchieknoten verschieben",
+)
+async def move_hierarchy_node(
+    request: Request,
+    node_id: str,
+    payload: _MovePayload,
+) -> HierarchyNode:
+    actor = build_actor_from_request(request)
+
+    session_factory = getattr(request.app.state, "session_factory", None)
+
+    if session_factory is None:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="HIERARCHY_PERSISTENCE_UNAVAILABLE",
+            message="Die Persistenz für Hierarchie ist nicht verfügbar.",
+        )
+
+    async with session_factory() as session:  # type: ignore[arg-type]
+        repository = HierarchyRepository(session)  # type: ignore[arg-type]
+        service = create_hierarchy_service(repository)
+
+        try:
+            node = await service.move_node(
+                node_id, new_parent_id=payload.new_parent_id, actor=actor
+            )
+            return node
+        except LookupError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_404_NOT_FOUND,
+                code="HIERARCHY_NODE_NOT_FOUND",
+                message=str(exc),
+            )
+        except PermissionError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                code="PERMISSION_DENIED",
+                message=str(exc),
+            )
+
+
+@router.delete(
+    "/{node_id}",
+    response_class=Response,
+    summary="Hierarchieknoten löschen",
+)
+async def delete_hierarchy_node(
+    request: Request,
+    node_id: str,
+) -> Response:
+    actor = build_actor_from_request(request)
+
+    session_factory = getattr(request.app.state, "session_factory", None)
+
+    if session_factory is None:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="HIERARCHY_PERSISTENCE_UNAVAILABLE",
+            message="Die Persistenz für Hierarchie ist nicht verfügbar.",
+        )
+
+    async with session_factory() as session:  # type: ignore[arg-type]
+        repository = HierarchyRepository(session)  # type: ignore[arg-type]
+        service = create_hierarchy_service(repository)
+
+        try:
+            await service.delete_node(node_id, actor=actor)
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        except LookupError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_404_NOT_FOUND,
+                code="HIERARCHY_NODE_NOT_FOUND",
+                message=str(exc),
+            )
+        except PermissionError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                code="PERMISSION_DENIED",
+                message=str(exc),
+            )

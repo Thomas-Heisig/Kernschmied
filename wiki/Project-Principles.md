@@ -6,7 +6,7 @@
 
 ---
 
-# Purpose
+## Purpose
 
 Kernschmied is designed as a **modular, schema-driven AI platform** that can evolve over many years without requiring architectural redesigns.
 
@@ -16,7 +16,7 @@ These principles are mandatory for every component of the system.
 
 ---
 
-# Core Philosophy
+## Core Philosophy
 
 Kernschmied follows one central philosophy:
 
@@ -30,7 +30,7 @@ Every extension must be explicitly registered, validated and authorized.
 
 ---
 
-# Design Goals
+## Design Goals
 
 The project aims to achieve:
 
@@ -47,7 +47,7 @@ The project aims to achieve:
 
 ---
 
-# Fundamental Principles
+## Fundamental Principles
 
 ## 1. Stable Contracts
 
@@ -409,7 +409,7 @@ Avoid overengineering.
 
 ---
 
-# Non-Goals
+## Non-Goals
 
 The following are intentionally outside the initial MVP:
 
@@ -422,7 +422,7 @@ The following are intentionally outside the initial MVP:
 
 ---
 
-# Guiding Principle
+## Guiding Principle
 
 Whenever multiple implementation options exist, choose the solution that best preserves:
 
@@ -436,7 +436,7 @@ Performance optimizations should never compromise these principles.
 
 ---
 
-# Summary
+## Summary
 
 Kernschmied is built on a small number of strict architectural rules:
 
@@ -453,11 +453,12 @@ Kernschmied is built on a small number of strict architectural rules:
 
 These principles form the foundation for every future decision within the project.
 
-```
+```text
 
 
 ## Verweise
 - [[Home]]
 
 Zurück zu [[Home]].
+
 ```

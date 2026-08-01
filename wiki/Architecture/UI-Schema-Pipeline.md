@@ -10,7 +10,7 @@ The UI Schema Pipeline is one of the central architectural concepts of Kernschmi
 
 ---
 
-# Goals
+## Goals
 
 The UI Schema Pipeline is designed to provide:
 
@@ -25,7 +25,7 @@ The UI Schema Pipeline is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 The pipeline follows several architectural principles.
 
@@ -49,6 +49,7 @@ Toolbar
 ↓
 
 Chat View
+
 ```
 
 The backend never sends executable UI code.
@@ -73,6 +74,7 @@ React Component
 ↓
 
 Rendered UI
+
 ```
 
 Rendering always remains under frontend control.
@@ -91,7 +93,7 @@ This guarantees:
 
 ---
 
-# High-Level Pipeline
+## High-Level Pipeline
 
 The complete UI Schema Pipeline is shown below.
 
@@ -129,13 +131,14 @@ Component Registry
 ↓
 
 React Components
+
 ```
 
 Each stage has a clearly defined responsibility.
 
 ---
 
-# Schema Sources
+## Schema Sources
 
 UI schemas may be generated from multiple sources.
 
@@ -152,7 +155,7 @@ These sources are merged before schema generation.
 
 ---
 
-# Schema Generation
+## Schema Generation
 
 The backend generates a complete UI schema.
 
@@ -169,7 +172,7 @@ The frontend never assembles schemas on its own.
 
 ---
 
-# Schema Validation
+## Schema Validation
 
 Every generated schema is validated before being returned.
 
@@ -186,7 +189,7 @@ Invalid schemas are rejected before reaching the client.
 
 ---
 
-# UI Schema Contract
+## UI Schema Contract
 
 The schema represents a stable API contract.
 
@@ -203,7 +206,7 @@ The schema contract evolves independently of frontend implementation details.
 
 ---
 
-# API Transport
+## API Transport
 
 The validated schema is delivered through the UI Schema API.
 
@@ -221,13 +224,14 @@ Backend
 ↓
 
 Validated Schema
+
 ```
 
 The schema is transported as JSON.
 
 ---
 
-# Bootstrap Relationship
+## Bootstrap Relationship
 
 Bootstrap provides metadata that allows clients to determine whether the UI schema should be refreshed.
 
@@ -241,7 +245,7 @@ Clients reload schemas only when necessary.
 
 ---
 
-# Client Loading
+## Client Loading
 
 During startup the frontend loads:
 
@@ -263,13 +267,14 @@ Hierarchy
 ↓
 
 Application Ready
+
 ```
 
 This creates a deterministic startup sequence.
 
 ---
 
-# Schema Parsing
+## Schema Parsing
 
 After download the frontend parses the schema into TypeScript models.
 
@@ -287,13 +292,14 @@ Type Definitions
 ↓
 
 Renderer
+
 ```
 
 Invalid schemas are rejected immediately.
 
 ---
 
-# Schema Renderer
+## Schema Renderer
 
 The Schema Renderer is responsible for interpreting the schema.
 
@@ -311,13 +317,14 @@ Component Resolution
 ↓
 
 React Tree
+
 ```
 
 The renderer never performs business logic.
 
 ---
 
-# Component Registry
+## Component Registry
 
 The renderer resolves component types through the Component Registry.
 
@@ -333,13 +340,14 @@ Component Registry
 ↓
 
 GenericChatView
+
 ```
 
 Unknown component types are handled safely.
 
 ---
 
-# Action Registry
+## Action Registry
 
 Interactive actions are resolved through the Action Registry.
 
@@ -353,13 +361,14 @@ Action Registry
 ↓
 
 Handler
+
 ```
 
 The backend defines available actions, while the frontend provides trusted implementations.
 
 ---
 
-# Recursive Rendering
+## Recursive Rendering
 
 Many schemas contain nested layouts.
 
@@ -377,13 +386,14 @@ Layout
     ├── Tree
 
     └── Chat
+
 ```
 
 The renderer recursively renders child components.
 
 ---
 
-# Generic Components
+## Generic Components
 
 The frontend uses generic components whenever possible.
 
@@ -399,7 +409,7 @@ Business-specific React components are intentionally avoided.
 
 ---
 
-# Unknown Components
+## Unknown Components
 
 Unknown component types never execute arbitrary code.
 
@@ -415,13 +425,14 @@ UnsupportedSchema
 ↓
 
 Visible Placeholder
+
 ```
 
 The application remains stable even when the backend evolves.
 
 ---
 
-# Unknown Actions
+## Unknown Actions
 
 Unknown actions are rejected safely.
 
@@ -439,13 +450,14 @@ Warning
 ↓
 
 Continue Rendering
+
 ```
 
 This prevents undefined runtime behavior.
 
 ---
 
-# Permission Filtering
+## Permission Filtering
 
 The backend determines which components and actions are available.
 
@@ -455,7 +467,7 @@ Permission enforcement always remains server-side.
 
 ---
 
-# Dynamic Forms
+## Dynamic Forms
 
 Forms are generated from schemas.
 
@@ -471,13 +483,14 @@ Form Renderer
 ↓
 
 Input Components
+
 ```
 
 The frontend never hardcodes configuration forms.
 
 ---
 
-# Dynamic Navigation
+## Dynamic Navigation
 
 Navigation may also be schema-driven.
 
@@ -493,7 +506,7 @@ Navigation remains declarative.
 
 ---
 
-# Schema Caching
+## Schema Caching
 
 Downloaded schemas may be cached.
 
@@ -505,13 +518,14 @@ UI Schema Version
 +
 
 Configuration Revision
+
 ```
 
 Caches are invalidated whenever either value changes.
 
 ---
 
-# Runtime Updates
+## Runtime Updates
 
 If runtime-editable configuration changes affect the UI:
 
@@ -529,13 +543,14 @@ Schema Reload
 ↓
 
 UI Refresh
+
 ```
 
 No frontend rebuild is required.
 
 ---
 
-# Versioning
+## Versioning
 
 The UI schema has its own version.
 
@@ -551,13 +566,14 @@ Version 0.5
 UI Schema
 
 Version 2
+
 ```
 
 Schema evolution is independent of application releases.
 
 ---
 
-# Validation on the Frontend
+## Validation on the Frontend
 
 The frontend performs defensive validation.
 
@@ -572,7 +588,7 @@ Malformed schemas are rejected before rendering.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Rendering failures are isolated.
 
@@ -586,13 +602,14 @@ Error Component
 ↓
 
 Remaining UI Continues
+
 ```
 
 A single invalid section should not prevent unrelated parts of the application from functioning.
 
 ---
 
-# Performance
+## Performance
 
 The pipeline is optimized for:
 
@@ -606,7 +623,7 @@ Schemas are interpreted rather than compiled.
 
 ---
 
-# Security
+## Security
 
 Several architectural boundaries protect the pipeline.
 
@@ -620,7 +637,7 @@ Likewise, only registered actions may be executed.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture supports future capabilities including:
 
@@ -637,7 +654,7 @@ These features can be introduced without changing the fundamental pipeline.
 
 ---
 
-# Relationship to Other Architecture
+## Relationship to Other Architecture
 
 The UI Schema Pipeline integrates multiple architectural subsystems.
 
@@ -671,13 +688,14 @@ Component Registry
 ↓
 
 React UI
+
 ```
 
 It therefore connects backend configuration with frontend rendering through stable contracts.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -719,7 +737,7 @@ It therefore connects backend configuration with frontend rendering through stab
 
 ---
 
-# Summary
+## Summary
 
 The UI Schema Pipeline provides the complete end-to-end process for transforming backend-defined interface descriptions into secure, dynamic, and fully rendered React user interfaces.
 

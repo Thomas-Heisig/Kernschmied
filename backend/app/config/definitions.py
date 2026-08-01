@@ -87,6 +87,7 @@ class ConfigUIComponent(StrEnum):
     TAGS = "tags"
     JSON = "json"
     URL = "url"
+    PROVIDER_SELECT = "provider_select"
     MODEL_SELECT = "model_select"
     TOOL_SELECT = "tool_select"
     NODE_SELECT = "node_select"
@@ -113,6 +114,7 @@ class ConfigValueSource(StrEnum):
     """
 
     STATIC = "static"
+    PROVIDERS = "providers"
     MODELS = "models"
     TOOLS = "tools"
     HIERARCHY_NODES = "hierarchy_nodes"
@@ -180,6 +182,18 @@ class ConfigDynamicOptions(BaseModel):
 
     filters: dict[str, Any] = Field(default_factory=dict)
 
+    depends_on: str | None = Field(
+        default=None,
+        max_length=255,
+        pattern=r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$",
+    )
+
+    dependency_parameter: str | None = Field(
+        default=None,
+        max_length=100,
+        pattern=r"^[a-z][a-z0-9_]*$",
+    )
+
     @model_validator(mode="after")
     def validate_endpoint(self) -> ConfigDynamicOptions:
         if self.source == ConfigValueSource.API:
@@ -192,6 +206,20 @@ class ConfigDynamicOptions(BaseModel):
                 raise ValueError(
                     "Dynamische Config-Endpunkte müssen mit '/api/' beginnen.",
                 )
+
+        if self.depends_on is None and self.dependency_parameter is not None:
+            raise ValueError(
+                "dependency_parameter benötigt depends_on.",
+            )
+
+        if self.depends_on is not None and self.dependency_parameter is None:
+            raise ValueError(
+                "depends_on benötigt dependency_parameter.",
+            )
+
+        # Note: preventing depends_on from referencing the same key
+        # requires knowledge of the parent definition's full key and is
+        # validated later when all definitions are available.
 
         return self
 
@@ -676,8 +704,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "language",
         },
     ),
-    
-        # ============================================================
+    # ============================================================
     # Identität und Verhalten
     # ============================================================
     config_definition(
@@ -832,8 +859,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         key="default_language",
         display_name="Standardsprache",
         description=(
-            "Bevorzugte Sprache für Antworten und erzeugte "
-            "Arbeitsergebnisse."
+            "Bevorzugte Sprache für Antworten und erzeugte Arbeitsergebnisse."
         ),
         value_schema={
             "type": "string",
@@ -874,10 +900,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="identity",
         key="timezone",
         display_name="Zeitzone",
-        description=(
-            "IANA-Zeitzone für Termine, Fristen und "
-            "zeitabhängige Aufgaben."
-        ),
+        description=("IANA-Zeitzone für Termine, Fristen und zeitabhängige Aufgaben."),
         value_schema={
             "type": "string",
             "minLength": 1,
@@ -897,8 +920,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             order=60,
             placeholder="Europe/Berlin",
             help_text=(
-                "Die Zeitzone muss als gültiger IANA-Bezeichner "
-                "angegeben werden."
+                "Die Zeitzone muss als gültiger IANA-Bezeichner angegeben werden."
             ),
         ),
         tags={
@@ -953,7 +975,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "governance",
         },
     ),
-
     # ============================================================
     # Uploads
     # ============================================================
@@ -1033,18 +1054,68 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
     # ============================================================
     config_definition(
         group="models",
-        key="default_model",
-        display_name="Standardmodell",
+        key="default_provider",
+        display_name="Standardprovider",
         description=(
-            "Standardmäßig ausgewähltes Modell, sofern kein höher "
-            "priorisierter Scope ein anderes Modell festlegt."
+            "Provider, dessen Modelle standardmäßig für neue Chats angeboten werden."
         ),
         value_schema={
             "type": "string",
             "minLength": 1,
+            "maxLength": 100,
+        },
+        default_value="ollama",
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.NODE,
+            ConfigScope.PROJECT,
+            ConfigScope.CHAT,
+            ConfigScope.USER,
+            ConfigScope.REQUEST,
+        },
+        request_override_allowed=True,
+        value_type=ConfigValueType.STRING,
+        permissions=ConfigPermissions(
+            read="models:read",
+            write="models:configure",
+        ),
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.PROVIDER_SELECT,
+            category="Modelle",
+            section="Standardauswahl",
+            order=10,
+            dynamic_options=ConfigDynamicOptions(
+                source=ConfigValueSource.PROVIDERS,
+                endpoint="/api/v1/models/providers",
+                value_field="id",
+                label_field="name",
+                description_field="description",
+            ),
+        ),
+        tags={
+            "models",
+            "providers",
+            "defaults",
+        },
+    ),
+    config_definition(
+        group="models",
+        key="default_model",
+        display_name="Standardmodell",
+        description=(
+            "Standardmodell für neue Chats. "
+            "Die Auswahl wird automatisch auf den aktuellen Provider gefiltert."
+        ),
+        value_schema={
+            "type": [
+                "string",
+                "null",
+            ],
+            "minLength": 1,
             "maxLength": 255,
         },
         default_value="ollama-qwen2.5-coder-7b",
+        nullable=True,
         allowed_scopes={
             ConfigScope.SYSTEM,
             ConfigScope.NODE,
@@ -1063,7 +1134,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             component=ConfigUIComponent.MODEL_SELECT,
             category="Modelle",
             section="Standardauswahl",
-            order=10,
+            order=20,
             dynamic_options=ConfigDynamicOptions(
                 source=ConfigValueSource.MODELS,
                 endpoint="/api/v1/models",
@@ -1072,7 +1143,10 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
                 description_field="description",
                 filters={
                     "include_disabled": False,
+                    "capability": "chat",
                 },
+                depends_on="models.default_provider",
+                dependency_parameter="provider",
             ),
         ),
         tags={

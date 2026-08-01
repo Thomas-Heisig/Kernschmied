@@ -8,7 +8,7 @@ The goal of this index is to provide a single entry point into the architectural
 
 ---
 
-# Purpose
+## Purpose
 
 The Architecture Decision Index exists to:
 
@@ -23,7 +23,7 @@ ADRs are intended to evolve together with the platform.
 
 ---
 
-# What is an ADR?
+## What is an ADR?
 
 An Architecture Decision Record (ADR) is a lightweight document describing one significant architectural decision.
 
@@ -39,7 +39,7 @@ Unlike implementation documentation, ADRs explain **why**, not **how**.
 
 ---
 
-# ADR Lifecycle
+## ADR Lifecycle
 
 Every ADR follows the same lifecycle.
 
@@ -65,6 +65,7 @@ Superseded (optional)
 ↓
 
 Archived (optional)
+
 ```
 
 Most ADRs remain permanently valid.
@@ -73,7 +74,7 @@ Some may later be superseded by newer decisions.
 
 ---
 
-# ADR Status
+## ADR Status
 
 The following status values are used.
 
@@ -88,7 +89,7 @@ The following status values are used.
 
 ---
 
-# Relationship to Source Code
+## Relationship to Source Code
 
 Architecture decisions should always be reflected in the implementation.
 
@@ -110,13 +111,14 @@ Tests
 ↓
 
 Documentation
+
 ```
 
 When implementation changes require architectural changes, the corresponding ADR should also be updated or superseded.
 
 ---
 
-# ADR Organization
+## ADR Organization
 
 The ADRs are organized by architectural topic rather than by implementation layer.
 
@@ -136,7 +138,7 @@ Future ADRs should follow the same organizational principles.
 
 ---
 
-# ADR Cross References
+## ADR Cross References
 
 Architecture Decision Records frequently reference:
 
@@ -152,11 +154,12 @@ Example:
 
 ```text
 [[ADR-0003-Registries]]
+
 ```
 
 ---
 
-# Current ADR Collection
+## Current ADR Collection
 
 ## ADR-0001
 
@@ -359,7 +362,7 @@ Related documentation:
 
 ---
 
-# Creating New ADRs
+## Creating New ADRs
 
 New Architecture Decision Records should be created whenever changes affect:
 
@@ -376,7 +379,7 @@ Minor implementation details generally do not require ADRs.
 
 ---
 
-# ADR Naming Convention
+## ADR Naming Convention
 
 ADRs use sequential numbering.
 
@@ -388,6 +391,7 @@ ADR-0001
 ADR-0002
 
 ADR-0003
+
 ```
 
 Numbers are never reused.
@@ -396,7 +400,7 @@ Titles should be concise and descriptive.
 
 ---
 
-# Recommended ADR Structure
+## Recommended ADR Structure
 
 Every ADR should include:
 
@@ -422,13 +426,14 @@ Performance
 Related Documentation
 
 Summary
+
 ```
 
 This ensures consistency across the project.
 
 ---
 
-# Relationship to Architecture Documentation
+## Relationship to Architecture Documentation
 
 Architecture documentation explains:
 
@@ -442,7 +447,7 @@ Both document types complement each other.
 
 ---
 
-# Relationship to APIs
+## Relationship to APIs
 
 API documentation specifies:
 
@@ -455,7 +460,7 @@ ADRs describe why these APIs exist in their current form.
 
 ---
 
-# Maintaining ADRs
+## Maintaining ADRs
 
 When architecture evolves:
 
@@ -468,7 +473,7 @@ Existing ADRs should not be rewritten to erase historical context.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -505,7 +510,7 @@ Existing ADRs should not be rewritten to erase historical context.
 
 ---
 
-# Summary
+## Summary
 
 The Architecture Decision Index provides a structured overview of all Architecture Decision Records within the Kernschmied project.
 

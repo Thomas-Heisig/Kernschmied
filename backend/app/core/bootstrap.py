@@ -1,7 +1,6 @@
 # F:\Kernschmied\backend\app\core\bootstrap.py
 
 from __future__ import annotations
-from typing import cast
 
 import inspect
 import logging
@@ -406,6 +405,11 @@ async def bootstrap_application(
         # ====================================================
 
         model_registry = ModelRegistry()
+        # Make model registry available to the already-created config_service
+        try:
+            config_service._model_registry = model_registry
+        except Exception:
+            pass
 
         await _run_bootstrap_step(
             step="models.discover_catalog",
@@ -1486,6 +1490,8 @@ def _registry_item_count(
         return len(typed_items)
 
         return None
+
+
 # ============================================================
 # Strukturierte Logging-Hilfsfunktionen
 # ============================================================

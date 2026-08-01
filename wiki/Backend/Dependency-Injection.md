@@ -8,7 +8,7 @@ Kernschmied relies on **FastAPI's dependency injection system** together with ex
 
 ---
 
-# Goals
+## Goals
 
 The Dependency Injection architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The Dependency Injection architecture is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Explicit Dependencies
 
@@ -45,6 +45,7 @@ Model Registry
 ↓
 
 Database Session
+
 ```
 
 Nothing is created implicitly.
@@ -71,6 +72,7 @@ ModelRegistry
 ↓
 
 PromptResolver
+
 ```
 
 Dependencies remain visible and testable.
@@ -93,6 +95,7 @@ Global Registry
 ↓
 
 Hidden Dependency
+
 ```
 
 Instead, dependencies are injected before the service is used.
@@ -107,7 +110,7 @@ Business services consume infrastructure rather than constructing it.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Bootstrap
@@ -127,13 +130,14 @@ Application Services
 ↓
 
 Repositories / Providers
+
 ```
 
 Bootstrap owns infrastructure creation.
 
 ---
 
-# Why Dependency Injection?
+## Why Dependency Injection?
 
 Without dependency injection, services would create their own infrastructure.
 
@@ -151,6 +155,7 @@ Create Registry
 ↓
 
 Create Provider
+
 ```
 
 This approach leads to:
@@ -164,7 +169,7 @@ Dependency injection avoids these problems.
 
 ---
 
-# Dependency Categories
+## Dependency Categories
 
 Typical injected dependencies include:
 
@@ -182,7 +187,7 @@ Application code should depend on abstractions rather than implementation detail
 
 ---
 
-# Application Bootstrap
+## Application Bootstrap
 
 Bootstrap creates shared infrastructure.
 
@@ -210,13 +215,14 @@ Services
 ↓
 
 FastAPI
+
 ```
 
 Only after successful initialization does the application begin processing requests.
 
 ---
 
-# FastAPI Integration
+## FastAPI Integration
 
 FastAPI resolves request-specific dependencies automatically.
 
@@ -236,13 +242,14 @@ Endpoint
 ↓
 
 Service
+
 ```
 
 Dependency resolution occurs before endpoint execution.
 
 ---
 
-# Request Scope
+## Request Scope
 
 Certain dependencies exist only for the lifetime of a single request.
 
@@ -257,7 +264,7 @@ These objects are disposed of automatically when the request finishes.
 
 ---
 
-# Application Scope
+## Application Scope
 
 Some dependencies are shared across the application.
 
@@ -272,7 +279,7 @@ These objects are created during bootstrap and reused.
 
 ---
 
-# Service Construction
+## Service Construction
 
 Application services receive infrastructure rather than creating it.
 
@@ -288,13 +295,14 @@ Prompt Resolver
 ↓
 
 Chat Service
+
 ```
 
 This keeps services focused on business logic.
 
 ---
 
-# Repository Injection
+## Repository Injection
 
 Repositories receive database sessions through dependency injection.
 
@@ -312,13 +320,14 @@ Repository
 ↓
 
 Database
+
 ```
 
 Repositories never create their own sessions.
 
 ---
 
-# Registry Injection
+## Registry Injection
 
 Registries are injected wherever runtime metadata is required.
 
@@ -334,13 +343,14 @@ Model Registry
 ↓
 
 Tool Registry
+
 ```
 
 The service remains unaware of registry implementation details.
 
 ---
 
-# Provider Injection
+## Provider Injection
 
 Provider factories or provider abstractions are injected into services.
 
@@ -354,13 +364,14 @@ Model Registry
 ↓
 
 Provider Backend
+
 ```
 
 Services never instantiate provider implementations directly.
 
 ---
 
-# Configuration Injection
+## Configuration Injection
 
 Resolved configuration is made available through dedicated services or resolvers.
 
@@ -374,13 +385,14 @@ Resolved Configuration
 ↓
 
 Application Service
+
 ```
 
 Configuration resolution remains centralized.
 
 ---
 
-# Request Context
+## Request Context
 
 A request context object may contain:
 
@@ -394,7 +406,7 @@ The context accompanies request processing without introducing global state.
 
 ---
 
-# Authentication
+## Authentication
 
 Authenticated user information is injected into endpoints and services.
 
@@ -412,13 +424,14 @@ Authorization
 ↓
 
 Business Logic
+
 ```
 
 Security-sensitive information is not retrieved through global variables.
 
 ---
 
-# Logging
+## Logging
 
 Structured loggers may be injected where appropriate.
 
@@ -426,7 +439,7 @@ Logging infrastructure remains centralized while allowing contextual logging wit
 
 ---
 
-# Lifecycle Management
+## Lifecycle Management
 
 Dependencies have clearly defined lifetimes.
 
@@ -440,7 +453,7 @@ Correct lifetime management prevents resource leaks.
 
 ---
 
-# Immutability
+## Immutability
 
 Injected infrastructure should remain immutable whenever possible.
 
@@ -454,7 +467,7 @@ Immutable objects simplify reasoning about application behavior.
 
 ---
 
-# Testing
+## Testing
 
 Dependency injection greatly simplifies testing.
 
@@ -481,13 +494,14 @@ Chat Service
 ↓
 
 Assertions
+
 ```
 
 Production code remains unchanged.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Dependency resolution failures are treated as infrastructure failures.
 
@@ -503,13 +517,14 @@ Dependency Creation Failed
 ↓
 
 Application Error
+
 ```
 
 Such failures are detected before business logic executes.
 
 ---
 
-# Performance
+## Performance
 
 Dependency injection improves performance by:
 
@@ -522,7 +537,7 @@ The dependency graph should remain lightweight and deterministic.
 
 ---
 
-# Security
+## Security
 
 Dependency injection contributes to security by:
 
@@ -535,7 +550,7 @@ Security-sensitive services are initialized only through trusted bootstrap logic
 
 ---
 
-# Anti-Patterns
+## Anti-Patterns
 
 The following practices should be avoided.
 
@@ -549,6 +564,7 @@ Global Instance
 ↓
 
 Used Everywhere
+
 ```
 
 Use injected shared services instead.
@@ -581,7 +597,7 @@ Object graphs should be assembled during bootstrap rather than within request ha
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture supports future enhancements including:
 
@@ -595,7 +611,7 @@ These additions can be introduced without changing existing service contracts.
 
 ---
 
-# Relationship to Other Backend Components
+## Relationship to Other Backend Components
 
 Dependency Injection connects all backend layers.
 
@@ -617,13 +633,14 @@ Repositories
 ↓
 
 Providers
+
 ```
 
 It acts as the infrastructure backbone of the backend.
 
 ---
 
-# Relationship to Architecture
+## Relationship to Architecture
 
 Dependency Injection integrates closely with:
 
@@ -635,7 +652,7 @@ Dependency Injection integrates closely with:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -665,7 +682,7 @@ Dependency Injection integrates closely with:
 
 ---
 
-# Summary
+## Summary
 
 The Dependency Injection architecture provides the foundation for constructing and managing shared infrastructure throughout the Kernschmied backend.
 

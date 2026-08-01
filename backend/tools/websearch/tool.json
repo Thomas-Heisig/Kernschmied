@@ -4,9 +4,6 @@
   "tool_type": "websearch",
   "version": "1.0.0",
   "enabled": true,
-  "permissions": [
-    "network.outbound",
-    "web.search"
-  ],
+  "permissions": ["network.outbound", "web.search"],
   "requires_confirmation": false
 }

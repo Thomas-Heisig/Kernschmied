@@ -21,23 +21,19 @@ from typing import Final, Literal, TypedDict, cast
 from urllib.parse import urlparse
 
 import httpx
-
 from app.contracts.tool import (
     BaseTool,
+    JsonMapping,
     ToolExecutionContext,
+    ToolExecutionStatus,
     ToolProgressCallback,
     ToolResult,
-    ToolExecutionStatus,
-    JsonMapping,
 )
-
 
 SafeSearch = Literal["off", "moderate", "strict"]
 
 
-BRAVE_SEARCH_ENDPOINT: Final[str] = (
-    "https://api.search.brave.com/res/v1/web/search"
-)
+BRAVE_SEARCH_ENDPOINT: Final[str] = "https://api.search.brave.com/res/v1/web/search"
 
 DEFAULT_TIMEOUT_SECONDS: Final[float] = 12.0
 
@@ -150,10 +146,7 @@ def _read_integer(
 
     if value < minimum or value > maximum:
         raise ValueError(
-            (
-                f"Das Argument '{key}' muss zwischen "
-                f"{minimum} und {maximum} liegen."
-            ),
+            (f"Das Argument '{key}' muss zwischen {minimum} und {maximum} liegen."),
         )
 
     return value
@@ -442,10 +435,7 @@ async def search_web(
 
     if len(normalized_query) > MAX_QUERY_LENGTH:
         raise ValueError(
-            (
-                "Die Suchanfrage darf höchstens "
-                f"{MAX_QUERY_LENGTH} Zeichen enthalten."
-            ),
+            (f"Die Suchanfrage darf höchstens {MAX_QUERY_LENGTH} Zeichen enthalten."),
         )
 
     if count < 1 or count > MAX_RESULT_COUNT:
@@ -615,9 +605,7 @@ class WebSearchTool(BaseTool):
             "count": {
                 "type": "integer",
                 "title": "Anzahl der Ergebnisse",
-                "description": (
-                    "Gewünschte Anzahl der Suchergebnisse."
-                ),
+                "description": ("Gewünschte Anzahl der Suchergebnisse."),
                 "minimum": 1,
                 "maximum": MAX_RESULT_COUNT,
                 "default": DEFAULT_RESULT_COUNT,
@@ -625,9 +613,7 @@ class WebSearchTool(BaseTool):
             "safe_search": {
                 "type": "string",
                 "title": "Safe Search",
-                "description": (
-                    "Filterung potenziell problematischer Suchergebnisse."
-                ),
+                "description": ("Filterung potenziell problematischer Suchergebnisse."),
                 "enum": [
                     "off",
                     "moderate",
@@ -646,7 +632,7 @@ class WebSearchTool(BaseTool):
         self,
         arguments: Mapping[str, object],
         *,
-        context: ToolExecutionContext,              # keyword-only
+        context: ToolExecutionContext,  # keyword-only
         progress: ToolProgressCallback | None = None,  # keyword-only
     ) -> ToolResult:
         """

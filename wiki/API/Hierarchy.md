@@ -17,7 +17,7 @@ The hierarchy is a fundamental building block of the platform and is used by nea
 
 ---
 
-# Goals
+## Goals
 
 The Hierarchy API is designed to provide:
 
@@ -32,7 +32,7 @@ The Hierarchy API is designed to provide:
 
 ---
 
-# Endpoints
+## Endpoints
 
 ## List Hierarchy
 
@@ -104,7 +104,7 @@ POST /api/v1/hierarchy/search
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 REST API
@@ -126,13 +126,14 @@ Configuration Resolver
         ▼
 
 Database
+
 ```
 
 The Hierarchy Service is the single authoritative component responsible for hierarchy management.
 
 ---
 
-# Generic Node Model
+## Generic Node Model
 
 Every node follows the same generic contract.
 
@@ -153,7 +154,7 @@ No node type receives special treatment inside the backend.
 
 ---
 
-# Node Fields
+## Node Fields
 
 | Field     | Description              |
 | --------- | ------------------------ |
@@ -168,7 +169,7 @@ Additional fields may be introduced without breaking compatibility.
 
 ---
 
-# Root Nodes
+## Root Nodes
 
 Every hierarchy begins with one or more root nodes.
 
@@ -184,13 +185,14 @@ Workspace
 ├── Teams
 
 └── Archive
+
 ```
 
 The root structure is defined by configuration rather than source code.
 
 ---
 
-# Example Response
+## Example Response
 
 ```json
 [
@@ -213,7 +215,7 @@ The exact representation may evolve while maintaining version compatibility.
 
 ---
 
-# Node Types
+## Node Types
 
 Node types are configuration-driven.
 
@@ -232,7 +234,7 @@ Applications may introduce additional types without backend modifications.
 
 ---
 
-# Schema Association
+## Schema Association
 
 Every node references a UI schema.
 
@@ -248,7 +250,7 @@ The frontend uses the schema identifier to select the appropriate view through t
 
 ---
 
-# Parent-Child Relationships
+## Parent-Child Relationships
 
 Every node belongs to exactly one parent except root nodes.
 
@@ -266,13 +268,14 @@ Chat
 ↓
 
 Conversation
+
 ```
 
 Cycles are not permitted.
 
 ---
 
-# Tree Traversal
+## Tree Traversal
 
 Clients may recursively traverse the hierarchy.
 
@@ -290,13 +293,14 @@ Grandchildren
 ↓
 
 Leaf Nodes
+
 ```
 
 The Generic Tree component renders the hierarchy independently of node types.
 
 ---
 
-# Configuration Inheritance
+## Configuration Inheritance
 
 Hierarchy nodes define configuration scopes.
 
@@ -320,6 +324,7 @@ Chat
 ↓
 
 Effective Configuration
+
 ```
 
 The Hierarchy API exposes structure only.
@@ -328,7 +333,7 @@ Configuration resolution is handled by the Configuration Resolver.
 
 ---
 
-# Prompt Inheritance
+## Prompt Inheritance
 
 Prompts inherit through the hierarchy using deterministic merge strategies.
 
@@ -352,13 +357,14 @@ Chat Prompt
 ↓
 
 Effective Prompt
+
 ```
 
 The Chat Service always receives the fully resolved prompt.
 
 ---
 
-# Authorization
+## Authorization
 
 Every node is protected by backend authorization.
 
@@ -374,7 +380,7 @@ Permissions are verified before every operation.
 
 ---
 
-# Node Creation
+## Node Creation
 
 Example request:
 
@@ -397,7 +403,7 @@ The backend validates:
 
 ---
 
-# Node Update
+## Node Update
 
 Example request:
 
@@ -413,7 +419,7 @@ Immutable identifiers remain unchanged.
 
 ---
 
-# Node Deletion
+## Node Deletion
 
 Deletion is subject to validation.
 
@@ -428,7 +434,7 @@ Deletion rules are implemented by the Hierarchy Service.
 
 ---
 
-# Moving Nodes
+## Moving Nodes
 
 Future versions may support moving nodes.
 
@@ -452,11 +458,12 @@ Update Parent
 ↓
 
 Recalculate Inheritance
+
 ```
 
 ---
 
-# Validation
+## Validation
 
 Hierarchy validation includes:
 
@@ -471,7 +478,7 @@ Invalid hierarchies are rejected.
 
 ---
 
-# Error Responses
+## Error Responses
 
 Errors follow the standard platform contract.
 
@@ -490,19 +497,20 @@ Example:
 
 ---
 
-# Versioning
+## Versioning
 
 The Hierarchy API follows the REST API version.
 
 ```text
 /api/v1/hierarchy
+
 ```
 
 The hierarchy contract also exposes its version through the Bootstrap API.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The Hierarchy API is optimized through:
 
@@ -516,7 +524,7 @@ Large hierarchies should avoid repeated full-tree reloads.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Hierarchy data never bypasses authorization.
 
@@ -531,7 +539,7 @@ The backend remains the single source of truth.
 
 ---
 
-# Frontend Integration
+## Frontend Integration
 
 The frontend loads the hierarchy during startup.
 
@@ -555,13 +563,14 @@ Schema Renderer
 ↓
 
 User Interaction
+
 ```
 
 The frontend does not hardcode node types.
 
 ---
 
-# Related APIs
+## Related APIs
 
 ```http
 GET /api/v1/bootstrap
@@ -575,7 +584,7 @@ POST /api/v1/chat/stream
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 - [[Architecture]]
 - [[Bootstrap]]
@@ -587,7 +596,7 @@ POST /api/v1/chat/stream
 
 ---
 
-# Summary
+## Summary
 
 The Hierarchy API provides the generic, schema-driven structure that organizes all resources within Kernschmied.
 

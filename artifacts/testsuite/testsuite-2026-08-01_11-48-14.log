@@ -1,0 +1,2582 @@
+**********************
+PowerShell transcript start
+Start time: 20260801114820
+Username: THOMAS-PC\T_hei
+RunAs User: THOMAS-PC\T_hei
+Configuration Name: 
+Machine: THOMAS-PC (Microsoft Windows NT 10.0.26200.0)
+Host Application: C:\Program Files\WindowsApps\Microsoft.PowerShell_7.6.4.0_x64__8wekyb3d8bbwe\pwsh.dll -noexit -command try { . "c:\Users\T_hei\AppData\Local\Programs\Microsoft VS Code Insiders\9e200810d9\resources\app\out\vs\workbench\contrib\terminal\common\scripts\shellIntegration.ps1" } catch {}
+Process ID: 16836
+PSVersion: 7.6.4
+PSEdition: Core
+GitCommitId: 7.6.4
+OS: Microsoft Windows 10.0.26200
+Platform: Win32NT
+PSCompatibleVersions: 1.0, 2.0, 3.0, 4.0, 5.0, 5.1, 6.0, 7.0
+PSRemotingProtocolVersion: 2.4
+SerializationVersion: 1.1.0.1
+WSManStackVersion: 3.0
+**********************
+
+Kernschmied Testsuite
+Projekt:        F:\Kernschmied
+Textprotokoll:  F:\Kernschmied\artifacts\testsuite\testsuite-2026-08-01_11-48-14.log
+JSON-Bericht:   F:\Kernschmied\artifacts\testsuite\testsuite-2026-08-01_11-48-14.json
+Arbeits-Prompt: F:\Kernschmied\artifacts\testsuite\work-prompt-2026-08-01_11-48-14.md
+Start:          01.08.2026 11:48:14
+Modus:          Korrigieren und prüfen
+
+==============================================================================
+ Grundvoraussetzungen prüfen
+==============================================================================
+
+> python --version
+Python 3.12.10
+
+> node --version
+v22.12.0
+
+> npm --version
+11.18.0
+
+> git --version
+git version 2.55.0.windows.3
+
+PowerShell: 7.6.4
+Python:     True
+Node:       True
+NPM:        True
+
+[OK] Grundvoraussetzungen prüfen
+
+==============================================================================
+ Ruff: Python formatieren
+==============================================================================
+
+> ruff format backend scripts
+1 file reformatted, 92 files left unchanged
+
+[OK] Ruff: Python formatieren
+
+==============================================================================
+ Ruff: sichere Auto-Fixes
+==============================================================================
+
+> ruff check backend scripts --fix --show-fixes
+TRY300 Consider moving this statement to an `else` block
+   --> backend\app\api\v1\bootstrap.py:383:9
+    |
+381 |         )
+382 |
+383 |         return default if resolved_result is None else resolved_result
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+384 |
+385 |     except (
+    |
+
+PERF401 Use `list.extend` to create a transformed list
+   --> backend\app\api\v1\chat.py:589:9
+    |
+588 |       for line in serialized.splitlines() or ["{}"]:
+589 | /         lines.append(
+590 | |             f"data: {line}",
+591 | |         )
+    | |_________^
+592 |
+593 |       return "\n".join(lines) + "\n\n"
+    |
+help: Replace for loop with list.extend
+
+TRY400 Use `logging.exception` instead of `logging.error`
+    --> backend\app\api\v1\configs.py:2070:9
+     |
+2069 |       except TypeError as exc:
+2070 | /         logger.error(
+2071 | |             "ConfigService.set does not support the required contract",
+2072 | |             extra={
+2073 | |                 "group": group,
+2074 | |                 "key": key,
+2075 | |                 "request_id": request_id,
+2076 | |                 "supported_kwargs": sorted(
+2077 | |                     setter_kwargs,
+2078 | |                 ),
+2079 | |             },
+2080 | |         )
+     | |_________^
+2081 |
+2082 |           raise structured_http_error(
+     |
+help: Replace with `exception`
+
+E501 Line too long (90 > 88)
+    --> backend\app\api\v1\configs.py:2194:89
+     |
+2192 |     values: dict = Field(
+2193 |         default_factory=dict,
+2194 |         description="Gruppierte Konfigurationswerte als Objekt { group: { key: value } }",
+     |                                                                                         ^^
+2195 |     )
+     |
+
+E501 Line too long (115 > 88)
+    --> backend\app\api\v1\configs.py:2208:89
+     |
+2206 |     summary="Mehrere Konfigurationswerte ändern (Bulk)",
+2207 |     description=(
+2208 |         "Nimmt ein gruppiertes `values`-Objekt entgegen und speichert alle enthaltenen Werte in einer Transaktion."
+     |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2209 |     ),
+2210 | )
+     |
+
+E501 Line too long (93 > 88)
+  --> backend\app\api\v1\documentation.py:37:89
+   |
+35 |     - Files directly under `wiki/` are grouped into the `project` section.
+36 |     - Section id/title are derived from the immediate parent folder name.
+37 |     - Page id is the relative path with slashes replaced by '-' and lowercased (without .md).
+   |                                                                                         ^^^^^
+38 |     """
+39 |     pages: list[DocumentationPageDefinition] = []
+   |
+
+E501 Line too long (89 > 88)
+   --> backend\app\api\v1\documentation.py:201:89
+    |
+199 |             detail={
+200 |                 "code": "DOCUMENTATION_PAGE_NOT_FOUND",
+201 |                 "message": "Die angeforderte Dokumentationsseite ist nicht registriert.",
+    |                                                                                         ^
+202 |                 "details": {"page_id": page_id},
+203 |             },
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\health.py:21:41
+   |
+21 | # Eigene rekursive Definition ENTFERNEN – stattdessen Pydantic's JsonValue verwenden
+   |                                         ^
+22 | JsonObject: TypeAlias = dict[str, JsonValue]
+   |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\hierarchy.py:39:47
+   |
+39 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+40 | JsonScalar = str | int | float | bool | None
+41 | JsonObject = dict[str, JsonValue]
+   |
+
+RUF002 Docstring contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\hierarchy.py:57:36
+   |
+55 | class HierarchyTreeResponse(BaseModel):
+56 |     """
+57 |     API-Vertrag für die Hierarchie – kompatibel mit Frontend-HierarchyTree.
+   |                                    ^
+58 |     """
+   |
+
+E501 Line too long (98 > 88)
+   --> backend\app\api\v1\hierarchy.py:337:89
+    |
+335 |             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+336 |             code="HIERARCHY_SERVICE_CONTRACT_UNSUPPORTED",
+337 |             message="Der registrierte Hierarchiedienst erfüllt den erforderlichen Vertrag nicht.",
+    |                                                                                         ^^^^^^^^^^
+338 |             details={
+339 |                 "required_method": "get_tree",
+    |
+
+TRY300 Consider moving this statement to an `else` block
+   --> backend\app\api\v1\hierarchy.py:435:13
+    |
+433 |         try:
+434 |             node = await service.create_node(payload, actor=actor)
+435 |             return node
+    |             ^^^^^^^^^^^
+436 |         except PermissionError as exc:
+437 |             raise structured_http_error(
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> backend\app\api\v1\hierarchy.py:437:13
+    |
+435 |               return node
+436 |           except PermissionError as exc:
+437 | /             raise structured_http_error(
+438 | |                 request=request,
+439 | |                 status_code=status.HTTP_403_FORBIDDEN,
+440 | |                 code="PERMISSION_DENIED",
+441 | |                 message=str(exc),
+442 | |             )
+    | |_____________^
+    |
+
+TRY300 Consider moving this statement to an `else` block
+   --> backend\app\api\v1\hierarchy.py:473:13
+    |
+471 |         try:
+472 |             node = await service.update_node(node_id, payload, actor=actor)
+473 |             return node
+    |             ^^^^^^^^^^^
+474 |         except LookupError as exc:
+475 |             raise structured_http_error(
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> backend\app\api\v1\hierarchy.py:475:13
+    |
+473 |               return node
+474 |           except LookupError as exc:
+475 | /             raise structured_http_error(
+476 | |                 request=request,
+477 | |                 status_code=status.HTTP_404_NOT_FOUND,
+478 | |                 code="HIERARCHY_NODE_NOT_FOUND",
+479 | |                 message=str(exc),
+480 | |             )
+    | |_____________^
+481 |           except PermissionError as exc:
+482 |               raise structured_http_error(
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> backend\app\api\v1\hierarchy.py:482:13
+    |
+480 |               )
+481 |           except PermissionError as exc:
+482 | /             raise structured_http_error(
+483 | |                 request=request,
+484 | |                 status_code=status.HTTP_403_FORBIDDEN,
+485 | |                 code="PERMISSION_DENIED",
+486 | |                 message=str(exc),
+487 | |             )
+    | |_____________^
+    |
+
+TRY300 Consider moving this statement to an `else` block
+   --> backend\app\api\v1\hierarchy.py:520:13
+    |
+518 |                 node_id, new_parent_id=payload.new_parent_id, actor=actor
+519 |             )
+520 |             return node
+    |             ^^^^^^^^^^^
+521 |         except LookupError as exc:
+522 |             raise structured_http_error(
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> backend\app\api\v1\hierarchy.py:522:13
+    |
+520 |               return node
+521 |           except LookupError as exc:
+522 | /             raise structured_http_error(
+523 | |                 request=request,
+524 | |                 status_code=status.HTTP_404_NOT_FOUND,
+525 | |                 code="HIERARCHY_NODE_NOT_FOUND",
+526 | |                 message=str(exc),
+527 | |             )
+    | |_____________^
+528 |           except PermissionError as exc:
+529 |               raise structured_http_error(
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> backend\app\api\v1\hierarchy.py:529:13
+    |
+527 |               )
+528 |           except PermissionError as exc:
+529 | /             raise structured_http_error(
+530 | |                 request=request,
+531 | |                 status_code=status.HTTP_403_FORBIDDEN,
+532 | |                 code="PERMISSION_DENIED",
+533 | |                 message=str(exc),
+534 | |             )
+    | |_____________^
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> backend\app\api\v1\hierarchy.py:566:13
+    |
+564 |               return Response(status_code=status.HTTP_204_NO_CONTENT)
+565 |           except LookupError as exc:
+566 | /             raise structured_http_error(
+567 | |                 request=request,
+568 | |                 status_code=status.HTTP_404_NOT_FOUND,
+569 | |                 code="HIERARCHY_NODE_NOT_FOUND",
+570 | |                 message=str(exc),
+571 | |             )
+    | |_____________^
+572 |           except PermissionError as exc:
+573 |               raise structured_http_error(
+    |
+
+B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+   --> backend\app\api\v1\hierarchy.py:573:13
+    |
+571 |               )
+572 |           except PermissionError as exc:
+573 | /             raise structured_http_error(
+574 | |                 request=request,
+575 | |                 status_code=status.HTTP_403_FORBIDDEN,
+576 | |                 code="PERMISSION_DENIED",
+577 | |                 message=str(exc),
+578 | |             )
+    | |_____________^
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\models.py:33:52
+   |
+33 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+34 | JsonScalar = str | int | float | bool | None
+35 | JsonObject = dict[str, JsonValue]
+   |
+
+TRY004 Prefer `TypeError` exception for invalid type
+    --> backend\app\api\v1\models.py:1107:9
+     |
+1105 |         list_models,
+1106 |     ):
+1107 |         raise RuntimeError("Die ModelRegistry implementiert list_models() nicht.")
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1108 |
+1109 |     raw_result: object = list_models()
+     |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\tools.py:33:52
+   |
+33 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+34 | JsonScalar = str | int | float | bool | None
+35 | JsonObject = dict[str, JsonValue]
+   |
+
+TRY004 Prefer `TypeError` exception for invalid type
+    --> backend\app\api\v1\tools.py:1153:9
+     |
+1151 |         list_tools,
+1152 |     ):
+1153 |         raise RuntimeError("Die ToolRegistry implementiert list_tools() nicht.")
+     |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1154 |
+1155 |     raw_result: object = list_tools()
+     |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\api\v1\ui.py:45:52
+   |
+45 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+46 | JsonScalar = str | int | float | bool | None
+47 | JsonObject = dict[str, JsonValue]
+   |
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\app\api\v1\ui.py:471:9
+    |
+469 |         value,
+470 |     ):
+471 |         raise ValueError("Callables dürfen nicht Bestandteil des UI-Schemas sein.")
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+472 |
+473 |     if isinstance(
+    |
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\app\api\v1\ui.py:695:17
+    |
+693 |                   dict,
+694 |               ):
+695 | /                 raise ValueError(
+696 | |                     f"{field_name}.{registry_key} muss ein Objekt sein.",
+697 | |                 )
+    | |_________________^
+698 |
+699 |               normalized_registry_value: JsonObject = dict(
+    |
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\app\api\v1\ui.py:713:9
+    |
+712 |       else:
+713 | /         raise ValueError(
+714 | |             f"{field_name} muss eine Liste oder ein Objekt sein.",
+715 | |         )
+    | |_________^
+716 |
+717 |       result: list[JsonValue] = []
+    |
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\app\api\v1\ui.py:726:13
+    |
+724 |               dict,
+725 |           ):
+726 | /             raise ValueError(
+727 | |                 f"{field_name}[{index}] muss ein Objekt sein.",
+728 | |             )
+    | |_____________^
+729 |
+730 |           normalized_item: JsonObject = dict(
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+   --> backend\app\api\v1\ui.py:801:57
+    |
+799 |     schema_data.setdefault("metadata", {})
+800 |
+801 |     # Normalisiere Listen (falls sie als Listen kommen) – aber node_types ist ein Objekt, keine Liste
+    |                                                         ^
+802 |     # Für components, actions, forms: wenn sie als Liste kommen, wandle sie in ein dict um,
+803 |     # wobei der Typ als Schlüssel dient (ähnlich wie Frontend es erwartet).
+    |
+
+E501 Line too long (101 > 88)
+   --> backend\app\api\v1\ui.py:801:89
+    |
+799 |     schema_data.setdefault("metadata", {})
+800 |
+801 |     # Normalisiere Listen (falls sie als Listen kommen) – aber node_types ist ein Objekt, keine Liste
+    |                                                                                         ^^^^^^^^^^^^^
+802 |     # Für components, actions, forms: wenn sie als Liste kommen, wandle sie in ein dict um,
+803 |     # wobei der Typ als Schlüssel dient (ähnlich wie Frontend es erwartet).
+    |
+
+E501 Line too long (91 > 88)
+   --> backend\app\api\v1\ui.py:802:89
+    |
+801 |     # Normalisiere Listen (falls sie als Listen kommen) – aber node_types ist ein Objekt, keine Liste
+802 |     # Für components, actions, forms: wenn sie als Liste kommen, wandle sie in ein dict um,
+    |                                                                                         ^^^
+803 |     # wobei der Typ als Schlüssel dient (ähnlich wie Frontend es erwartet).
+804 |     # Oder wir erwarten, dass der Builder bereits ein dict liefert.
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\auth\models.py:16:52
+   |
+14 | )
+15 |
+16 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+17 | JsonScalar = str | int | float | bool | None
+18 | JsonObject = dict[str, JsonValue]
+   |
+
+SIM108 Use ternary operator `raw_values = [value] if isinstance(value, str) else value` instead of `if`-`else`-block
+   --> backend\app\config\definitions.py:437:9
+    |
+435 |               return frozenset()
+436 |
+437 | /         if isinstance(value, str):
+438 | |             raw_values = [value]
+439 | |         else:
+440 | |             raw_values = value
+    | |______________________________^
+441 |
+442 |           tags: set[str] = set()
+    |
+help: Replace `if`-`else`-block with `raw_values = [value] if isinstance(value, str) else value`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> backend\app\config\definitions.py:525:9
+    |
+524 |       def _validate_scope_rules(self) -> None:
+525 | /         if ConfigScope.REQUEST in self.allowed_scopes:
+526 | |             if not self.request_override_allowed:
+    | |_________________________________________________^
+527 |                   raise ValueError(
+528 |                       f"'{self.full_key}' erlaubt den REQUEST-Scope, "
+    |
+help: Combine `if` statements using `and`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> backend\app\config\definitions.py:532:9
+    |
+530 |                   )
+531 |
+532 | /         if self.request_override_allowed:
+533 | |             if ConfigScope.REQUEST not in self.allowed_scopes:
+    | |______________________________________________________________^
+534 |                   raise ValueError(
+535 |                       f"'{self.full_key}' erlaubt Request-Overrides, "
+    |
+help: Combine `if` statements using `and`
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\config\resolver.py:20:52
+   |
+18 | )
+19 |
+20 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+21 | JsonScalar = str | int | float | bool | None
+22 | JsonObject = dict[str, JsonValue]
+   |
+
+TRY203 Remove exception handler; error is immediately re-raised
+   --> backend\app\config\service.py:848:9
+    |
+846 |                       provider_id=provider_id,
+847 |                   )
+848 | /         except ConfigValidationError:
+849 | |             raise
+    | |_________________^
+850 |
+851 |           actor = self._normalize_actor(
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\config\service.py:880:21
+    |
+879 |                   if row is None:
+880 | /                     raise ConfigEntryNotFoundError(
+881 | |                         group=normalized_group,
+882 | |                         key=normalized_key,
+883 | |                     )
+    | |_____________________^
+884 |
+885 |                   previous_value = deepcopy(
+    |
+
+E501 Line too long (91 > 88)
+    --> backend\app\config\service.py:1054:89
+     |
+1052 |                 return updates.get((group, key))
+1053 |
+1054 |             # If default_model is being changed, validate using updated or current provider
+     |                                                                                         ^^^
+1055 |             if ("models", "default_model") in updates:
+1056 |                 raw_model = lookup("models", "default_model")
+     |
+
+TRY203 Remove exception handler; error is immediately re-raised
+    --> backend\app\config\service.py:1097:9
+     |
+1095 |                       provider_id=new_provider_id,
+1096 |                   )
+1097 | /         except ConfigValidationError:
+1098 | |             raise
+     | |_________________^
+1099 |
+1100 |           actor = self._normalize_actor(
+     |
+
+TRY301 Abstract `raise` to an inner function
+    --> backend\app\config\service.py:1141:25
+     |
+1140 |                       if row is None:
+1141 | /                         raise ConfigEntryNotFoundError(
+1142 | |                             group=definition.group,
+1143 | |                             key=definition.key,
+1144 | |                         )
+     | |_________________________^
+1145 |
+1146 |                       previous_value = deepcopy(
+     |
+
+E501 Line too long (93 > 88)
+    --> backend\app\config\service.py:1418:89
+     |
+1416 |                 code="MODEL_REGISTRY_UNAVAILABLE",
+1417 |                 message=(
+1418 |                     "Die Modellregistrierung ist nicht verfügbar; Validierung nicht möglich."
+     |                                                                                         ^^^^^
+1419 |                 ),
+1420 |             )
+     |
+
+E501 Line too long (115 > 88)
+    --> backend\app\config\service.py:1453:89
+     |
+1451 |                 code="MODEL_PROVIDER_MISMATCH",
+1452 |                 message=(
+1453 |                     f"Das Modell '{model_id}' gehört zum Provider '{entry_provider}' und nicht zu '{provider_id}'."
+     |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1454 |                 ),
+1455 |             )
+     |
+
+PERF401 Use a list comprehension to create a transformed list
+    --> backend\app\config\service.py:1773:17
+     |
+1772 |               for _item in typed_list:
+1773 | /                 masked_list.append(
+1774 | |                     SECRET_MASK,
+1775 | |                 )
+     | |_________________^
+1776 |
+1777 |               return masked_list
+     |
+help: Replace for loop with list comprehension
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\contracts\hierarchy.py:14:52
+   |
+12 | )  # NEU: Pydantic's JsonValue
+13 |
+14 | # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+   |                                                    ^
+15 | JsonScalar = str | int | float | bool | None
+16 | JsonObject = dict[str, JsonValue]
+   |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+   --> backend\app\contracts\model_backend.py:413:51
+    |
+411 |         )
+412 |
+413 |         # messages sind bereits list[ChatMessage] – keine Prüfung nötig
+    |                                                   ^
+414 |
+415 |         if not 0.0 <= self.temperature <= 2.0:
+    |
+
+E501 Line too long (90 > 88)
+   --> backend\app\contracts\model_backend.py:639:89
+    |
+637 |         ).lower()
+638 |
+639 |         # `capabilities` ist bereits set[ModelCapability], daher keine Konvertierung nötig
+    |                                                                                         ^^
+640 |
+641 |         if self.context_window is not None and self.context_window <= 0:
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\contracts\tool.py:25:47
+   |
+25 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+26 | JsonScalar = str | int | float | bool | None
+27 | JsonObject = dict[str, JsonValue]
+   |
+
+UP042 Class ToolRiskLevel inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\tool.py:217:7
+    |
+217 | class ToolRiskLevel(str, Enum):
+    |       ^^^^^^^^^^^^^
+218 |     """
+219 |     Grobe Risikoklassifizierung für Tool-Ausführungen.
+    |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class ToolAvailabilityStatus inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\tool.py:229:7
+    |
+229 | class ToolAvailabilityStatus(str, Enum):
+    |       ^^^^^^^^^^^^^^^^^^^^^^
+230 |     """
+231 |     Aktueller Verfügbarkeitsstatus eines Tools.
+    |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class ToolExecutionStatus inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\tool.py:240:7
+    |
+240 | class ToolExecutionStatus(str, Enum):
+    |       ^^^^^^^^^^^^^^^^^^^
+241 |     """
+242 |     Ergebnisstatus einer Tool-Ausführung.
+    |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class ToolSideEffect inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\tool.py:251:7
+    |
+251 | class ToolSideEffect(str, Enum):
+    |       ^^^^^^^^^^^^^^
+252 |     """
+253 |     Deklarierte Nebenwirkungen eines Tools.
+    |
+help: Inherit from `enum.StrEnum`
+
+RUF012 Mutable default value for class attribute
+   --> backend\app\contracts\tool.py:547:38
+    |
+545 |       version: str = "1.0.0"
+546 |
+547 |       parameters_schema: JsonMapping = {
+    |  ______________________________________^
+548 | |         "type": "object",
+549 | |         "properties": {},
+550 | |         "additionalProperties": False,
+551 | |     }
+    | |_____^
+552 |
+553 |       result_schema: JsonMapping | None = None
+    |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+RUF012 Mutable default value for class attribute
+   --> backend\app\contracts\tool.py:571:29
+    |
+569 |     tags: tuple[str, ...] = ()
+570 |
+571 |     metadata: JsonMapping = {}
+    |                             ^^
+572 |
+573 |     def __init__(self) -> None:
+    |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+UP042 Class UIComponentKind inherits from both `str` and `enum.Enum`
+  --> backend\app\contracts\ui_schema.py:33:7
+   |
+33 | class UIComponentKind(str, Enum):
+   |       ^^^^^^^^^^^^^^^
+34 |     """
+35 |     Bekannte generische Komponentenarten.
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class UIActionKind inherits from both `str` and `enum.Enum`
+  --> backend\app\contracts\ui_schema.py:62:7
+   |
+62 | class UIActionKind(str, Enum):
+   |       ^^^^^^^^^^^^
+63 |     """
+64 |     Fest definierte Kategorien von UI-Aktionen.
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class UIActionMethod inherits from both `str` and `enum.Enum`
+  --> backend\app\contracts\ui_schema.py:87:7
+   |
+87 | class UIActionMethod(str, Enum):
+   |       ^^^^^^^^^^^^^^
+88 |     """
+89 |     Zulässige HTTP-Methoden für API-gebundene Aktionen.
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class UIActionConfirmationStyle inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\ui_schema.py:99:7
+    |
+ 99 | class UIActionConfirmationStyle(str, Enum):
+    |       ^^^^^^^^^^^^^^^^^^^^^^^^^
+100 |     """
+101 |     Darstellung einer Aktionsbestätigung.
+    |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class UIFormFieldType inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\ui_schema.py:110:7
+    |
+110 | class UIFormFieldType(str, Enum):
+    |       ^^^^^^^^^^^^^^^
+111 |     """
+112 |     Bekannte generische Formularfelder.
+    |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class UIVisibility inherits from both `str` and `enum.Enum`
+   --> backend\app\contracts\ui_schema.py:137:7
+    |
+137 | class UIVisibility(str, Enum):
+    |       ^^^^^^^^^^^^
+138 |     """
+139 |     Sichtbarkeit eines Schemaelements.
+    |
+help: Inherit from `enum.StrEnum`
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:383:13
+    |
+382 |           if hierarchy_repository is None or hierarchy_service is None:
+383 | /             raise BootstrapStepError(
+384 | |                 step="hierarchy.initialize",
+385 | |                 reason=(
+386 | |                     "Der Hierarchie-Service wurde nicht vollständig initialisiert."
+387 | |                 ),
+388 | |             )
+    | |_____________^
+389 |
+390 |           # ====================================================
+    |
+
+SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+   --> backend\app\core\bootstrap.py:409:9
+    |
+407 |           model_registry = ModelRegistry()
+408 |           # Make model registry available to the already-created config_service
+409 | /         try:
+410 | |             config_service._model_registry = model_registry
+411 | |         except Exception:
+412 | |             pass
+    | |________________^
+413 |
+414 |           await _run_bootstrap_step(
+    |
+help: Replace `try`-`except`-`pass` with `with contextlib.suppress(Exception): ...`
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:468:17
+    |
+466 |           async def load_manifests() -> None:
+467 |               if model_service is None:  # type: ignore
+468 | /                 raise RuntimeError(
+469 | |                     "Der ModelService wurde noch nicht erstellt.",
+470 | |                 )
+    | |_________________^
+471 |
+472 |               if not MODEL_MANIFEST_DIRECTORY.exists():
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:473:17
+    |
+472 |               if not MODEL_MANIFEST_DIRECTORY.exists():
+473 | /                 raise RuntimeError(
+474 | |                     "Das Modellmanifest-Verzeichnis existiert "
+475 | |                     f"nicht: {MODEL_MANIFEST_DIRECTORY}",
+476 | |                 )
+    | |_________________^
+477 |
+478 |               if not MODEL_MANIFEST_DIRECTORY.is_dir():
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:479:17
+    |
+478 |               if not MODEL_MANIFEST_DIRECTORY.is_dir():
+479 | /                 raise RuntimeError(
+480 | |                     "Der Modellmanifest-Pfad ist kein "
+481 | |                     f"Verzeichnis: {MODEL_MANIFEST_DIRECTORY}",
+482 | |                 )
+    | |_________________^
+483 |
+484 |               _log_info(
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:533:17
+    |
+531 |                   )
+532 |
+533 | /                 raise RuntimeError(
+534 | |                     "Das Standardmodell "
+535 | |                     f"'{DEFAULT_MODEL_ID}' konnte nicht "
+536 | |                     "registriert werden."
+537 | |                 )
+    | |_________________^
+538 |
+539 |               model_ids = await model_service.list_model_ids()
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:562:17
+    |
+561 |               if model_service is None:  # type: ignore
+562 | /                 raise RuntimeError(
+563 | |                     "Der ModelService ist nicht verfügbar.",
+564 | |                 )
+    | |_________________^
+565 |
+566 |               chat_service = ChatService(
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\core\bootstrap.py:578:13
+    |
+577 |           if chat_service is None:
+578 | /             raise BootstrapStepError(
+579 | |                 step="chat.initialize_service",
+580 | |                 reason=("Der ChatService wurde nicht vollständig initialisiert."),
+581 | |             )
+    | |_____________^
+582 |
+583 |           # ====================================================
+    |
+
+TRY300 Consider moving this statement to an `else` block
+   --> backend\app\core\bootstrap.py:625:9
+    |
+623 |         )
+624 |
+625 |         return result
+    |         ^^^^^^^^^^^^^
+626 |
+627 |     except Exception as exc:
+    |
+
+UP042 Class AppEnvironment inherits from both `str` and `enum.Enum`
+  --> backend\app\core\security_profile.py:13:7
+   |
+13 | class AppEnvironment(str, Enum):
+   |       ^^^^^^^^^^^^^^
+14 |     DEVELOPMENT = "development"
+15 |     INTRANET = "intranet"
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class AuthMode inherits from both `str` and `enum.Enum`
+  --> backend\app\core\security_profile.py:19:7
+   |
+19 | class AuthMode(str, Enum):
+   |       ^^^^^^^^
+20 |     NONE = "none"
+21 |     API_KEY = "api_key"
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class AppEnvironment inherits from both `str` and `enum.Enum`
+  --> backend\app\core\settings.py:76:7
+   |
+76 | class AppEnvironment(str, Enum):
+   |       ^^^^^^^^^^^^^^
+77 |     """
+78 |     Festes Betriebsprofil.
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class LogLevel inherits from both `str` and `enum.Enum`
+  --> backend\app\core\settings.py:89:7
+   |
+89 | class LogLevel(str, Enum):
+   |       ^^^^^^^^
+90 |     CRITICAL = "CRITICAL"
+91 |     ERROR = "ERROR"
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class ForwardedHeaderMode inherits from both `str` and `enum.Enum`
+  --> backend\app\core\settings.py:97:7
+   |
+97 | class ForwardedHeaderMode(str, Enum):
+   |       ^^^^^^^^^^^^^^^^^^^
+98 |     """
+99 |     Steuerung der Verarbeitung weitergeleiteter Proxy-Header.
+   |
+help: Inherit from `enum.StrEnum`
+
+UP042 Class DatabaseMigrationMode inherits from both `str` and `enum.Enum`
+   --> backend\app\core\settings.py:106:7
+    |
+106 | class DatabaseMigrationMode(str, Enum):
+    |       ^^^^^^^^^^^^^^^^^^^^^
+107 |     """
+108 |     Verhalten beim Anwendungsstart.
+    |
+help: Inherit from `enum.StrEnum`
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> backend\app\core\settings.py:908:9
+    |
+906 |               )
+907 |
+908 | /         if self.database_migration_mode == DatabaseMigrationMode.UPGRADE:
+909 | |             if self.app_environment == AppEnvironment.INTERNET:
+    | |_______________________________________________________________^
+910 |                   raise ValueError(
+911 |                       "DATABASE_MIGRATION_MODE=upgrade ist im "
+    |
+help: Combine `if` statements using `and`
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\database\models\hierarchy_node.py:23:47
+   |
+21 | from app.database.base import Base
+22 |
+23 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+24 | JsonScalar = str | int | float | bool | None
+25 | JsonObject = dict[str, JsonValue]
+   |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\hierarchy\models.py:9:47
+   |
+ 7 | from pydantic import JsonValue
+ 8 |
+ 9 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+10 | JsonScalar = str | int | float | bool | None
+11 | JsonObject = dict[str, JsonValue]
+   |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\models\lifecycle.py:772:21
+    |
+771 |                   if not isinstance(backend, BaseModelBackend):  # type: ignore[reportUnnecessaryIsInstance]
+772 | /                     raise TypeError(
+773 | |                         "Die Backend-Factory hat keine "
+774 | |                         "BaseModelBackend-Instanz zurückgegeben.",
+775 | |                     )
+    | |_____________________^
+776 |
+777 |                   entry.backend = backend
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+    --> backend\app\models\lifecycle.py:1020:57
+     |
+1018 |                 ensure_loaded=True,
+1019 |             ) as backend:
+1020 |                 # Der Vertrag deklariert generate nicht – Pylance-Hinweis unterdrücken
+     |                                                         ^
+1021 |                 result: StreamEvent = await asyncio.wait_for(
+1022 |                     backend.generate(request),  # type: ignore[reportAttributeAccessIssue]
+     |
+
+E501 Line too long (103 > 88)
+    --> backend\app\models\lifecycle.py:1095:89
+     |
+1093 |                 ensure_loaded=True,
+1094 |             ) as backend:
+1095 |                 # cast sorgt für den korrekten Typ, da backend.stream nicht im Interface deklariert ist
+     |                                                                                         ^^^^^^^^^^^^^^^
+1096 |                 stream_iter = cast(
+1097 |                     AsyncIterator[StreamEvent],
+     |
+
+TRY300 Consider moving this statement to an `else` block
+    --> backend\app\models\lifecycle.py:1260:21
+     |
+1258 |                     entry.state = ModelLifecycleState.UNLOADED
+1259 |
+1260 |                     return True
+     |                     ^^^^^^^^^^^
+1261 |
+1262 |                 except TimeoutError as exc:
+     |
+
+E501 Line too long (101 > 88)
+    --> backend\app\models\lifecycle.py:1347:89
+     |
+1346 |             try:
+1347 |                 # Backend.shutdown() ist im Interface nicht deklariert → Pylance-Hinweis unterdrücken
+     |                                                                                         ^^^^^^^^^^^^^
+1348 |                 await asyncio.wait_for(
+1349 |                     backend.shutdown(),  # type: ignore[reportAttributeAccessIssue]
+     |
+
+E501 Line too long (91 > 88)
+    --> backend\app\models\lifecycle.py:1578:89
+     |
+1576 |         if callable(is_loaded_attr):
+1577 |             try:
+1578 |                 # Den Rückgabewert explizit mit Any annehmen, da der Callable unbekannt ist
+     |                                                                                         ^^^
+1579 |                 result: Any = is_loaded_attr()
+1580 |                 if isinstance(result, bool):
+     |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\models\manifest.py:53:42
+   |
+52 | JsonPrimitive: TypeAlias = str | int | float | bool | None
+53 | # JsonValue wird von pydantic importiert – nicht rekursiv definiert
+   |                                          ^
+54 | JsonObject: TypeAlias = dict[str, JsonValue]
+55 | ValidationErrorItem: TypeAlias = dict[str, JsonValue]
+   |
+
+SIM105 Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
+    --> backend\app\models\manifest.py:1237:9
+     |
+1235 |           )
+1236 |       except Exception:
+1237 | /         try:
+1238 | |             temporary_path.unlink(
+1239 | |                 missing_ok=True,
+1240 | |             )
+1241 | |         except OSError:
+1242 | |             pass
+     | |________________^
+1243 |
+1244 |           raise
+     |
+help: Replace `try`-`except`-`pass` with `with contextlib.suppress(OSError): ...`
+
+TRY300 Consider moving this statement to an `else` block
+    --> backend\app\models\manifest.py:1476:9
+     |
+1474 |             parent,
+1475 |         )
+1476 |         return True
+     |         ^^^^^^^^^^^
+1477 |     except ValueError:
+1478 |         return False
+     |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+   --> backend\app\models\providers\__init__.py:273:54
+    |
+271 |         BaseModelBackend,
+272 |     ):  # type: ignore
+273 |         # Hier kann es sich um ein Protokoll handeln – zur Laufzeit prüfen wir
+    |                                                      ^
+274 |         # ob es die erforderlichen Methoden hat.
+275 |         # Da BaseModelBackend eine abstrakte Basisklasse ist, funktioniert
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+   --> backend\app\models\providers\__init__.py:431:58
+    |
+429 |             dependencies: ProviderDependencies | None = None,
+430 |         ) -> BaseModelBackend | Awaitable[BaseModelBackend]:
+431 |             # Der tatsächliche Rückgabetyp ist dynamisch – er kann
+    |                                                          ^
+432 |             # BaseModelBackend oder Awaitable[BaseModelBackend] sein.
+433 |             # Der Aufrufer (Registry) wird das später auflösen.
+    |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+   --> backend\app\models\providers\__init__.py:443:47
+    |
+441 |             )
+442 |             # raw_result kann entweder BaseModelBackend oder Awaitable sein.
+443 |             # Wir geben es unverändert weiter – der Registry-Code prüft es.
+    |                                               ^
+444 |             # Um Pylance zufriedenzustellen, typisieren wir es als Union.
+445 |             # Da der Union-Typ korrekt ist, hilft ein cast.
+    |
+
+PERF402 Use `list` or `list.copy` to create a copy of a list
+    --> backend\app\models\providers\http_generic.py:1966:9
+     |
+1965 |       for value in values:
+1966 | /         result.append(
+1967 | |             value,
+1968 | |         )
+     | |_________^
+1969 |
+1970 |       return result
+     |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\models\providers\llama_cpp.py:306:21
+    |
+305 |                 if isinstance(item, _StreamFailure):
+306 |                     raise item.error
+    |                     ^^^^^^^^^^^^^^^^
+307 |
+308 |                 parsed_chunk = _parse_chunk(
+    |
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\models\providers\mlx.py:484:21
+    |
+482 |                     _StreamFailure,
+483 |                 ):
+484 |                     raise queue_item.error
+    |                     ^^^^^^^^^^^^^^^^^^^^^^
+485 |
+486 |                 yield StreamEvent.create(
+    |
+
+PERF401 Use a list comprehension to create a transformed list
+   --> backend\app\models\providers\mlx.py:746:9
+    |
+745 |       for message in converted_messages:
+746 | /         prompt_parts.append(
+747 | |             f"{message['role']}: {message['content']}",
+748 | |         )
+    | |_________^
+749 |
+750 |       prompt_parts.append(
+    |
+help: Replace for loop with list comprehension
+
+TRY300 Consider moving this statement to an `else` block
+   --> backend\app\models\providers\ollama.py:244:13
+    |
+242 |             )
+243 |
+244 |             return response.is_success
+    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+245 |
+246 |         except asyncio.CancelledError:
+    |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> backend\app\models\providers\ollama.py:581:9
+    |
+579 |           request: GenerationRequest,
+580 |       ) -> None:
+581 | /         if request.tools:
+582 | |             if not self._supports_tools:
+    | |________________________________________^
+583 |                   raise OllamaConfigurationError(
+584 |                       "Das konfigurierte Ollama-Modell "
+    |
+help: Combine `if` statements using `and`
+
+PERF403 Use a dictionary comprehension instead of a for-loop
+    --> backend\app\models\providers\ollama.py:1103:13
+     |
+1101 |             str,
+1102 |         ):
+1103 |             result[raw_key] = raw_value
+     |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+1104 |
+1105 |     return result
+     |
+help: Replace for loop with dict comprehension
+
+PERF401 Use a list comprehension to create a transformed list
+    --> backend\app\models\providers\transformers.py:1058:9
+     |
+1057 |       for message in converted_messages:
+1058 | /         prompt_parts.append(
+1059 | |             f"{message['role']}: {message['content']}",
+1060 | |         )
+     | |_________^
+1061 |
+1062 |       prompt_parts.append(
+     |
+help: Replace for loop with list comprehension
+
+E501 Line too long (93 > 88)
+  --> backend\app\models\service.py:33:89
+   |
+31 | 13. Provider-Erzeugung und Secret-Auflösung sind systembezogene Vorgänge.
+32 | 14. Autorisierung und Provider-Lifecycle bleiben getrennte Verantwortlichkeiten.
+33 | 15. Registry und Fallback-Speicher werden niemals gleichzeitig als Wahrheitsquelle verwendet.
+   |                                                                                         ^^^^^
+34 | 16. Bei einer Ersetzung wird zuerst der alte Lifecycle entfernt und danach der neue registriert.
+35 | 17. Fehlgeschlagene Ersetzungen stellen den vorherigen Zustand bestmöglich wieder her.
+   |
+
+E501 Line too long (96 > 88)
+  --> backend\app\models\service.py:34:89
+   |
+32 | 14. Autorisierung und Provider-Lifecycle bleiben getrennte Verantwortlichkeiten.
+33 | 15. Registry und Fallback-Speicher werden niemals gleichzeitig als Wahrheitsquelle verwendet.
+34 | 16. Bei einer Ersetzung wird zuerst der alte Lifecycle entfernt und danach der neue registriert.
+   |                                                                                         ^^^^^^^^
+35 | 17. Fehlgeschlagene Ersetzungen stellen den vorherigen Zustand bestmöglich wieder her.
+   |
+
+TRY301 Abstract `raise` to an inner function
+    --> backend\app\models\service.py:1036:21
+     |
+1034 |                       and not replace
+1035 |                   ):
+1036 | /                     raise DuplicateModelManifestError(
+1037 | |                         model_id,
+1038 | |                         manifest_paths=[
+1039 | |                             str(
+1040 | |                                 known_path,
+1041 | |                             )
+1042 | |                             for known_path in known_paths
+1043 | |                         ],
+1044 | |                         request_id=self._request_id(
+1045 | |                             access_context,
+1046 | |                         ),
+1047 | |                     )
+     | |_____________________^
+1048 |
+1049 |                   result = await self.register_manifest(
+     |
+
+E501 Line too long (90 > 88)
+   --> backend\app\registries\model_registry.py:490:89
+    |
+488 |                     return entry
+489 |                 logger.warning(
+490 |                     "Explizites Default-Modell %s ist nicht aktiv oder nicht registriert",
+    |                                                                                         ^^
+491 |                     self._default_model_id,
+492 |                 )
+    |
+
+PERF401 Use `list.extend` to create a transformed list
+   --> backend\app\registries\model_registry.py:600:17
+    |
+599 |               for loaded_manifest in manifests:
+600 | /                 results.append(
+601 | |                     ModelDiscoveryResult(
+602 | |                         manifest_path=(loaded_manifest.manifest_path),
+603 | |                         model_id=model_id,
+604 | |                         provider_type=(loaded_manifest.manifest.provider.type),
+605 | |                         status=(ModelDiscoveryResultStatus.DUPLICATE),
+606 | |                         message=str(duplicate_error),
+607 | |                         error_type=(duplicate_error.__class__.__name__),
+608 | |                         error_code=str(
+609 | |                             duplicate_error.code,
+610 | |                         ),
+611 | |                     ),
+612 | |                 )
+    | |_________________^
+613 |
+614 |               if not continue_on_error:
+    |
+help: Replace for loop with list.extend
+
+TRY301 Abstract `raise` to an inner function
+   --> backend\app\registries\tool_registry.py:560:21
+    |
+558 |                 )
+559 |                 if manifest.tool_id in ids_seen:
+560 |                     raise DuplicateToolRegistrationError(manifest.tool_id)
+    |                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+561 |                 ids_seen[manifest.tool_id] = manifest_path
+562 |                 loaded_manifests.append(manifest)
+    |
+
+TRY300 Consider moving this statement to an `else` block
+    --> backend\app\registries\tool_registry.py:1215:9
+     |
+1213 |     try:
+1214 |         path.relative_to(parent)
+1215 |         return True
+     |         ^^^^^^^^^^^
+1216 |     except ValueError:
+1217 |         return False
+     |
+
+E501 Line too long (96 > 88)
+    --> backend\app\registries\tool_registry.py:1338:89
+     |
+1336 |         return ToolAvailability(
+1337 |             status=ToolAvailabilityStatus.UNAVAILABLE,
+1338 |             reason="Die Verfügbarkeitsprüfung lieferte einen nicht unterstützten Rückgabewert.",
+     |                                                                                         ^^^^^^^^
+1339 |         )
+     |
+
+PERF401 Use `list.extend` to create a transformed list
+   --> backend\app\services\chat_service.py:694:13
+    |
+693 |           for line in payload.splitlines() or ("",):
+694 | /             lines.append(
+695 | |                 f"data: {line}",
+696 | |             )
+    | |_____________^
+697 |
+698 |           lines.extend(
+    |
+help: Replace for loop with list.extend
+
+TRY300 Consider moving this statement to an `else` block
+    --> backend\app\services\chat_service.py:1119:13
+     |
+1117 |             )
+1118 |
+1119 |             return response
+     |             ^^^^^^^^^^^^^^^
+1120 |
+1121 |         except asyncio.CancelledError as exc:
+     |
+
+TRY301 Abstract `raise` to an inner function
+    --> backend\app\services\chat_service.py:1329:21
+     |
+1327 |                       )
+1328 |
+1329 | /                     raise ChatGenerationError(
+1330 | |                         error_message,
+1331 | |                         request_id=context.request_id,
+1332 | |                         details={
+1333 | |                             "conversation_id": conversation_id,
+1334 | |                             "model_id": model_id,
+1335 | |                             "provider_error": error_message,
+1336 | |                             "model_event": payload,
+1337 | |                         },
+1338 | |                     )
+     | |_____________________^
+1339 |
+1340 |                   _log_info(
+     |
+
+E501 Line too long (90 > 88)
+    --> backend\app\services\chat_service.py:1567:89
+     |
+1566 |             error = ChatGenerationError(
+1567 |                 "Beim Erzeugen der Chat-Antwort ist ein unerwarteter Fehler aufgetreten.",
+     |                                                                                         ^^
+1568 |                 request_id=(context.request_id),
+1569 |                 details={
+     |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\storage\models\chat.py:22:47
+   |
+20 | from app.storage.models.base import Base, utc_now
+21 |
+22 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+23 | JsonScalar = str | int | float | bool | None
+24 | JsonObject = dict[str, JsonValue]
+   |
+
+RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+  --> backend\app\storage\models\hierarchy.py:23:47
+   |
+21 | from app.storage.models.base import Base, utc_now
+22 |
+23 | # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
+   |                                               ^
+24 | JsonScalar = str | int | float | bool | None
+25 | JsonObject = dict[str, JsonValue]
+   |
+
+PERF401 Use a list comprehension to create a transformed list
+   --> backend\app\ui\serializer.py:114:13
+    |
+113 |           for action_type in action_types:
+114 | /             validated_actions.append(
+115 | |                 self._registry.require_action(
+116 | |                     action_type,
+117 | |                 ),
+118 | |             )
+    | |_____________^
+119 |
+120 |           return validated_actions
+    |
+help: Replace for loop with list comprehension
+
+SIM108 Use ternary operator `raw_value = enum_value if isinstance(enum_value, str) else str(value)` instead of `if`-`else`-block
+   --> backend\main.py:327:9
+    |
+325 |           )
+326 |
+327 | /         if isinstance(
+328 | |             enum_value,
+329 | |             str,
+330 | |         ):
+331 | |             raw_value = enum_value
+332 | |         else:
+333 | |             raw_value = str(
+334 | |                 value,
+335 | |             )
+    | |_____________^
+336 |
+337 |       normalized = raw_value.strip().lower()
+    |
+help: Replace `if`-`else`-block with `raw_value = enum_value if isinstance(enum_value, str) else str(value)`
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\tools\calculator\implementation.py:109:13
+    |
+107 |               bool,
+108 |           ):
+109 | /             raise ValueError(
+110 | |                 "Boolesche Werte sind nicht erlaubt.",
+111 | |             )
+    | |_____________^
+112 |
+113 |           if isinstance(
+    |
+
+RUF012 Mutable default value for class attribute
+   --> backend\tools\calculator\implementation.py:283:37
+    |
+281 |       )
+282 |
+283 |       parameters: dict[str, object] = {
+    |  _____________________________________^
+284 | |         "type": "object",
+285 | |         "properties": {
+286 | |             "expression": {
+287 | |                 "type": "string",
+288 | |                 "title": "Mathematischer Ausdruck",
+289 | |                 "description": (
+290 | |                     "Ein einfacher mathematischer Ausdruck, "
+291 | |                     "zum Beispiel '(1250 * 0.19) + 81'."
+292 | |                 ),
+293 | |                 "minLength": 1,
+294 | |                 "maxLength": MAX_EXPRESSION_LENGTH,
+295 | |             },
+296 | |         },
+297 | |         "required": [
+298 | |             "expression",
+299 | |         ],
+300 | |         "additionalProperties": False,
+301 | |     }
+    | |_____^
+302 |
+303 |       # Diese Methode muss dieselbe Signatur wie BaseTool.execute besitzen.
+    |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\tools\websearch\implementation.py:109:9
+    |
+108 |       if not isinstance(value, str):
+109 | /         raise ValueError(
+110 | |             f"Das Argument '{key}' muss eine Zeichenkette sein.",
+111 | |         )
+    | |_________^
+112 |
+113 |       normalized_value = value.strip()
+    |
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\tools\websearch\implementation.py:143:9
+    |
+141 |       # ausgeschlossen werden.
+142 |       if isinstance(value, bool) or not isinstance(value, int):
+143 | /         raise ValueError(
+144 | |             f"Das Argument '{key}' muss eine ganze Zahl sein.",
+145 | |         )
+    | |_________^
+146 |
+147 |       if value < minimum or value > maximum:
+    |
+
+TRY004 Prefer `TypeError` exception for invalid type
+   --> backend\tools\websearch\implementation.py:168:9
+    |
+167 |       if not isinstance(value, str):
+168 | /         raise ValueError(
+169 | |             "Das Argument 'safe_search' muss eine Zeichenkette sein.",
+170 | |         )
+    | |_________^
+171 |
+172 |       normalized_value = value.strip().lower()
+    |
+
+RUF012 Mutable default value for class attribute
+   --> backend\tools\websearch\implementation.py:592:37
+    |
+590 |       )
+591 |
+592 |       parameters: dict[str, object] = {
+    |  _____________________________________^
+593 | |         "type": "object",
+594 | |         "properties": {
+595 | |             "query": {
+596 | |                 "type": "string",
+597 | |                 "title": "Suchanfrage",
+598 | |                 "description": (
+599 | |                     "Die konkrete Suchanfrage. "
+600 | |                     "Beispiel: 'FastAPI Pydantic v2 offizielle Dokumentation'."
+601 | |                 ),
+602 | |                 "minLength": 1,
+603 | |                 "maxLength": MAX_QUERY_LENGTH,
+604 | |             },
+605 | |             "count": {
+606 | |                 "type": "integer",
+607 | |                 "title": "Anzahl der Ergebnisse",
+608 | |                 "description": ("Gewünschte Anzahl der Suchergebnisse."),
+609 | |                 "minimum": 1,
+610 | |                 "maximum": MAX_RESULT_COUNT,
+611 | |                 "default": DEFAULT_RESULT_COUNT,
+612 | |             },
+613 | |             "safe_search": {
+614 | |                 "type": "string",
+615 | |                 "title": "Safe Search",
+616 | |                 "description": ("Filterung potenziell problematischer Suchergebnisse."),
+617 | |                 "enum": [
+618 | |                     "off",
+619 | |                     "moderate",
+620 | |                     "strict",
+621 | |                 ],
+622 | |                 "default": "moderate",
+623 | |             },
+624 | |         },
+625 | |         "required": [
+626 | |             "query",
+627 | |         ],
+628 | |         "additionalProperties": False,
+629 | |     }
+    | |_____^
+630 |
+631 |       async def execute(
+    |
+help: Consider initializing in `__init__` or annotating with `typing.ClassVar`
+
+Found 122 errors.
+No fixes available (22 hidden fixes can be enabled with the `--unsafe-fixes` option).
+PS>TerminatingError(): "Befehl 'ruff' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+>> TerminatingError(): "Befehl 'ruff' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+
+[FEHLER] Ruff: sichere Auto-Fixes
+Befehl 'ruff' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert.
+
+==============================================================================
+ Ruff: Lint-Prüfung
+==============================================================================
+
+> ruff check backend scripts --output-format concise
+backend\app\api\v1\bootstrap.py:383:9: TRY300 Consider moving this statement to an `else` block
+backend\app\api\v1\chat.py:589:9: PERF401 Use `list.extend` to create a transformed list
+backend\app\api\v1\configs.py:2070:9: TRY400 Use `logging.exception` instead of `logging.error`
+backend\app\api\v1\configs.py:2194:89: E501 Line too long (90 > 88)
+backend\app\api\v1\configs.py:2208:89: E501 Line too long (115 > 88)
+backend\app\api\v1\documentation.py:37:89: E501 Line too long (93 > 88)
+backend\app\api\v1\documentation.py:201:89: E501 Line too long (89 > 88)
+backend\app\api\v1\health.py:21:41: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\api\v1\hierarchy.py:39:47: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\api\v1\hierarchy.py:57:36: RUF002 Docstring contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\api\v1\hierarchy.py:337:89: E501 Line too long (98 > 88)
+backend\app\api\v1\hierarchy.py:435:13: TRY300 Consider moving this statement to an `else` block
+backend\app\api\v1\hierarchy.py:437:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+backend\app\api\v1\hierarchy.py:473:13: TRY300 Consider moving this statement to an `else` block
+backend\app\api\v1\hierarchy.py:475:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+backend\app\api\v1\hierarchy.py:482:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+backend\app\api\v1\hierarchy.py:520:13: TRY300 Consider moving this statement to an `else` block
+backend\app\api\v1\hierarchy.py:522:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+backend\app\api\v1\hierarchy.py:529:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+backend\app\api\v1\hierarchy.py:566:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+backend\app\api\v1\hierarchy.py:573:13: B904 Within an `except` clause, raise exceptions with `raise ... from err` or `raise ... from None` to distinguish them from errors in exception handling
+backend\app\api\v1\models.py:33:52: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\api\v1\models.py:1107:9: TRY004 Prefer `TypeError` exception for invalid type
+backend\app\api\v1\tools.py:33:52: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\api\v1\tools.py:1153:9: TRY004 Prefer `TypeError` exception for invalid type
+backend\app\api\v1\ui.py:45:52: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\api\v1\ui.py:471:9: TRY004 Prefer `TypeError` exception for invalid type
+backend\app\api\v1\ui.py:695:17: TRY004 Prefer `TypeError` exception for invalid type
+backend\app\api\v1\ui.py:713:9: TRY004 Prefer `TypeError` exception for invalid type
+backend\app\api\v1\ui.py:726:13: TRY004 Prefer `TypeError` exception for invalid type
+backend\app\api\v1\ui.py:801:57: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\api\v1\ui.py:801:89: E501 Line too long (101 > 88)
+backend\app\api\v1\ui.py:802:89: E501 Line too long (91 > 88)
+backend\app\auth\models.py:16:52: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\config\definitions.py:437:9: SIM108 Use ternary operator `raw_values = [value] if isinstance(value, str) else value` instead of `if`-`else`-block
+backend\app\config\definitions.py:525:9: SIM102 Use a single `if` statement instead of nested `if` statements
+backend\app\config\definitions.py:532:9: SIM102 Use a single `if` statement instead of nested `if` statements
+backend\app\config\resolver.py:20:52: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\config\service.py:848:9: TRY203 Remove exception handler; error is immediately re-raised
+backend\app\config\service.py:880:21: TRY301 Abstract `raise` to an inner function
+backend\app\config\service.py:1054:89: E501 Line too long (91 > 88)
+backend\app\config\service.py:1097:9: TRY203 Remove exception handler; error is immediately re-raised
+backend\app\config\service.py:1141:25: TRY301 Abstract `raise` to an inner function
+backend\app\config\service.py:1418:89: E501 Line too long (93 > 88)
+backend\app\config\service.py:1453:89: E501 Line too long (115 > 88)
+backend\app\config\service.py:1773:17: PERF401 Use a list comprehension to create a transformed list
+backend\app\contracts\hierarchy.py:14:52: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\contracts\model_backend.py:413:51: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\contracts\model_backend.py:639:89: E501 Line too long (90 > 88)
+backend\app\contracts\tool.py:25:47: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\contracts\tool.py:217:7: UP042 Class ToolRiskLevel inherits from both `str` and `enum.Enum`
+backend\app\contracts\tool.py:229:7: UP042 Class ToolAvailabilityStatus inherits from both `str` and `enum.Enum`
+backend\app\contracts\tool.py:240:7: UP042 Class ToolExecutionStatus inherits from both `str` and `enum.Enum`
+backend\app\contracts\tool.py:251:7: UP042 Class ToolSideEffect inherits from both `str` and `enum.Enum`
+backend\app\contracts\tool.py:547:38: RUF012 Mutable default value for class attribute
+backend\app\contracts\tool.py:571:29: RUF012 Mutable default value for class attribute
+backend\app\contracts\ui_schema.py:33:7: UP042 Class UIComponentKind inherits from both `str` and `enum.Enum`
+backend\app\contracts\ui_schema.py:62:7: UP042 Class UIActionKind inherits from both `str` and `enum.Enum`
+backend\app\contracts\ui_schema.py:87:7: UP042 Class UIActionMethod inherits from both `str` and `enum.Enum`
+backend\app\contracts\ui_schema.py:99:7: UP042 Class UIActionConfirmationStyle inherits from both `str` and `enum.Enum`
+backend\app\contracts\ui_schema.py:110:7: UP042 Class UIFormFieldType inherits from both `str` and `enum.Enum`
+backend\app\contracts\ui_schema.py:137:7: UP042 Class UIVisibility inherits from both `str` and `enum.Enum`
+backend\app\core\bootstrap.py:383:13: TRY301 Abstract `raise` to an inner function
+backend\app\core\bootstrap.py:409:9: SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+backend\app\core\bootstrap.py:468:17: TRY301 Abstract `raise` to an inner function
+backend\app\core\bootstrap.py:473:17: TRY301 Abstract `raise` to an inner function
+backend\app\core\bootstrap.py:479:17: TRY301 Abstract `raise` to an inner function
+backend\app\core\bootstrap.py:533:17: TRY301 Abstract `raise` to an inner function
+backend\app\core\bootstrap.py:562:17: TRY301 Abstract `raise` to an inner function
+backend\app\core\bootstrap.py:578:13: TRY301 Abstract `raise` to an inner function
+backend\app\core\bootstrap.py:625:9: TRY300 Consider moving this statement to an `else` block
+backend\app\core\security_profile.py:13:7: UP042 Class AppEnvironment inherits from both `str` and `enum.Enum`
+backend\app\core\security_profile.py:19:7: UP042 Class AuthMode inherits from both `str` and `enum.Enum`
+backend\app\core\settings.py:76:7: UP042 Class AppEnvironment inherits from both `str` and `enum.Enum`
+backend\app\core\settings.py:89:7: UP042 Class LogLevel inherits from both `str` and `enum.Enum`
+backend\app\core\settings.py:97:7: UP042 Class ForwardedHeaderMode inherits from both `str` and `enum.Enum`
+backend\app\core\settings.py:106:7: UP042 Class DatabaseMigrationMode inherits from both `str` and `enum.Enum`
+backend\app\core\settings.py:908:9: SIM102 Use a single `if` statement instead of nested `if` statements
+backend\app\database\models\hierarchy_node.py:23:47: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\hierarchy\models.py:9:47: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\models\lifecycle.py:772:21: TRY301 Abstract `raise` to an inner function
+backend\app\models\lifecycle.py:1020:57: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\models\lifecycle.py:1095:89: E501 Line too long (103 > 88)
+backend\app\models\lifecycle.py:1260:21: TRY300 Consider moving this statement to an `else` block
+backend\app\models\lifecycle.py:1347:89: E501 Line too long (101 > 88)
+backend\app\models\lifecycle.py:1578:89: E501 Line too long (91 > 88)
+backend\app\models\manifest.py:53:42: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\models\manifest.py:1237:9: SIM105 Use `contextlib.suppress(OSError)` instead of `try`-`except`-`pass`
+backend\app\models\manifest.py:1476:9: TRY300 Consider moving this statement to an `else` block
+backend\app\models\providers\__init__.py:273:54: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\models\providers\__init__.py:431:58: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\models\providers\__init__.py:443:47: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\models\providers\http_generic.py:1966:9: PERF402 Use `list` or `list.copy` to create a copy of a list
+backend\app\models\providers\llama_cpp.py:306:21: TRY301 Abstract `raise` to an inner function
+backend\app\models\providers\mlx.py:484:21: TRY301 Abstract `raise` to an inner function
+backend\app\models\providers\mlx.py:746:9: PERF401 Use a list comprehension to create a transformed list
+backend\app\models\providers\ollama.py:244:13: TRY300 Consider moving this statement to an `else` block
+backend\app\models\providers\ollama.py:581:9: SIM102 Use a single `if` statement instead of nested `if` statements
+backend\app\models\providers\ollama.py:1103:13: PERF403 Use a dictionary comprehension instead of a for-loop
+backend\app\models\providers\transformers.py:1058:9: PERF401 Use a list comprehension to create a transformed list
+backend\app\models\service.py:33:89: E501 Line too long (93 > 88)
+backend\app\models\service.py:34:89: E501 Line too long (96 > 88)
+backend\app\models\service.py:1036:21: TRY301 Abstract `raise` to an inner function
+backend\app\registries\model_registry.py:490:89: E501 Line too long (90 > 88)
+backend\app\registries\model_registry.py:600:17: PERF401 Use `list.extend` to create a transformed list
+backend\app\registries\tool_registry.py:560:21: TRY301 Abstract `raise` to an inner function
+backend\app\registries\tool_registry.py:1215:9: TRY300 Consider moving this statement to an `else` block
+backend\app\registries\tool_registry.py:1338:89: E501 Line too long (96 > 88)
+backend\app\services\chat_service.py:694:13: PERF401 Use `list.extend` to create a transformed list
+backend\app\services\chat_service.py:1119:13: TRY300 Consider moving this statement to an `else` block
+backend\app\services\chat_service.py:1329:21: TRY301 Abstract `raise` to an inner function
+backend\app\services\chat_service.py:1567:89: E501 Line too long (90 > 88)
+backend\app\storage\models\chat.py:22:47: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\storage\models\hierarchy.py:23:47: RUF003 Comment contains ambiguous `–` (EN DASH). Did you mean `-` (HYPHEN-MINUS)?
+backend\app\ui\serializer.py:114:13: PERF401 Use a list comprehension to create a transformed list
+backend\main.py:327:9: SIM108 Use ternary operator `raw_value = enum_value if isinstance(enum_value, str) else str(value)` instead of `if`-`else`-block
+backend\tools\calculator\implementation.py:109:13: TRY004 Prefer `TypeError` exception for invalid type
+backend\tools\calculator\implementation.py:283:37: RUF012 Mutable default value for class attribute
+backend\tools\websearch\implementation.py:109:9: TRY004 Prefer `TypeError` exception for invalid type
+backend\tools\websearch\implementation.py:143:9: TRY004 Prefer `TypeError` exception for invalid type
+backend\tools\websearch\implementation.py:168:9: TRY004 Prefer `TypeError` exception for invalid type
+backend\tools\websearch\implementation.py:592:37: RUF012 Mutable default value for class attribute
+Found 122 errors.
+No fixes available (22 hidden fixes can be enabled with the `--unsafe-fixes` option).
+PS>TerminatingError(): "Befehl 'ruff' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+>> TerminatingError(): "Befehl 'ruff' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+
+[FEHLER] Ruff: Lint-Prüfung
+Befehl 'ruff' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert.
+
+==============================================================================
+ Ruff: Formatprüfung
+==============================================================================
+
+> ruff format --check backend scripts
+93 files already formatted
+
+[OK] Ruff: Formatprüfung
+Prettier formatiert 193 Dateien.
+
+==============================================================================
+ Prettier: Projekt formatieren
+==============================================================================
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install prettier F:\Kernschmied\.markdownlint-cli2.jsonc F:\Kernschmied\bug_report.yml F:\Kernschmied\CHANGELOG.md F:\Kernschmied\CODE_OF_CONDUCT.md F:\Kernschmied\CONTRIBUTING.md F:\Kernschmied\package-lock.json F:\Kernschmied\package.json F:\Kernschmied\PULL_REQUEST_TEMPLATE.md F:\Kernschmied\README-PATCH.md F:\Kernschmied\README.md F:\Kernschmied\SECURITY.md F:\Kernschmied\settings-defaults.json F:\Kernschmied\SETTINGS-PATCH-INTEGRATION.md F:\Kernschmied\SUPPORT.md F:\Kernschmied\.vscode\settings.json F:\Kernschmied\backend\model_paths\demo\model.json F:\Kernschmied\backend\tools\calculator\tool.json F:\Kernschmied\backend\tools\websearch\tool.json F:\Kernschmied\config\bootstrap.example.json F:\Kernschmied\config\seed\001-core.json F:\Kernschmied\config\seed\002-ui.json F:\Kernschmied\data\websites\heisig-naturstein-modern\website.json F:\Kernschmied\docs\openapi-formatted.json F:\Kernschmied\docs\openapi.json F:\Kernschmied\docs\PROJECT_PROMPT.md F:\Kernschmied\docs\architecture\Settings-Catalog.md F:\Kernschmied\frontend\index.html F:\Kernschmied\frontend\package-lock.json F:\Kernschmied\frontend\package.json F:\Kernschmied\frontend\postcss.config.js F:\Kernschmied\frontend\tailwind.config.ts F:\Kernschmied\frontend\tsconfig.json F:\Kernschmied\frontend\vite.config.ts F:\Kernschmied\frontend\src\App.tsx F:\Kernschmied\frontend\src\index.css F:\Kernschmied\frontend\src\main.tsx F:\Kernschmied\frontend\src\vite-env.d.ts F:\Kernschmied\frontend\src\api\client.ts F:\Kernschmied\frontend\src\api\config.ts F:\Kernschmied\frontend\src\api\documentation.ts F:\Kernschmied\frontend\src\api\hierarchy.ts F:\Kernschmied\frontend\src\api\settingsCatalog.ts F:\Kernschmied\frontend\src\app\AppProviders.tsx F:\Kernschmied\frontend\src\app\AppShell.tsx F:\Kernschmied\frontend\src\app\AppWorkspace.tsx F:\Kernschmied\frontend\src\app\index.ts F:\Kernschmied\frontend\src\app\useAppBootstrap.ts F:\Kernschmied\frontend\src\components\index.ts F:\Kernschmied\frontend\src\components\chat\GenericChatView.tsx F:\Kernschmied\frontend\src\components\chat\index.ts F:\Kernschmied\frontend\src\components\documentation\DocumentationDialog.tsx F:\Kernschmied\frontend\src\components\documentation\index.ts F:\Kernschmied\frontend\src\components\documentation\MarkdownDocument.tsx F:\Kernschmied\frontend\src\components\errors\AppErrorScreen.tsx F:\Kernschmied\frontend\src\components\errors\index.ts F:\Kernschmied\frontend\src\components\errors\UnsupportedSchema.tsx F:\Kernschmied\frontend\src\components\layout\AppContextSidebar.tsx F:\Kernschmied\frontend\src\components\layout\AppFooter.tsx F:\Kernschmied\frontend\src\components\layout\AppHeader.tsx F:\Kernschmied\frontend\src\components\layout\AppHierarchySidebar.tsx F:\Kernschmied\frontend\src\components\layout\AppLayout.tsx F:\Kernschmied\frontend\src\components\layout\index.ts F:\Kernschmied\frontend\src\components\schema\GenericTreeClean.tsx F:\Kernschmied\frontend\src\components\schema\index.ts F:\Kernschmied\frontend\src\components\schema\SchemaRenderer.tsx F:\Kernschmied\frontend\src\components\schema\UnsupportedSchemaComponent.tsx F:\Kernschmied\frontend\src\components\settings\index.ts F:\Kernschmied\frontend\src\components\settings\SettingsCatalogView.tsx F:\Kernschmied\frontend\src\components\settings\SettingsContent.tsx F:\Kernschmied\frontend\src\components\settings\SettingsDialog.tsx F:\Kernschmied\frontend\src\components\settings\SettingsField.tsx F:\Kernschmied\frontend\src\components\settings\SettingsSidebar.tsx F:\Kernschmied\frontend\src\components\status\AppLoadingScreen.tsx F:\Kernschmied\frontend\src\components\status\index.ts F:\Kernschmied\frontend\src\components\ui\HierarchyActionModal.tsx F:\Kernschmied\frontend\src\components\ui\Modal.tsx F:\Kernschmied\frontend\src\components\ui\ToastProvider.tsx F:\Kernschmied\frontend\src\components\websites\index.ts F:\Kernschmied\frontend\src\components\websites\WebsiteWorkspace.tsx F:\Kernschmied\frontend\src\components\workspace\index.ts F:\Kernschmied\frontend\src\components\workspace\SelectedNodeWorkspace.tsx F:\Kernschmied\frontend\src\contracts\config.ts F:\Kernschmied\frontend\src\contracts\documentation.ts F:\Kernschmied\frontend\src\contracts\hierarchy.ts F:\Kernschmied\frontend\src\contracts\index.ts F:\Kernschmied\frontend\src\contracts\schema.ts F:\Kernschmied\frontend\src\contracts\settings.ts F:\Kernschmied\frontend\src\hooks\useAppSchema.ts F:\Kernschmied\frontend\src\hooks\useConfigApi.ts F:\Kernschmied\frontend\src\hooks\useSystemConfig.ts F:\Kernschmied\frontend\src\registry\actionRegistry.ts F:\Kernschmied\frontend\src\registry\componentRegistry.tsx F:\Kernschmied\frontend\src\registry\iconRegistry.tsx F:\Kernschmied\frontend\src\store\AppStore.tsx F:\Kernschmied\frontend\src\store\index.ts F:\Kernschmied\frontend\src\store\selectors.ts F:\Kernschmied\frontend\src\theme\index.ts F:\Kernschmied\frontend\src\theme\ThemeProvider.tsx F:\Kernschmied\wiki\_Footer.md F:\Kernschmied\wiki\_Sidebar.md --write --ignore-unknown --log-level warn
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install prettier F:\Kernschmied\wiki\Architecture.md F:\Kernschmied\wiki\FAQ.md F:\Kernschmied\wiki\Getting-Started.md F:\Kernschmied\wiki\Glossary.md F:\Kernschmied\wiki\Home.md F:\Kernschmied\wiki\Installation.md F:\Kernschmied\wiki\Project-Principles.md F:\Kernschmied\wiki\ADR\ADR-0001-Schema-Driven-UI.md F:\Kernschmied\wiki\ADR\ADR-0002-Bootstrap.md F:\Kernschmied\wiki\ADR\ADR-0003-Registries.md F:\Kernschmied\wiki\ADR\ADR-0004-Security-Profiles.md F:\Kernschmied\wiki\ADR\ADR-0005-Versioned-Contracts.md F:\Kernschmied\wiki\ADR\ADR-0006-API-Contracts-and-Versioning.md F:\Kernschmied\wiki\ADR\ADR-0007-Database-and-Storage-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0008-Tool-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0009-Authentication-and-Authorization.md F:\Kernschmied\wiki\ADR\ADR-0010-Configuration-Management.md F:\Kernschmied\wiki\ADR\ADR-0011-Hierarchy-and-Prompt-Inheritance.md F:\Kernschmied\wiki\ADR\ADR-0012-Frontend-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0013-Error-Handling-and-Logging.md F:\Kernschmied\wiki\ADR\ADR-0014-Deployment-Profiles.md F:\Kernschmied\wiki\ADR\ADR-0015-LLM-Provider-Architecture.md F:\Kernschmied\wiki\API\Bootstrap.md F:\Kernschmied\wiki\API\Chat.md F:\Kernschmied\wiki\API\Configuration.md F:\Kernschmied\wiki\API\Errors.md F:\Kernschmied\wiki\API\Hierarchy.md F:\Kernschmied\wiki\API\Models.md F:\Kernschmied\wiki\API\SSE.md F:\Kernschmied\wiki\API\Tools.md F:\Kernschmied\wiki\API\UI-Schema.md F:\Kernschmied\wiki\Architecture\Architecture-Decision-Index.md F:\Kernschmied\wiki\Architecture\Bootstrap-Lifecycle.md F:\Kernschmied\wiki\Architecture\C4-Container.md F:\Kernschmied\wiki\Architecture\Configuration-Architecture.md F:\Kernschmied\wiki\Architecture\Contract-Versioning.md F:\Kernschmied\wiki\Architecture\Deployment-Architecture.md F:\Kernschmied\wiki\Architecture\Extension-Points.md F:\Kernschmied\wiki\Architecture\Hierarchy-Architecture.md F:\Kernschmied\wiki\Architecture\Manifest-System.md F:\Kernschmied\wiki\Architecture\Prompt-Inheritance.md F:\Kernschmied\wiki\Architecture\Registry-Architecture.md F:\Kernschmied\wiki\Architecture\Repository-Structure.md F:\Kernschmied\wiki\Architecture\Request-Lifecycle.md F:\Kernschmied\wiki\Architecture\Security-Architecture.md F:\Kernschmied\wiki\Architecture\Settings-Catalog.md F:\Kernschmied\wiki\Architecture\System-Context.md F:\Kernschmied\wiki\Architecture\UI-Schema-Pipeline.md F:\Kernschmied\wiki\Backend\Backend-Overview.md F:\Kernschmied\wiki\Backend\Bootstrap.md F:\Kernschmied\wiki\Backend\Chat.md F:\Kernschmied\wiki\Backend\Configuration.md F:\Kernschmied\wiki\Backend\Contracts.md F:\Kernschmied\wiki\Backend\Database.md F:\Kernschmied\wiki\Backend\Dependency-Injection.md F:\Kernschmied\wiki\Backend\Error-Handling.md F:\Kernschmied\wiki\Backend\Hierarchy.md F:\Kernschmied\wiki\Backend\Model-Registry.md F:\Kernschmied\wiki\Backend\Security.md F:\Kernschmied\wiki\Backend\Tool-Registry.md F:\Kernschmied\wiki\Concepts\Configuration-Revisions.md F:\Kernschmied\wiki\Concepts\Dynamic-UI.md F:\Kernschmied\wiki\Concepts\Plugin-System.md F:\Kernschmied\wiki\Concepts\Prompt-Inheritance.md F:\Kernschmied\wiki\Concepts\Runtime-Configuration.md F:\Kernschmied\wiki\Concepts\Schema-Versioning.md F:\Kernschmied\wiki\Deployment\Development.md F:\Kernschmied\wiki\Deployment\Internet.md F:\Kernschmied\wiki\Deployment\Intranet.md F:\Kernschmied\wiki\Development\Coding-Guidelines.md F:\Kernschmied\wiki\Development\Release-Process.md F:\Kernschmied\wiki\Development\Roadmap.md F:\Kernschmied\wiki\Development\Testing.md F:\Kernschmied\wiki\Development\ToDo.md F:\Kernschmied\wiki\Frontend\Action-Registry.md F:\Kernschmied\wiki\Frontend\API-Client.md F:\Kernschmied\wiki\Frontend\Component-Registry.md F:\Kernschmied\wiki\Frontend\Forms.md F:\Kernschmied\wiki\Frontend\Frontend-Overview.md F:\Kernschmied\wiki\Frontend\Generic-Tree.md F:\Kernschmied\wiki\Frontend\Routing.md F:\Kernschmied\wiki\Frontend\Schema-Renderer.md F:\Kernschmied\wiki\Frontend\State-Management.md F:\Kernschmied\wiki\Frontend\Streaming.md F:\Kernschmied\wiki\Frontend\UI-Schema.md F:\Kernschmied\wiki\User-Manual\Chat.md F:\Kernschmied\wiki\User-Manual\Hierarchy.md F:\Kernschmied\wiki\User-Manual\Overview.md F:\Kernschmied\wiki\User-Manual\Settings.md F:\Kernschmied\wiki\User-Manual\Troubleshooting.md F:\Kernschmied\wiki\Work-Documents\Änderungen.md F:\Kernschmied\wiki\Work-Documents\Fehlerbehebung_der_chat_Pipelien.md F:\Kernschmied\wiki\Work-Documents\PROJECT_PROMPT.md --write --ignore-unknown --log-level warn
+
+[OK] Prettier: Projekt formatieren
+
+==============================================================================
+ Prettier: Formatierung prüfen
+==============================================================================
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install prettier F:\Kernschmied\.markdownlint-cli2.jsonc F:\Kernschmied\bug_report.yml F:\Kernschmied\CHANGELOG.md F:\Kernschmied\CODE_OF_CONDUCT.md F:\Kernschmied\CONTRIBUTING.md F:\Kernschmied\package-lock.json F:\Kernschmied\package.json F:\Kernschmied\PULL_REQUEST_TEMPLATE.md F:\Kernschmied\README-PATCH.md F:\Kernschmied\README.md F:\Kernschmied\SECURITY.md F:\Kernschmied\settings-defaults.json F:\Kernschmied\SETTINGS-PATCH-INTEGRATION.md F:\Kernschmied\SUPPORT.md F:\Kernschmied\.vscode\settings.json F:\Kernschmied\backend\model_paths\demo\model.json F:\Kernschmied\backend\tools\calculator\tool.json F:\Kernschmied\backend\tools\websearch\tool.json F:\Kernschmied\config\bootstrap.example.json F:\Kernschmied\config\seed\001-core.json F:\Kernschmied\config\seed\002-ui.json F:\Kernschmied\data\websites\heisig-naturstein-modern\website.json F:\Kernschmied\docs\openapi-formatted.json F:\Kernschmied\docs\openapi.json F:\Kernschmied\docs\PROJECT_PROMPT.md F:\Kernschmied\docs\architecture\Settings-Catalog.md F:\Kernschmied\frontend\index.html F:\Kernschmied\frontend\package-lock.json F:\Kernschmied\frontend\package.json F:\Kernschmied\frontend\postcss.config.js F:\Kernschmied\frontend\tailwind.config.ts F:\Kernschmied\frontend\tsconfig.json F:\Kernschmied\frontend\vite.config.ts F:\Kernschmied\frontend\src\App.tsx F:\Kernschmied\frontend\src\index.css F:\Kernschmied\frontend\src\main.tsx F:\Kernschmied\frontend\src\vite-env.d.ts F:\Kernschmied\frontend\src\api\client.ts F:\Kernschmied\frontend\src\api\config.ts F:\Kernschmied\frontend\src\api\documentation.ts F:\Kernschmied\frontend\src\api\hierarchy.ts F:\Kernschmied\frontend\src\api\settingsCatalog.ts F:\Kernschmied\frontend\src\app\AppProviders.tsx F:\Kernschmied\frontend\src\app\AppShell.tsx F:\Kernschmied\frontend\src\app\AppWorkspace.tsx F:\Kernschmied\frontend\src\app\index.ts F:\Kernschmied\frontend\src\app\useAppBootstrap.ts F:\Kernschmied\frontend\src\components\index.ts F:\Kernschmied\frontend\src\components\chat\GenericChatView.tsx F:\Kernschmied\frontend\src\components\chat\index.ts F:\Kernschmied\frontend\src\components\documentation\DocumentationDialog.tsx F:\Kernschmied\frontend\src\components\documentation\index.ts F:\Kernschmied\frontend\src\components\documentation\MarkdownDocument.tsx F:\Kernschmied\frontend\src\components\errors\AppErrorScreen.tsx F:\Kernschmied\frontend\src\components\errors\index.ts F:\Kernschmied\frontend\src\components\errors\UnsupportedSchema.tsx F:\Kernschmied\frontend\src\components\layout\AppContextSidebar.tsx F:\Kernschmied\frontend\src\components\layout\AppFooter.tsx F:\Kernschmied\frontend\src\components\layout\AppHeader.tsx F:\Kernschmied\frontend\src\components\layout\AppHierarchySidebar.tsx F:\Kernschmied\frontend\src\components\layout\AppLayout.tsx F:\Kernschmied\frontend\src\components\layout\index.ts F:\Kernschmied\frontend\src\components\schema\GenericTreeClean.tsx F:\Kernschmied\frontend\src\components\schema\index.ts F:\Kernschmied\frontend\src\components\schema\SchemaRenderer.tsx F:\Kernschmied\frontend\src\components\schema\UnsupportedSchemaComponent.tsx F:\Kernschmied\frontend\src\components\settings\index.ts F:\Kernschmied\frontend\src\components\settings\SettingsCatalogView.tsx F:\Kernschmied\frontend\src\components\settings\SettingsContent.tsx F:\Kernschmied\frontend\src\components\settings\SettingsDialog.tsx F:\Kernschmied\frontend\src\components\settings\SettingsField.tsx F:\Kernschmied\frontend\src\components\settings\SettingsSidebar.tsx F:\Kernschmied\frontend\src\components\status\AppLoadingScreen.tsx F:\Kernschmied\frontend\src\components\status\index.ts F:\Kernschmied\frontend\src\components\ui\HierarchyActionModal.tsx F:\Kernschmied\frontend\src\components\ui\Modal.tsx F:\Kernschmied\frontend\src\components\ui\ToastProvider.tsx F:\Kernschmied\frontend\src\components\websites\index.ts F:\Kernschmied\frontend\src\components\websites\WebsiteWorkspace.tsx F:\Kernschmied\frontend\src\components\workspace\index.ts F:\Kernschmied\frontend\src\components\workspace\SelectedNodeWorkspace.tsx F:\Kernschmied\frontend\src\contracts\config.ts F:\Kernschmied\frontend\src\contracts\documentation.ts F:\Kernschmied\frontend\src\contracts\hierarchy.ts F:\Kernschmied\frontend\src\contracts\index.ts F:\Kernschmied\frontend\src\contracts\schema.ts F:\Kernschmied\frontend\src\contracts\settings.ts F:\Kernschmied\frontend\src\hooks\useAppSchema.ts F:\Kernschmied\frontend\src\hooks\useConfigApi.ts F:\Kernschmied\frontend\src\hooks\useSystemConfig.ts F:\Kernschmied\frontend\src\registry\actionRegistry.ts F:\Kernschmied\frontend\src\registry\componentRegistry.tsx F:\Kernschmied\frontend\src\registry\iconRegistry.tsx F:\Kernschmied\frontend\src\store\AppStore.tsx F:\Kernschmied\frontend\src\store\index.ts F:\Kernschmied\frontend\src\store\selectors.ts F:\Kernschmied\frontend\src\theme\index.ts F:\Kernschmied\frontend\src\theme\ThemeProvider.tsx F:\Kernschmied\wiki\_Footer.md F:\Kernschmied\wiki\_Sidebar.md --check --ignore-unknown --log-level warn
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install prettier F:\Kernschmied\wiki\Architecture.md F:\Kernschmied\wiki\FAQ.md F:\Kernschmied\wiki\Getting-Started.md F:\Kernschmied\wiki\Glossary.md F:\Kernschmied\wiki\Home.md F:\Kernschmied\wiki\Installation.md F:\Kernschmied\wiki\Project-Principles.md F:\Kernschmied\wiki\ADR\ADR-0001-Schema-Driven-UI.md F:\Kernschmied\wiki\ADR\ADR-0002-Bootstrap.md F:\Kernschmied\wiki\ADR\ADR-0003-Registries.md F:\Kernschmied\wiki\ADR\ADR-0004-Security-Profiles.md F:\Kernschmied\wiki\ADR\ADR-0005-Versioned-Contracts.md F:\Kernschmied\wiki\ADR\ADR-0006-API-Contracts-and-Versioning.md F:\Kernschmied\wiki\ADR\ADR-0007-Database-and-Storage-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0008-Tool-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0009-Authentication-and-Authorization.md F:\Kernschmied\wiki\ADR\ADR-0010-Configuration-Management.md F:\Kernschmied\wiki\ADR\ADR-0011-Hierarchy-and-Prompt-Inheritance.md F:\Kernschmied\wiki\ADR\ADR-0012-Frontend-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0013-Error-Handling-and-Logging.md F:\Kernschmied\wiki\ADR\ADR-0014-Deployment-Profiles.md F:\Kernschmied\wiki\ADR\ADR-0015-LLM-Provider-Architecture.md F:\Kernschmied\wiki\API\Bootstrap.md F:\Kernschmied\wiki\API\Chat.md F:\Kernschmied\wiki\API\Configuration.md F:\Kernschmied\wiki\API\Errors.md F:\Kernschmied\wiki\API\Hierarchy.md F:\Kernschmied\wiki\API\Models.md F:\Kernschmied\wiki\API\SSE.md F:\Kernschmied\wiki\API\Tools.md F:\Kernschmied\wiki\API\UI-Schema.md F:\Kernschmied\wiki\Architecture\Architecture-Decision-Index.md F:\Kernschmied\wiki\Architecture\Bootstrap-Lifecycle.md F:\Kernschmied\wiki\Architecture\C4-Container.md F:\Kernschmied\wiki\Architecture\Configuration-Architecture.md F:\Kernschmied\wiki\Architecture\Contract-Versioning.md F:\Kernschmied\wiki\Architecture\Deployment-Architecture.md F:\Kernschmied\wiki\Architecture\Extension-Points.md F:\Kernschmied\wiki\Architecture\Hierarchy-Architecture.md F:\Kernschmied\wiki\Architecture\Manifest-System.md F:\Kernschmied\wiki\Architecture\Prompt-Inheritance.md F:\Kernschmied\wiki\Architecture\Registry-Architecture.md F:\Kernschmied\wiki\Architecture\Repository-Structure.md F:\Kernschmied\wiki\Architecture\Request-Lifecycle.md F:\Kernschmied\wiki\Architecture\Security-Architecture.md F:\Kernschmied\wiki\Architecture\Settings-Catalog.md F:\Kernschmied\wiki\Architecture\System-Context.md F:\Kernschmied\wiki\Architecture\UI-Schema-Pipeline.md F:\Kernschmied\wiki\Backend\Backend-Overview.md F:\Kernschmied\wiki\Backend\Bootstrap.md F:\Kernschmied\wiki\Backend\Chat.md F:\Kernschmied\wiki\Backend\Configuration.md F:\Kernschmied\wiki\Backend\Contracts.md F:\Kernschmied\wiki\Backend\Database.md F:\Kernschmied\wiki\Backend\Dependency-Injection.md F:\Kernschmied\wiki\Backend\Error-Handling.md F:\Kernschmied\wiki\Backend\Hierarchy.md F:\Kernschmied\wiki\Backend\Model-Registry.md F:\Kernschmied\wiki\Backend\Security.md F:\Kernschmied\wiki\Backend\Tool-Registry.md F:\Kernschmied\wiki\Concepts\Configuration-Revisions.md F:\Kernschmied\wiki\Concepts\Dynamic-UI.md F:\Kernschmied\wiki\Concepts\Plugin-System.md F:\Kernschmied\wiki\Concepts\Prompt-Inheritance.md F:\Kernschmied\wiki\Concepts\Runtime-Configuration.md F:\Kernschmied\wiki\Concepts\Schema-Versioning.md F:\Kernschmied\wiki\Deployment\Development.md F:\Kernschmied\wiki\Deployment\Internet.md F:\Kernschmied\wiki\Deployment\Intranet.md F:\Kernschmied\wiki\Development\Coding-Guidelines.md F:\Kernschmied\wiki\Development\Release-Process.md F:\Kernschmied\wiki\Development\Roadmap.md F:\Kernschmied\wiki\Development\Testing.md F:\Kernschmied\wiki\Development\ToDo.md F:\Kernschmied\wiki\Frontend\Action-Registry.md F:\Kernschmied\wiki\Frontend\API-Client.md F:\Kernschmied\wiki\Frontend\Component-Registry.md F:\Kernschmied\wiki\Frontend\Forms.md F:\Kernschmied\wiki\Frontend\Frontend-Overview.md F:\Kernschmied\wiki\Frontend\Generic-Tree.md F:\Kernschmied\wiki\Frontend\Routing.md F:\Kernschmied\wiki\Frontend\Schema-Renderer.md F:\Kernschmied\wiki\Frontend\State-Management.md F:\Kernschmied\wiki\Frontend\Streaming.md F:\Kernschmied\wiki\Frontend\UI-Schema.md F:\Kernschmied\wiki\User-Manual\Chat.md F:\Kernschmied\wiki\User-Manual\Hierarchy.md F:\Kernschmied\wiki\User-Manual\Overview.md F:\Kernschmied\wiki\User-Manual\Settings.md F:\Kernschmied\wiki\User-Manual\Troubleshooting.md F:\Kernschmied\wiki\Work-Documents\Änderungen.md F:\Kernschmied\wiki\Work-Documents\Fehlerbehebung_der_chat_Pipelien.md F:\Kernschmied\wiki\Work-Documents\PROJECT_PROMPT.md --check --ignore-unknown --log-level warn
+
+[OK] Prettier: Formatierung prüfen
+
+==============================================================================
+ Markdownlint: Repository Auto-Fix
+==============================================================================
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install markdownlint-cli2 --fix F:\Kernschmied\CHANGELOG.md F:\Kernschmied\CODE_OF_CONDUCT.md F:\Kernschmied\CONTRIBUTING.md F:\Kernschmied\PULL_REQUEST_TEMPLATE.md F:\Kernschmied\README-PATCH.md F:\Kernschmied\README.md F:\Kernschmied\SECURITY.md F:\Kernschmied\SETTINGS-PATCH-INTEGRATION.md F:\Kernschmied\SUPPORT.md F:\Kernschmied\docs\PROJECT_PROMPT.md F:\Kernschmied\docs\architecture\Settings-Catalog.md
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: F:/Kernschmied/CHANGELOG.md F:/Kernschmied/CODE_OF_CONDUCT.md F:/Kernschmied/CONTRIBUTING.md F:/Kernschmied/PULL_REQUEST_TEMPLATE.md F:/Kernschmied/README-PATCH.md F:/Kernschmied/README.md F:/Kernschmied/SECURITY.md F:/Kernschmied/SETTINGS-PATCH-INTEGRATION.md F:/Kernschmied/SUPPORT.md F:/Kernschmied/docs/PROJECT_PROMPT.md F:/Kernschmied/docs/architecture/Settings-Catalog.md wiki/**/*.md README.md !**/node_modules/** !**/.venv/** !**/dist/** !**/build/**
+Linting: 106 files
+Summary: 16 issues in 2 files
+wiki/Architecture/Architecture-Decision-Index.md:168 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Decision"]
+wiki/Architecture/Architecture-Decision-Index.md:168 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Decision"]
+wiki/Development/Roadmap.md:3 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Stand: 01.08.2026"]
+wiki/Development/Roadmap.md:3 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Stand: 01.08.2026"]
+wiki/Development/Roadmap.md:234 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: weitgehend abgeschloss..."]
+wiki/Development/Roadmap.md:234 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: weitgehend abgeschloss..."]
+wiki/Development/Roadmap.md:274 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: in Bearbeitung"]
+wiki/Development/Roadmap.md:274 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: in Bearbeitung"]
+wiki/Development/Roadmap.md:352 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: in Bearbeitung"]
+wiki/Development/Roadmap.md:352 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: in Bearbeitung"]
+wiki/Development/Roadmap.md:511 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: begonnen"]
+wiki/Development/Roadmap.md:511 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: begonnen"]
+wiki/Development/Roadmap.md:586 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: teilweise umgesetzt"]
+wiki/Development/Roadmap.md:586 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: teilweise umgesetzt"]
+wiki/Development/Roadmap.md:694 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: begonnen"]
+wiki/Development/Roadmap.md:694 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: begonnen"]
+wiki/Development/Roadmap.md:755 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: geplant"]
+wiki/Development/Roadmap.md:755 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: geplant"]
+wiki/Development/Roadmap.md:793 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig geplant"]
+wiki/Development/Roadmap.md:793 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig geplant"]
+wiki/Development/Roadmap.md:831 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: später"]
+wiki/Development/Roadmap.md:831 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: später"]
+wiki/Development/Roadmap.md:872 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: nicht Teil des aktuell..."]
+wiki/Development/Roadmap.md:872 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: nicht Teil des aktuell..."]
+wiki/Development/Roadmap.md:896 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+wiki/Development/Roadmap.md:896 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+wiki/Development/Roadmap.md:918 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+wiki/Development/Roadmap.md:918 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+wiki/Development/Roadmap.md:953 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: Grundlagen vorhanden, ..."]
+wiki/Development/Roadmap.md:953 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: Grundlagen vorhanden, ..."]
+wiki/Development/Roadmap.md:988 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+wiki/Development/Roadmap.md:988 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+PS>TerminatingError(): "Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+>> TerminatingError(): "Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+>> TerminatingError(): "Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+>> TerminatingError(): "Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+>> TerminatingError(): "Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+
+[FEHLER] Markdownlint: Repository Auto-Fix
+Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert.
+
+==============================================================================
+ Markdownlint: Wiki Auto-Fix
+==============================================================================
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install markdownlint-cli2 --config F:\Kernschmied\artifacts\testsuite\wiki.markdownlint-cli2.jsonc --fix F:\Kernschmied\wiki\_Footer.md F:\Kernschmied\wiki\_Sidebar.md F:\Kernschmied\wiki\Architecture.md F:\Kernschmied\wiki\FAQ.md F:\Kernschmied\wiki\Getting-Started.md F:\Kernschmied\wiki\Glossary.md F:\Kernschmied\wiki\Home.md F:\Kernschmied\wiki\Installation.md F:\Kernschmied\wiki\Project-Principles.md F:\Kernschmied\wiki\ADR\ADR-0001-Schema-Driven-UI.md F:\Kernschmied\wiki\ADR\ADR-0002-Bootstrap.md F:\Kernschmied\wiki\ADR\ADR-0003-Registries.md F:\Kernschmied\wiki\ADR\ADR-0004-Security-Profiles.md F:\Kernschmied\wiki\ADR\ADR-0005-Versioned-Contracts.md F:\Kernschmied\wiki\ADR\ADR-0006-API-Contracts-and-Versioning.md F:\Kernschmied\wiki\ADR\ADR-0007-Database-and-Storage-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0008-Tool-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0009-Authentication-and-Authorization.md F:\Kernschmied\wiki\ADR\ADR-0010-Configuration-Management.md F:\Kernschmied\wiki\ADR\ADR-0011-Hierarchy-and-Prompt-Inheritance.md F:\Kernschmied\wiki\ADR\ADR-0012-Frontend-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0013-Error-Handling-and-Logging.md F:\Kernschmied\wiki\ADR\ADR-0014-Deployment-Profiles.md F:\Kernschmied\wiki\ADR\ADR-0015-LLM-Provider-Architecture.md F:\Kernschmied\wiki\API\Bootstrap.md
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: F:/Kernschmied/wiki/_Footer.md F:/Kernschmied/wiki/_Sidebar.md F:/Kernschmied/wiki/Architecture.md F:/Kernschmied/wiki/FAQ.md F:/Kernschmied/wiki/Getting-Started.md F:/Kernschmied/wiki/Glossary.md F:/Kernschmied/wiki/Home.md F:/Kernschmied/wiki/Installation.md F:/Kernschmied/wiki/Project-Principles.md F:/Kernschmied/wiki/ADR/ADR-0001-Schema-Driven-UI.md F:/Kernschmied/wiki/ADR/ADR-0002-Bootstrap.md F:/Kernschmied/wiki/ADR/ADR-0003-Registries.md F:/Kernschmied/wiki/ADR/ADR-0004-Security-Profiles.md F:/Kernschmied/wiki/ADR/ADR-0005-Versioned-Contracts.md F:/Kernschmied/wiki/ADR/ADR-0006-API-Contracts-and-Versioning.md F:/Kernschmied/wiki/ADR/ADR-0007-Database-and-Storage-Architecture.md F:/Kernschmied/wiki/ADR/ADR-0008-Tool-Architecture.md F:/Kernschmied/wiki/ADR/ADR-0009-Authentication-and-Authorization.md F:/Kernschmied/wiki/ADR/ADR-0010-Configuration-Management.md F:/Kernschmied/wiki/ADR/ADR-0011-Hierarchy-and-Prompt-Inheritance.md F:/Kernschmied/wiki/ADR/ADR-0012-Frontend-Architecture.md F:/Kernschmied/wiki/ADR/ADR-0013-Error-Handling-and-Logging.md F:/Kernschmied/wiki/ADR/ADR-0014-Deployment-Profiles.md F:/Kernschmied/wiki/ADR/ADR-0015-LLM-Provider-Architecture.md F:/Kernschmied/wiki/API/Bootstrap.md wiki/**/*.md README.md !**/node_modules/** !**/.venv/** !**/dist/** !**/build/**
+Linting: 96 files
+Summary: 0 issues in 0 files
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install markdownlint-cli2 --config F:\Kernschmied\artifacts\testsuite\wiki.markdownlint-cli2.jsonc --fix F:\Kernschmied\wiki\API\Chat.md F:\Kernschmied\wiki\API\Configuration.md F:\Kernschmied\wiki\API\Errors.md F:\Kernschmied\wiki\API\Hierarchy.md F:\Kernschmied\wiki\API\Models.md F:\Kernschmied\wiki\API\SSE.md F:\Kernschmied\wiki\API\Tools.md F:\Kernschmied\wiki\API\UI-Schema.md F:\Kernschmied\wiki\Architecture\Architecture-Decision-Index.md F:\Kernschmied\wiki\Architecture\Bootstrap-Lifecycle.md F:\Kernschmied\wiki\Architecture\C4-Container.md F:\Kernschmied\wiki\Architecture\Configuration-Architecture.md F:\Kernschmied\wiki\Architecture\Contract-Versioning.md F:\Kernschmied\wiki\Architecture\Deployment-Architecture.md F:\Kernschmied\wiki\Architecture\Extension-Points.md F:\Kernschmied\wiki\Architecture\Hierarchy-Architecture.md F:\Kernschmied\wiki\Architecture\Manifest-System.md F:\Kernschmied\wiki\Architecture\Prompt-Inheritance.md F:\Kernschmied\wiki\Architecture\Registry-Architecture.md F:\Kernschmied\wiki\Architecture\Repository-Structure.md F:\Kernschmied\wiki\Architecture\Request-Lifecycle.md F:\Kernschmied\wiki\Architecture\Security-Architecture.md F:\Kernschmied\wiki\Architecture\Settings-Catalog.md F:\Kernschmied\wiki\Architecture\System-Context.md F:\Kernschmied\wiki\Architecture\UI-Schema-Pipeline.md
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: F:/Kernschmied/wiki/API/Chat.md F:/Kernschmied/wiki/API/Configuration.md F:/Kernschmied/wiki/API/Errors.md F:/Kernschmied/wiki/API/Hierarchy.md F:/Kernschmied/wiki/API/Models.md F:/Kernschmied/wiki/API/SSE.md F:/Kernschmied/wiki/API/Tools.md F:/Kernschmied/wiki/API/UI-Schema.md F:/Kernschmied/wiki/Architecture/Architecture-Decision-Index.md F:/Kernschmied/wiki/Architecture/Bootstrap-Lifecycle.md F:/Kernschmied/wiki/Architecture/C4-Container.md F:/Kernschmied/wiki/Architecture/Configuration-Architecture.md F:/Kernschmied/wiki/Architecture/Contract-Versioning.md F:/Kernschmied/wiki/Architecture/Deployment-Architecture.md F:/Kernschmied/wiki/Architecture/Extension-Points.md F:/Kernschmied/wiki/Architecture/Hierarchy-Architecture.md F:/Kernschmied/wiki/Architecture/Manifest-System.md F:/Kernschmied/wiki/Architecture/Prompt-Inheritance.md F:/Kernschmied/wiki/Architecture/Registry-Architecture.md F:/Kernschmied/wiki/Architecture/Repository-Structure.md F:/Kernschmied/wiki/Architecture/Request-Lifecycle.md F:/Kernschmied/wiki/Architecture/Security-Architecture.md F:/Kernschmied/wiki/Architecture/Settings-Catalog.md F:/Kernschmied/wiki/Architecture/System-Context.md F:/Kernschmied/wiki/Architecture/UI-Schema-Pipeline.md wiki/**/*.md README.md !**/node_modules/** !**/.venv/** !**/dist/** !**/build/**
+Linting: 96 files
+Summary: 0 issues in 0 files
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install markdownlint-cli2 --config F:\Kernschmied\artifacts\testsuite\wiki.markdownlint-cli2.jsonc --fix F:\Kernschmied\wiki\Backend\Backend-Overview.md F:\Kernschmied\wiki\Backend\Bootstrap.md F:\Kernschmied\wiki\Backend\Chat.md F:\Kernschmied\wiki\Backend\Configuration.md F:\Kernschmied\wiki\Backend\Contracts.md F:\Kernschmied\wiki\Backend\Database.md F:\Kernschmied\wiki\Backend\Dependency-Injection.md F:\Kernschmied\wiki\Backend\Error-Handling.md F:\Kernschmied\wiki\Backend\Hierarchy.md F:\Kernschmied\wiki\Backend\Model-Registry.md F:\Kernschmied\wiki\Backend\Security.md F:\Kernschmied\wiki\Backend\Tool-Registry.md F:\Kernschmied\wiki\Concepts\Configuration-Revisions.md F:\Kernschmied\wiki\Concepts\Dynamic-UI.md F:\Kernschmied\wiki\Concepts\Plugin-System.md F:\Kernschmied\wiki\Concepts\Prompt-Inheritance.md F:\Kernschmied\wiki\Concepts\Runtime-Configuration.md F:\Kernschmied\wiki\Concepts\Schema-Versioning.md F:\Kernschmied\wiki\Deployment\Development.md F:\Kernschmied\wiki\Deployment\Internet.md F:\Kernschmied\wiki\Deployment\Intranet.md F:\Kernschmied\wiki\Development\Coding-Guidelines.md F:\Kernschmied\wiki\Development\Release-Process.md F:\Kernschmied\wiki\Development\Roadmap.md F:\Kernschmied\wiki\Development\Testing.md
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: F:/Kernschmied/wiki/Backend/Backend-Overview.md F:/Kernschmied/wiki/Backend/Bootstrap.md F:/Kernschmied/wiki/Backend/Chat.md F:/Kernschmied/wiki/Backend/Configuration.md F:/Kernschmied/wiki/Backend/Contracts.md F:/Kernschmied/wiki/Backend/Database.md F:/Kernschmied/wiki/Backend/Dependency-Injection.md F:/Kernschmied/wiki/Backend/Error-Handling.md F:/Kernschmied/wiki/Backend/Hierarchy.md F:/Kernschmied/wiki/Backend/Model-Registry.md F:/Kernschmied/wiki/Backend/Security.md F:/Kernschmied/wiki/Backend/Tool-Registry.md F:/Kernschmied/wiki/Concepts/Configuration-Revisions.md F:/Kernschmied/wiki/Concepts/Dynamic-UI.md F:/Kernschmied/wiki/Concepts/Plugin-System.md F:/Kernschmied/wiki/Concepts/Prompt-Inheritance.md F:/Kernschmied/wiki/Concepts/Runtime-Configuration.md F:/Kernschmied/wiki/Concepts/Schema-Versioning.md F:/Kernschmied/wiki/Deployment/Development.md F:/Kernschmied/wiki/Deployment/Internet.md F:/Kernschmied/wiki/Deployment/Intranet.md F:/Kernschmied/wiki/Development/Coding-Guidelines.md F:/Kernschmied/wiki/Development/Release-Process.md F:/Kernschmied/wiki/Development/Roadmap.md F:/Kernschmied/wiki/Development/Testing.md wiki/**/*.md README.md !**/node_modules/** !**/.venv/** !**/dist/** !**/build/**
+Linting: 96 files
+Summary: 0 issues in 0 files
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install markdownlint-cli2 --config F:\Kernschmied\artifacts\testsuite\wiki.markdownlint-cli2.jsonc --fix F:\Kernschmied\wiki\Development\ToDo.md F:\Kernschmied\wiki\Frontend\Action-Registry.md F:\Kernschmied\wiki\Frontend\API-Client.md F:\Kernschmied\wiki\Frontend\Component-Registry.md F:\Kernschmied\wiki\Frontend\Forms.md F:\Kernschmied\wiki\Frontend\Frontend-Overview.md F:\Kernschmied\wiki\Frontend\Generic-Tree.md F:\Kernschmied\wiki\Frontend\Routing.md F:\Kernschmied\wiki\Frontend\Schema-Renderer.md F:\Kernschmied\wiki\Frontend\State-Management.md F:\Kernschmied\wiki\Frontend\Streaming.md F:\Kernschmied\wiki\Frontend\UI-Schema.md F:\Kernschmied\wiki\User-Manual\Chat.md F:\Kernschmied\wiki\User-Manual\Hierarchy.md F:\Kernschmied\wiki\User-Manual\Overview.md F:\Kernschmied\wiki\User-Manual\Settings.md F:\Kernschmied\wiki\User-Manual\Troubleshooting.md F:\Kernschmied\wiki\Work-Documents\Änderungen.md F:\Kernschmied\wiki\Work-Documents\Fehlerbehebung_der_chat_Pipelien.md F:\Kernschmied\wiki\Work-Documents\PROJECT_PROMPT.md
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: F:/Kernschmied/wiki/Development/ToDo.md F:/Kernschmied/wiki/Frontend/Action-Registry.md F:/Kernschmied/wiki/Frontend/API-Client.md F:/Kernschmied/wiki/Frontend/Component-Registry.md F:/Kernschmied/wiki/Frontend/Forms.md F:/Kernschmied/wiki/Frontend/Frontend-Overview.md F:/Kernschmied/wiki/Frontend/Generic-Tree.md F:/Kernschmied/wiki/Frontend/Routing.md F:/Kernschmied/wiki/Frontend/Schema-Renderer.md F:/Kernschmied/wiki/Frontend/State-Management.md F:/Kernschmied/wiki/Frontend/Streaming.md F:/Kernschmied/wiki/Frontend/UI-Schema.md F:/Kernschmied/wiki/User-Manual/Chat.md F:/Kernschmied/wiki/User-Manual/Hierarchy.md F:/Kernschmied/wiki/User-Manual/Overview.md F:/Kernschmied/wiki/User-Manual/Settings.md F:/Kernschmied/wiki/User-Manual/Troubleshooting.md F:/Kernschmied/wiki/Work-Documents/Änderungen.md F:/Kernschmied/wiki/Work-Documents/Fehlerbehebung_der_chat_Pipelien.md F:/Kernschmied/wiki/Work-Documents/PROJECT_PROMPT.md wiki/**/*.md README.md !**/node_modules/** !**/.venv/** !**/dist/** !**/build/**
+Linting: 96 files
+Summary: 0 issues in 0 files
+
+[OK] Markdownlint: Wiki Auto-Fix
+
+==============================================================================
+ Markdownlint: Repository prüfen
+==============================================================================
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install markdownlint-cli2 F:\Kernschmied\CHANGELOG.md F:\Kernschmied\CODE_OF_CONDUCT.md F:\Kernschmied\CONTRIBUTING.md F:\Kernschmied\PULL_REQUEST_TEMPLATE.md F:\Kernschmied\README-PATCH.md F:\Kernschmied\README.md F:\Kernschmied\SECURITY.md F:\Kernschmied\SETTINGS-PATCH-INTEGRATION.md F:\Kernschmied\SUPPORT.md F:\Kernschmied\docs\PROJECT_PROMPT.md F:\Kernschmied\docs\architecture\Settings-Catalog.md
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: F:/Kernschmied/CHANGELOG.md F:/Kernschmied/CODE_OF_CONDUCT.md F:/Kernschmied/CONTRIBUTING.md F:/Kernschmied/PULL_REQUEST_TEMPLATE.md F:/Kernschmied/README-PATCH.md F:/Kernschmied/README.md F:/Kernschmied/SECURITY.md F:/Kernschmied/SETTINGS-PATCH-INTEGRATION.md F:/Kernschmied/SUPPORT.md F:/Kernschmied/docs/PROJECT_PROMPT.md F:/Kernschmied/docs/architecture/Settings-Catalog.md wiki/**/*.md README.md !**/node_modules/** !**/.venv/** !**/dist/** !**/build/**
+Linting: 106 files
+Summary: 16 issues in 2 files
+wiki/Architecture/Architecture-Decision-Index.md:168 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Decision"]
+wiki/Architecture/Architecture-Decision-Index.md:168 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Decision"]
+wiki/Development/Roadmap.md:3 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Stand: 01.08.2026"]
+wiki/Development/Roadmap.md:3 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Stand: 01.08.2026"]
+wiki/Development/Roadmap.md:234 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: weitgehend abgeschloss..."]
+wiki/Development/Roadmap.md:234 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: weitgehend abgeschloss..."]
+wiki/Development/Roadmap.md:274 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: in Bearbeitung"]
+wiki/Development/Roadmap.md:274 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: in Bearbeitung"]
+wiki/Development/Roadmap.md:352 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: in Bearbeitung"]
+wiki/Development/Roadmap.md:352 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: in Bearbeitung"]
+wiki/Development/Roadmap.md:511 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: begonnen"]
+wiki/Development/Roadmap.md:511 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: begonnen"]
+wiki/Development/Roadmap.md:586 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: teilweise umgesetzt"]
+wiki/Development/Roadmap.md:586 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: teilweise umgesetzt"]
+wiki/Development/Roadmap.md:694 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: begonnen"]
+wiki/Development/Roadmap.md:694 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: begonnen"]
+wiki/Development/Roadmap.md:755 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: geplant"]
+wiki/Development/Roadmap.md:755 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: geplant"]
+wiki/Development/Roadmap.md:793 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig geplant"]
+wiki/Development/Roadmap.md:793 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig geplant"]
+wiki/Development/Roadmap.md:831 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: später"]
+wiki/Development/Roadmap.md:831 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: später"]
+wiki/Development/Roadmap.md:872 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: nicht Teil des aktuell..."]
+wiki/Development/Roadmap.md:872 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: nicht Teil des aktuell..."]
+wiki/Development/Roadmap.md:896 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+wiki/Development/Roadmap.md:896 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+wiki/Development/Roadmap.md:918 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+wiki/Development/Roadmap.md:918 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+wiki/Development/Roadmap.md:953 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: Grundlagen vorhanden, ..."]
+wiki/Development/Roadmap.md:953 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: Grundlagen vorhanden, ..."]
+wiki/Development/Roadmap.md:988 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+wiki/Development/Roadmap.md:988 error MD036/no-emphasis-as-heading Emphasis used instead of a heading [Context: "Status: langfristig"]
+PS>TerminatingError(): "Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+>> TerminatingError(): "Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+>> TerminatingError(): "Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+>> TerminatingError(): "Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+>> TerminatingError(): "Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert."
+
+[FEHLER] Markdownlint: Repository prüfen
+Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert.
+
+==============================================================================
+ Markdownlint: Wiki prüfen
+==============================================================================
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install markdownlint-cli2 --config F:\Kernschmied\artifacts\testsuite\wiki.markdownlint-cli2.jsonc F:\Kernschmied\wiki\_Footer.md F:\Kernschmied\wiki\_Sidebar.md F:\Kernschmied\wiki\Architecture.md F:\Kernschmied\wiki\FAQ.md F:\Kernschmied\wiki\Getting-Started.md F:\Kernschmied\wiki\Glossary.md F:\Kernschmied\wiki\Home.md F:\Kernschmied\wiki\Installation.md F:\Kernschmied\wiki\Project-Principles.md F:\Kernschmied\wiki\ADR\ADR-0001-Schema-Driven-UI.md F:\Kernschmied\wiki\ADR\ADR-0002-Bootstrap.md F:\Kernschmied\wiki\ADR\ADR-0003-Registries.md F:\Kernschmied\wiki\ADR\ADR-0004-Security-Profiles.md F:\Kernschmied\wiki\ADR\ADR-0005-Versioned-Contracts.md F:\Kernschmied\wiki\ADR\ADR-0006-API-Contracts-and-Versioning.md F:\Kernschmied\wiki\ADR\ADR-0007-Database-and-Storage-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0008-Tool-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0009-Authentication-and-Authorization.md F:\Kernschmied\wiki\ADR\ADR-0010-Configuration-Management.md F:\Kernschmied\wiki\ADR\ADR-0011-Hierarchy-and-Prompt-Inheritance.md F:\Kernschmied\wiki\ADR\ADR-0012-Frontend-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0013-Error-Handling-and-Logging.md F:\Kernschmied\wiki\ADR\ADR-0014-Deployment-Profiles.md F:\Kernschmied\wiki\ADR\ADR-0015-LLM-Provider-Architecture.md F:\Kernschmied\wiki\API\Bootstrap.md
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: F:/Kernschmied/wiki/_Footer.md F:/Kernschmied/wiki/_Sidebar.md F:/Kernschmied/wiki/Architecture.md F:/Kernschmied/wiki/FAQ.md F:/Kernschmied/wiki/Getting-Started.md F:/Kernschmied/wiki/Glossary.md F:/Kernschmied/wiki/Home.md F:/Kernschmied/wiki/Installation.md F:/Kernschmied/wiki/Project-Principles.md F:/Kernschmied/wiki/ADR/ADR-0001-Schema-Driven-UI.md F:/Kernschmied/wiki/ADR/ADR-0002-Bootstrap.md F:/Kernschmied/wiki/ADR/ADR-0003-Registries.md F:/Kernschmied/wiki/ADR/ADR-0004-Security-Profiles.md F:/Kernschmied/wiki/ADR/ADR-0005-Versioned-Contracts.md F:/Kernschmied/wiki/ADR/ADR-0006-API-Contracts-and-Versioning.md F:/Kernschmied/wiki/ADR/ADR-0007-Database-and-Storage-Architecture.md F:/Kernschmied/wiki/ADR/ADR-0008-Tool-Architecture.md F:/Kernschmied/wiki/ADR/ADR-0009-Authentication-and-Authorization.md F:/Kernschmied/wiki/ADR/ADR-0010-Configuration-Management.md F:/Kernschmied/wiki/ADR/ADR-0011-Hierarchy-and-Prompt-Inheritance.md F:/Kernschmied/wiki/ADR/ADR-0012-Frontend-Architecture.md F:/Kernschmied/wiki/ADR/ADR-0013-Error-Handling-and-Logging.md F:/Kernschmied/wiki/ADR/ADR-0014-Deployment-Profiles.md F:/Kernschmied/wiki/ADR/ADR-0015-LLM-Provider-Architecture.md F:/Kernschmied/wiki/API/Bootstrap.md wiki/**/*.md README.md !**/node_modules/** !**/.venv/** !**/dist/** !**/build/**
+Linting: 96 files
+Summary: 0 issues in 0 files
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install markdownlint-cli2 --config F:\Kernschmied\artifacts\testsuite\wiki.markdownlint-cli2.jsonc F:\Kernschmied\wiki\API\Chat.md F:\Kernschmied\wiki\API\Configuration.md F:\Kernschmied\wiki\API\Errors.md F:\Kernschmied\wiki\API\Hierarchy.md F:\Kernschmied\wiki\API\Models.md F:\Kernschmied\wiki\API\SSE.md F:\Kernschmied\wiki\API\Tools.md F:\Kernschmied\wiki\API\UI-Schema.md F:\Kernschmied\wiki\Architecture\Architecture-Decision-Index.md F:\Kernschmied\wiki\Architecture\Bootstrap-Lifecycle.md F:\Kernschmied\wiki\Architecture\C4-Container.md F:\Kernschmied\wiki\Architecture\Configuration-Architecture.md F:\Kernschmied\wiki\Architecture\Contract-Versioning.md F:\Kernschmied\wiki\Architecture\Deployment-Architecture.md F:\Kernschmied\wiki\Architecture\Extension-Points.md F:\Kernschmied\wiki\Architecture\Hierarchy-Architecture.md F:\Kernschmied\wiki\Architecture\Manifest-System.md F:\Kernschmied\wiki\Architecture\Prompt-Inheritance.md F:\Kernschmied\wiki\Architecture\Registry-Architecture.md F:\Kernschmied\wiki\Architecture\Repository-Structure.md F:\Kernschmied\wiki\Architecture\Request-Lifecycle.md F:\Kernschmied\wiki\Architecture\Security-Architecture.md F:\Kernschmied\wiki\Architecture\Settings-Catalog.md F:\Kernschmied\wiki\Architecture\System-Context.md F:\Kernschmied\wiki\Architecture\UI-Schema-Pipeline.md
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: F:/Kernschmied/wiki/API/Chat.md F:/Kernschmied/wiki/API/Configuration.md F:/Kernschmied/wiki/API/Errors.md F:/Kernschmied/wiki/API/Hierarchy.md F:/Kernschmied/wiki/API/Models.md F:/Kernschmied/wiki/API/SSE.md F:/Kernschmied/wiki/API/Tools.md F:/Kernschmied/wiki/API/UI-Schema.md F:/Kernschmied/wiki/Architecture/Architecture-Decision-Index.md F:/Kernschmied/wiki/Architecture/Bootstrap-Lifecycle.md F:/Kernschmied/wiki/Architecture/C4-Container.md F:/Kernschmied/wiki/Architecture/Configuration-Architecture.md F:/Kernschmied/wiki/Architecture/Contract-Versioning.md F:/Kernschmied/wiki/Architecture/Deployment-Architecture.md F:/Kernschmied/wiki/Architecture/Extension-Points.md F:/Kernschmied/wiki/Architecture/Hierarchy-Architecture.md F:/Kernschmied/wiki/Architecture/Manifest-System.md F:/Kernschmied/wiki/Architecture/Prompt-Inheritance.md F:/Kernschmied/wiki/Architecture/Registry-Architecture.md F:/Kernschmied/wiki/Architecture/Repository-Structure.md F:/Kernschmied/wiki/Architecture/Request-Lifecycle.md F:/Kernschmied/wiki/Architecture/Security-Architecture.md F:/Kernschmied/wiki/Architecture/Settings-Catalog.md F:/Kernschmied/wiki/Architecture/System-Context.md F:/Kernschmied/wiki/Architecture/UI-Schema-Pipeline.md wiki/**/*.md README.md !**/node_modules/** !**/.venv/** !**/dist/** !**/build/**
+Linting: 96 files
+Summary: 0 issues in 0 files
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install markdownlint-cli2 --config F:\Kernschmied\artifacts\testsuite\wiki.markdownlint-cli2.jsonc F:\Kernschmied\wiki\Backend\Backend-Overview.md F:\Kernschmied\wiki\Backend\Bootstrap.md F:\Kernschmied\wiki\Backend\Chat.md F:\Kernschmied\wiki\Backend\Configuration.md F:\Kernschmied\wiki\Backend\Contracts.md F:\Kernschmied\wiki\Backend\Database.md F:\Kernschmied\wiki\Backend\Dependency-Injection.md F:\Kernschmied\wiki\Backend\Error-Handling.md F:\Kernschmied\wiki\Backend\Hierarchy.md F:\Kernschmied\wiki\Backend\Model-Registry.md F:\Kernschmied\wiki\Backend\Security.md F:\Kernschmied\wiki\Backend\Tool-Registry.md F:\Kernschmied\wiki\Concepts\Configuration-Revisions.md F:\Kernschmied\wiki\Concepts\Dynamic-UI.md F:\Kernschmied\wiki\Concepts\Plugin-System.md F:\Kernschmied\wiki\Concepts\Prompt-Inheritance.md F:\Kernschmied\wiki\Concepts\Runtime-Configuration.md F:\Kernschmied\wiki\Concepts\Schema-Versioning.md F:\Kernschmied\wiki\Deployment\Development.md F:\Kernschmied\wiki\Deployment\Internet.md F:\Kernschmied\wiki\Deployment\Intranet.md F:\Kernschmied\wiki\Development\Coding-Guidelines.md F:\Kernschmied\wiki\Development\Release-Process.md F:\Kernschmied\wiki\Development\Roadmap.md F:\Kernschmied\wiki\Development\Testing.md
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: F:/Kernschmied/wiki/Backend/Backend-Overview.md F:/Kernschmied/wiki/Backend/Bootstrap.md F:/Kernschmied/wiki/Backend/Chat.md F:/Kernschmied/wiki/Backend/Configuration.md F:/Kernschmied/wiki/Backend/Contracts.md F:/Kernschmied/wiki/Backend/Database.md F:/Kernschmied/wiki/Backend/Dependency-Injection.md F:/Kernschmied/wiki/Backend/Error-Handling.md F:/Kernschmied/wiki/Backend/Hierarchy.md F:/Kernschmied/wiki/Backend/Model-Registry.md F:/Kernschmied/wiki/Backend/Security.md F:/Kernschmied/wiki/Backend/Tool-Registry.md F:/Kernschmied/wiki/Concepts/Configuration-Revisions.md F:/Kernschmied/wiki/Concepts/Dynamic-UI.md F:/Kernschmied/wiki/Concepts/Plugin-System.md F:/Kernschmied/wiki/Concepts/Prompt-Inheritance.md F:/Kernschmied/wiki/Concepts/Runtime-Configuration.md F:/Kernschmied/wiki/Concepts/Schema-Versioning.md F:/Kernschmied/wiki/Deployment/Development.md F:/Kernschmied/wiki/Deployment/Internet.md F:/Kernschmied/wiki/Deployment/Intranet.md F:/Kernschmied/wiki/Development/Coding-Guidelines.md F:/Kernschmied/wiki/Development/Release-Process.md F:/Kernschmied/wiki/Development/Roadmap.md F:/Kernschmied/wiki/Development/Testing.md wiki/**/*.md README.md !**/node_modules/** !**/.venv/** !**/dist/** !**/build/**
+Linting: 96 files
+Summary: 0 issues in 0 files
+Arbeitsverzeichnis: F:\Kernschmied
+
+> npx --no-install markdownlint-cli2 --config F:\Kernschmied\artifacts\testsuite\wiki.markdownlint-cli2.jsonc F:\Kernschmied\wiki\Development\ToDo.md F:\Kernschmied\wiki\Frontend\Action-Registry.md F:\Kernschmied\wiki\Frontend\API-Client.md F:\Kernschmied\wiki\Frontend\Component-Registry.md F:\Kernschmied\wiki\Frontend\Forms.md F:\Kernschmied\wiki\Frontend\Frontend-Overview.md F:\Kernschmied\wiki\Frontend\Generic-Tree.md F:\Kernschmied\wiki\Frontend\Routing.md F:\Kernschmied\wiki\Frontend\Schema-Renderer.md F:\Kernschmied\wiki\Frontend\State-Management.md F:\Kernschmied\wiki\Frontend\Streaming.md F:\Kernschmied\wiki\Frontend\UI-Schema.md F:\Kernschmied\wiki\User-Manual\Chat.md F:\Kernschmied\wiki\User-Manual\Hierarchy.md F:\Kernschmied\wiki\User-Manual\Overview.md F:\Kernschmied\wiki\User-Manual\Settings.md F:\Kernschmied\wiki\User-Manual\Troubleshooting.md F:\Kernschmied\wiki\Work-Documents\Änderungen.md F:\Kernschmied\wiki\Work-Documents\Fehlerbehebung_der_chat_Pipelien.md F:\Kernschmied\wiki\Work-Documents\PROJECT_PROMPT.md
+markdownlint-cli2 v0.23.2 (markdownlint v0.41.1)
+Finding: F:/Kernschmied/wiki/Development/ToDo.md F:/Kernschmied/wiki/Frontend/Action-Registry.md F:/Kernschmied/wiki/Frontend/API-Client.md F:/Kernschmied/wiki/Frontend/Component-Registry.md F:/Kernschmied/wiki/Frontend/Forms.md F:/Kernschmied/wiki/Frontend/Frontend-Overview.md F:/Kernschmied/wiki/Frontend/Generic-Tree.md F:/Kernschmied/wiki/Frontend/Routing.md F:/Kernschmied/wiki/Frontend/Schema-Renderer.md F:/Kernschmied/wiki/Frontend/State-Management.md F:/Kernschmied/wiki/Frontend/Streaming.md F:/Kernschmied/wiki/Frontend/UI-Schema.md F:/Kernschmied/wiki/User-Manual/Chat.md F:/Kernschmied/wiki/User-Manual/Hierarchy.md F:/Kernschmied/wiki/User-Manual/Overview.md F:/Kernschmied/wiki/User-Manual/Settings.md F:/Kernschmied/wiki/User-Manual/Troubleshooting.md F:/Kernschmied/wiki/Work-Documents/Änderungen.md F:/Kernschmied/wiki/Work-Documents/Fehlerbehebung_der_chat_Pipelien.md F:/Kernschmied/wiki/Work-Documents/PROJECT_PROMPT.md wiki/**/*.md README.md !**/node_modules/** !**/.venv/** !**/dist/** !**/build/**
+Linting: 96 files
+Summary: 0 issues in 0 files
+
+[OK] Markdownlint: Wiki prüfen
+
+==============================================================================
+ Lychee: Links prüfen
+==============================================================================
+
+> lychee --no-progress F:\Kernschmied\CHANGELOG.md F:\Kernschmied\CODE_OF_CONDUCT.md F:\Kernschmied\CONTRIBUTING.md F:\Kernschmied\PULL_REQUEST_TEMPLATE.md F:\Kernschmied\README-PATCH.md F:\Kernschmied\README.md F:\Kernschmied\SECURITY.md F:\Kernschmied\SETTINGS-PATCH-INTEGRATION.md F:\Kernschmied\SUPPORT.md F:\Kernschmied\docs\PROJECT_PROMPT.md F:\Kernschmied\docs\architecture\Settings-Catalog.md F:\Kernschmied\wiki\_Footer.md F:\Kernschmied\wiki\_Sidebar.md F:\Kernschmied\wiki\Architecture.md F:\Kernschmied\wiki\FAQ.md F:\Kernschmied\wiki\Getting-Started.md F:\Kernschmied\wiki\Glossary.md F:\Kernschmied\wiki\Home.md F:\Kernschmied\wiki\Installation.md F:\Kernschmied\wiki\Project-Principles.md
+🔍 17 Total (in 901ms) 🔗 9 Unique ✅ 17 OK 🚫 0 Errors
+
+
+> lychee --no-progress F:\Kernschmied\wiki\ADR\ADR-0001-Schema-Driven-UI.md F:\Kernschmied\wiki\ADR\ADR-0002-Bootstrap.md F:\Kernschmied\wiki\ADR\ADR-0003-Registries.md F:\Kernschmied\wiki\ADR\ADR-0004-Security-Profiles.md F:\Kernschmied\wiki\ADR\ADR-0005-Versioned-Contracts.md F:\Kernschmied\wiki\ADR\ADR-0006-API-Contracts-and-Versioning.md F:\Kernschmied\wiki\ADR\ADR-0007-Database-and-Storage-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0008-Tool-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0009-Authentication-and-Authorization.md F:\Kernschmied\wiki\ADR\ADR-0010-Configuration-Management.md F:\Kernschmied\wiki\ADR\ADR-0011-Hierarchy-and-Prompt-Inheritance.md F:\Kernschmied\wiki\ADR\ADR-0012-Frontend-Architecture.md F:\Kernschmied\wiki\ADR\ADR-0013-Error-Handling-and-Logging.md F:\Kernschmied\wiki\ADR\ADR-0014-Deployment-Profiles.md F:\Kernschmied\wiki\ADR\ADR-0015-LLM-Provider-Architecture.md F:\Kernschmied\wiki\API\Bootstrap.md F:\Kernschmied\wiki\API\Chat.md F:\Kernschmied\wiki\API\Configuration.md F:\Kernschmied\wiki\API\Errors.md F:\Kernschmied\wiki\API\Hierarchy.md
+🔍 0 Total (in 2ms) 🔗 0 Unique ✅ 0 OK 🚫 0 Errors
+
+
+> lychee --no-progress F:\Kernschmied\wiki\API\Models.md F:\Kernschmied\wiki\API\SSE.md F:\Kernschmied\wiki\API\Tools.md F:\Kernschmied\wiki\API\UI-Schema.md F:\Kernschmied\wiki\Architecture\Architecture-Decision-Index.md F:\Kernschmied\wiki\Architecture\Bootstrap-Lifecycle.md F:\Kernschmied\wiki\Architecture\C4-Container.md F:\Kernschmied\wiki\Architecture\Configuration-Architecture.md F:\Kernschmied\wiki\Architecture\Contract-Versioning.md F:\Kernschmied\wiki\Architecture\Deployment-Architecture.md F:\Kernschmied\wiki\Architecture\Extension-Points.md F:\Kernschmied\wiki\Architecture\Hierarchy-Architecture.md F:\Kernschmied\wiki\Architecture\Manifest-System.md F:\Kernschmied\wiki\Architecture\Prompt-Inheritance.md F:\Kernschmied\wiki\Architecture\Registry-Architecture.md F:\Kernschmied\wiki\Architecture\Repository-Structure.md F:\Kernschmied\wiki\Architecture\Request-Lifecycle.md F:\Kernschmied\wiki\Architecture\Security-Architecture.md F:\Kernschmied\wiki\Architecture\Settings-Catalog.md F:\Kernschmied\wiki\Architecture\System-Context.md
+🔍 0 Total (in 3ms) 🔗 0 Unique ✅ 0 OK 🚫 0 Errors
+
+
+> lychee --no-progress F:\Kernschmied\wiki\Architecture\UI-Schema-Pipeline.md F:\Kernschmied\wiki\Backend\Backend-Overview.md F:\Kernschmied\wiki\Backend\Bootstrap.md F:\Kernschmied\wiki\Backend\Chat.md F:\Kernschmied\wiki\Backend\Configuration.md F:\Kernschmied\wiki\Backend\Contracts.md F:\Kernschmied\wiki\Backend\Database.md F:\Kernschmied\wiki\Backend\Dependency-Injection.md F:\Kernschmied\wiki\Backend\Error-Handling.md F:\Kernschmied\wiki\Backend\Hierarchy.md F:\Kernschmied\wiki\Backend\Model-Registry.md F:\Kernschmied\wiki\Backend\Security.md F:\Kernschmied\wiki\Backend\Tool-Registry.md F:\Kernschmied\wiki\Concepts\Configuration-Revisions.md F:\Kernschmied\wiki\Concepts\Dynamic-UI.md F:\Kernschmied\wiki\Concepts\Plugin-System.md F:\Kernschmied\wiki\Concepts\Prompt-Inheritance.md F:\Kernschmied\wiki\Concepts\Runtime-Configuration.md F:\Kernschmied\wiki\Concepts\Schema-Versioning.md F:\Kernschmied\wiki\Deployment\Development.md
+🔍 0 Total (in 2ms) 🔗 0 Unique ✅ 0 OK 🚫 0 Errors
+
+
+> lychee --no-progress F:\Kernschmied\wiki\Deployment\Internet.md F:\Kernschmied\wiki\Deployment\Intranet.md F:\Kernschmied\wiki\Development\Coding-Guidelines.md F:\Kernschmied\wiki\Development\Release-Process.md F:\Kernschmied\wiki\Development\Roadmap.md F:\Kernschmied\wiki\Development\Testing.md F:\Kernschmied\wiki\Development\ToDo.md F:\Kernschmied\wiki\Frontend\Action-Registry.md F:\Kernschmied\wiki\Frontend\API-Client.md F:\Kernschmied\wiki\Frontend\Component-Registry.md F:\Kernschmied\wiki\Frontend\Forms.md F:\Kernschmied\wiki\Frontend\Frontend-Overview.md F:\Kernschmied\wiki\Frontend\Generic-Tree.md F:\Kernschmied\wiki\Frontend\Routing.md F:\Kernschmied\wiki\Frontend\Schema-Renderer.md F:\Kernschmied\wiki\Frontend\State-Management.md F:\Kernschmied\wiki\Frontend\Streaming.md F:\Kernschmied\wiki\Frontend\UI-Schema.md F:\Kernschmied\wiki\User-Manual\Chat.md F:\Kernschmied\wiki\User-Manual\Hierarchy.md
+🔍 0 Total (in 3ms) 🔗 0 Unique ✅ 0 OK 🚫 0 Errors
+
+
+> lychee --no-progress F:\Kernschmied\wiki\User-Manual\Overview.md F:\Kernschmied\wiki\User-Manual\Settings.md F:\Kernschmied\wiki\User-Manual\Troubleshooting.md F:\Kernschmied\wiki\Work-Documents\Änderungen.md F:\Kernschmied\wiki\Work-Documents\Fehlerbehebung_der_chat_Pipelien.md F:\Kernschmied\wiki\Work-Documents\PROJECT_PROMPT.md
+🔍 0 Total (in 0s) 🔗 0 Unique ✅ 0 OK 🚫 0 Errors
+
+
+[OK] Lychee: Links prüfen
+
+==============================================================================
+ Vale
+==============================================================================
+[ÜBERSPRUNGEN] Vale oder Vale-Konfiguration wurde nicht gefunden.
+
+==============================================================================
+ JSON-Dateien validieren
+==============================================================================
+
+> python -c "import json
+import pathlib
+import sys
+
+errors = []
+
+for raw_path in sys.argv[1:]:
+    path = pathlib.Path(raw_path)
+
+    try:
+        with path.open(\"r\", encoding=\"utf-8-sig\") as stream:
+            json.load(stream)
+    except Exception as exc:
+        errors.append(f\"{path}: {exc}\")
+
+if errors:
+    print(\"\n\".join(errors), file=sys.stderr)
+    raise SystemExit(1)
+
+print(f\"{len(sys.argv) - 1} JSON-Dateien sind gültig.\")" F:\Kernschmied\package-lock.json F:\Kernschmied\package.json F:\Kernschmied\settings-defaults.json F:\Kernschmied\.vscode\settings.json F:\Kernschmied\backend\model_paths\demo\model.json F:\Kernschmied\backend\tools\calculator\tool.json F:\Kernschmied\backend\tools\websearch\tool.json F:\Kernschmied\config\bootstrap.example.json F:\Kernschmied\config\seed\001-core.json F:\Kernschmied\config\seed\002-ui.json F:\Kernschmied\data\websites\heisig-naturstein-modern\website.json F:\Kernschmied\docs\openapi-formatted.json F:\Kernschmied\docs\openapi.json F:\Kernschmied\frontend\package-lock.json F:\Kernschmied\frontend\package.json F:\Kernschmied\frontend\tsconfig.json
+16 JSON-Dateien sind gültig.
+
+[OK] JSON-Dateien validieren
+
+==============================================================================
+ TOML-Dateien validieren
+==============================================================================
+
+> python -c "import pathlib
+import sys
+import tomllib
+
+errors = []
+
+for raw_path in sys.argv[1:]:
+    path = pathlib.Path(raw_path)
+
+    try:
+        with path.open(\"rb\") as stream:
+            tomllib.load(stream)
+    except Exception as exc:
+        errors.append(f\"{path}: {exc}\")
+
+if errors:
+    print(\"\n\".join(errors), file=sys.stderr)
+    raise SystemExit(1)
+
+print(f\"{len(sys.argv) - 1} TOML-Dateien sind gültig.\")" F:\Kernschmied\pyproject.toml
+1 TOML-Dateien sind gültig.
+
+[OK] TOML-Dateien validieren
+
+==============================================================================
+ YAML-Dateien validieren
+==============================================================================
+
+> python -c "import pathlib
+import sys
+import yaml
+
+errors = []
+
+for raw_path in sys.argv[1:]:
+    path = pathlib.Path(raw_path)
+
+    try:
+        with path.open(\"r\", encoding=\"utf-8-sig\") as stream:
+            yaml.safe_load(stream)
+    except Exception as exc:
+        errors.append(f\"{path}: {exc}\")
+
+if errors:
+    print(\"\n\".join(errors), file=sys.stderr)
+    raise SystemExit(1)
+
+print(f\"{len(sys.argv) - 1} YAML-Dateien sind gültig.\")" F:\Kernschmied\bug_report.yml
+1 YAML-Dateien sind gültig.
+
+[OK] YAML-Dateien validieren
+
+==============================================================================
+ Python: Backend kompilieren
+==============================================================================
+
+> python -m compileall -q F:\Kernschmied\backend
+
+[OK] Python: Backend kompilieren
+
+==============================================================================
+ FastAPI-Import und OpenAPI prüfen
+==============================================================================
+Arbeitsverzeichnis: F:\Kernschmied\backend
+
+> python -c "from main import app
+
+schema = app.openapi()
+
+assert isinstance(schema, dict)
+assert schema.get(\"openapi\")
+assert schema.get(\"info\")
+assert isinstance(schema.get(\"paths\"), dict)
+
+print(\"OpenAPI:\", schema[\"openapi\"])
+print(\"Titel:\", schema[\"info\"].get(\"title\"))
+print(\"Pfade:\", len(schema[\"paths\"]))"
+OpenAPI: 3.1.0
+Titel: Kernschmied
+Pfade: 16
+
+[OK] FastAPI-Import und OpenAPI prüfen
+
+==============================================================================
+ Mypy: Typprüfung
+==============================================================================
+
+> python -m mypy backend --show-error-codes --pretty
+backend\tools\websearch\implementation.py: error: Duplicate module named
+"implementation" (also at "backend\tools\calculator\implementation.py")
+backend\tools\websearch\implementation.py: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules for more info
+backend\tools\websearch\implementation.py: note: Common resolutions include:
+backend\tools\websearch\implementation.py: note:     a) using `--exclude` to avoid checking one of them,
+backend\tools\websearch\implementation.py: note:     b) adding `__init__.py` somewhere,
+backend\tools\websearch\implementation.py: note:     c) using `--explicit-package-bases` or adjusting `MYPYPATH`
+Found 1 error in 1 file (errors prevented further checking)
+PS>TerminatingError(): "Befehl 'python' wurde mit Exitcode 2 beendet.
+
+backend\tools\websearch\implementation.py: error: Duplicate module named
+"implementation" (also at "backend\tools\calculator\implementation.py")
+backend\tools\websearch\implementation.py: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules for more info
+backend\tools\websearch\implementation.py: note: Common resolutions include:
+backend\tools\websearch\implementation.py: note:     a) using `--exclude` to avoid checking one of them,
+backend\tools\websearch\implementation.py: note:     b) adding `__init__.py` somewhere,
+backend\tools\websearch\implementation.py: note:     c) using `--explicit-package-bases` or adjusting `MYPYPATH`
+Found 1 error in 1 file (errors prevented further checking)"
+>> TerminatingError(): "Befehl 'python' wurde mit Exitcode 2 beendet.
+
+backend\tools\websearch\implementation.py: error: Duplicate module named
+"implementation" (also at "backend\tools\calculator\implementation.py")
+backend\tools\websearch\implementation.py: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules for more info
+backend\tools\websearch\implementation.py: note: Common resolutions include:
+backend\tools\websearch\implementation.py: note:     a) using `--exclude` to avoid checking one of them,
+backend\tools\websearch\implementation.py: note:     b) adding `__init__.py` somewhere,
+backend\tools\websearch\implementation.py: note:     c) using `--explicit-package-bases` or adjusting `MYPYPATH`
+Found 1 error in 1 file (errors prevented further checking)"
+
+[FEHLER] Mypy: Typprüfung
+Befehl 'python' wurde mit Exitcode 2 beendet.
+
+backend\tools\websearch\implementation.py: error: Duplicate module named
+"implementation" (also at "backend\tools\calculator\implementation.py")
+backend\tools\websearch\implementation.py: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules for more info
+backend\tools\websearch\implementation.py: note: Common resolutions include:
+backend\tools\websearch\implementation.py: note:     a) using `--exclude` to avoid checking one of them,
+backend\tools\websearch\implementation.py: note:     b) adding `__init__.py` somewhere,
+backend\tools\websearch\implementation.py: note:     c) using `--explicit-package-bases` or adjusting `MYPYPATH`
+Found 1 error in 1 file (errors prevented further checking)
+
+==============================================================================
+ Pip: Abhängigkeiten prüfen
+==============================================================================
+
+> python -m pip check
+No broken requirements found.
+
+[OK] Pip: Abhängigkeiten prüfen
+
+==============================================================================
+ Pip-Audit: Schwachstellen prüfen
+==============================================================================
+
+> python -m pip_audit --progress-spinner off --format json --output F:\Kernschmied\artifacts\testsuite\pip-audit-2026-08-01_11-48-14.json
+Found 39 known vulnerabilities in 5 packages
+
+[WARNUNG] Pip-Audit: Schwachstellen prüfen
+Pip-Audit hat bekannte Schwachstellen gefunden. Bericht: F:\Kernschmied\artifacts\testsuite\pip-audit-2026-08-01_11-48-14.json
+
+==============================================================================
+ Bandit: Sicherheitsanalyse
+==============================================================================
+
+> python -m bandit -f json -o F:\Kernschmied\artifacts\testsuite\bandit-2026-08-01_11-48-14.json -r F:\Kernschmied\backend\app -r F:\Kernschmied\backend\main.py -r F:\Kernschmied\backend\tools
+usage: __main__.py [-h] [-r] [-a {file,vuln}] [-n CONTEXT_LINES]
+                   [-c CONFIG_FILE] [-p PROFILE] [-t TESTS] [-s SKIPS]
+                   [-l | --severity-level {all,low,medium,high}]
+                   [-i | --confidence-level {all,low,medium,high}]
+                   [-f {csv,custom,html,json,screen,txt,xml,yaml}]
+                   [--msg-template MSG_TEMPLATE] [-o [OUTPUT_FILE]] [-v] [-d]
+                   [-q] [--ignore-nosec] [-x EXCLUDED_PATHS] [-b BASELINE]
+                   [--ini INI_PATH] [--exit-zero] [--version]
+                   [targets ...]
+__main__.py: error: unrecognized arguments: F:\Kernschmied\backend\main.py F:\Kernschmied\backend\tools
+PS>TerminatingError(): "Befehl 'python' wurde mit Exitcode 2 beendet.
+
+usage: __main__.py [-h] [-r] [-a {file,vuln}] [-n CONTEXT_LINES]
+                   [-c CONFIG_FILE] [-p PROFILE] [-t TESTS] [-s SKIPS]
+                   [-l | --severity-level {all,low,medium,high}]
+                   [-i | --confidence-level {all,low,medium,high}]
+                   [-f {csv,custom,html,json,screen,txt,xml,yaml}]
+                   [--msg-template MSG_TEMPLATE] [-o [OUTPUT_FILE]] [-v] [-d]
+                   [-q] [--ignore-nosec] [-x EXCLUDED_PATHS] [-b BASELINE]
+                   [--ini INI_PATH] [--exit-zero] [--version]
+                   [targets ...]
+__main__.py: error: unrecognized arguments: F:\Kernschmied\backend\main.py F:\Kernschmied\backend\tools"
+>> TerminatingError(): "Befehl 'python' wurde mit Exitcode 2 beendet.
+
+usage: __main__.py [-h] [-r] [-a {file,vuln}] [-n CONTEXT_LINES]
+                   [-c CONFIG_FILE] [-p PROFILE] [-t TESTS] [-s SKIPS]
+                   [-l | --severity-level {all,low,medium,high}]
+                   [-i | --confidence-level {all,low,medium,high}]
+                   [-f {csv,custom,html,json,screen,txt,xml,yaml}]
+                   [--msg-template MSG_TEMPLATE] [-o [OUTPUT_FILE]] [-v] [-d]
+                   [-q] [--ignore-nosec] [-x EXCLUDED_PATHS] [-b BASELINE]
+                   [--ini INI_PATH] [--exit-zero] [--version]
+                   [targets ...]
+__main__.py: error: unrecognized arguments: F:\Kernschmied\backend\main.py F:\Kernschmied\backend\tools"
+
+[FEHLER] Bandit: Sicherheitsanalyse
+Befehl 'python' wurde mit Exitcode 2 beendet.
+
+usage: __main__.py [-h] [-r] [-a {file,vuln}] [-n CONTEXT_LINES]
+                   [-c CONFIG_FILE] [-p PROFILE] [-t TESTS] [-s SKIPS]
+                   [-l | --severity-level {all,low,medium,high}]
+                   [-i | --confidence-level {all,low,medium,high}]
+                   [-f {csv,custom,html,json,screen,txt,xml,yaml}]
+                   [--msg-template MSG_TEMPLATE] [-o [OUTPUT_FILE]] [-v] [-d]
+                   [-q] [--ignore-nosec] [-x EXCLUDED_PATHS] [-b BASELINE]
+                   [--ini INI_PATH] [--exit-zero] [--version]
+                   [targets ...]
+__main__.py: error: unrecognized arguments: F:\Kernschmied\backend\main.py F:\Kernschmied\backend\tools
+
+==============================================================================
+ Pytest: Backend-Tests
+==============================================================================
+
+> python -m pytest -ra --strict-markers --strict-config
+============================= test session starts =============================
+platform win32 -- Python 3.12.10, pytest-9.1.1, pluggy-1.6.0
+rootdir: F:\Kernschmied
+configfile: pyproject.toml
+plugins: anyio-4.14.2, asyncio-1.4.0, cov-7.1.0
+asyncio: mode=Mode.STRICT, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collected 0 items
+
+============================ no tests ran in 0.04s ============================
+
+[WARNUNG] Pytest: Backend-Tests
+Pytest hat keine Tests gesammelt. Exitcode 5 ist kein Testfehler, zeigt aber, dass aktuell keine ausführbaren Tests vorhanden sind.
+
+==============================================================================
+ ESLint: Auto-Fix
+==============================================================================
+[ÜBERSPRUNGEN] Kein lint- oder lint:fix-Skript vorhanden.
+
+==============================================================================
+ ESLint-Prüfung
+==============================================================================
+[ÜBERSPRUNGEN] Kein lint-Skript vorhanden.
+
+==============================================================================
+ TypeScript: Typprüfung
+==============================================================================
+Arbeitsverzeichnis: F:\Kernschmied\frontend
+
+> npx --no-install tsc --noEmit --pretty false
+
+[OK] TypeScript: Typprüfung
+
+==============================================================================
+ Frontend-Tests
+==============================================================================
+[ÜBERSPRUNGEN] Kein Frontend-Testskript vorhanden.
+
+==============================================================================
+ Frontend: Produktions-Build
+==============================================================================
+Arbeitsverzeichnis: F:\Kernschmied\frontend
+
+> npm run build
+
+> dynamic-chat-frontend@0.1.0 build
+> tsc -b && vite build
+
+vite v8.1.5 building client environment for production...
+[2K
+transforming...✓ 1838 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                      0.40 kB │ gzip:   0.27 kB
+dist/assets/index-BLB9I4kL.css      58.77 kB │ gzip:  10.61 kB
+dist/assets/hierarchy-D92-_opA.js    0.43 kB │ gzip:   0.22 kB
+dist/assets/index-DrcjL5Ik.js      380.25 kB │ gzip: 109.23 kB
+
+✓ built in 345ms
+
+[OK] Frontend: Produktions-Build
+
+==============================================================================
+ NPM Audit: Schwachstellen prüfen
+==============================================================================
+Arbeitsverzeichnis: F:\Kernschmied\frontend
+
+> npm audit --audit-level=high
+found 0 vulnerabilities
+
+[OK] NPM Audit: Schwachstellen prüfen
+
+==============================================================================
+ PSScriptAnalyzer: PowerShell prüfen
+==============================================================================
+
+RuleName                                    Severity ScriptName             Line Message
+--------                                    -------- ----------             ---- -------
+PSUseApprovedVerbs                           Warning assign_fence_langs.ps1    4 The cmdlet 'Detect-Lang' uses an unapproved verb.
+PSAvoidUsingWriteHost                        Warning stop.ps1                  2 File 'stop.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, does not…
+PSAvoidUsingEmptyCatchBlock                  Warning testsuite.ps1          3444 Empty catch block is used. Please use Write-Error or throw statements in catch blocks.
+PSUseApprovedVerbs                           Warning testsuite.ps1           248 The cmdlet 'Prompt-YesNo' uses an unapproved verb.
+PSUseApprovedVerbs                           Warning testsuite.ps1           266 The cmdlet 'Ensure-RequiredTools' uses an unapproved verb.
+PSAvoidAssignmentToAutomaticVariable           Error testsuite.ps1           140 Starting from PowerShell 6.0, the Variable 'IsWindows' cannot be assigned any more since it is a readonl…
+PSAvoidAssignmentToAutomaticVariable           Error testsuite.ps1           143 Starting from PowerShell 6.0, the Variable 'IsWindows' cannot be assigned any more since it is a readonl…
+PSAvoidAssignmentToAutomaticVariable         Warning testsuite.ps1          1504 The Variable 'Matches' is an automatic variable that is built into PowerShell, assigning to it might hav…
+PSAvoidAssignmentToAutomaticVariable         Warning testsuite.ps1          1542 The Variable 'Matches' is an automatic variable that is built into PowerShell, assigning to it might hav…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           299 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           303 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           305 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           309 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           316 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           318 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           319 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           322 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           323 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           329 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           330 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           330 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           331 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           334 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           340 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           400 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           401 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           402 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           403 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           418 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           442 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           443 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           795 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           796 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           800 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           801 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           804 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           809 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           810 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           813 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           824 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           825 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           826 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           831 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           832 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           833 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           871 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1           974 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          1409 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          1957 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          1962 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          1967 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          1972 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2008 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2009 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2012 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2020 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2027 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2028 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2029 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2030 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2031 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2032 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2050 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2051 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2052 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2053 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2054 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2055 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2056 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2062 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2065 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2102 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2103 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2109 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2110 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2111 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2280 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2938 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          2939 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3277 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3346 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3347 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3383 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3385 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3387 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3390 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3399 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3401 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3421 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3422 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3434 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3456 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3457 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3461 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3465 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3470 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3471 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSAvoidUsingWriteHost                        Warning testsuite.ps1          3475 File 'testsuite.ps1' uses Write-Host. Avoid using Write-Host because it might not work in all hosts, doe…
+PSUseSingularNouns                           Warning testsuite.ps1           240 The cmdlet 'Test-CommandExists' uses a plural noun. A singular noun should be used instead.
+PSUseSingularNouns                           Warning testsuite.ps1           266 The cmdlet 'Ensure-RequiredTools' uses a plural noun. A singular noun should be used instead.
+PSUseSingularNouns                           Warning testsuite.ps1          1192 The cmdlet 'Get-ProjectFiles' uses a plural noun. A singular noun should be used instead.
+PSUseSingularNouns                           Warning testsuite.ps1          1265 The cmdlet 'Get-NpmScripts' uses a plural noun. A singular noun should be used instead.
+PSUseSingularNouns                           Warning testsuite.ps1          1348 The cmdlet 'Install-BackendDependencies' uses a plural noun. A singular noun should be used instead.
+PSUseSingularNouns                           Warning testsuite.ps1          1475 The cmdlet 'Get-ActionItems' uses a plural noun. A singular noun should be used instead.
+PSUseBOMForUnicodeEncodedFile                Warning testsuite.ps1               Missing BOM encoding for non-ASCII encoded file 'testsuite.ps1'
+PSPossibleIncorrectComparisonWithNull        Warning testsuite.ps1           245 $null should be on the left side of equality comparisons.
+PSUseShouldProcessForStateChangingFunctions  Warning testsuite.ps1           739 Function 'New-StepResult' has verb that could change system state. Therefore, the function has to suppor…
+PSUseShouldProcessForStateChangingFunctions  Warning testsuite.ps1          1567 Function 'Update-SuiteState' has verb that could change system state. Therefore, the function has to sup…
+PSReviewUnusedParameter                      Warning testsuite.ps1          1403 The parameter 'PythonCode' has been declared but not used.
+PSUseDeclaredVarsMoreThanAssignments         Warning testsuite.ps1           165 The variable 'DocsDirectory' is assigned but never used.
+
+PS>TerminatingError(): "110 PowerShell-Probleme gefunden."
+
+[WARNUNG] PSScriptAnalyzer: PowerShell prüfen
+110 PowerShell-Probleme gefunden.
+
+==============================================================================
+ TODO- und FIXME-Bericht erstellen
+==============================================================================
+32 Aktionshinweise gefunden.
+Bericht: F:\Kernschmied\artifacts\testsuite\action-items-2026-08-01_11-48-14.txt
+
+[OK] TODO- und FIXME-Bericht erstellen
+
+==============================================================================
+ Git: Arbeitsverzeichnis prüfen
+==============================================================================
+Geänderte Git-Einträge: 145
+ M README.md
+ M backend/app/api/v1/configs.py
+ M backend/app/api/v1/documentation.py
+ M backend/app/api/v1/hierarchy.py
+ M backend/app/api/v1/models.py
+ M backend/app/api/v1/router.py
+ M backend/app/api/v1/settings_catalog.py
+ D backend/app/auth/development_identity.py
+ M backend/app/config/definitions.py
+ M backend/app/config/service.py
+ M backend/app/core/bootstrap.py
+ M backend/app/schemas/configuration.py
+ M backend/app/schemas/settings_catalog.py
+ M backend/app/services/chat_service.py
+ M backend/app/services/settings_catalog.py
+ M backend/main.py
+ M backend/tools/websearch/implementation.py
+ M backend/tools/websearch/tool.json
+ M data/websites/heisig-naturstein-modern/website.json
+ M frontend/src/api/config.ts
+ M frontend/src/api/settingsCatalog.ts
+ M frontend/src/app/AppShell.tsx
+ M frontend/src/app/AppWorkspace.tsx
+ M frontend/src/app/useAppBootstrap.ts
+ M frontend/src/components/documentation/DocumentationDialog.tsx
+ M frontend/src/components/documentation/MarkdownDocument.tsx
+ M frontend/src/components/layout/AppHierarchySidebar.tsx
+ D frontend/src/components/schema/GenericTree.tsx
+ M frontend/src/components/schema/index.ts
+ M frontend/src/components/settings/SettingsCatalogView.tsx
+ M frontend/src/components/settings/SettingsContent.tsx
+ M frontend/src/components/settings/SettingsDialog.tsx
+ M frontend/src/components/settings/SettingsField.tsx
+ M frontend/src/components/settings/SettingsSidebar.tsx
+ M frontend/src/components/settings/index.ts
+ M frontend/src/components/workspace/SelectedNodeWorkspace.tsx
+ M frontend/src/contracts/config.ts
+ M frontend/src/contracts/hierarchy.ts
+ M frontend/src/contracts/settings.ts
+ M frontend/src/hooks/useSystemConfig.ts
+ M frontend/src/registry/componentRegistry.tsx
+ M frontend/tsconfig.tsbuildinfo
+ M frontend/vite.config.ts
+ D scripts/quality-full.ps1
+ D scripts/quality.ps1
+ M wiki/ADR/ADR-0001-Schema-Driven-UI.md
+ M wiki/ADR/ADR-0002-Bootstrap.md
+ M wiki/ADR/ADR-0003-Registries.md
+ M wiki/ADR/ADR-0004-Security-Profiles.md
+ M wiki/ADR/ADR-0005-Versioned-Contracts.md
+... weitere 95 Einträge stehen in F:\Kernschmied\artifacts\testsuite\git-status-2026-08-01_11-48-14.txt
+Nicht vorgemerkte Änderungen:  131 files changed, 17662 insertions(+), 9194 deletions(-)
+PS>TerminatingError(): "Git diff --check hat Probleme festgestellt."
+
+[FEHLER] Git: Arbeitsverzeichnis prüfen
+Git diff --check hat Probleme festgestellt.
+
+==============================================================================
+ Zusammenfassung
+==============================================================================
+Erfolgreich:    18
+Fehlgeschlagen: 7
+Warnungen:      3
+Übersprungen:   4
+
+Passed-Schritte:
+  [OK] Grundvoraussetzungen prüfen (0,18s)
+  [OK] Ruff: Python formatieren (0,02s)
+  [OK] Ruff: Formatprüfung (0,02s)
+  [OK] Prettier: Projekt formatieren (3,68s)
+  [OK] Prettier: Formatierung prüfen (4,17s)
+  [OK] Markdownlint: Wiki Auto-Fix (5,39s)
+  [OK] Markdownlint: Wiki prüfen (5,21s)
+  [OK] Lychee: Links prüfen (1,01s)
+  [OK] JSON-Dateien validieren (0,04s)
+  [OK] TOML-Dateien validieren (0,05s)
+  [OK] YAML-Dateien validieren (0,05s)
+  [OK] Python: Backend kompilieren (0,86s)
+  [OK] FastAPI-Import und OpenAPI prüfen (0,72s)
+  [OK] Pip: Abhängigkeiten prüfen (0,32s)
+  [OK] TypeScript: Typprüfung (0,46s)
+  [OK] Frontend: Produktions-Build (0,90s)
+  [OK] NPM Audit: Schwachstellen prüfen (0,56s)
+  [OK] TODO- und FIXME-Bericht erstellen (10,40s)
+
+Warning-Schritte:
+  [!] Pip-Audit: Schwachstellen prüfen (1,91s)
+       Pip-Audit hat bekannte Schwachstellen gefunden. Bericht: F:\Kernschmied\artifacts\testsuite\pip-audit-2026-08-01_11-48-14.json
+  [!] Pytest: Backend-Tests (0,28s)
+       Pytest hat keine Tests gesammelt. Exitcode 5 ist kein Testfehler, zeigt aber, dass aktuell keine ausführbaren Tests vorhanden sind.
+  [!] PSScriptAnalyzer: PowerShell prüfen (0,04s)
+       110 PowerShell-Probleme gefunden.
+
+Skipped-Schritte:
+  [--] Vale (0,00s)
+       Vale oder Vale-Konfiguration wurde nicht gefunden.
+  [--] ESLint: Auto-Fix (0,00s)
+       Kein lint- oder lint:fix-Skript vorhanden.
+  [--] ESLint-Prüfung (0,00s)
+       Kein lint-Skript vorhanden.
+  [--] Frontend-Tests (0,00s)
+       Kein Frontend-Testskript vorhanden.
+
+Failed-Schritte:
+  [X] Ruff: sichere Auto-Fixes (0,40s)
+       Befehl 'ruff' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert.
+  [X] Ruff: Lint-Prüfung (0,06s)
+       Befehl 'ruff' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert.
+  [X] Markdownlint: Repository Auto-Fix (1,56s)
+       Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert.
+  [X] Markdownlint: Repository prüfen (1,44s)
+       Befehl 'npx' wurde mit Exitcode 1 beendet.
+Die vollständige Werkzeugausgabe wurde als separate Schrittausgabe gespeichert.
+  [X] Mypy: Typprüfung (0,14s)
+       Befehl 'python' wurde mit Exitcode 2 beendet.
+
+backend\tools\websearch\implementation.py: error: Duplicate module named
+"implementation" (also at "backend\tools\calculator\implementation.py")
+backend\tools\websearch\implementation.py: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules for more info
+backend\tools\websearch\implementation.py: note: Common resolutions include:
+backend\tools\websearch\implementation.py: note:     a) using `--exclude` to avoid checking one of them,
+backend\tools\websearch\implementation.py: note:     b) adding `__init__.py` somewhere,
+backend\tools\websearch\implementation.py: note:     c) using `--explicit-package-bases` or adjusting `MYPYPATH`
+Found 1 error in 1 file (errors prevented further checking)
+  [X] Bandit: Sicherheitsanalyse (0,16s)
+       Befehl 'python' wurde mit Exitcode 2 beendet.
+
+usage: __main__.py [-h] [-r] [-a {file,vuln}] [-n CONTEXT_LINES]
+                   [-c CONFIG_FILE] [-p PROFILE] [-t TESTS] [-s SKIPS]
+                   [-l | --severity-level {all,low,medium,high}]
+                   [-i | --confidence-level {all,low,medium,high}]
+                   [-f {csv,custom,html,json,screen,txt,xml,yaml}]
+                   [--msg-template MSG_TEMPLATE] [-o [OUTPUT_FILE]] [-v] [-d]
+                   [-q] [--ignore-nosec] [-x EXCLUDED_PATHS] [-b BASELINE]
+                   [--ini INI_PATH] [--exit-zero] [--version]
+                   [targets ...]
+__main__.py: error: unrecognized arguments: F:\Kernschmied\backend\main.py F:\Kernschmied\backend\tools
+  [X] Git: Arbeitsverzeichnis prüfen (0,17s)
+       Git diff --check hat Probleme festgestellt.
+
+Textprotokoll: F:\Kernschmied\artifacts\testsuite\testsuite-2026-08-01_11-48-14.log
+JSON-Bericht:  F:\Kernschmied\artifacts\testsuite\testsuite-2026-08-01_11-48-14.json
+Aktionsbericht: F:\Kernschmied\artifacts\testsuite\action-items-2026-08-01_11-48-14.txt
+Arbeits-Prompt: F:\Kernschmied\artifacts\testsuite\work-prompt-2026-08-01_11-48-14.md
+Dauer:          55,01s
+**********************
+PowerShell transcript end
+End time: 20260801114909
+**********************

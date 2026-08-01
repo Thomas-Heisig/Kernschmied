@@ -8,7 +8,7 @@ Prompt Inheritance is one of the key architectural concepts behind Kernschmied's
 
 ---
 
-# Goals
+## Goals
 
 The Prompt Inheritance architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The Prompt Inheritance architecture is designed to provide:
 
 ---
 
-# Core Principle
+## Core Principle
 
 Instead of creating prompts manually for every conversation, the backend assembles them from multiple inheritance levels.
 
@@ -53,13 +53,14 @@ Request Prompt
 ↓
 
 Final Prompt
+
 ```
 
 Every layer contributes additional context.
 
 ---
 
-# Why Prompt Inheritance?
+## Why Prompt Inheritance?
 
 Without inheritance, every conversation would require its own complete prompt.
 
@@ -81,6 +82,7 @@ Conversation C
 ↓
 
 Complete Prompt
+
 ```
 
 This approach leads to:
@@ -94,7 +96,7 @@ Prompt inheritance removes duplication by reusing shared instructions.
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Composition Instead of Duplication
 
@@ -110,6 +112,7 @@ Prompt Resolver
 ↓
 
 Final Prompt
+
 ```
 
 Individual layers only define what they need to contribute.
@@ -138,6 +141,7 @@ Final Prompt
 ↓
 
 Provider Backend
+
 ```
 
 The provider receives an already resolved prompt.
@@ -152,7 +156,7 @@ Administrators can update prompts without modifying source code or restarting th
 
 ---
 
-# Prompt Hierarchy
+## Prompt Hierarchy
 
 A typical inheritance chain may look like this:
 
@@ -178,13 +182,14 @@ Conversation
 ↓
 
 Request
+
 ```
 
 Additional hierarchy levels may be introduced through configuration.
 
 ---
 
-# System Prompt
+## System Prompt
 
 The system level defines global platform behavior.
 
@@ -200,7 +205,7 @@ Every conversation inherits the system prompt.
 
 ---
 
-# Organization Prompt
+## Organization Prompt
 
 Organizations may define shared instructions.
 
@@ -216,7 +221,7 @@ These instructions apply to all descendant nodes.
 
 ---
 
-# Workspace Prompt
+## Workspace Prompt
 
 A workspace may define context shared by related projects.
 
@@ -230,7 +235,7 @@ Workspaces help avoid repetition across multiple projects.
 
 ---
 
-# Project Prompt
+## Project Prompt
 
 Projects contribute project-specific context.
 
@@ -246,7 +251,7 @@ Project prompts affect only the corresponding project hierarchy.
 
 ---
 
-# Conversation Prompt
+## Conversation Prompt
 
 Individual conversations may define temporary context.
 
@@ -261,7 +266,7 @@ Conversation prompts are isolated from other conversations.
 
 ---
 
-# Request Prompt
+## Request Prompt
 
 The request level has the highest priority.
 
@@ -275,7 +280,7 @@ Request prompts exist only for a single request.
 
 ---
 
-# Prompt Resolution
+## Prompt Resolution
 
 The Prompt Resolver combines all applicable prompt fragments.
 
@@ -293,13 +298,14 @@ Prompt Resolver
 ↓
 
 Resolved Prompt
+
 ```
 
 The resulting prompt is immutable during model execution.
 
 ---
 
-# Prompt Composition
+## Prompt Composition
 
 Each inheritance level contributes only its own instructions.
 
@@ -322,13 +328,14 @@ Request
 ↓
 
 Final Prompt
+
 ```
 
 The resolver combines the fragments in a deterministic order.
 
 ---
 
-# Ordering
+## Ordering
 
 Prompt ordering is well-defined.
 
@@ -354,13 +361,14 @@ Conversation
 ↓
 
 Request
+
 ```
 
 Ordering never depends on database retrieval order.
 
 ---
 
-# Merge Strategy
+## Merge Strategy
 
 Different prompt sections may use different merge strategies.
 
@@ -377,7 +385,7 @@ The merge strategy is defined by configuration.
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Prompt fragments are stored as runtime configuration.
 
@@ -393,7 +401,7 @@ No application restart is required for runtime-editable prompt changes.
 
 ---
 
-# Hierarchy Integration
+## Hierarchy Integration
 
 Prompt inheritance follows the same hierarchy used for configuration.
 
@@ -407,13 +415,14 @@ Prompt Resolver
 ↓
 
 Final Prompt
+
 ```
 
 Hierarchy changes automatically influence inherited prompts.
 
 ---
 
-# Configuration Revisions
+## Configuration Revisions
 
 Prompt updates increment the configuration revision.
 
@@ -431,13 +440,14 @@ Cache Invalidated
 ↓
 
 Next Request Uses New Prompt
+
 ```
 
 The resolver always uses the latest valid configuration.
 
 ---
 
-# Provider Interaction
+## Provider Interaction
 
 Providers never assemble prompts.
 
@@ -453,13 +463,14 @@ Resolved Prompt
 ↓
 
 Provider
+
 ```
 
 Every provider receives identical prompt content regardless of implementation.
 
 ---
 
-# Chat Integration
+## Chat Integration
 
 When a chat request arrives:
 
@@ -481,13 +492,14 @@ Resolve Prompt
 ↓
 
 Model Execution
+
 ```
 
 Prompt construction always precedes inference.
 
 ---
 
-# Prompt Validation
+## Prompt Validation
 
 Prompt configuration is validated before activation.
 
@@ -502,7 +514,7 @@ Invalid prompt configuration is rejected.
 
 ---
 
-# Security
+## Security
 
 Prompt inheritance follows backend security policies.
 
@@ -519,7 +531,7 @@ Prompt text remains data rather than executable behavior.
 
 ---
 
-# Performance
+## Performance
 
 Prompt resolution is optimized through:
 
@@ -532,7 +544,7 @@ Prompt construction remains inexpensive enough to occur for every request.
 
 ---
 
-# Benefits
+## Benefits
 
 Prompt Inheritance provides several architectural advantages.
 
@@ -560,13 +572,13 @@ Large organizations can manage prompt behavior centrally while allowing local cu
 
 ---
 
-## Provider Independence
+## Provider Independence (2)
 
 Prompt construction remains independent of AI model implementations.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture supports future capabilities including:
 
@@ -582,7 +594,7 @@ These enhancements can be introduced without changing the fundamental inheritanc
 
 ---
 
-# Relationship to Other Concepts
+## Relationship to Other Concepts
 
 Prompt Inheritance is closely related to:
 
@@ -594,7 +606,7 @@ Prompt Inheritance is closely related to:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Concepts
 
@@ -632,7 +644,7 @@ Prompt Inheritance is closely related to:
 
 ---
 
-# Summary
+## Summary
 
 Prompt Inheritance enables Kernschmied to construct AI prompts dynamically by combining reusable prompt fragments from multiple hierarchical configuration levels instead of relying on duplicated, conversation-specific prompts.
 

@@ -8,7 +8,7 @@ The platform follows a **defense-in-depth** strategy in which multiple independe
 
 ---
 
-# Goals
+## Goals
 
 The Security Architecture is designed to provide:
 
@@ -24,7 +24,7 @@ The Security Architecture is designed to provide:
 
 ---
 
-# Security Principles
+## Security Principles
 
 The platform follows several core security principles.
 
@@ -50,6 +50,7 @@ Administrator Approval
 ↓
 
 Available
+
 ```
 
 ---
@@ -84,6 +85,7 @@ Business Logic
 ↓
 
 Persistence
+
 ```
 
 If one layer fails, others continue to protect the application.
@@ -126,13 +128,14 @@ Authorization
 ↓
 
 Execution
+
 ```
 
 The server remains the ultimate authority.
 
 ---
 
-# Security Layers
+## Security Layers
 
 The complete security model spans multiple architectural layers.
 
@@ -178,13 +181,14 @@ Repositories
 ↓
 
 Database
+
 ```
 
 Each layer has an independent responsibility.
 
 ---
 
-# Deployment Profiles
+## Deployment Profiles
 
 Security behavior depends on the configured deployment profile.
 
@@ -198,7 +202,7 @@ Security requirements increase with deployment exposure.
 
 ---
 
-# Development Profile
+## Development Profile
 
 The development profile prioritizes productivity while maintaining architectural consistency.
 
@@ -214,7 +218,7 @@ This profile must never be exposed publicly.
 
 ---
 
-# Intranet Profile
+## Intranet Profile
 
 The intranet profile assumes trusted organizational infrastructure.
 
@@ -230,7 +234,7 @@ Internal trust never replaces authorization.
 
 ---
 
-# Internet Profile
+## Internet Profile
 
 The internet profile applies the strictest security controls.
 
@@ -249,7 +253,7 @@ This profile is intended for public deployment.
 
 ---
 
-# Transport Security
+## Transport Security
 
 All communication should be encrypted.
 
@@ -263,7 +267,7 @@ Unencrypted production communication is not supported.
 
 ---
 
-# Reverse Proxy
+## Reverse Proxy
 
 A reverse proxy is recommended for production deployments.
 
@@ -281,7 +285,7 @@ Examples include NGINX, Caddy, and Traefik.
 
 ---
 
-# Authentication
+## Authentication
 
 Authentication establishes the identity of the caller.
 
@@ -298,7 +302,7 @@ Authentication occurs before business logic executes.
 
 ---
 
-# Authorization
+## Authorization
 
 Authorization determines whether an authenticated user may perform an operation.
 
@@ -314,7 +318,7 @@ Authorization decisions are always made on the server.
 
 ---
 
-# Permission Model
+## Permission Model
 
 Permissions are evaluated independently of the frontend.
 
@@ -331,7 +335,7 @@ Permissions may be inherited through the hierarchy where appropriate.
 
 ---
 
-# Configuration Security
+## Configuration Security
 
 Runtime configuration is considered sensitive.
 
@@ -346,7 +350,7 @@ Configuration never bypasses architectural safety constraints.
 
 ---
 
-# Secrets Management
+## Secrets Management
 
 Secrets must never be stored in ordinary runtime configuration.
 
@@ -361,7 +365,7 @@ Secrets belong in dedicated secret management mechanisms or environment-specific
 
 ---
 
-# Environment Configuration
+## Environment Configuration
 
 The `.env` file contains only bootstrap and infrastructure values.
 
@@ -376,7 +380,7 @@ Business configuration belongs in the configuration subsystem.
 
 ---
 
-# Request Validation
+## Request Validation
 
 Every request is validated before processing.
 
@@ -392,7 +396,7 @@ Invalid requests are rejected immediately.
 
 ---
 
-# Input Sanitization
+## Input Sanitization
 
 All external input is treated as untrusted.
 
@@ -408,7 +412,7 @@ Validation occurs at system boundaries.
 
 ---
 
-# Output Validation
+## Output Validation
 
 Public responses follow stable API contracts.
 
@@ -423,7 +427,7 @@ Errors are returned using structured error objects.
 
 ---
 
-# Tool Security
+## Tool Security
 
 Tools operate within explicit security boundaries.
 
@@ -439,7 +443,7 @@ Tool execution is never permitted solely because a tool exists on disk.
 
 ---
 
-# Provider Isolation
+## Provider Isolation
 
 Model providers remain isolated behind provider interfaces.
 
@@ -459,13 +463,14 @@ OpenAI
 Anthropic
 
 Future Providers
+
 ```
 
 Application services never depend directly on provider implementations.
 
 ---
 
-# Manifest Validation
+## Manifest Validation
 
 Every manifest is treated as untrusted input.
 
@@ -481,7 +486,7 @@ Only validated manifests are registered.
 
 ---
 
-# Registry Security
+## Registry Security
 
 Registries enforce several security guarantees.
 
@@ -496,7 +501,7 @@ Registries expose only validated metadata.
 
 ---
 
-# Dependency Injection
+## Dependency Injection
 
 Dependency Injection limits object creation to controlled application startup.
 
@@ -511,7 +516,7 @@ Services never construct security-sensitive infrastructure manually.
 
 ---
 
-# Database Security
+## Database Security
 
 Database access is isolated through repositories.
 
@@ -525,13 +530,14 @@ Repository
 ↓
 
 Database
+
 ```
 
 Repositories encapsulate persistence logic and help maintain consistent validation.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Sensitive operations generate audit entries.
 
@@ -547,7 +553,7 @@ Audit records support accountability and traceability.
 
 ---
 
-# Logging
+## Logging
 
 Application logs should contain operational information while avoiding confidential data.
 
@@ -557,7 +563,7 @@ Structured logging is recommended to simplify monitoring and diagnostics.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Errors are returned using stable contracts.
 
@@ -576,7 +582,7 @@ Internal implementation details remain hidden.
 
 ---
 
-# Rate Limiting
+## Rate Limiting
 
 Public deployments should limit excessive requests.
 
@@ -591,7 +597,7 @@ Rate limiting reduces abuse and improves availability.
 
 ---
 
-# Denial-of-Service Protection
+## Denial-of-Service Protection
 
 The platform should protect itself against resource exhaustion.
 
@@ -607,7 +613,7 @@ These controls complement network-level protections.
 
 ---
 
-# Session Security
+## Session Security
 
 When session-based authentication is used:
 
@@ -620,7 +626,7 @@ Session management remains independent of business logic.
 
 ---
 
-# Cross-Origin Requests
+## Cross-Origin Requests
 
 Cross-Origin Resource Sharing (CORS) is configured according to the deployment profile.
 
@@ -628,7 +634,7 @@ Production deployments should explicitly define trusted origins rather than allo
 
 ---
 
-# Security Headers
+## Security Headers
 
 Production deployments should provide modern HTTP security headers.
 
@@ -644,7 +650,7 @@ These are typically applied by the reverse proxy or middleware.
 
 ---
 
-# AI Provider Security
+## AI Provider Security
 
 Communication with AI providers should observe the same security principles as any external service.
 
@@ -660,7 +666,7 @@ Provider-specific failures must not compromise application security.
 
 ---
 
-# Runtime Updates
+## Runtime Updates
 
 Security-related configuration changes are validated before activation.
 
@@ -668,7 +674,7 @@ Changes that affect runtime behavior should increment the configuration revision
 
 ---
 
-# Future Security Enhancements
+## Future Security Enhancements
 
 The architecture supports future capabilities such as:
 
@@ -685,7 +691,7 @@ These enhancements can be introduced without redesigning the platform.
 
 ---
 
-# Relationship to Other Architecture
+## Relationship to Other Architecture
 
 Security spans the entire architecture.
 
@@ -727,13 +733,14 @@ Repositories
 ↓
 
 Response
+
 ```
 
 Every subsystem contributes to the overall security model.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -764,7 +771,7 @@ Every subsystem contributes to the overall security model.
 
 ---
 
-# Summary
+## Summary
 
 The Security Architecture provides a layered, defense-in-depth security model that protects every stage of the Kernschmied platform, from incoming HTTP requests to AI provider communication and persistent storage.
 

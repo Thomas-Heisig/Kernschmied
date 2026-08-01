@@ -33,6 +33,9 @@ class ConfigDynamicOptionsResponse(BaseModel):
         default_factory=dict,
     )
 
+    depends_on: str | None = None
+    dependency_parameter: str | None = None
+
 
 class ConfigUIResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")

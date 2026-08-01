@@ -1,0 +1,5 @@
+COMMAND: python -m pip check
+WORKING DIRECTORY: F:\Kernschmied
+EXIT CODE: 0
+
+No broken requirements found.

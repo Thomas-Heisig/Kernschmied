@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 Forms are one of the primary interaction mechanisms in Kernschmied.
 
@@ -26,7 +26,7 @@ The frontend is responsible only for rendering and user interaction.
 
 ---
 
-# Design Goals
+## Design Goals
 
 The Forms subsystem has several objectives:
 
@@ -42,7 +42,7 @@ The Forms subsystem has several objectives:
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 Backend
@@ -70,6 +70,7 @@ Input Components
 ↓
 
 Browser
+
 ```
 
 The backend describes **what** should be rendered.
@@ -78,7 +79,7 @@ The frontend decides **how** to render it.
 
 ---
 
-# Responsibilities
+## Responsibilities
 
 ## Backend
 
@@ -111,7 +112,7 @@ The frontend is responsible for:
 
 ---
 
-# Form Lifecycle
+## Form Lifecycle
 
 ```text
 Load Schema
@@ -139,13 +140,14 @@ Backend Validation
 ↓
 
 Success / Error
+
 ```
 
 The backend always performs the final validation.
 
 ---
 
-# Form Structure
+## Form Structure
 
 A typical form consists of:
 
@@ -157,11 +159,12 @@ Form
 ├── Fields
 ├── Actions
 └── Validation
+
 ```
 
 ---
 
-# Example Schema
+## Example Schema
 
 ```json
 {
@@ -186,7 +189,7 @@ Form
 
 ---
 
-# Field Types
+## Field Types
 
 Common field types include:
 
@@ -216,7 +219,7 @@ New field types can be introduced through the Component Registry.
 
 ---
 
-# Sections
+## Sections
 
 Large forms are divided into sections.
 
@@ -230,13 +233,14 @@ Permissions
 Advanced
 
 Diagnostics
+
 ```
 
 Sections improve readability and usability.
 
 ---
 
-# Layouts
+## Layouts
 
 Forms support multiple layouts.
 
@@ -253,7 +257,7 @@ Layouts are resolved through the Layout Registry.
 
 ---
 
-# Labels
+## Labels
 
 Every field should have a descriptive label.
 
@@ -261,13 +265,14 @@ Example:
 
 ```text
 Project Name
+
 ```
 
 Labels improve accessibility and usability.
 
 ---
 
-# Help Text
+## Help Text
 
 Fields may provide additional explanations.
 
@@ -275,13 +280,14 @@ Example:
 
 ```text
 The project name must be unique within the workspace.
+
 ```
 
 Help text should explain _why_, not merely repeat the label.
 
 ---
 
-# Placeholders
+## Placeholders
 
 Placeholders provide examples rather than instructions.
 
@@ -289,17 +295,19 @@ Good example:
 
 ```text
 Example Project
+
 ```
 
 Poor example:
 
 ```text
 Enter project name here
+
 ```
 
 ---
 
-# Default Values
+## Default Values
 
 The backend may define default values.
 
@@ -315,7 +323,7 @@ Defaults improve usability but never replace validation.
 
 ---
 
-# Validation
+## Validation
 
 Validation rules are included in the schema.
 
@@ -335,7 +343,7 @@ The backend always performs authoritative validation.
 
 ---
 
-# Validation Lifecycle
+## Validation Lifecycle
 
 ```text
 User Input
@@ -355,11 +363,12 @@ Server Validation
 ↓
 
 Response
+
 ```
 
 ---
 
-# Required Fields
+## Required Fields
 
 Required fields are explicitly marked.
 
@@ -375,7 +384,7 @@ The visual representation should clearly communicate mandatory input.
 
 ---
 
-# Conditional Visibility
+## Conditional Visibility
 
 Fields may depend on other values.
 
@@ -389,13 +398,14 @@ Advanced Settings
 Visible only if
 
 Expert Mode = Enabled
+
 ```
 
 Visibility rules are defined in the schema.
 
 ---
 
-# Read-Only Fields
+## Read-Only Fields
 
 Some fields are informational only.
 
@@ -411,7 +421,7 @@ Read-only fields remain visible but cannot be edited.
 
 ---
 
-# Disabled Fields
+## Disabled Fields
 
 Disabled fields are temporarily unavailable.
 
@@ -427,7 +437,7 @@ Unlike read-only fields, disabled controls are excluded from interaction.
 
 ---
 
-# Dynamic Data Sources
+## Dynamic Data Sources
 
 Selection controls may retrieve options dynamically.
 
@@ -443,7 +453,7 @@ The API Client retrieves the data.
 
 ---
 
-# File Uploads
+## File Uploads
 
 File inputs should support:
 
@@ -457,7 +467,7 @@ Upload authorization remains the responsibility of the backend.
 
 ---
 
-# Actions
+## Actions
 
 Forms expose actions through the Action Registry.
 
@@ -475,7 +485,7 @@ Actions remain independent from business logic.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Validation errors should appear close to the affected field.
 
@@ -485,13 +495,14 @@ Example:
 Project Name
 
 "This field is required."
+
 ```
 
 Global errors should only be used for form-wide failures.
 
 ---
 
-# Accessibility
+## Accessibility
 
 Forms should support:
 
@@ -506,7 +517,7 @@ Accessibility is implemented by generic form components.
 
 ---
 
-# Responsive Design
+## Responsive Design
 
 Forms should adapt automatically.
 
@@ -528,13 +539,14 @@ Single Column
 Mobile
 
 Stacked Layout
+
 ```
 
 No schema changes are required.
 
 ---
 
-# Performance
+## Performance
 
 The form system should:
 
@@ -548,7 +560,7 @@ Large forms should remain responsive.
 
 ---
 
-# Security
+## Security
 
 The frontend must never trust:
 
@@ -561,7 +573,7 @@ The backend validates every submitted value.
 
 ---
 
-# Anti-Patterns
+## Anti-Patterns
 
 Avoid:
 
@@ -573,7 +585,7 @@ Avoid:
 
 ---
 
-# Testing
+## Testing
 
 Typical tests include:
 
@@ -588,7 +600,7 @@ Typical tests include:
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 The form architecture supports future capabilities such as:
 
@@ -605,9 +617,9 @@ These enhancements should not require changes to existing schemas.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
-## Architecture
+## Architecture (2)
 
 - [[Architecture]]
 - [[UI-Schema]]
@@ -615,7 +627,7 @@ These enhancements should not require changes to existing schemas.
 
 ---
 
-## Frontend
+## Frontend (2)
 
 - [[Component-Registry]]
 - [[Action-Registry]]
@@ -624,7 +636,7 @@ These enhancements should not require changes to existing schemas.
 
 ---
 
-## Backend
+## Backend (2)
 
 - [[Contracts]]
 - [[Configuration]]
@@ -640,7 +652,7 @@ These enhancements should not require changes to existing schemas.
 
 ---
 
-# Summary
+## Summary
 
 The Forms subsystem enables Kernschmied to provide powerful, configurable, and consistent user interfaces without creating business-specific React components.
 

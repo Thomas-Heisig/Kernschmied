@@ -8,7 +8,7 @@ The API is backed by the **Model Registry**, which discovers, validates, and man
 
 ---
 
-# Goals
+## Goals
 
 The Models API is designed to provide:
 
@@ -23,7 +23,7 @@ The Models API is designed to provide:
 
 ---
 
-# Endpoints
+## Endpoints
 
 ## List Models
 
@@ -63,7 +63,7 @@ POST /api/v1/models/validate
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 REST API
@@ -91,13 +91,14 @@ Model Backend
         ▼
 
 LLM Provider
+
 ```
 
 The REST API never communicates directly with provider implementations.
 
 ---
 
-# Registry-Based Design
+## Registry-Based Design
 
 The Models API is backed by the **Model Registry**.
 
@@ -114,7 +115,7 @@ Business services consume the registry instead of provider-specific APIs.
 
 ---
 
-# Model Manifest
+## Model Manifest
 
 Each model is defined by a validated manifest.
 
@@ -122,6 +123,7 @@ Example:
 
 ```text
 model.json
+
 ```
 
 Typical manifest fields include:
@@ -140,7 +142,7 @@ The manifest is validated before registration.
 
 ---
 
-# Example Response
+## Example Response
 
 ```json
 [
@@ -159,7 +161,7 @@ The exact schema may evolve through versioned contracts.
 
 ---
 
-# Model Fields
+## Model Fields
 
 | Field          | Description               |
 | -------------- | ------------------------- |
@@ -174,7 +176,7 @@ Additional metadata may be added without breaking compatibility.
 
 ---
 
-# Model Identifier
+## Model Identifier
 
 Every model has a unique identifier.
 
@@ -182,6 +184,7 @@ Example:
 
 ```text
 qwen2.5-coder:7b
+
 ```
 
 The identifier is used throughout the platform:
@@ -196,7 +199,7 @@ Identifiers remain stable whenever possible.
 
 ---
 
-# Display Name
+## Display Name
 
 The display name is intended for user interfaces.
 
@@ -204,13 +207,14 @@ Example:
 
 ```text
 Qwen 2.5 7B
+
 ```
 
 Unlike the identifier, display names may change without affecting compatibility.
 
 ---
 
-# Provider
+## Provider
 
 Each model belongs to exactly one provider.
 
@@ -227,7 +231,7 @@ Clients should treat provider information as descriptive rather than executable.
 
 ---
 
-# Capabilities
+## Capabilities
 
 Models advertise supported capabilities.
 
@@ -245,7 +249,7 @@ Clients may adapt their behavior based on supported capabilities.
 
 ---
 
-# Context Length
+## Context Length
 
 The context length describes the maximum supported token window.
 
@@ -261,7 +265,7 @@ Applications should not exceed this limit.
 
 ---
 
-# Availability
+## Availability
 
 Availability indicates whether the model can currently be used.
 
@@ -282,7 +286,7 @@ Possible states include:
 
 ---
 
-# Model Discovery
+## Model Discovery
 
 During startup the Model Registry discovers available models.
 
@@ -308,13 +312,14 @@ Model Registry
 ↓
 
 Models API
+
 ```
 
 Only validated models become visible.
 
 ---
 
-# Model Selection
+## Model Selection
 
 The Models API is informational.
 
@@ -340,11 +345,12 @@ Provider Resolution
 ↓
 
 Generation
+
 ```
 
 ---
 
-# Default Model
+## Default Model
 
 The default model is determined through configuration.
 
@@ -358,13 +364,14 @@ Model Registry
 ↓
 
 Default Model
+
 ```
 
 The Models API reports available models, not configuration decisions.
 
 ---
 
-# Runtime Refresh
+## Runtime Refresh
 
 Future versions may support refreshing the registry without restarting the application.
 
@@ -388,11 +395,12 @@ Update Registry
 ↓
 
 Revision++
+
 ```
 
 ---
 
-# Health Information
+## Health Information
 
 Future versions may expose provider health.
 
@@ -408,7 +416,7 @@ Health reporting remains provider-independent.
 
 ---
 
-# Authentication
+## Authentication
 
 Reading model metadata generally requires authentication depending on the deployment profile.
 
@@ -416,7 +424,7 @@ Administrative operations always require elevated permissions.
 
 ---
 
-# Authorization
+## Authorization
 
 Typical permissions include:
 
@@ -428,7 +436,7 @@ The backend always performs authorization checks.
 
 ---
 
-# Validation
+## Validation
 
 The registry validates:
 
@@ -442,7 +450,7 @@ Invalid models are rejected before registration.
 
 ---
 
-# Error Responses
+## Error Responses
 
 Errors follow the standard platform contract.
 
@@ -461,12 +469,13 @@ Example:
 
 ---
 
-# Versioning
+## Versioning
 
 The Models API follows the REST API version.
 
 ```text
 /api/v1/models
+
 ```
 
 The registry version is published separately through the Bootstrap API.
@@ -475,7 +484,7 @@ Clients may invalidate cached model information whenever the model registry revi
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The Models API is optimized through:
 
@@ -489,7 +498,7 @@ Model discovery should not occur for every request.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 The Models API never exposes:
 
@@ -503,7 +512,7 @@ Only safe metadata is returned.
 
 ---
 
-# Frontend Integration
+## Frontend Integration
 
 The frontend typically retrieves available models during application startup.
 
@@ -527,13 +536,14 @@ Chat View
 ↓
 
 User Selection
+
 ```
 
 The frontend should rely on model identifiers rather than provider-specific information.
 
 ---
 
-# Relationship to the Chat API
+## Relationship to the Chat API
 
 The Models API is responsible for **discovery**.
 
@@ -557,13 +567,14 @@ Chat API
 ↓
 
 Generation
+
 ```
 
 This separation keeps both APIs focused and simplifies long-term evolution.
 
 ---
 
-# Related APIs
+## Related APIs
 
 ```http
 GET /api/v1/bootstrap
@@ -577,7 +588,7 @@ GET /api/v1/tools
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 - [[Architecture]]
 - [[Bootstrap]]
@@ -590,7 +601,7 @@ GET /api/v1/tools
 
 ---
 
-# Summary
+## Summary
 
 The Models API provides a stable, provider-independent catalog of all language models available within Kernschmied.
 

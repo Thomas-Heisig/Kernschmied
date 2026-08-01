@@ -50,6 +50,7 @@ export async function loadSystemConfig(
     headers: {
       Accept: "application/json",
     },
+    credentials: "same-origin",
     signal,
   });
 
@@ -76,6 +77,7 @@ export async function updateSystemConfig(
       values: request.values,
       expected_revision: request.expected_revision ?? null,
     }),
+    credentials: "same-origin",
     signal,
   });
 
@@ -86,6 +88,8 @@ export async function updateSystemConfig(
   const payload = await readJsonResponse(response);
 
   return normalizeConfigSnapshot(payload);
+  // The legacy bulk-update flow was removed; we already returned the
+  // normalized snapshot above. Ensure function ends here.
 }
 
 async function readJsonResponse(response: Response): Promise<unknown> {

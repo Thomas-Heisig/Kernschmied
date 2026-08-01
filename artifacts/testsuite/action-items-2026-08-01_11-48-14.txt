@@ -1,0 +1,39 @@
+Kernschmied-Aktionsbericht
+Erstellt: 01.08.2026 11:49:09
+Treffer: 32
+
+Erfasst werden nur echte Code-Kommentarmarker und offene Markdown-Checkboxen.
+Normale Placeholder-Felder, Typnamen und Dokumentation werden nicht als TODO gewertet.
+
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:7: - [ ] Fehlerbehebung
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:8: - [ ] Neue Funktion
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:9: - [ ] Refactoring
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:10: - [ ] Vertrags- oder Schemaänderung
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:11: - [ ] Datenbankmigration
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:12: - [ ] Dokumentation
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:13: - [ ] Sicherheitsverbesserung
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:17: - [ ] Backend
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:18: - [ ] Frontend
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:19: - [ ] Datenbank/Alembic
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:20: - [ ] Bootstrap
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:21: - [ ] Hierarchie
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:22: - [ ] UI-Schema/SchemaRenderer
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:23: - [ ] Modelle
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:24: - [ ] Tools
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:25: - [ ] Chat/SSE
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:26: - [ ] Konfiguration
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:27: - [ ] Dokumentation
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:31: - [ ] Keine öffentlichen Verträge geändert
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:32: - [ ] Öffentliche Verträge geändert und versioniert
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:33: - [ ] Frontend- und Backendverträge gemeinsam angepasst
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:34: - [ ] OpenAPI aktualisiert und geprüft
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:35: - [ ] Migration oder Kompatibilität dokumentiert
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:39: - [ ] Serverseitige Autorisierung geprüft
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:40: - [ ] Keine Secrets oder personenbezogenen Daten enthalten
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:41: - [ ] Keine dynamischen Imports oder Aktionen aus ungeprüften Backendwerten
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:42: - [ ] Unbekannte Typen werden sicher behandelt
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:46: - [ ] Backendtests erfolgreich
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:47: - [ ] Frontendbuild erfolgreich
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:48: - [ ] Frontendtests erfolgreich, sofern vorhanden
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:49: - [ ] Gemeinsamer Start erfolgreich
+[UncheckedTask] F:\Kernschmied\CODE_OF_CONDUCT.md:50: - [ ] Manuell geprüft

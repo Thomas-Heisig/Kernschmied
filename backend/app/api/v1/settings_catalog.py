@@ -1,3 +1,5 @@
+# F:\Kernschmied\backend\app\api\v1\settings_catalog.py
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Request

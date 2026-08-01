@@ -8,7 +8,7 @@ This allows developers to build and test features under realistic conditions wit
 
 ---
 
-# Goals
+## Goals
 
 The Development profile is designed to provide:
 
@@ -23,7 +23,7 @@ The Development profile is designed to provide:
 
 ---
 
-# Design Philosophy
+## Design Philosophy
 
 Development should simplify operations—not change application behavior.
 
@@ -35,13 +35,14 @@ Deployment Profile
         │
         ▼
 Development Rules
+
 ```
 
 Business logic, APIs, schemas, and contracts remain identical across all deployment profiles.
 
 ---
 
-# Profile Characteristics
+## Profile Characteristics
 
 The Development profile typically includes:
 
@@ -58,7 +59,7 @@ The profile is optimized for developer productivity rather than operational secu
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Developer
@@ -86,13 +87,14 @@ SQLite Database
         ▼
 
 Local AI Providers
+
 ```
 
 All components usually execute on the same workstation.
 
 ---
 
-# Typical Environment
+## Typical Environment
 
 A standard development installation may include:
 
@@ -111,7 +113,7 @@ The exact operating system is not significant because the architecture remains p
 
 ---
 
-# Bootstrap
+## Bootstrap
 
 During startup, the backend initializes all core subsystems.
 
@@ -130,7 +132,7 @@ The bootstrap sequence is identical across all deployment profiles.
 
 ---
 
-# Local Database
+## Local Database
 
 SQLite is the recommended database for development.
 
@@ -152,13 +154,14 @@ Hierarchy
 ↓
 
 Runtime Data
+
 ```
 
 The database can later be replaced by PostgreSQL without architectural changes.
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Development uses the same Runtime Configuration system as every other profile.
 
@@ -177,7 +180,7 @@ Developers test the same configuration system that production uses.
 
 ---
 
-# Environment Variables
+## Environment Variables
 
 Environment variables contain only infrastructure settings.
 
@@ -193,7 +196,7 @@ Business configuration does not belong in environment variables.
 
 ---
 
-# Local AI Providers
+## Local AI Providers
 
 Development commonly uses local AI providers.
 
@@ -219,13 +222,14 @@ Provider
 ↓
 
 Model
+
 ```
 
 Switching providers does not affect the application architecture.
 
 ---
 
-# Frontend Development
+## Frontend Development
 
 The frontend is typically executed using the Vite development server.
 
@@ -243,13 +247,14 @@ Hot Reload
 ↓
 
 Updated UI
+
 ```
 
 This enables rapid user interface iteration.
 
 ---
 
-# Backend Development
+## Backend Development
 
 FastAPI is commonly started with automatic reload enabled.
 
@@ -263,13 +268,14 @@ Backend Reload
 ↓
 
 Updated API
+
 ```
 
 Reloading affects only the development environment.
 
 ---
 
-# Logging
+## Logging
 
 Development favors detailed logging.
 
@@ -286,7 +292,7 @@ Verbose logging simplifies debugging.
 
 ---
 
-# Debugging
+## Debugging
 
 The Development profile supports debugging through standard development tools.
 
@@ -303,7 +309,7 @@ Debugging facilities are not part of the production runtime.
 
 ---
 
-# Authentication
+## Authentication
 
 Development may use simplified authentication.
 
@@ -317,7 +323,7 @@ This accelerates feature development while preserving the authorization architec
 
 ---
 
-# Authorization
+## Authorization
 
 Although authentication may be simplified, authorization continues to use the same backend logic.
 
@@ -331,13 +337,14 @@ Authorization
 ↓
 
 Business Operation
+
 ```
 
 Authorization should never be bypassed simply because the application runs locally.
 
 ---
 
-# Security
+## Security
 
 The Development profile intentionally relaxes selected operational restrictions.
 
@@ -360,7 +367,7 @@ The architecture itself remains secure.
 
 ---
 
-# API Contracts
+## API Contracts
 
 Development exposes the same APIs as every other deployment profile.
 
@@ -378,7 +385,7 @@ No development-specific API contracts exist.
 
 ---
 
-# Schema Validation
+## Schema Validation
 
 All schemas continue to be validated.
 
@@ -393,7 +400,7 @@ Development never disables schema validation.
 
 ---
 
-# Plugin Development
+## Plugin Development
 
 The Development profile is the preferred environment for plugin authors.
 
@@ -417,13 +424,14 @@ Test
 ↓
 
 Iterate
+
 ```
 
 Plugins are validated using the same rules as production.
 
 ---
 
-# Registry Initialization
+## Registry Initialization
 
 During startup, registries discover available extensions.
 
@@ -439,7 +447,7 @@ Development uses identical registration logic.
 
 ---
 
-# Caching
+## Caching
 
 Caching remains active during development.
 
@@ -455,13 +463,14 @@ Revision++
 ↓
 
 Cache Reload
+
 ```
 
 Developers therefore test real runtime behavior.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Structured error responses remain enabled.
 
@@ -475,13 +484,14 @@ message
 details
 
 request_id
+
 ```
 
 Development may include additional diagnostic information.
 
 ---
 
-# Testing
+## Testing
 
 The Development profile supports all testing activities.
 
@@ -498,7 +508,7 @@ Testing should reflect production behavior as closely as possible.
 
 ---
 
-# Typical Workflow
+## Typical Workflow
 
 ```text
 Modify Source Code
@@ -522,13 +532,14 @@ Validate Behavior
 ↓
 
 Commit Changes
+
 ```
 
 The workflow emphasizes short feedback cycles.
 
 ---
 
-# Differences from Production
+## Differences from Production
 
 Compared to Internet deployments, Development typically provides:
 
@@ -546,7 +557,7 @@ Despite these operational differences, application contracts remain identical.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The Development profile supports future enhancements including:
 
@@ -562,7 +573,7 @@ These capabilities improve development without affecting production deployments.
 
 ---
 
-# Relationship to Other Deployment Profiles
+## Relationship to Other Deployment Profiles
 
 Development shares the same architecture with:
 
@@ -573,7 +584,7 @@ Only operational policies differ.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Deployment
 
@@ -611,7 +622,7 @@ Only operational policies differ.
 
 ---
 
-# Summary
+## Summary
 
 The Development deployment profile provides a productive local environment for building and testing Kernschmied while preserving the same architecture, contracts, schemas, registries, and runtime behavior used in production. Rather than introducing a separate development architecture, it relaxes only selected operational requirements such as authentication and logging.
 

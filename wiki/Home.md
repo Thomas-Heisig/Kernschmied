@@ -6,7 +6,7 @@
 
 ---
 
-# Welcome to the Kernschmied Wiki
+## Welcome to the Kernschmied Wiki
 
 Welcome to the official documentation of **Kernschmied**.
 
@@ -27,7 +27,7 @@ This wiki serves as the central source of truth for developers, contributors, an
 
 ---
 
-# Project Vision
+## Project Vision
 
 Kernschmied is more than a chat application.
 
@@ -39,7 +39,7 @@ The guiding principle is:
 
 ---
 
-# Technology Stack
+## Technology Stack
 
 ## Backend
 
@@ -75,7 +75,7 @@ The guiding principle is:
 
 ---
 
-# Documentation Structure
+## Documentation Structure
 
 ## Getting Started
 
@@ -95,7 +95,7 @@ Core architecture and design decisions.
 
 ---
 
-## Backend
+## Backend (2)
 
 Backend implementation details.
 
@@ -114,7 +114,7 @@ Backend implementation details.
 
 ---
 
-## Frontend
+## Frontend (2)
 
 Frontend architecture.
 
@@ -170,7 +170,7 @@ Deployment profiles.
 
 ---
 
-## Development
+## Development (2)
 
 Guidelines for contributors.
 
@@ -194,7 +194,7 @@ Design decisions are documented as ADRs.
 
 ---
 
-# Core Principles
+## Core Principles
 
 Kernschmied follows a small number of strict architectural rules:
 
@@ -215,7 +215,7 @@ For more details see:
 
 ---
 
-# Development Workflow
+## Development Workflow
 
 Typical workflow:
 
@@ -230,7 +230,7 @@ Typical workflow:
 
 ---
 
-# Repository
+## Repository
 
 GitHub Repository:
 
@@ -246,7 +246,7 @@ Use the GitHub Issue tracker to report ideas or discuss options:
 
 ---
 
-# Contributing
+## Contributing
 
 If you want to contribute to Kernschmied, please read:
 
@@ -256,7 +256,7 @@ If you want to contribute to Kernschmied, please read:
 
 ---
 
-# Documentation Philosophy
+## Documentation Philosophy
 
 Documentation is considered part of the product.
 
@@ -268,7 +268,7 @@ Outdated documentation should be corrected as soon as possible.
 
 ---
 
-# Roadmap
+## Roadmap
 
 The long-term roadmap includes:
 
@@ -290,7 +290,7 @@ For details see:
 
 ---
 
-# Need Help?
+## Need Help?
 
 Useful pages:
 
@@ -301,7 +301,7 @@ Useful pages:
 
 ---
 
-# License
+## License
 
 See the repository `LICENSE` file for licensing information.
 

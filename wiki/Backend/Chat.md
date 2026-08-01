@@ -8,7 +8,7 @@ The backend remains the authoritative execution environment for every chat reque
 
 ---
 
-# Goals
+## Goals
 
 The Chat System is designed to provide:
 
@@ -24,7 +24,7 @@ The Chat System is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Provider Independence
 
@@ -46,6 +46,7 @@ Provider Interface
 ↓
 
 Ollama / OpenAI-Compatible / Future Providers
+
 ```
 
 This abstraction allows providers to be added or replaced without changing business logic.
@@ -77,7 +78,7 @@ Instead of waiting for complete model output, tokens are streamed immediately to
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Browser
@@ -113,13 +114,14 @@ Provider
 ↓
 
 Streaming Response
+
 ```
 
 Each subsystem performs a clearly defined responsibility.
 
 ---
 
-# Chat Lifecycle
+## Chat Lifecycle
 
 A typical chat request follows this sequence.
 
@@ -157,13 +159,14 @@ Streaming
 ↓
 
 Completion
+
 ```
 
 The sequence is deterministic and repeatable.
 
 ---
 
-# Chat Request
+## Chat Request
 
 A chat request contains all information required for generation.
 
@@ -180,7 +183,7 @@ The request is validated before processing begins.
 
 ---
 
-# Request Validation
+## Request Validation
 
 Validation includes:
 
@@ -194,7 +197,7 @@ Invalid requests are rejected before reaching the provider.
 
 ---
 
-# Conversation Context
+## Conversation Context
 
 The Chat Service maintains conversation state.
 
@@ -210,7 +213,7 @@ Conversation handling remains independent of the frontend.
 
 ---
 
-# Hierarchy Resolution
+## Hierarchy Resolution
 
 If a request references a hierarchy node, the backend resolves inherited context.
 
@@ -226,7 +229,7 @@ Hierarchy determines inherited configuration and prompt fragments.
 
 ---
 
-# Configuration Resolution
+## Configuration Resolution
 
 Runtime configuration is resolved before generation.
 
@@ -242,7 +245,7 @@ Configuration is resolved using the Configuration Resolver.
 
 ---
 
-# Prompt Resolution
+## Prompt Resolution
 
 The Prompt Resolver assembles the final prompt.
 
@@ -270,13 +273,14 @@ User
 ↓
 
 Request
+
 ```
 
 The resulting prompt is deterministic and provider-independent.
 
 ---
 
-# Model Resolution
+## Model Resolution
 
 The requested model is resolved through the Model Registry.
 
@@ -294,13 +298,14 @@ Provider Metadata
 ↓
 
 Provider Backend
+
 ```
 
 Services never instantiate provider implementations directly.
 
 ---
 
-# Provider Invocation
+## Provider Invocation
 
 After prompt resolution, the provider generates the response.
 
@@ -316,7 +321,7 @@ The Chat Service remains unaware of provider-specific APIs.
 
 ---
 
-# Tool Execution
+## Tool Execution
 
 If the model requests a tool, execution follows a controlled workflow.
 
@@ -346,13 +351,14 @@ Tool Result
 ↓
 
 Model
+
 ```
 
 Only registered and authorized tools may execute.
 
 ---
 
-# Streaming Responses
+## Streaming Responses
 
 Responses are streamed using Server-Sent Events.
 
@@ -388,13 +394,14 @@ usage
 ↓
 
 complete
+
 ```
 
 Streaming allows clients to render responses incrementally.
 
 ---
 
-# Supported Event Types
+## Supported Event Types
 
 Typical SSE events include:
 
@@ -415,7 +422,7 @@ Additional event types may be introduced through versioned contracts.
 
 ---
 
-# Token Streaming
+## Token Streaming
 
 Streaming begins as soon as the provider produces output.
 
@@ -433,13 +440,14 @@ SSE Event
 ↓
 
 Frontend
+
 ```
 
 The frontend never polls for chat completion.
 
 ---
 
-# Usage Reporting
+## Usage Reporting
 
 Providers may return usage metadata.
 
@@ -453,7 +461,7 @@ Usage reporting is provider-independent.
 
 ---
 
-# Conversation Persistence
+## Conversation Persistence
 
 Conversation storage is separated from generation.
 
@@ -469,7 +477,7 @@ Persistence policies remain configurable.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Errors are translated into structured API responses.
 
@@ -488,7 +496,7 @@ Internal provider details remain hidden.
 
 ---
 
-# Cancellation
+## Cancellation
 
 Clients may cancel active streaming requests.
 
@@ -508,13 +516,14 @@ Provider Stopped
 ↓
 
 Resources Released
+
 ```
 
 Cancellation prevents unnecessary computation.
 
 ---
 
-# Security
+## Security
 
 The Chat System enforces several security boundaries.
 
@@ -530,7 +539,7 @@ The frontend cannot bypass backend validation.
 
 ---
 
-# Performance
+## Performance
 
 The Chat System is optimized for:
 
@@ -545,7 +554,7 @@ Performance optimizations never compromise deterministic behavior.
 
 ---
 
-# Extensibility
+## Extensibility
 
 The Chat System supports future extensions including:
 
@@ -561,7 +570,7 @@ These capabilities integrate through registries and stable contracts rather than
 
 ---
 
-# Relationship to Other Backend Components
+## Relationship to Other Backend Components
 
 The Chat System coordinates multiple backend subsystems.
 
@@ -595,13 +604,14 @@ Provider
 ↓
 
 Streaming
+
 ```
 
 It serves as the orchestration layer for conversational AI.
 
 ---
 
-# Relationship to Architecture
+## Relationship to Architecture
 
 The Chat System depends on several architectural concepts.
 
@@ -614,7 +624,7 @@ The Chat System depends on several architectural concepts.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -646,7 +656,7 @@ The Chat System depends on several architectural concepts.
 
 ---
 
-# Summary
+## Summary
 
 The Chat System is the orchestration layer that transforms validated user requests into streamed AI responses by combining runtime configuration, hierarchical context, prompt inheritance, provider-independent model resolution, authorized tool execution, and Server-Sent Events.
 

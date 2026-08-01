@@ -8,7 +8,7 @@ Schema Versioning is a fundamental building block of the platform's long-term st
 
 ---
 
-# Goals
+## Goals
 
 The Schema Versioning architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The Schema Versioning architecture is designed to provide:
 
 ---
 
-# Core Principle
+## Core Principle
 
 Every schema exposed by the platform has an explicit version.
 
@@ -41,13 +41,14 @@ Validation
 ↓
 
 Consumer
+
 ```
 
 Schemas are never considered unversioned implementation details.
 
 ---
 
-# Why Version Schemas?
+## Why Version Schemas?
 
 Without explicit versioning, even small changes may unintentionally break consumers.
 
@@ -61,6 +62,7 @@ Changed Property
 ↓
 
 Frontend Failure
+
 ```
 
 With versioned schemas:
@@ -79,13 +81,14 @@ Compatibility Rules
 ↓
 
 Safe Evolution
+
 ```
 
 Consumers always know which contract they are processing.
 
 ---
 
-# What Is a Schema?
+## What Is a Schema?
 
 Within Kernschmied, a schema describes structured data exchanged between components.
 
@@ -104,7 +107,7 @@ Every schema represents a contract rather than an implementation.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Schema Definition
@@ -124,13 +127,14 @@ Registry
 ↓
 
 Consumer
+
 ```
 
 Versioning is integrated into every stage of the schema lifecycle.
 
 ---
 
-# Explicit Version Numbers
+## Explicit Version Numbers
 
 Every schema contains an explicit version identifier.
 
@@ -138,13 +142,14 @@ Example:
 
 ```text
 schema_version = 1
+
 ```
 
 Consumers validate compatibility before processing the schema.
 
 ---
 
-# Compatibility
+## Compatibility
 
 Schema compatibility is intentional and predictable.
 
@@ -163,7 +168,7 @@ Breaking changes require a new schema version.
 
 ---
 
-# Backward Compatibility
+## Backward Compatibility
 
 Whenever practical, newer platform versions continue supporting older schema versions.
 
@@ -179,13 +184,14 @@ Supports
 Schema v1
 
 Schema v2
+
 ```
 
 This allows gradual upgrades.
 
 ---
 
-# Forward Compatibility
+## Forward Compatibility
 
 Consumers should ignore unknown optional fields whenever possible.
 
@@ -201,13 +207,14 @@ Unknown Metadata
 ↓
 
 Continue Processing
+
 ```
 
 This enables incremental platform evolution.
 
 ---
 
-# Validation
+## Validation
 
 Every schema is validated before use.
 
@@ -224,7 +231,7 @@ Unsupported schema versions are rejected.
 
 ---
 
-# Schema Evolution
+## Schema Evolution
 
 Schemas evolve deliberately.
 
@@ -240,13 +247,14 @@ Version 2
 ↓
 
 Version 3
+
 ```
 
 Each version represents a stable contract.
 
 ---
 
-# API Versioning
+## API Versioning
 
 API payloads rely on versioned schemas.
 
@@ -264,13 +272,14 @@ Validation
 ↓
 
 Consumer
+
 ```
 
 API evolution remains independent from implementation details.
 
 ---
 
-# UI Schema Versioning
+## UI Schema Versioning
 
 The frontend validates UI schema versions before rendering.
 
@@ -288,13 +297,14 @@ Schema Renderer
 ↓
 
 Rendered Interface
+
 ```
 
 Unsupported versions produce a safe error instead of undefined behavior.
 
 ---
 
-# Configuration Schemas
+## Configuration Schemas
 
 Runtime configuration also follows explicit schema versions.
 
@@ -312,13 +322,14 @@ Validation
 ↓
 
 Configuration Service
+
 ```
 
 Configuration migrations become deterministic.
 
 ---
 
-# Manifest Versioning
+## Manifest Versioning
 
 Plugin, tool, and model manifests are versioned independently.
 
@@ -332,7 +343,7 @@ Each manifest evolves according to its own lifecycle.
 
 ---
 
-# Registry Integration
+## Registry Integration
 
 Registries validate schema compatibility before registration.
 
@@ -350,13 +361,14 @@ Registry
 ↓
 
 Available Component
+
 ```
 
 Invalid or unsupported schemas are rejected.
 
 ---
 
-# Bootstrap Integration
+## Bootstrap Integration
 
 Bootstrap exposes schema version information to clients.
 
@@ -372,13 +384,14 @@ Versions
 ↓
 
 Frontend Initialization
+
 ```
 
 The frontend immediately knows which contracts are supported.
 
 ---
 
-# Plugin Compatibility
+## Plugin Compatibility
 
 Plugins declare the schema versions they support.
 
@@ -392,13 +405,14 @@ Supported Schema Versions
 ↓
 
 Compatibility Check
+
 ```
 
 Incompatible plugins are rejected during startup.
 
 ---
 
-# Migration
+## Migration
 
 Schema changes should be introduced through controlled migrations.
 
@@ -418,13 +432,14 @@ Validated Schema
 ↓
 
 New Version
+
 ```
 
 Migrations preserve data integrity while enabling evolution.
 
 ---
 
-# Deprecation
+## Deprecation
 
 Schemas may be deprecated before removal.
 
@@ -440,13 +455,14 @@ Deprecated
 ↓
 
 Removed
+
 ```
 
 Deprecation gives consumers time to migrate.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Unsupported schema versions produce structured errors.
 
@@ -462,13 +478,14 @@ Validation Failed
 ↓
 
 Structured Error Response
+
 ```
 
 Consumers never process incompatible schemas.
 
 ---
 
-# Security
+## Security
 
 Schema Versioning contributes to platform security by ensuring that only validated contracts are accepted.
 
@@ -483,7 +500,7 @@ Unknown versions are rejected rather than interpreted heuristically.
 
 ---
 
-# Performance
+## Performance
 
 Version validation is inexpensive.
 
@@ -503,13 +520,14 @@ Validate
 ↓
 
 Continue
+
 ```
 
 The overhead is negligible compared to application logic.
 
 ---
 
-# Best Practices
+## Best Practices
 
 Recommended practices include:
 
@@ -524,7 +542,7 @@ These principles keep the ecosystem predictable.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The Schema Versioning architecture supports future capabilities including:
 
@@ -540,7 +558,7 @@ These capabilities can be added without changing the existing versioning model.
 
 ---
 
-# Relationship to Other Concepts
+## Relationship to Other Concepts
 
 Schema Versioning integrates closely with:
 
@@ -552,7 +570,7 @@ Schema Versioning integrates closely with:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Concepts
 
@@ -591,7 +609,7 @@ Schema Versioning integrates closely with:
 
 ---
 
-# Summary
+## Summary
 
 Schema Versioning ensures that every public contract within Kernschmied evolves in a controlled, predictable, and compatible manner. By assigning explicit versions to schemas, validating compatibility before use, and supporting structured migration and deprecation strategies, the platform can evolve without breaking existing integrations.
 

@@ -8,7 +8,7 @@ This architecture enables safe, provider-independent tool execution while allowi
 
 ---
 
-# Goals
+## Goals
 
 The Tool Registry is designed to provide:
 
@@ -23,7 +23,7 @@ The Tool Registry is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Explicit Registration
 
@@ -43,6 +43,7 @@ Tool Registry
 ↓
 
 Available Tool
+
 ```
 
 No executable component is discovered automatically.
@@ -80,6 +81,7 @@ Tool Registry
 ↓
 
 Python Implementation
+
 ```
 
 Application services and AI providers never depend on implementation class names.
@@ -122,13 +124,14 @@ Registry Entry
 ↓
 
 Runtime Availability
+
 ```
 
 This allows tools to be added without modifying the registry itself.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Tool Manifest
@@ -148,13 +151,14 @@ Tool Implementation
 ↓
 
 Result
+
 ```
 
 Each layer has a clearly defined responsibility.
 
 ---
 
-# Registry Responsibilities
+## Registry Responsibilities
 
 The Tool Registry is responsible for:
 
@@ -170,7 +174,7 @@ The registry does **not** execute tool logic.
 
 ---
 
-# Tool Discovery
+## Tool Discovery
 
 Tool discovery occurs during application bootstrap.
 
@@ -194,13 +198,14 @@ Create Registry Entry
 ↓
 
 Application Ready
+
 ```
 
 Only valid tools become part of the registry.
 
 ---
 
-# Tool Manifest
+## Tool Manifest
 
 Every tool provides a manifest describing its capabilities.
 
@@ -221,7 +226,7 @@ The manifest is validated before registration.
 
 ---
 
-# Registry Entries
+## Registry Entries
 
 Each registry entry represents one logical tool.
 
@@ -241,7 +246,7 @@ Registry entries remain immutable after initialization.
 
 ---
 
-# Tool Resolution
+## Tool Resolution
 
 Application services resolve tools through the registry.
 
@@ -255,13 +260,14 @@ Tool Registry
 ↓
 
 Resolved Implementation
+
 ```
 
 Unknown identifiers generate structured errors.
 
 ---
 
-# Tool Execution Pipeline
+## Tool Execution Pipeline
 
 Executing a tool follows a deterministic workflow.
 
@@ -291,13 +297,14 @@ Output Validation
 ↓
 
 Result
+
 ```
 
 Every execution follows the same sequence regardless of tool type.
 
 ---
 
-# Input Validation
+## Input Validation
 
 Every tool defines an input schema.
 
@@ -313,7 +320,7 @@ Invalid requests never reach the tool implementation.
 
 ---
 
-# Output Validation
+## Output Validation
 
 Tool results may also be validated.
 
@@ -328,7 +335,7 @@ Invalid outputs are treated as execution failures.
 
 ---
 
-# Capability Metadata
+## Capability Metadata
 
 Capabilities describe what a tool can perform.
 
@@ -346,7 +353,7 @@ Capabilities assist discovery but do not grant execution rights.
 
 ---
 
-# Authorization
+## Authorization
 
 Every execution request is authorized before invocation.
 
@@ -362,7 +369,7 @@ Authorization is enforced by the backend.
 
 ---
 
-# Configuration Integration
+## Configuration Integration
 
 Runtime configuration controls:
 
@@ -375,7 +382,7 @@ The registry exposes metadata, while configuration determines runtime availabili
 
 ---
 
-# Bootstrap Integration
+## Bootstrap Integration
 
 The registry is initialized during application startup.
 
@@ -393,13 +400,14 @@ Registry Initialization
 ↓
 
 Ready
+
 ```
 
 Startup fails if mandatory registry validation fails.
 
 ---
 
-# Revision Tracking
+## Revision Tracking
 
 The Tool Registry maintains a revision number.
 
@@ -413,13 +421,14 @@ Registry Updated
 ↓
 
 Revision 8
+
 ```
 
 Clients may use revisions to invalidate cached registry metadata.
 
 ---
 
-# Duplicate Detection
+## Duplicate Detection
 
 Logical identifiers must be unique.
 
@@ -429,13 +438,14 @@ Invalid example:
 calculator
 
 calculator
+
 ```
 
 Duplicate identifiers prevent successful registration.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Typical registry failures include:
 
@@ -449,7 +459,7 @@ Errors follow the standard backend error contract.
 
 ---
 
-# Security
+## Security
 
 Security is a primary responsibility of the Tool Registry.
 
@@ -466,7 +476,7 @@ Unknown tools are never executed.
 
 ---
 
-# Performance
+## Performance
 
 The registry is optimized for:
 
@@ -479,7 +489,7 @@ Registry lookups should have negligible runtime overhead.
 
 ---
 
-# Testing
+## Testing
 
 The Tool Registry should be verified through automated tests.
 
@@ -497,7 +507,7 @@ Testing ensures reliable registry behavior across releases.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture supports future enhancements including:
 
@@ -513,7 +523,7 @@ These features can be added without changing existing registry consumers.
 
 ---
 
-# Relationship to Other Backend Components
+## Relationship to Other Backend Components
 
 The Tool Registry coordinates tool discovery and execution metadata.
 
@@ -535,13 +545,14 @@ Tool Implementation
 ↓
 
 Result
+
 ```
 
 It acts as the authoritative source for executable backend tools.
 
 ---
 
-# Relationship to Architecture
+## Relationship to Architecture
 
 The Tool Registry integrates closely with:
 
@@ -553,7 +564,7 @@ The Tool Registry integrates closely with:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -586,7 +597,7 @@ The Tool Registry integrates closely with:
 
 ---
 
-# Summary
+## Summary
 
 The Tool Registry provides the authoritative catalog of executable tools within the Kernschmied backend by separating trusted tool metadata from execution logic and enforcing explicit registration, schema validation, authorization, and stable identifiers.
 

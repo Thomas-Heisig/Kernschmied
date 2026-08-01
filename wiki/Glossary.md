@@ -5,7 +5,7 @@
 
 ---
 
-# Introduction
+## Introduction
 
 This glossary defines the terminology used throughout the Kernschmied project.
 
@@ -13,7 +13,7 @@ The goal is to ensure that every developer, contributor, and future maintainer u
 
 ---
 
-# A
+## A
 
 ## Action
 
@@ -63,7 +63,7 @@ Typical audit entries include:
 
 ---
 
-# B
+## B
 
 ## Backend
 
@@ -106,7 +106,7 @@ Business logic belongs to the backend and should never be hardcoded into the fro
 
 ---
 
-# C
+## C
 
 ## Component
 
@@ -169,7 +169,7 @@ Contracts should remain stable whenever possible.
 
 ---
 
-# D
+## D
 
 ## Database
 
@@ -211,7 +211,7 @@ Each profile enforces different security requirements.
 
 ---
 
-# E
+## E
 
 ## Endpoint
 
@@ -219,17 +219,18 @@ A REST API route exposed by FastAPI.
 
 Examples:
 
-```
+```text
 GET /bootstrap
 
 GET /hierarchy
 
 POST /chat
+
 ```
 
 ---
 
-# F
+## F
 
 ## FastAPI
 
@@ -258,7 +259,7 @@ The frontend never implements business rules.
 
 ---
 
-# G
+## G
 
 ## Generic Component
 
@@ -278,7 +279,7 @@ Avoid:
 
 ---
 
-# H
+## H
 
 ## Hierarchy
 
@@ -302,7 +303,7 @@ Each node contains:
 
 ---
 
-# I
+## I
 
 ## Infrastructure
 
@@ -319,7 +320,7 @@ Infrastructure is intentionally separated from business logic.
 
 ---
 
-# M
+## M
 
 ## Manifest
 
@@ -346,7 +347,7 @@ The backend registry responsible for discovering and validating available AI mod
 
 ---
 
-# O
+## O
 
 ## OpenAPI
 
@@ -354,15 +355,16 @@ Automatically generated API documentation provided by FastAPI.
 
 Accessible via:
 
-```
+```text
 /docs
 
 /openapi.json
+
 ```
 
 ---
 
-# P
+## P
 
 ## Plugin
 
@@ -390,7 +392,7 @@ A mechanism that combines prompts from different hierarchy levels according to c
 
 ---
 
-# R
+## R
 
 ## Registry
 
@@ -419,7 +421,7 @@ Configuration stored in the database that can influence application behavior whi
 
 ---
 
-# S
+## S
 
 ## Schema
 
@@ -473,7 +475,7 @@ Examples:
 
 ---
 
-# T
+## T
 
 ## Tool
 
@@ -496,7 +498,7 @@ Responsible for validating and exposing available backend tools.
 
 ---
 
-# U
+## U
 
 ## UI Schema
 
@@ -512,7 +514,7 @@ Typical elements include:
 
 ---
 
-# V
+## V
 
 ## Validation
 
@@ -530,7 +532,7 @@ Breaking changes require a new schema version.
 
 ---
 
-# W
+## W
 
 ## Workspace
 
@@ -540,7 +542,7 @@ The exact implementation depends on the project configuration.
 
 ---
 
-# Related Pages
+## Related Pages
 
 - [[Home]]
 - [[Architecture]]

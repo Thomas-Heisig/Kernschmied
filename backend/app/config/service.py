@@ -45,6 +45,23 @@ class ConfigServiceError(Exception):
     """
 
 
+class ConfigValidationError(ConfigServiceError):
+    def __init__(
+        self,
+        *,
+        code: str,
+        message: str,
+    ) -> None:
+        self.code = code
+        self.message = message
+
+        super().__init__(message)
+
+
+# Alias auf Modulebene, damit andere Module den Fehler direkt importieren können
+ConfigValidationError = ConfigValidationError
+
+
 class ConfigDefinitionNotFoundError(ConfigServiceError):
     def __init__(
         self,
@@ -234,12 +251,16 @@ class ConfigService:
         session_factory: async_sessionmaker[AsyncSession],
         *,
         definitions: Sequence[ConfigDefinition] = CONFIG_DEFINITIONS,
+        model_registry: object | None = None,
     ) -> None:
         self.session_factory = session_factory
 
         self._definitions = self._build_definition_registry(
             definitions,
         )
+
+        # Optional model registry used for provider/model validation
+        self._model_registry = model_registry
 
         self._cache: dict[tuple[str, str], Any] = {}
 
@@ -791,6 +812,42 @@ class ConfigService:
             value=value,
         )
 
+        # Special validation for provider/model coherence
+        try:
+            if definition.group == "models" and definition.key in {
+                "default_model",
+                "default_provider",
+            }:
+                # Determine effective model_id and provider_id for validation
+                if definition.key == "default_model":
+                    model_id = value if isinstance(value, str) else None
+
+                    # provider from current store
+                    provider_value = self.get(
+                        "models",
+                        "default_provider",
+                    )
+                    provider_id = (
+                        provider_value if isinstance(provider_value, str) else None
+                    )
+
+                else:  # setting provider
+                    provider_id = value if isinstance(value, str) else None
+
+                    current_model = self.get(
+                        "models",
+                        "default_model",
+                    )
+
+                    model_id = current_model if isinstance(current_model, str) else None
+
+                await self._validate_default_model(
+                    model_id=model_id,
+                    provider_id=provider_id,
+                )
+        except ConfigValidationError:
+            raise
+
         actor = self._normalize_actor(
             changed_by,
         )
@@ -987,6 +1044,58 @@ class ConfigService:
                     deepcopy(value),
                 ),
             )
+
+        # Pre-validation: provider/model coherence for models.default_model/provider
+        try:
+            # helper to extract value from updates mapping
+            def lookup(group: str, key: str) -> Any:
+                return updates.get((group, key))
+
+            # If default_model is being changed, validate using updated or current provider
+            if ("models", "default_model") in updates:
+                raw_model = lookup("models", "default_model")
+
+                model_id = raw_model if isinstance(raw_model, str) else None
+
+                if ("models", "default_provider") in updates:
+                    raw_provider = lookup("models", "default_provider")
+                    provider_id = (
+                        raw_provider if isinstance(raw_provider, str) else None
+                    )
+                else:
+                    provider_value = self.get("models", "default_provider")
+                    provider_id = (
+                        provider_value if isinstance(provider_value, str) else None
+                    )
+
+                await self._validate_default_model(
+                    model_id=model_id,
+                    provider_id=provider_id,
+                )
+
+            # If provider changes alone, ensure existing model remains valid
+            if ("models", "default_provider") in updates and (
+                "models",
+                "default_model",
+            ) not in updates:
+                raw_provider = lookup("models", "default_provider")
+                new_provider_id = (
+                    raw_provider if isinstance(raw_provider, str) else None
+                )
+
+                current_model_value = self.get("models", "default_model")
+                current_model_id = (
+                    current_model_value
+                    if isinstance(current_model_value, str)
+                    else None
+                )
+
+                await self._validate_default_model(
+                    model_id=current_model_id,
+                    provider_id=new_provider_id,
+                )
+        except ConfigValidationError:
+            raise
 
         actor = self._normalize_actor(
             changed_by,
@@ -1279,6 +1388,107 @@ class ConfigService:
         await session.flush()
 
         return state
+
+    async def _validate_default_model(
+        self,
+        *,
+        model_id: str | None,
+        provider_id: str | None,
+    ) -> None:
+        """
+        Prüft, ob das gewählte Modell existiert, verfügbar ist,
+        Chat unterstützt und zum gewählten Provider gehört.
+        """
+
+        if model_id is None:
+            return
+
+        if provider_id is None:
+            raise ConfigValidationError(
+                code="PROVIDER_MISSING",
+                message=(
+                    "Es wurde kein Provider ausgewählt, aber ein Modell angegeben."
+                ),
+            )
+
+        if self._model_registry is None:
+            raise ConfigValidationError(
+                code="MODEL_REGISTRY_UNAVAILABLE",
+                message=(
+                    "Die Modellregistrierung ist nicht verfügbar; Validierung nicht möglich."
+                ),
+            )
+
+        # list entries and normalize
+        try:
+            entries = await self._model_registry.list_entries()
+        except Exception as exc:
+            raise ConfigValidationError(
+                code="MODEL_REGISTRY_UNAVAILABLE",
+                message=("Die Modellregistrierung konnte nicht gelesen werden."),
+            ) from exc
+
+        selected = None
+
+        for entry in entries:
+            if getattr(entry, "model_id", None) == model_id:
+                selected = entry
+                break
+
+        if selected is None:
+            raise ConfigValidationError(
+                code="MODEL_NOT_REGISTERED",
+                message=(f"Das Modell '{model_id}' ist nicht registriert."),
+            )
+
+        entry_provider = getattr(selected, "provider_type", None)
+
+        if (
+            entry_provider is None
+            or entry_provider.casefold() != provider_id.casefold()
+        ):
+            raise ConfigValidationError(
+                code="MODEL_PROVIDER_MISMATCH",
+                message=(
+                    f"Das Modell '{model_id}' gehört zum Provider '{entry_provider}' und nicht zu '{provider_id}'."
+                ),
+            )
+
+        enabled = getattr(selected, "enabled", True)
+        # selectable/available not part of registry entry; check manifest if present
+        manifest = getattr(selected, "manifest", None)
+
+        selectable = True
+        available = True
+
+        if manifest is not None:
+            selectable = getattr(manifest, "selectable", True)
+            available = getattr(manifest, "is_enabled", True)
+
+        if not enabled or not available or not selectable:
+            raise ConfigValidationError(
+                code="MODEL_NOT_SELECTABLE",
+                message=(f"Das Modell '{model_id}' ist derzeit nicht auswählbar."),
+            )
+
+        # capabilities: manifest may expose supports() or capabilities attribute
+        supports_chat = False
+
+        if manifest is not None:
+            try:
+                supports_chat = bool(manifest.supports("chat"))
+            except Exception:
+                supports_chat = bool(
+                    getattr(manifest, "capabilities", {}).get("chat", False)
+                    if getattr(manifest, "capabilities", None) is not None
+                    else False
+                )
+
+        if not supports_chat:
+            raise ConfigValidationError(
+                code="MODEL_NO_CHAT_CAPABILITY",
+                message=(f"Das Modell '{model_id}' unterstützt keine Chat-Funktion."),
+            )
 
     async def _get_config_row(
         self,

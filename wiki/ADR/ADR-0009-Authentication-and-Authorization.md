@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is designed to operate in multiple deployment environments with significantly different security requirements.
 
@@ -24,7 +24,7 @@ The platform therefore separates **authentication** (who is the user?) from **au
 
 ---
 
-# Problem
+## Problem
 
 Many applications tightly couple authentication and authorization.
 
@@ -41,7 +41,7 @@ Kernschmied must support multiple authentication mechanisms without changing bus
 
 ---
 
-# Decision
+## Decision
 
 Authentication and authorization are separated into independent architectural layers.
 
@@ -53,7 +53,7 @@ Business services never authenticate users directly.
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > Authentication identifies.
 >
@@ -61,7 +61,7 @@ Business services never authenticate users directly.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Client
@@ -89,11 +89,12 @@ Authorization Service
         ▼
 
 Business Service
+
 ```
 
 ---
 
-# Design Goals
+## Design Goals
 
 The security architecture should provide:
 
@@ -107,7 +108,7 @@ The security architecture should provide:
 
 ---
 
-# Authentication
+## Authentication
 
 Authentication establishes the caller identity.
 
@@ -125,7 +126,7 @@ Authentication itself never grants permissions.
 
 ---
 
-# Authorization
+## Authorization
 
 Authorization determines whether an authenticated user may perform an operation.
 
@@ -141,7 +142,7 @@ Authorization evaluates:
 
 ---
 
-# Security Profiles
+## Security Profiles
 
 Authentication behavior depends on the deployment profile.
 
@@ -157,7 +158,7 @@ Each profile defines minimum security requirements.
 
 ---
 
-# Development Profile
+## Development Profile
 
 The development profile prioritizes developer productivity.
 
@@ -174,13 +175,14 @@ Example:
 
 ```text
 local-user
+
 ```
 
 Development mode must never be enabled unintentionally in production.
 
 ---
 
-# Intranet Profile
+## Intranet Profile
 
 The intranet profile assumes a trusted internal network.
 
@@ -198,7 +200,7 @@ Audit logging is enabled.
 
 ---
 
-# Internet Profile
+## Internet Profile
 
 Internet deployments require the highest security level.
 
@@ -216,7 +218,7 @@ Authentication is mandatory.
 
 ---
 
-# Authentication Providers
+## Authentication Providers
 
 Authentication mechanisms should remain replaceable.
 
@@ -234,7 +236,7 @@ Business services remain independent of the chosen provider.
 
 ---
 
-# Authentication Middleware
+## Authentication Middleware
 
 Authentication is performed before request processing.
 
@@ -258,11 +260,12 @@ Authorization
 ↓
 
 Endpoint
+
 ```
 
 ---
 
-# Authentication Context
+## Authentication Context
 
 The middleware creates an Authentication Context.
 
@@ -279,7 +282,7 @@ The context remains immutable during request processing.
 
 ---
 
-# User Context
+## User Context
 
 Business services receive a strongly typed user context.
 
@@ -296,7 +299,7 @@ Business services should never inspect JWTs or authentication tokens directly.
 
 ---
 
-# Permission Model
+## Permission Model
 
 Permissions are explicit.
 
@@ -314,7 +317,7 @@ Permissions are evaluated centrally.
 
 ---
 
-# Roles
+## Roles
 
 Roles group permissions.
 
@@ -334,6 +337,7 @@ Tool Management
 ↓
 
 User Management
+
 ```
 
 Another example:
@@ -352,13 +356,14 @@ Models
 ↓
 
 Own Configuration
+
 ```
 
 Roles remain configurable.
 
 ---
 
-# Authorization Flow
+## Authorization Flow
 
 ```text
 Request
@@ -382,11 +387,12 @@ Yes → Execute
 ↓
 
 No → Forbidden
+
 ```
 
 ---
 
-# Hierarchical Authorization
+## Hierarchical Authorization
 
 Permissions may depend on hierarchy.
 
@@ -401,7 +407,7 @@ A user may have permission within one project but not another.
 
 ---
 
-# Configuration Authorization
+## Configuration Authorization
 
 Administrative configuration requires dedicated permissions.
 
@@ -416,7 +422,7 @@ Configuration endpoints should never rely solely on client-side checks.
 
 ---
 
-# Tool Authorization
+## Tool Authorization
 
 Every tool execution is authorized individually.
 
@@ -432,7 +438,7 @@ Tool permissions remain independent from model permissions.
 
 ---
 
-# Model Authorization
+## Model Authorization
 
 Model usage may also require permissions.
 
@@ -447,7 +453,7 @@ The Model Registry exposes only models available to the current user.
 
 ---
 
-# API Authorization
+## API Authorization
 
 Authorization is enforced inside backend services.
 
@@ -457,7 +463,7 @@ Client-side authorization is never considered a security mechanism.
 
 ---
 
-# Deny by Default
+## Deny by Default
 
 Unknown users, unknown roles, or unknown permissions are denied.
 
@@ -469,13 +475,14 @@ Permission Missing
 ↓
 
 Access Denied
+
 ```
 
 Explicit permission grants are always required.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Security-sensitive operations are logged.
 
@@ -498,7 +505,7 @@ Audit records should contain:
 
 ---
 
-# Session Management
+## Session Management
 
 Authenticated sessions should provide:
 
@@ -511,7 +518,7 @@ Session management depends on the authentication provider but exposes a consiste
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 The security architecture enforces:
 
@@ -526,7 +533,7 @@ Authentication tokens should never be trusted without validation.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Authentication should occur once per request.
 
@@ -536,7 +543,7 @@ Permission evaluation should remain deterministic and inexpensive.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 The architecture enables:
 
@@ -550,7 +557,7 @@ Operations teams can adapt authentication mechanisms without modifying business 
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -570,7 +577,7 @@ Operations teams can adapt authentication mechanisms without modifying business 
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Authentication Inside Business Services
 
@@ -598,7 +605,7 @@ Rejected because enterprise deployments require configurable permission models.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -617,7 +624,7 @@ Mitigation strategies include:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -634,7 +641,7 @@ Authentication providers should be replaceable without affecting business servic
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0004-Security-Profiles]]
 - [[ADR-0005-Versioned-Contracts]]
@@ -644,7 +651,7 @@ Authentication providers should be replaceable without affecting business servic
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -672,7 +679,7 @@ Authentication providers should be replaceable without affecting business servic
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a security architecture that **strictly separates authentication from authorization**.
 

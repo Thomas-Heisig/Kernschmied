@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 The **Schema Renderer** is one of the core building blocks of the Kernschmied frontend.
 
@@ -18,7 +18,7 @@ It is responsible for interpreting schemas, validating them, resolving component
 
 ---
 
-# Purpose
+## Purpose
 
 The Schema Renderer enables the frontend to evolve without requiring business-specific code changes.
 
@@ -35,7 +35,7 @@ Its primary responsibilities are:
 
 ---
 
-# Design Philosophy
+## Design Philosophy
 
 Traditional applications often follow this pattern:
 
@@ -53,6 +53,7 @@ Business Logic
 ↓
 
 UI
+
 ```
 
 This approach quickly leads to hundreds of custom components.
@@ -81,6 +82,7 @@ Generic Components
 ↓
 
 Browser
+
 ```
 
 The frontend never knows what a "Project", "Invoice" or "Customer" is.
@@ -89,7 +91,7 @@ It only understands schemas.
 
 ---
 
-# Renderer Responsibilities
+## Renderer Responsibilities
 
 The renderer is responsible for:
 
@@ -112,7 +114,7 @@ The renderer is **not** responsible for:
 
 ---
 
-# Rendering Pipeline
+## Rendering Pipeline
 
 ```text
 REST API
@@ -148,13 +150,14 @@ React Components
 ↓
 
 Rendered UI
+
 ```
 
 Every stage validates its input before proceeding.
 
 ---
 
-# Rendering Flow
+## Rendering Flow
 
 ```text
 Load Schema
@@ -186,11 +189,12 @@ Attach Actions
 ↓
 
 Finished Page
+
 ```
 
 ---
 
-# Schema Validation
+## Schema Validation
 
 Before rendering, every schema is validated.
 
@@ -207,7 +211,7 @@ Invalid schemas are rejected before rendering begins.
 
 ---
 
-# Version Compatibility
+## Version Compatibility
 
 Every schema contains a version.
 
@@ -231,7 +235,7 @@ Unsupported schemas produce a clear diagnostic page.
 
 ---
 
-# Layout Resolution
+## Layout Resolution
 
 Layouts determine the overall page structure.
 
@@ -255,11 +259,12 @@ Layout Registry
 ↓
 
 React Layout Component
+
 ```
 
 ---
 
-# Section Rendering
+## Section Rendering
 
 Pages are divided into sections.
 
@@ -273,6 +278,7 @@ Permissions
 Advanced
 
 Diagnostics
+
 ```
 
 Sections improve organization and readability.
@@ -281,7 +287,7 @@ Each section is rendered recursively.
 
 ---
 
-# Component Resolution
+## Component Resolution
 
 Components are never instantiated directly.
 
@@ -301,6 +307,7 @@ React Component
 ↓
 
 Rendering
+
 ```
 
 Example:
@@ -311,11 +318,12 @@ Example:
 ↓
 
 TextField
+
 ```
 
 ---
 
-# Recursive Rendering
+## Recursive Rendering
 
 Schemas may contain nested structures.
 
@@ -331,13 +339,14 @@ Tabs
         └── Form
 
             └── Text Field
+
 ```
 
 The renderer supports arbitrary nesting.
 
 ---
 
-# Property Mapping
+## Property Mapping
 
 The renderer maps schema properties to React props.
 
@@ -362,7 +371,7 @@ The mapping layer keeps schemas independent from React implementation details.
 
 ---
 
-# Dynamic Rendering
+## Dynamic Rendering
 
 The renderer supports runtime-generated pages.
 
@@ -378,7 +387,7 @@ No frontend rebuild is required.
 
 ---
 
-# Action Resolution
+## Action Resolution
 
 Buttons and commands are described in the schema.
 
@@ -406,11 +415,12 @@ Handler
 ↓
 
 Backend
+
 ```
 
 ---
 
-# Unknown Components
+## Unknown Components
 
 Unknown component types never crash the application.
 
@@ -424,13 +434,14 @@ Example:
 │                               │
 │ type: ai-super-widget         │
 └───────────────────────────────┘
+
 ```
 
 This greatly simplifies debugging.
 
 ---
 
-# Unknown Layouts
+## Unknown Layouts
 
 If a layout cannot be resolved:
 
@@ -444,13 +455,14 @@ Diagnostic Component
 ↓
 
 Rendering Continues
+
 ```
 
 The remainder of the page remains usable whenever possible.
 
 ---
 
-# Error Isolation
+## Error Isolation
 
 Rendering failures should remain local.
 
@@ -466,13 +478,14 @@ Rendering Error
 ↓
 
 Fallback Component
+
 ```
 
 Other components continue rendering.
 
 ---
 
-# Performance
+## Performance
 
 The renderer should:
 
@@ -486,7 +499,7 @@ Rendering performance should remain predictable even for large schemas.
 
 ---
 
-# Component Registry Integration
+## Component Registry Integration
 
 The renderer communicates with the Component Registry.
 
@@ -504,13 +517,14 @@ Registered Component
 ↓
 
 React Element
+
 ```
 
 This makes new component types extensible without modifying the renderer.
 
 ---
 
-# Action Registry Integration
+## Action Registry Integration
 
 Actions follow the same architecture.
 
@@ -528,11 +542,12 @@ Action Handler
 ↓
 
 Backend Request
+
 ```
 
 ---
 
-# Security
+## Security
 
 The Schema Renderer must never:
 
@@ -546,7 +561,7 @@ Schemas describe data—not executable code.
 
 ---
 
-# Accessibility
+## Accessibility
 
 All rendered components should support:
 
@@ -560,7 +575,7 @@ Accessibility is implemented by the generic components, not by the schemas.
 
 ---
 
-# Testing
+## Testing
 
 Typical renderer tests include:
 
@@ -577,7 +592,7 @@ Snapshot tests may be used for stable rendering contracts.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The renderer is designed to support future capabilities such as:
 
@@ -594,7 +609,7 @@ These extensions should not require changes to the renderer's public contract.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -629,7 +644,7 @@ These extensions should not require changes to the renderer's public contract.
 
 ---
 
-# Summary
+## Summary
 
 The Schema Renderer is the central rendering engine of the Kernschmied frontend.
 

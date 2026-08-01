@@ -8,7 +8,7 @@ The Intranet profile provides a balance between usability, performance, and ente
 
 ---
 
-# Goals
+## Goals
 
 The Intranet deployment profile is designed to provide:
 
@@ -23,7 +23,7 @@ The Intranet deployment profile is designed to provide:
 
 ---
 
-# Design Philosophy
+## Design Philosophy
 
 Deployment profiles influence operational policies—not application architecture.
 
@@ -35,13 +35,14 @@ Deployment Profile
         │
         ▼
 Intranet Policies
+
 ```
 
 Business logic, runtime configuration, APIs, registries, schemas, and contracts remain identical across all deployment profiles.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Corporate Network
@@ -75,13 +76,14 @@ Database
         ▼
 
 Model Providers
+
 ```
 
 Only authenticated internal users may access the platform.
 
 ---
 
-# Typical Environment
+## Typical Environment
 
 A typical intranet deployment consists of:
 
@@ -98,7 +100,7 @@ The exact infrastructure depends on organizational requirements.
 
 ---
 
-# Trusted Network
+## Trusted Network
 
 The Intranet profile assumes that the application is deployed inside an organization's controlled network.
 
@@ -114,7 +116,7 @@ Network trust reduces exposure but does not replace application security.
 
 ---
 
-# Secure Communication
+## Secure Communication
 
 Internal communication should use encrypted transport whenever practical.
 
@@ -132,13 +134,14 @@ Reverse Proxy
 ↓
 
 Backend
+
 ```
 
 Even within trusted networks, HTTPS is recommended to protect credentials and session data.
 
 ---
 
-# Reverse Proxy
+## Reverse Proxy
 
 A reverse proxy typically provides:
 
@@ -153,7 +156,7 @@ The backend remains responsible for business logic.
 
 ---
 
-# Authentication
+## Authentication
 
 Unlike the Development profile, the Intranet profile always requires authenticated users.
 
@@ -170,7 +173,7 @@ Authentication integrates with existing enterprise infrastructure whenever possi
 
 ---
 
-# Authorization
+## Authorization
 
 Authentication does not imply authorization.
 
@@ -186,13 +189,14 @@ Authorization
 ↓
 
 Business Operation
+
 ```
 
 Permissions remain fully backend-controlled.
 
 ---
 
-# Session Management
+## Session Management
 
 Authenticated sessions should be protected through:
 
@@ -206,7 +210,7 @@ Session policies may be less restrictive than Internet deployments while still p
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Business behavior continues to use Runtime Configuration.
 
@@ -223,7 +227,7 @@ Changes become effective without restarting the application.
 
 ---
 
-# Environment Variables
+## Environment Variables
 
 Environment variables contain infrastructure settings only.
 
@@ -239,7 +243,7 @@ Business configuration remains stored in the database.
 
 ---
 
-# Database
+## Database
 
 PostgreSQL is the preferred database for production intranet deployments.
 
@@ -259,13 +263,14 @@ Hierarchy
 Audit
 
 Application Data
+
 ```
 
 The architecture remains database-independent.
 
 ---
 
-# AI Providers
+## AI Providers
 
 Organizations may choose different provider strategies.
 
@@ -280,7 +285,7 @@ The Model Registry abstracts provider differences.
 
 ---
 
-# API Security
+## API Security
 
 Every API request is validated before execution.
 
@@ -296,7 +301,7 @@ Business services never receive invalid requests.
 
 ---
 
-# Streaming
+## Streaming
 
 Streaming follows the same authorization model as REST APIs.
 
@@ -314,13 +319,14 @@ SSE Stream
 ↓
 
 Client
+
 ```
 
 Streaming endpoints never bypass security policies.
 
 ---
 
-# CORS
+## CORS
 
 CORS policies should allow only trusted organizational origins.
 
@@ -336,13 +342,14 @@ Allowed Origin
 ↓
 
 API Access
+
 ```
 
 Unknown origins should be rejected.
 
 ---
 
-# Logging
+## Logging
 
 Operational logging typically includes:
 
@@ -357,7 +364,7 @@ Logs support operational monitoring and troubleshooting.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Configuration and administrative operations are fully audited.
 
@@ -374,7 +381,7 @@ Auditability is a core requirement of the Intranet profile.
 
 ---
 
-# Configuration Revisions
+## Configuration Revisions
 
 Configuration updates increment revision numbers.
 
@@ -392,13 +399,14 @@ Cache Invalidated
 ↓
 
 Updated Runtime Behavior
+
 ```
 
 Multiple backend instances remain synchronized through revision tracking.
 
 ---
 
-# Plugin Security
+## Plugin Security
 
 Plugins follow the same validation pipeline as the application core.
 
@@ -413,7 +421,7 @@ Plugins cannot bypass authorization or modify core services.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Structured error responses remain enabled.
 
@@ -427,13 +435,14 @@ message
 details
 
 request_id
+
 ```
 
 Operational diagnostics may be richer than in Internet deployments while still avoiding unnecessary exposure of internal implementation details.
 
 ---
 
-# Monitoring
+## Monitoring
 
 Typical monitoring includes:
 
@@ -448,7 +457,7 @@ Monitoring supports operational stability and capacity planning.
 
 ---
 
-# Backup Strategy
+## Backup Strategy
 
 Organizations should regularly back up:
 
@@ -462,7 +471,7 @@ Backup procedures should be tested periodically.
 
 ---
 
-# High Availability
+## High Availability
 
 Larger organizations may deploy multiple backend instances.
 
@@ -482,13 +491,14 @@ Backend   Backend
         ▼
 
  PostgreSQL
+
 ```
 
 Shared runtime configuration ensures consistent behavior across all instances.
 
 ---
 
-# Security Principles
+## Security Principles
 
 The Intranet profile enforces several mandatory principles.
 
@@ -505,7 +515,7 @@ These principles apply regardless of network trust.
 
 ---
 
-# Differences from Other Profiles
+## Differences from Other Profiles
 
 | Feature        | Development | Intranet      | Internet |
 | -------------- | ----------- | ------------- | -------- |
@@ -521,7 +531,7 @@ The application architecture remains identical across all profiles.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The Intranet deployment profile supports future enhancements including:
 
@@ -537,7 +547,7 @@ These capabilities can be added without changing the application's architecture.
 
 ---
 
-# Relationship to Other Deployment Profiles
+## Relationship to Other Deployment Profiles
 
 The Intranet profile shares the same application architecture with:
 
@@ -548,7 +558,7 @@ Only operational policies and security requirements differ.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Deployment
 
@@ -586,7 +596,7 @@ Only operational policies and security requirements differ.
 
 ---
 
-# Summary
+## Summary
 
 The Intranet deployment profile provides a secure and manageable environment for operating Kernschmied inside an organization's trusted network. It combines enterprise authentication, server-side authorization, runtime configuration, audit logging, schema validation, and centralized administration while maintaining the same APIs, contracts, registries, and architecture used in every other deployment profile.
 

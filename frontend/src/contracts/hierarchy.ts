@@ -254,7 +254,10 @@ export function isOptionalNullableRecord(
  * Typ für den Anlegenvorgang eines neuen Knotens, wie er vom Frontend an das
  * Backend gesendet wird. ID und Kinder werden serverseitig erzeugt.
  */
-export type HierarchyNodeCreate = Omit<HierarchyNode, "id" | "children" | "revision"> & {
+export type HierarchyNodeCreate = Omit<
+  HierarchyNode,
+  "id" | "children" | "revision"
+> & {
   parent_id?: HierarchyNodeId | null;
 };
 

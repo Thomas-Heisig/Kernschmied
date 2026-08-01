@@ -16,7 +16,7 @@ The Chat API is intentionally provider-independent. Clients never communicate di
 
 ---
 
-# Goals
+## Goals
 
 The Chat API is designed to provide:
 
@@ -31,7 +31,7 @@ The Chat API is designed to provide:
 
 ---
 
-# Endpoints
+## Endpoints
 
 ## Streaming Chat
 
@@ -45,6 +45,7 @@ Returns:
 
 ```text
 Content-Type: text/event-stream
+
 ```
 
 ---
@@ -65,7 +66,7 @@ DELETE /api/v1/chat/{id}
 
 ---
 
-# Request Lifecycle
+## Request Lifecycle
 
 ```text
 Frontend
@@ -105,11 +106,12 @@ Generation
 ↓
 
 SSE Stream
+
 ```
 
 ---
 
-# Request Body
+## Request Body
 
 Example:
 
@@ -128,7 +130,7 @@ Example:
 
 ---
 
-# Request Fields
+## Request Fields
 
 | Field             | Required | Description        |
 | ----------------- | -------- | ------------------ |
@@ -141,7 +143,7 @@ Example:
 
 ---
 
-# Message
+## Message
 
 Contains the user's input.
 
@@ -157,7 +159,7 @@ The message must be validated before execution.
 
 ---
 
-# Conversation ID
+## Conversation ID
 
 If supplied, the request belongs to an existing chat.
 
@@ -173,7 +175,7 @@ Example:
 
 ---
 
-# Hierarchy Node
+## Hierarchy Node
 
 Determines configuration inheritance.
 
@@ -194,7 +196,7 @@ The hierarchy resolver determines:
 
 ---
 
-# Model ID
+## Model ID
 
 Explicitly requests a model.
 
@@ -210,7 +212,7 @@ If omitted, the default model is resolved through the Configuration Resolver.
 
 ---
 
-# Tool IDs
+## Tool IDs
 
 Limits available tools.
 
@@ -230,7 +232,7 @@ Requested tools are filtered against:
 
 ---
 
-# Metadata
+## Metadata
 
 Metadata contains additional request information.
 
@@ -247,7 +249,7 @@ Metadata must never override protected configuration.
 
 ---
 
-# Server-Sent Events
+## Server-Sent Events
 
 The response is streamed.
 
@@ -255,13 +257,14 @@ The response is streamed.
 Content-Type:
 
 text/event-stream
+
 ```
 
 Clients process events incrementally.
 
 ---
 
-# Event Sequence
+## Event Sequence
 
 Typical execution:
 
@@ -295,11 +298,12 @@ usage
 ↓
 
 complete
+
 ```
 
 ---
 
-# Event Types
+## Event Types
 
 Supported events:
 
@@ -318,7 +322,7 @@ Supported events:
 
 ---
 
-# Start Event
+## Start Event
 
 Example:
 
@@ -329,11 +333,12 @@ data:
 {
     "conversation_id":"chat-42"
 }
+
 ```
 
 ---
 
-# Token Event
+## Token Event
 
 Example:
 
@@ -344,13 +349,14 @@ data:
 {
     "content":"Hello"
 }
+
 ```
 
 Multiple token events may be emitted.
 
 ---
 
-# Message Event
+## Message Event
 
 Represents the final generated message.
 
@@ -358,13 +364,14 @@ Example:
 
 ```text
 event:message
+
 ```
 
 This event is optional if token streaming is sufficient.
 
 ---
 
-# Reasoning Event
+## Reasoning Event
 
 Some providers expose reasoning information.
 
@@ -372,13 +379,14 @@ Example:
 
 ```text
 event:reasoning
+
 ```
 
 Clients should display reasoning only when explicitly enabled.
 
 ---
 
-# Tool Call Event
+## Tool Call Event
 
 Example:
 
@@ -389,13 +397,14 @@ data:
 {
     "tool":"calculator"
 }
+
 ```
 
 This informs the frontend that a tool is being executed.
 
 ---
 
-# Tool Result Event
+## Tool Result Event
 
 Example:
 
@@ -406,11 +415,12 @@ data:
 {
     "success":true
 }
+
 ```
 
 ---
 
-# Usage Event
+## Usage Event
 
 Example:
 
@@ -422,11 +432,12 @@ data:
     "prompt_tokens":120,
     "completion_tokens":84
 }
+
 ```
 
 ---
 
-# Complete Event
+## Complete Event
 
 Final event.
 
@@ -434,13 +445,14 @@ Example:
 
 ```text
 event:complete
+
 ```
 
 No additional events follow.
 
 ---
 
-# Error Event
+## Error Event
 
 Example:
 
@@ -452,13 +464,14 @@ data:
     "code":"provider_timeout",
     "message":"Generation timed out."
 }
+
 ```
 
 Clients should terminate the stream gracefully.
 
 ---
 
-# Heartbeat
+## Heartbeat
 
 Long-running generations may emit heartbeat events.
 
@@ -466,13 +479,14 @@ Example:
 
 ```text
 event:heartbeat
+
 ```
 
 This prevents idle network timeouts.
 
 ---
 
-# Authentication
+## Authentication
 
 Authentication depends upon the deployment profile.
 
@@ -490,7 +504,7 @@ Required.
 
 ---
 
-# Authorization
+## Authorization
 
 Authorization verifies:
 
@@ -503,7 +517,7 @@ Unauthorized requests are rejected before generation begins.
 
 ---
 
-# Configuration Resolution
+## Configuration Resolution
 
 Before generation starts:
 
@@ -521,13 +535,14 @@ Effective Configuration
 ↓
 
 Chat Service
+
 ```
 
 The model receives only the effective configuration.
 
 ---
 
-# Model Resolution
+## Model Resolution
 
 The Model Registry resolves:
 
@@ -540,7 +555,7 @@ Business services never instantiate providers directly.
 
 ---
 
-# Tool Execution
+## Tool Execution
 
 Tool calls follow the centralized Tool Architecture.
 
@@ -568,11 +583,12 @@ Execution
 ↓
 
 Result
+
 ```
 
 ---
 
-# Error Responses
+## Error Responses
 
 Non-streaming failures return standard API errors.
 
@@ -591,7 +607,7 @@ Streaming failures use SSE error events.
 
 ---
 
-# Validation
+## Validation
 
 Requests are validated using Pydantic.
 
@@ -607,7 +623,7 @@ Invalid requests never reach providers.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The Chat API supports:
 
@@ -621,7 +637,7 @@ Long-running responses do not block the server.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 The Chat API never:
 
@@ -635,7 +651,7 @@ All provider interactions remain backend controlled.
 
 ---
 
-# Related Endpoints
+## Related Endpoints
 
 ```http
 GET /api/v1/bootstrap
@@ -651,7 +667,7 @@ GET /api/v1/config
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 - [[Architecture]]
 - [[Streaming]]
@@ -666,7 +682,7 @@ GET /api/v1/config
 
 ---
 
-# Summary
+## Summary
 
 The Chat API is the primary interaction endpoint of Kernschmied.
 

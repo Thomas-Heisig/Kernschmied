@@ -8,7 +8,7 @@ The Release Process applies equally to the backend, frontend, plugins, documenta
 
 ---
 
-# Goals
+## Goals
 
 The Release Process is designed to provide:
 
@@ -23,7 +23,7 @@ The Release Process is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 The release process follows several core principles.
 
@@ -38,7 +38,7 @@ Releases should never depend on undocumented manual steps.
 
 ---
 
-# Release Lifecycle
+## Release Lifecycle
 
 A release follows a deterministic lifecycle.
 
@@ -72,13 +72,14 @@ Deployment
 ↓
 
 Maintenance
+
 ```
 
 Each stage has clearly defined responsibilities.
 
 ---
 
-# High-Level Workflow
+## High-Level Workflow
 
 ```text
 Source Code
@@ -106,13 +107,14 @@ Version Tag
 ↓
 
 Published Release
+
 ```
 
 Every released artifact originates from a validated source revision.
 
 ---
 
-# Versioning
+## Versioning
 
 Every release receives an explicit version.
 
@@ -128,13 +130,14 @@ Example:
 ↓
 
 1.0.0
+
 ```
 
 Version numbers communicate platform evolution and compatibility expectations.
 
 ---
 
-# Semantic Versioning
+## Semantic Versioning
 
 Kernschmied follows Semantic Versioning.
 
@@ -152,6 +155,7 @@ Examples:
 ↓
 
 1.2.1
+
 ```
 
 Compatible bug fix.
@@ -162,6 +166,7 @@ Compatible bug fix.
 ↓
 
 1.3.0
+
 ```
 
 New functionality.
@@ -172,13 +177,14 @@ New functionality.
 ↓
 
 2.0.0
+
 ```
 
 Breaking architectural evolution.
 
 ---
 
-# Release Planning
+## Release Planning
 
 Before implementation begins, a release should define:
 
@@ -194,7 +200,7 @@ Planning reduces release risk.
 
 ---
 
-# Feature Development
+## Feature Development
 
 Development takes place on feature branches.
 
@@ -218,13 +224,14 @@ Review
 ↓
 
 Merge
+
 ```
 
 The main branch should always remain releasable.
 
 ---
 
-# Code Review
+## Code Review
 
 Every significant change should undergo peer review.
 
@@ -242,7 +249,7 @@ Reviews improve long-term code quality.
 
 ---
 
-# Automated Validation
+## Automated Validation
 
 Every release candidate should pass automated validation.
 
@@ -260,7 +267,7 @@ Failures block the release process.
 
 ---
 
-# Testing
+## Testing
 
 Testing should verify the complete platform.
 
@@ -278,7 +285,7 @@ All critical functionality should be validated before release.
 
 ---
 
-# Contract Validation
+## Contract Validation
 
 Public contracts are verified before publication.
 
@@ -294,7 +301,7 @@ Unexpected breaking changes should be detected before deployment.
 
 ---
 
-# Documentation
+## Documentation
 
 Documentation is part of every release.
 
@@ -311,7 +318,7 @@ Documentation should reflect the released platform rather than future plans.
 
 ---
 
-# Release Candidate
+## Release Candidate
 
 A Release Candidate (RC) represents a version believed to be production-ready.
 
@@ -331,13 +338,14 @@ Release Candidate
 ↓
 
 Final Verification
+
 ```
 
 Only critical issues should delay a Release Candidate.
 
 ---
 
-# Final Release
+## Final Release
 
 Once validation is complete, the release becomes official.
 
@@ -355,13 +363,14 @@ Version Tag
 ↓
 
 Published Release
+
 ```
 
 Published releases should remain immutable.
 
 ---
 
-# Build Reproducibility
+## Build Reproducibility
 
 A release should be reproducible from version-controlled sources.
 
@@ -375,13 +384,14 @@ Build
 ↓
 
 Identical Artifacts
+
 ```
 
 Builds should not depend on undocumented local modifications.
 
 ---
 
-# Deployment Readiness
+## Deployment Readiness
 
 Before deployment, verify:
 
@@ -396,7 +406,7 @@ Deployment should never introduce unexpected runtime changes.
 
 ---
 
-# Database Migrations
+## Database Migrations
 
 Schema changes requiring persistence updates should use version-controlled migrations.
 
@@ -416,13 +426,14 @@ Deployment
 ↓
 
 Updated Database
+
 ```
 
 Database changes should be backward-compatible whenever practical.
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Runtime configuration is not part of the application build.
 
@@ -438,13 +449,14 @@ Runtime Configuration
 ↓
 
 Operational Platform
+
 ```
 
 Configuration changes should be versioned and audited independently.
 
 ---
 
-# Plugin Compatibility
+## Plugin Compatibility
 
 Plugins should be validated against the target platform version.
 
@@ -459,7 +471,7 @@ Incompatible plugins should be identified before deployment.
 
 ---
 
-# Security Review
+## Security Review
 
 Before release, security-sensitive changes should be reviewed.
 
@@ -476,7 +488,7 @@ Security validation is part of the release process.
 
 ---
 
-# Dependency Management
+## Dependency Management
 
 Dependencies should be reviewed before every release.
 
@@ -492,7 +504,7 @@ Outdated or vulnerable dependencies should be addressed before publication whene
 
 ---
 
-# Release Notes
+## Release Notes
 
 Each release should include release notes describing:
 
@@ -507,7 +519,7 @@ Release notes provide a clear overview of platform evolution.
 
 ---
 
-# Rollback Strategy
+## Rollback Strategy
 
 Every deployment should have a rollback plan.
 
@@ -523,13 +535,14 @@ Rollback
 ↓
 
 Previous Stable Release
+
 ```
 
 Rollback procedures should be documented and tested.
 
 ---
 
-# Long-Term Support
+## Long-Term Support
 
 Stable releases may receive maintenance updates.
 
@@ -543,7 +556,7 @@ New features should generally be introduced in new minor or major releases.
 
 ---
 
-# Traceability
+## Traceability
 
 Every release should be traceable to:
 
@@ -558,7 +571,7 @@ Traceability simplifies maintenance and auditing.
 
 ---
 
-# Common Release Checklist
+## Common Release Checklist
 
 Before publishing a release, verify:
 
@@ -575,7 +588,7 @@ Before publishing a release, verify:
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 The Release Process supports future enhancements including:
 
@@ -591,7 +604,7 @@ These enhancements strengthen automation while preserving the underlying release
 
 ---
 
-# Relationship to Other Development Processes
+## Relationship to Other Development Processes
 
 The Release Process works together with:
 
@@ -604,7 +617,7 @@ Each process contributes to overall software quality.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Development
 
@@ -641,7 +654,7 @@ Each process contributes to overall software quality.
 
 ---
 
-# Summary
+## Summary
 
 The Release Process defines a structured and repeatable workflow for delivering new versions of Kernschmied. By combining semantic versioning, automated validation, comprehensive testing, documentation, contract verification, migration planning, and reproducible builds, every release represents a stable and traceable platform state.
 

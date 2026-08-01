@@ -8,7 +8,7 @@ Unlike many traditional applications, Kernschmied does **not** embed deployment 
 
 ---
 
-# Goals
+## Goals
 
 The Bootstrap Lifecycle is designed to provide:
 
@@ -23,7 +23,7 @@ The Bootstrap Lifecycle is designed to provide:
 
 ---
 
-# Architectural Principles
+## Architectural Principles
 
 The bootstrap process follows several core principles.
 
@@ -69,7 +69,7 @@ Changes are:
 
 ---
 
-# High-Level Startup Sequence
+## High-Level Startup Sequence
 
 ```text
 Application Start
@@ -125,11 +125,12 @@ Load Additional Resources
         ▼
 
 Ready
+
 ```
 
 ---
 
-# Backend Bootstrap
+## Backend Bootstrap
 
 Before clients can connect, the backend initializes its core infrastructure.
 
@@ -161,13 +162,14 @@ Register Routes
 ↓
 
 Start Server
+
 ```
 
 The backend startup is deterministic and completes before accepting requests.
 
 ---
 
-# Backend Initialization Components
+## Backend Initialization Components
 
 Typical initialization order:
 
@@ -186,7 +188,7 @@ Each component depends only on previously initialized services.
 
 ---
 
-# Client Bootstrap
+## Client Bootstrap
 
 After the frontend starts, it immediately requests:
 
@@ -198,7 +200,7 @@ This request provides all metadata required to initialize the client.
 
 ---
 
-# Bootstrap Response
+## Bootstrap Response
 
 Typical information includes:
 
@@ -237,11 +239,12 @@ Endpoints
 ↓
 
 Revisions
+
 ```
 
 ---
 
-# Application Metadata
+## Application Metadata
 
 The frontend receives:
 
@@ -258,7 +261,7 @@ This information is primarily informational.
 
 ---
 
-# Deployment Profile
+## Deployment Profile
 
 The bootstrap response identifies the active deployment profile.
 
@@ -282,7 +285,7 @@ The frontend may adapt diagnostics or presentation but never security decisions.
 
 ---
 
-# Security Profile
+## Security Profile
 
 Bootstrap exposes the active security profile.
 
@@ -300,7 +303,7 @@ Authorization always remains server-side.
 
 ---
 
-# Capability Discovery
+## Capability Discovery
 
 Capabilities describe which platform features are available.
 
@@ -320,7 +323,7 @@ Clients use capability discovery instead of hardcoded assumptions.
 
 ---
 
-# Feature Discovery
+## Feature Discovery
 
 Features represent optional frontend behavior.
 
@@ -334,7 +337,7 @@ Feature flags should influence presentation only.
 
 ---
 
-# Endpoint Discovery
+## Endpoint Discovery
 
 Bootstrap publishes canonical endpoint locations.
 
@@ -353,7 +356,7 @@ This removes endpoint knowledge from frontend source code.
 
 ---
 
-# Version Discovery
+## Version Discovery
 
 Each public contract exposes its version.
 
@@ -373,7 +376,7 @@ Clients compare versions before using optional functionality.
 
 ---
 
-# Revision Discovery
+## Revision Discovery
 
 Bootstrap also publishes mutable runtime revisions.
 
@@ -391,13 +394,14 @@ Configuration Revision
 ↓
 
 17
+
 ```
 
 Clients invalidate cached resources when revisions change.
 
 ---
 
-# Frontend Initialization Pipeline
+## Frontend Initialization Pipeline
 
 After bootstrap completes successfully, the frontend continues initialization.
 
@@ -429,13 +433,14 @@ Initialize Stores
 ↓
 
 Render UI
+
 ```
 
 The exact order may evolve while preserving dependencies.
 
 ---
 
-# Bootstrap Dependency Graph
+## Bootstrap Dependency Graph
 
 ```text
 Bootstrap
@@ -449,13 +454,14 @@ Bootstrap
 ├── Tools
 
 └── Configuration
+
 ```
 
 Every subsequent API depends on bootstrap metadata.
 
 ---
 
-# Cache Management
+## Cache Management
 
 Bootstrap supports efficient client caching.
 
@@ -469,7 +475,7 @@ Resources tied to revisions are reloaded only when revisions change.
 
 ---
 
-# Configuration Changes
+## Configuration Changes
 
 When runtime configuration changes:
 
@@ -487,13 +493,14 @@ Bootstrap Reflects New Revision
 ↓
 
 Frontend Reloads Configuration
+
 ```
 
 This minimizes unnecessary API requests.
 
 ---
 
-# Authentication Flow
+## Authentication Flow
 
 Depending on the deployment profile:
 
@@ -511,13 +518,14 @@ Bootstrap
 ↓
 
 Application Initialization
+
 ```
 
 Unauthenticated clients receive standard authorization errors.
 
 ---
 
-# Failure Handling
+## Failure Handling
 
 If bootstrap fails:
 
@@ -535,13 +543,14 @@ Show Error Screen
 ↓
 
 Retry
+
 ```
 
 The application should not continue initialization with incomplete bootstrap information.
 
 ---
 
-# Startup Validation
+## Startup Validation
 
 The frontend should validate:
 
@@ -554,7 +563,7 @@ Unsupported platforms should fail gracefully with a meaningful message.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Bootstrap errors follow the standard error contract.
 
@@ -571,7 +580,7 @@ Example:
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Bootstrap should:
 
@@ -585,7 +594,7 @@ Large payloads are intentionally delegated to specialized APIs.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Bootstrap intentionally excludes:
 
@@ -600,7 +609,7 @@ Only information required for application initialization is exposed.
 
 ---
 
-# Extension Points
+## Extension Points
 
 Future bootstrap versions may expose additional metadata, including:
 
@@ -614,7 +623,7 @@ New fields should be additive to preserve backward compatibility.
 
 ---
 
-# Relationship to Other APIs
+## Relationship to Other APIs
 
 Bootstrap initializes the client before any other API is used.
 
@@ -642,11 +651,12 @@ GET /tools
 ↓
 
 POST /chat/stream
+
 ```
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -678,7 +688,7 @@ POST /chat/stream
 
 ---
 
-# Summary
+## Summary
 
 The Bootstrap Lifecycle defines the deterministic startup process for every Kernschmied client.
 

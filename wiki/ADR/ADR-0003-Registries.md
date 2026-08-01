@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is designed as a configurable platform rather than a single-purpose business application.
 
@@ -40,7 +40,7 @@ The platform therefore requires a consistent mechanism for managing extensible f
 
 ---
 
-# Problem
+## Decision
 
 Without a common extension mechanism, new functionality tends to be integrated directly into existing code.
 
@@ -73,7 +73,7 @@ As the application evolves, this approach creates several problems.
 
 ---
 
-## Growing Conditional Logic
+## Architectural Principle
 
 Every new implementation requires another conditional branch.
 
@@ -81,7 +81,7 @@ Over time these become increasingly difficult to understand and maintain.
 
 ---
 
-## Tight Coupling
+## High-Level Architecture
 
 Core application code becomes directly dependent upon every supported implementation.
 
@@ -89,7 +89,7 @@ Adding one provider often requires modifying multiple files.
 
 ---
 
-## Limited Extensibility
+## Why Registries?
 
 Third-party extensions become difficult because new functionality must be inserted into existing code rather than registered independently.
 
@@ -109,7 +109,7 @@ Core components remain in constant modification instead of being extended throug
 
 ---
 
-# Decision
+## Decision (2)
 
 Kernschmied adopts a **registry-based extension architecture**.
 
@@ -126,7 +126,7 @@ The application core communicates only with registries and never directly with i
 
 ---
 
-# Architectural Principle
+## Architectural Principle (2)
 
 > **Core systems depend on registries.  
 > Registries depend on implementations.  
@@ -134,7 +134,7 @@ The application core communicates only with registries and never directly with i
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture (2)
 
 ```text
                 Application
@@ -153,11 +153,12 @@ The application core communicates only with registries and never directly with i
 
  Implementation   Implementation   Implementation
        A               B               C
+
 ```
 
 ---
 
-# Why Registries?
+## Why Registries? (2)
 
 Registries provide several important architectural advantages.
 
@@ -200,7 +201,7 @@ Every extension follows the same initialization process.
 
 ---
 
-# Registry Responsibilities
+## Registry Responsibilities
 
 Every registry should support the following responsibilities.
 
@@ -226,6 +227,7 @@ Model Registry
 ↓
 
 Ollama Provider
+
 ```
 
 ---
@@ -266,7 +268,7 @@ Registries control:
 
 ---
 
-# Registry Types
+## Registry Types
 
 Kernschmied contains several specialized registries.
 
@@ -319,6 +321,7 @@ Example:
 ↓
 
 TextField
+
 ```
 
 ---
@@ -335,6 +338,7 @@ Example:
 ↓
 
 Submit Handler
+
 ```
 
 ---
@@ -373,7 +377,7 @@ Future registry responsible for prompt inheritance providers.
 
 ---
 
-# Registration Process
+## Registration Process
 
 Every registry follows the same lifecycle.
 
@@ -395,13 +399,14 @@ Register
 ↓
 
 Registry Ready
+
 ```
 
 Invalid implementations are rejected before the application becomes operational.
 
 ---
 
-# Registration Requirements
+## Registration Requirements
 
 Every implementation should provide:
 
@@ -421,7 +426,7 @@ Optional metadata may include:
 
 ---
 
-# Manifests
+## Manifests
 
 Registries use manifests to describe implementations.
 
@@ -438,7 +443,7 @@ This improves validation and security.
 
 ---
 
-# Lookup
+## Lookup (2)
 
 Registry lookup should be deterministic.
 
@@ -452,13 +457,14 @@ Registry
 ↓
 
 Implementation
+
 ```
 
 Unknown identifiers return a controlled failure rather than causing application instability.
 
 ---
 
-# Duplicate Registration
+## Duplicate Registration
 
 Identifiers must be globally unique within a registry.
 
@@ -474,13 +480,14 @@ Implementation A
 ↓
 
 Implementation B
+
 ```
 
 Duplicate registrations are rejected during startup.
 
 ---
 
-# Version Compatibility
+## Version Compatibility
 
 Registries validate compatibility between:
 
@@ -493,7 +500,7 @@ Unsupported versions are rejected before activation.
 
 ---
 
-# Dependency Resolution
+## Dependency Resolution
 
 Implementations may depend on other platform capabilities.
 
@@ -515,13 +522,14 @@ Tool Registry
 ↓
 
 Calculator
+
 ```
 
 If dependencies are unavailable, registration fails gracefully.
 
 ---
 
-# Runtime Discovery
+## Runtime Discovery
 
 Administrative interfaces may query registries to display available functionality.
 
@@ -535,7 +543,7 @@ Typical information includes:
 
 ---
 
-# Error Handling
+## Error Handling
 
 Registration failures should be isolated.
 
@@ -553,13 +561,14 @@ Registration Failed
 ↓
 
 Continue Startup
+
 ```
 
 A faulty extension should not prevent unrelated extensions from functioning unless the failed extension is mandatory.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Registries follow a strict allow-list model.
 
@@ -577,7 +586,7 @@ Registration is explicit and deterministic.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Registries should provide:
 
@@ -591,7 +600,7 @@ Lookup performance should remain effectively independent of registry size.
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -644,7 +653,7 @@ Registration and validation increase startup complexity, although only once duri
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Conditional Logic
 
@@ -692,7 +701,7 @@ Rejected as the sole extension mechanism.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -712,7 +721,7 @@ Mitigation strategies include:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 All registries should provide:
 
@@ -727,7 +736,7 @@ Registries should be registered using dependency injection rather than global mu
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0001-Schema-Driven-UI]]
 - [[ADR-0002-Bootstrap]]
@@ -736,7 +745,7 @@ Registries should be registered using dependency injection rather than global mu
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -771,7 +780,7 @@ Registries should be registered using dependency injection rather than global mu
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **registry-based extension architecture** for every major extension point in the platform.
 

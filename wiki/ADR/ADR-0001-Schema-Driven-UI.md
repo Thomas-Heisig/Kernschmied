@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is intended to become a highly configurable platform rather than a fixed business application.
 
@@ -39,7 +39,7 @@ The architecture therefore requires a solution that allows backend-driven evolut
 
 ---
 
-# Problem
+## Problem
 
 Traditional frontend architectures have several disadvantages for a configurable platform.
 
@@ -91,7 +91,7 @@ Plugins become difficult because they must integrate into many different fronten
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied adopts a **Schema-Driven User Interface Architecture**.
 
@@ -103,7 +103,7 @@ Business-specific React components are intentionally avoided.
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 The guiding principle is:
 
@@ -112,7 +112,7 @@ The guiding principle is:
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Backend
@@ -144,11 +144,12 @@ Component Registry
 ↓
 
 React Components
+
 ```
 
 ---
 
-# Core Concepts
+## Core Concepts
 
 The architecture consists of several cooperating building blocks.
 
@@ -189,6 +190,7 @@ Example:
 ↓
 
 TextField
+
 ```
 
 Unknown component types never execute arbitrary code.
@@ -219,6 +221,7 @@ API Client
 ↓
 
 Backend
+
 ```
 
 ---
@@ -238,16 +241,16 @@ The frontend is responsible only for presentation and interaction.
 
 ---
 
-# Example
+## Example
 
 Instead of creating:
 
-```text
-ProjectEditor.tsx
+```ts
+ProjectEditor.tsx;
 
-CustomerEditor.tsx
+CustomerEditor.tsx;
 
-InvoiceEditor.tsx
+InvoiceEditor.tsx;
 ```
 
 The backend may expose:
@@ -268,7 +271,7 @@ The frontend renders the schema without requiring new React pages.
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -344,7 +347,7 @@ This increases backend responsibilities but centralizes business knowledge.
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Traditional React Pages
 
@@ -369,12 +372,12 @@ Rejected.
 
 Examples include commercial low-code platforms.
 
-### Advantages
+### Advantages (2)
 
 - Rapid UI creation
 - Visual editors
 
-### Disadvantages
+### Disadvantages (2)
 
 - Vendor lock-in
 - Limited flexibility
@@ -389,11 +392,11 @@ Rejected.
 
 Allowing backend-provided JavaScript to construct user interfaces.
 
-### Advantages
+### Advantages (3)
 
 - Maximum flexibility
 
-### Disadvantages
+### Disadvantages (3)
 
 - Severe security risks
 - Difficult debugging
@@ -404,7 +407,7 @@ Explicitly rejected.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 The schema-driven architecture follows a strict allow-list model.
 
@@ -422,7 +425,7 @@ Unknown schema elements are displayed as unsupported instead of being executed.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The architecture supports efficient rendering through:
 
@@ -437,7 +440,7 @@ Schema interpretation introduces minimal overhead compared to network latency an
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 This decision affects nearly every frontend subsystem, including:
 
@@ -454,7 +457,7 @@ The backend also becomes responsible for generating valid UI Schemas.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -474,7 +477,7 @@ These risks are mitigated through:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should follow these principles:
 
@@ -489,7 +492,7 @@ The implementation should follow these principles:
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0002-Backend-Authority]]
 - [[ADR-0003-Registry-Based-Extension]]
@@ -498,7 +501,7 @@ The implementation should follow these principles:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -520,7 +523,7 @@ The implementation should follow these principles:
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **schema-driven user interface architecture** in which the backend describes user interfaces through versioned schemas and the frontend renders them using generic components and explicit registries.
 

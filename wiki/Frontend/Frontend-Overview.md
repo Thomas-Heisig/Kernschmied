@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 The Kernschmied frontend is a **schema-driven React application** built around the principle that **business logic belongs exclusively to the backend**.
 
@@ -16,7 +16,7 @@ The frontend therefore acts as a **generic rendering engine**, responsible for p
 
 ---
 
-# Goals
+## Goals
 
 The frontend architecture has several primary objectives:
 
@@ -33,7 +33,7 @@ The frontend architecture has several primary objectives:
 
 ---
 
-# Design Philosophy
+## Design Philosophy
 
 The frontend follows one simple rule:
 
@@ -70,13 +70,14 @@ React Components
 ↓
 
 Browser
+
 ```
 
 This dramatically reduces duplicated frontend code while allowing the backend to evolve independently.
 
 ---
 
-# Technology Stack
+## Technology Stack
 
 The frontend is built using modern technologies.
 
@@ -91,7 +92,7 @@ The frontend is built using modern technologies.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Browser
@@ -127,11 +128,12 @@ REST API / SSE
 ↓
 
 FastAPI Backend
+
 ```
 
 ---
 
-# Responsibilities
+## Responsibilities
 
 The frontend is responsible for:
 
@@ -156,7 +158,7 @@ The frontend is **not** responsible for:
 
 ---
 
-# Architectural Principles
+## Architectural Principles
 
 The frontend follows these principles:
 
@@ -171,7 +173,7 @@ The frontend follows these principles:
 
 ---
 
-# Frontend Layers
+## Frontend Layers
 
 ```text
 Application
@@ -184,13 +186,14 @@ Application
 ├── Generic Components
 ├── API Client
 └── Shared Utilities
+
 ```
 
 Each layer has clearly defined responsibilities.
 
 ---
 
-# Application Shell
+## Application Shell
 
 The App Shell provides the permanent structure of the application.
 
@@ -208,7 +211,7 @@ Business pages are rendered inside the shell.
 
 ---
 
-# Routing
+## Routing
 
 Routing controls navigation throughout the application.
 
@@ -228,7 +231,7 @@ See:
 
 ---
 
-# Schema Renderer
+## Schema Renderer
 
 The Schema Renderer converts backend-provided UI Schemas into React components.
 
@@ -246,7 +249,7 @@ See:
 
 ---
 
-# Component Registry
+## Component Registry
 
 Every renderable component is registered centrally.
 
@@ -258,6 +261,7 @@ Example:
 ↓
 
 TextField
+
 ```
 
 This enables new component types without modifying the renderer.
@@ -268,7 +272,7 @@ See:
 
 ---
 
-# Action Registry
+## Action Registry
 
 User actions are also registered centrally.
 
@@ -288,7 +292,7 @@ See:
 
 ---
 
-# Generic Components
+## Generic Components
 
 Instead of domain-specific components, Kernschmied provides reusable building blocks.
 
@@ -310,7 +314,7 @@ These components know nothing about the application's business domain.
 
 ---
 
-# Generic Tree
+## Generic Tree
 
 Hierarchical data is rendered through a single Generic Tree component.
 
@@ -329,7 +333,7 @@ See:
 
 ---
 
-# Forms
+## Forms
 
 Forms are generated dynamically from schemas.
 
@@ -348,7 +352,7 @@ See:
 
 ---
 
-# State Management
+## State Management
 
 State is intentionally simple.
 
@@ -367,7 +371,7 @@ See:
 
 ---
 
-# API Client
+## API Client
 
 The API Client provides a single abstraction for backend communication.
 
@@ -387,7 +391,7 @@ See:
 
 ---
 
-# Streaming
+## Streaming
 
 AI responses are streamed using Server-Sent Events.
 
@@ -407,6 +411,7 @@ SSE Stream
 ↓
 
 Incremental Rendering
+
 ```
 
 Streaming remains provider-independent.
@@ -417,7 +422,7 @@ See:
 
 ---
 
-# Styling
+## Styling
 
 The frontend uses Tailwind CSS.
 
@@ -433,7 +438,7 @@ Business-specific styling should be avoided.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Errors are handled at multiple levels.
 
@@ -449,7 +454,7 @@ Errors should remain localized whenever possible.
 
 ---
 
-# Accessibility
+## Accessibility
 
 Accessibility is a first-class architectural requirement.
 
@@ -466,7 +471,7 @@ Accessibility is implemented within the generic component library.
 
 ---
 
-# Performance
+## Performance
 
 The frontend is designed for predictable performance.
 
@@ -483,7 +488,7 @@ Optimization should never compromise readability.
 
 ---
 
-# Security
+## Security
 
 The frontend follows a zero-trust approach.
 
@@ -499,7 +504,7 @@ All security decisions remain on the backend.
 
 ---
 
-# Testing
+## Testing
 
 Frontend testing includes:
 
@@ -514,7 +519,7 @@ Testing focuses on observable behavior rather than implementation details.
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 The architecture supports future capabilities such as:
 
@@ -531,7 +536,7 @@ These extensions should not require breaking existing contracts.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -574,7 +579,7 @@ These extensions should not require breaking existing contracts.
 
 ---
 
-# Summary
+## Summary
 
 The Kernschmied frontend is not a traditional business application—it is a **generic user interface platform**.
 

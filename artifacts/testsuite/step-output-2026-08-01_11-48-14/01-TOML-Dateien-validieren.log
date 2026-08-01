@@ -1,0 +1,24 @@
+COMMAND: python -c import pathlib
+import sys
+import tomllib
+
+errors = []
+
+for raw_path in sys.argv[1:]:
+    path = pathlib.Path(raw_path)
+
+    try:
+        with path.open("rb") as stream:
+            tomllib.load(stream)
+    except Exception as exc:
+        errors.append(f"{path}: {exc}")
+
+if errors:
+    print("\n".join(errors), file=sys.stderr)
+    raise SystemExit(1)
+
+print(f"{len(sys.argv) - 1} TOML-Dateien sind gültig.") F:\Kernschmied\pyproject.toml
+WORKING DIRECTORY: F:\Kernschmied
+EXIT CODE: 0
+
+1 TOML-Dateien sind gültig.

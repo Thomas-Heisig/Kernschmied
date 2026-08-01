@@ -6,7 +6,7 @@
 
 ---
 
-# Projektstatus
+## Projektstatus
 
 **Aktueller Stand:** MVP+ (Architekturgrundlagen vollständig, Funktionsumfang wird kontinuierlich erweitert)
 
@@ -23,7 +23,7 @@ Bereits umgesetzt sind unter anderem:
 
 ---
 
-# Architekturprinzipien
+## Architekturprinzipien
 
 Das gesamte Projekt folgt einigen festen Grundregeln:
 
@@ -38,7 +38,7 @@ Das gesamte Projekt folgt einigen festen Grundregeln:
 
 ---
 
-# Technologie-Stack
+## Technologie-Stack
 
 ## Backend
 
@@ -66,9 +66,9 @@ Das gesamte Projekt folgt einigen festen Grundregeln:
 
 ---
 
-# Projektstruktur
+## Projektstruktur
 
-```
+```text
 Kernschmied/
 
 ├── backend/
@@ -106,7 +106,7 @@ Kernschmied/
 
 ---
 
-# Kernfunktionen
+## Kernfunktionen
 
 ## Konfigurationssystem
 
@@ -232,7 +232,7 @@ Alle Einstellungen besitzen:
 
 ---
 
-# Sicherheitsmodell
+## Sicherheitsmodell
 
 Das Projekt unterstützt drei Betriebsprofile.
 
@@ -259,25 +259,25 @@ Das Projekt unterstützt drei Betriebsprofile.
 
 ---
 
-# API
+## API
 
 Das Backend stellt eine REST-API bereit.
 
 Dokumentation:
 
-```
+```text
 http://localhost:8000/docs
 ```
 
 OpenAPI:
 
-```
+```text
 http://localhost:8000/openapi.json
 ```
 
 ---
 
-# Schnellstart
+## Schnellstart
 
 ## Voraussetzungen
 
@@ -303,7 +303,7 @@ Danach stehen zur Verfügung:
 
 ---
 
-# Backend manuell starten
+## Backend manuell starten
 
 ```powershell
 cd backend
@@ -319,7 +319,7 @@ uvicorn main:app --reload
 
 ---
 
-# Frontend manuell starten
+## Frontend manuell starten
 
 ```powershell
 cd frontend
@@ -331,7 +331,7 @@ npm run dev
 
 ---
 
-# Entwicklungsprinzipien
+## Entwicklungsprinzipien
 
 Im gesamten Projekt gelten folgende Regeln:
 
@@ -346,7 +346,7 @@ Im gesamten Projekt gelten folgende Regeln:
 
 ---
 
-# Roadmap
+## Roadmap
 
 ## Bereits umgesetzt
 
@@ -388,11 +388,9 @@ Im gesamten Projekt gelten folgende Regeln:
 
 ---
 
-# Lizenz
+## Lizenz
 
 Dieses Projekt befindet sich aktuell in aktiver Entwicklung.
-
-```
 
 ## Warum diese Version besser ist
 
@@ -412,4 +410,3 @@ Sie beschreibt den tatsächlichen Projektstand deutlich genauer. Gegenüber der 
 - ✅ Entwicklungsrichtlinien
 
 Damit wirkt das Repository nicht mehr wie ein einfaches FastAPI/React-Template, sondern als das, was es inzwischen ist: das Fundament einer modularen, schema-gesteuerten KI-Plattform.
-```

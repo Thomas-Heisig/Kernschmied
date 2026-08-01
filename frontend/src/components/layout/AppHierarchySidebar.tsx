@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import type { ComponentProps } from "react";
 
-import { GenericTree } from "../schema/GenericTree";
+import { GenericTree } from "../schema/GenericTreeClean";
 
 type GenericTreeProps = ComponentProps<typeof GenericTree>;
 
@@ -15,6 +15,11 @@ interface AppHierarchySidebarProps {
   expandedNodeIds: GenericTreeProps["expandedNodeIds"];
   onSelect: GenericTreeProps["onSelect"];
   onExpandedNodeIdsChange: GenericTreeProps["onExpandedNodeIdsChange"];
+  onAction?: GenericTreeProps["onAction"];
+  onCreateChat?: GenericTreeProps["onCreateChat"];
+  onNodeDrop?: GenericTreeProps["onNodeDrop"];
+  isBusy?: boolean;
+  recentlyMovedNodeId?: string | null;
 
   defaultOpen?: boolean;
 }
@@ -26,6 +31,11 @@ export function AppHierarchySidebar({
   expandedNodeIds,
   onSelect,
   onExpandedNodeIdsChange,
+  onAction,
+  onCreateChat,
+  onNodeDrop,
+  isBusy = false,
+  recentlyMovedNodeId = null,
   defaultOpen = true,
 }: AppHierarchySidebarProps) {
   const [open, setOpen] = useState(defaultOpen);
@@ -69,7 +79,6 @@ export function AppHierarchySidebar({
             </p>
           </div>
         ) : null}
-
         <button
           type="button"
           onClick={toggleSidebar}
@@ -98,14 +107,40 @@ export function AppHierarchySidebar({
           className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2"
           aria-label="Hierarchiebaum"
         >
-          <GenericTree
-            root={root}
-            schema={schema}
-            selectedNodeId={selectedNodeId}
-            expandedNodeIds={expandedNodeIds}
-            onSelect={onSelect}
-            onExpandedNodeIdsChange={onExpandedNodeIdsChange}
-          />
+          <div className="relative">
+            {isBusy ? (
+              <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/60 dark:bg-slate-900/60">
+                <svg
+                  className="h-8 w-8 animate-spin text-text-muted"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    strokeWidth="4"
+                    stroke="currentColor"
+                    strokeDasharray="60"
+                    strokeLinecap="round"
+                    fill="none"
+                  ></circle>
+                </svg>
+              </div>
+            ) : null}
+            <GenericTree
+              root={root}
+              schema={schema}
+              selectedNodeId={selectedNodeId}
+              expandedNodeIds={expandedNodeIds}
+              onSelect={onSelect}
+              onExpandedNodeIdsChange={onExpandedNodeIdsChange}
+              onAction={onAction}
+              onCreateChat={onCreateChat}
+              onNodeDrop={onNodeDrop}
+              isBusy={isBusy}
+              recentlyMovedNodeId={recentlyMovedNodeId}
+            />
+          </div>
         </nav>
       ) : (
         <button

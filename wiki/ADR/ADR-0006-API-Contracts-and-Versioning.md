@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied consists of multiple independently evolving subsystems:
 
@@ -38,7 +38,7 @@ Because these systems evolve independently, every contract must remain stable ov
 
 ---
 
-# Problem
+## Problem
 
 Without a clear API versioning strategy, even small backend changes may unintentionally break existing clients.
 
@@ -54,7 +54,7 @@ These problems become increasingly severe as external integrations grow.
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied adopts a **contract-first API architecture** with explicit versioning.
 
@@ -69,7 +69,7 @@ API evolution follows these principles:
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > APIs are products.
 >
@@ -77,7 +77,7 @@ API evolution follows these principles:
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Frontend
@@ -99,11 +99,12 @@ FastAPI Backend
         ▼
 
 Business Services
+
 ```
 
 ---
 
-# Versioning Strategy
+## Versioning Strategy
 
 API versioning is based on the URL.
 
@@ -115,6 +116,7 @@ Example:
 /api/v1/chat
 
 /api/v1/config
+
 ```
 
 Future versions may exist alongside previous ones.
@@ -125,11 +127,12 @@ Example:
 /api/v1/...
 
 /api/v2/...
+
 ```
 
 ---
 
-# Why URL Versioning?
+## Why URL Versioning?
 
 Alternative approaches were evaluated:
 
@@ -148,7 +151,7 @@ URL versioning was selected because it is:
 
 ---
 
-# API Stability
+## API Stability
 
 Once published:
 
@@ -161,7 +164,7 @@ Only additive changes are allowed within the same version.
 
 ---
 
-# Contract Categories
+## Contract Categories
 
 Kernschmied defines several independent contract versions.
 
@@ -182,7 +185,7 @@ Each contract evolves independently.
 
 ---
 
-# Bootstrap Version
+## Bootstrap Version
 
 The bootstrap endpoint communicates supported versions.
 
@@ -207,7 +210,7 @@ Clients use this information during initialization.
 
 ---
 
-# Schema Versioning
+## Schema Versioning
 
 Every schema contains its own version.
 
@@ -224,7 +227,7 @@ Unknown schema versions are rejected before rendering.
 
 ---
 
-# Backward-Compatible Changes
+## Backward-Compatible Changes
 
 The following changes do **not** require a new API version:
 
@@ -237,7 +240,7 @@ Existing clients continue to function.
 
 ---
 
-# Breaking Changes
+## Breaking Changes
 
 Breaking changes require a new API version.
 
@@ -252,25 +255,27 @@ Examples include:
 
 ---
 
-# Client Compatibility
+## Client Compatibility
 
 Older clients continue using:
 
 ```text
 /api/v1/
+
 ```
 
 New clients may migrate to:
 
 ```text
 /api/v2/
+
 ```
 
 Multiple API versions may coexist during migration.
 
 ---
 
-# Error Contracts
+## Error Contracts
 
 Every endpoint returns structured errors.
 
@@ -289,7 +294,7 @@ The error structure itself is versioned.
 
 ---
 
-# Request IDs
+## Request IDs
 
 Every request receives a unique identifier.
 
@@ -313,13 +318,14 @@ Support
 ↓
 
 Diagnostics
+
 ```
 
 Request IDs improve troubleshooting across distributed systems.
 
 ---
 
-# HTTP Status Codes
+## HTTP Status Codes
 
 Standard HTTP status codes are used consistently.
 
@@ -339,7 +345,7 @@ Standard HTTP status codes are used consistently.
 
 ---
 
-# OpenAPI
+## OpenAPI
 
 Every public REST endpoint is documented using OpenAPI.
 
@@ -349,7 +355,7 @@ OpenAPI represents the authoritative machine-readable API documentation.
 
 ---
 
-# Streaming Contracts
+## Streaming Contracts
 
 Chat streaming uses Server-Sent Events.
 
@@ -370,7 +376,7 @@ Unknown event types should be ignored unless explicitly required.
 
 ---
 
-# Deprecation Policy
+## Deprecation Policy
 
 The lifecycle of an API contract is:
 
@@ -392,13 +398,14 @@ Removal Announced
 ↓
 
 Removed in Next Major Version
+
 ```
 
 Deprecation periods allow consumers sufficient migration time.
 
 ---
 
-# Validation
+## Validation
 
 All requests are validated using Pydantic models.
 
@@ -408,7 +415,7 @@ Invalid requests receive structured validation errors.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 API contracts contribute to security through:
 
@@ -422,7 +429,7 @@ Clients must never rely on undocumented behavior.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Stable contracts improve performance by enabling:
 
@@ -436,7 +443,7 @@ Version stability also reduces unnecessary compatibility checks.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 Versioned APIs simplify:
 
@@ -450,7 +457,7 @@ Operations teams can run multiple client versions simultaneously.
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -469,7 +476,7 @@ Operations teams can run multiple client versions simultaneously.
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Header-Based Versioning
 
@@ -493,6 +500,7 @@ Example:
 
 ```text
 /api/bootstrap?version=2
+
 ```
 
 Rejected due to unclear semantics.
@@ -505,7 +513,7 @@ Rejected because it inevitably leads to accidental breaking changes.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -524,7 +532,7 @@ Mitigation includes:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -539,7 +547,7 @@ The implementation should provide:
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0001-Schema-Driven-UI]]
 - [[ADR-0002-Bootstrap]]
@@ -548,7 +556,7 @@ The implementation should provide:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -573,7 +581,7 @@ The implementation should provide:
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **contract-first, URL-versioned API architecture** in which every public interface evolves through explicit, documented versions.
 

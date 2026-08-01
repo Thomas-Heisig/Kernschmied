@@ -8,7 +8,7 @@ One of the primary architectural goals of Kernschmied is that **internal impleme
 
 ---
 
-# Goals
+## Goals
 
 The Backend Contract architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The Backend Contract architecture is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Stable Public Interfaces
 
@@ -41,6 +41,7 @@ Public Contract
 ↓
 
 Consumer
+
 ```
 
 Consumers depend only on the contract.
@@ -85,13 +86,14 @@ Public Contract
 ↓
 
 Frontend
+
 ```
 
 This keeps clients independent of AI vendors.
 
 ---
 
-# Contract Categories
+## Contract Categories
 
 The backend exposes several categories of contracts.
 
@@ -111,7 +113,7 @@ Each category evolves independently.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Frontend
@@ -131,13 +133,14 @@ Application Services
 ↓
 
 Repositories / Providers
+
 ```
 
 Contracts isolate consumers from implementation details.
 
 ---
 
-# Request Contracts
+## Request Contracts
 
 Request contracts define the structure of incoming data.
 
@@ -153,7 +156,7 @@ Requests are validated before processing.
 
 ---
 
-# Response Contracts
+## Response Contracts
 
 Response contracts define the data returned to clients.
 
@@ -168,7 +171,7 @@ Clients should never rely on undocumented fields.
 
 ---
 
-# JSON Serialization
+## JSON Serialization
 
 REST contracts use JSON.
 
@@ -185,7 +188,7 @@ Serialization follows Pydantic models to ensure consistency.
 
 ---
 
-# Streaming Contracts
+## Streaming Contracts
 
 Streaming responses use Server-Sent Events.
 
@@ -217,13 +220,14 @@ usage
 ↓
 
 complete
+
 ```
 
 Each event follows a documented schema.
 
 ---
 
-# Bootstrap Contract
+## Bootstrap Contract
 
 The Bootstrap contract provides application metadata.
 
@@ -240,7 +244,7 @@ Bootstrap is usually the first contract consumed by the frontend.
 
 ---
 
-# Configuration Contract
+## Configuration Contract
 
 Configuration contracts expose runtime configuration through stable schemas.
 
@@ -255,7 +259,7 @@ Internal storage details remain hidden.
 
 ---
 
-# Hierarchy Contract
+## Hierarchy Contract
 
 Hierarchy contracts expose the generic node structure.
 
@@ -271,7 +275,7 @@ Clients interpret hierarchy generically rather than relying on hardcoded node ty
 
 ---
 
-# UI Schema Contract
+## UI Schema Contract
 
 The UI Schema contract defines the structure of the dynamic frontend.
 
@@ -287,7 +291,7 @@ The frontend maps schema definitions to trusted React components.
 
 ---
 
-# Model Contract
+## Model Contract
 
 Model contracts expose available AI models.
 
@@ -303,7 +307,7 @@ Provider-specific APIs remain hidden.
 
 ---
 
-# Tool Contract
+## Tool Contract
 
 Tool contracts describe executable tools.
 
@@ -319,7 +323,7 @@ Execution details remain internal.
 
 ---
 
-# Error Contract
+## Error Contract
 
 Every error follows the same structure.
 
@@ -338,7 +342,7 @@ Clients should process errors using the documented fields rather than HTTP statu
 
 ---
 
-# Versioning
+## Versioning
 
 Every contract category has its own version.
 
@@ -360,13 +364,14 @@ API v1
 ↓
 
 SSE v2
+
 ```
 
 Independent versioning allows individual contracts to evolve without forcing unrelated changes.
 
 ---
 
-# Backward Compatibility
+## Backward Compatibility
 
 Contracts evolve using additive changes whenever possible.
 
@@ -380,7 +385,7 @@ Existing fields should not change semantics.
 
 ---
 
-# Breaking Changes
+## Breaking Changes
 
 Breaking changes require explicit version updates.
 
@@ -395,7 +400,7 @@ Clients can determine compatibility using version metadata.
 
 ---
 
-# Optional Fields
+## Optional Fields
 
 Optional properties allow gradual evolution.
 
@@ -412,7 +417,7 @@ Older clients ignore unknown optional fields.
 
 ---
 
-# Unknown Fields
+## Unknown Fields
 
 Consumers should ignore unknown fields unless explicitly documented otherwise.
 
@@ -420,7 +425,7 @@ This approach supports forward compatibility between different application versi
 
 ---
 
-# Contract Validation
+## Contract Validation
 
 Contracts are validated using Pydantic.
 
@@ -436,7 +441,7 @@ Validation occurs automatically at API boundaries.
 
 ---
 
-# Internal Models vs Public Contracts
+## Internal Models vs Public Contracts
 
 Internal application models are not public contracts.
 
@@ -454,13 +459,14 @@ API Model
 ↓
 
 JSON
+
 ```
 
 Changes to internal models do not necessarily affect public APIs.
 
 ---
 
-# Dependency Injection
+## Dependency Injection
 
 Application services receive validated contract models through dependency injection.
 
@@ -468,7 +474,7 @@ Endpoints should never manipulate raw request payloads directly.
 
 ---
 
-# Security
+## Security
 
 Contracts never expose:
 
@@ -482,7 +488,7 @@ Only documented information is returned.
 
 ---
 
-# Testing
+## Testing
 
 Contract stability should be verified through automated testing.
 
@@ -498,7 +504,7 @@ Stable contracts are critical for frontend compatibility.
 
 ---
 
-# Documentation
+## Documentation
 
 Every public contract should be documented.
 
@@ -515,7 +521,7 @@ Documentation evolves together with the contract.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The contract architecture supports future additions including:
 
@@ -530,7 +536,7 @@ New contracts should follow the same architectural principles.
 
 ---
 
-# Relationship to Other Backend Components
+## Relationship to Other Backend Components
 
 Backend contracts connect every external interface to the application core.
 
@@ -552,13 +558,14 @@ Repositories
 ↓
 
 Providers
+
 ```
 
 Contracts provide the stable boundary between consumers and implementation.
 
 ---
 
-# Relationship to Architecture
+## Relationship to Architecture
 
 Backend Contracts are closely related to:
 
@@ -570,7 +577,7 @@ Backend Contracts are closely related to:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -605,7 +612,7 @@ Backend Contracts are closely related to:
 
 ---
 
-# Summary
+## Summary
 
 The Backend Contracts define the stable, versioned interfaces that separate external consumers from the internal implementation of the Kernschmied backend.
 

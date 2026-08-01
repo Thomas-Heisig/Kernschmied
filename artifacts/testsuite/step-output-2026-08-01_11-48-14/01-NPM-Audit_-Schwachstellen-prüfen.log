@@ -1,0 +1,5 @@
+COMMAND: npm audit --audit-level=high
+WORKING DIRECTORY: F:\Kernschmied\frontend
+EXIT CODE: 0
+
+found 0 vulnerabilities

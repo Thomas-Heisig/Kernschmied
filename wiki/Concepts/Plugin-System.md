@@ -12,7 +12,7 @@ Every plugin operates within clearly defined architectural boundaries.
 
 ---
 
-# Goals
+## Goals
 
 The Plugin System is designed to provide:
 
@@ -27,7 +27,7 @@ The Plugin System is designed to provide:
 
 ---
 
-# Core Principles
+## Core Principles
 
 ## Extension, Not Modification
 
@@ -45,6 +45,7 @@ Plugin
 ↓
 
 Extended Functionality
+
 ```
 
 The core application remains unchanged regardless of installed plugins.
@@ -88,6 +89,7 @@ Registry
 ↓
 
 Available Plugin
+
 ```
 
 Unknown directories are ignored.
@@ -109,7 +111,7 @@ Registration does not imply authorization.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Plugin Package
@@ -129,13 +131,14 @@ Backend / Frontend Integration
 ↓
 
 Application
+
 ```
 
 The Plugin Registry acts as the central coordination point.
 
 ---
 
-# Plugin Structure
+## Plugin Structure
 
 A typical plugin contains:
 
@@ -148,13 +151,14 @@ plugin/
 ├── schemas/
 ├── assets/
 └── README.md
+
 ```
 
 Only the manifest is required for discovery.
 
 ---
 
-# Plugin Manifest
+## Plugin Manifest
 
 Each plugin provides a versioned manifest.
 
@@ -174,7 +178,7 @@ The manifest is validated during bootstrap.
 
 ---
 
-# Plugin Discovery
+## Plugin Discovery
 
 Plugin discovery occurs during application startup.
 
@@ -196,13 +200,14 @@ Register Plugin
 ↓
 
 Application Ready
+
 ```
 
 Plugins with invalid manifests are rejected.
 
 ---
 
-# Plugin Registry
+## Plugin Registry
 
 The Plugin Registry maintains metadata about installed plugins.
 
@@ -219,7 +224,7 @@ The registry does not execute plugin code.
 
 ---
 
-# Plugin Lifecycle
+## Plugin Lifecycle
 
 A plugin typically progresses through the following lifecycle.
 
@@ -245,13 +250,14 @@ Available
 ↓
 
 Disabled / Removed
+
 ```
 
 Each state transition is deterministic.
 
 ---
 
-# Backend Plugins
+## Backend Plugins
 
 Backend plugins may contribute:
 
@@ -266,7 +272,7 @@ Business services remain independent of plugin implementations.
 
 ---
 
-# Frontend Plugins
+## Frontend Plugins
 
 Frontend plugins may contribute:
 
@@ -281,7 +287,7 @@ They operate through predefined frontend extension points.
 
 ---
 
-# Manifest Validation
+## Manifest Validation
 
 Validation includes:
 
@@ -296,7 +302,7 @@ Invalid manifests prevent registration.
 
 ---
 
-# Version Compatibility
+## Version Compatibility
 
 Plugins declare supported platform versions.
 
@@ -312,13 +318,14 @@ Compatible With
 ↓
 
 Platform Version
+
 ```
 
 Incompatible plugins are rejected during startup.
 
 ---
 
-# Extension Points
+## Extension Points
 
 Plugins may extend only documented extension points.
 
@@ -335,7 +342,7 @@ Undocumented internal APIs are not considered stable extension points.
 
 ---
 
-# Configuration
+## Configuration
 
 Plugins may define configuration schemas.
 
@@ -350,7 +357,7 @@ Plugins never read raw configuration directly from storage.
 
 ---
 
-# Schema Integration
+## Schema Integration
 
 Plugins may contribute schemas.
 
@@ -366,7 +373,7 @@ All schemas must be versioned.
 
 ---
 
-# Registry Integration
+## Registry Integration
 
 Plugins integrate with existing registries rather than replacing them.
 
@@ -380,13 +387,14 @@ Registry
 ↓
 
 Application Services
+
 ```
 
 Registries remain the authoritative source of runtime metadata.
 
 ---
 
-# Tool Integration
+## Tool Integration
 
 Plugins may contribute executable tools.
 
@@ -404,13 +412,14 @@ Tool Registry
 ↓
 
 Authorized Execution
+
 ```
 
 Tool execution follows the standard security pipeline.
 
 ---
 
-# Model Integration
+## Model Integration
 
 Plugins may contribute model providers.
 
@@ -428,13 +437,14 @@ Model Registry
 ↓
 
 Provider Backend
+
 ```
 
 Provider implementations remain isolated behind stable interfaces.
 
 ---
 
-# UI Integration
+## UI Integration
 
 Plugins may contribute additional UI definitions.
 
@@ -452,13 +462,14 @@ Schema Renderer
 ↓
 
 Rendered Interface
+
 ```
 
 The frontend never executes arbitrary plugin code outside supported extension points.
 
 ---
 
-# Security
+## Security
 
 The Plugin System enforces strict security boundaries.
 
@@ -474,7 +485,7 @@ Security policies are enforced by the core platform.
 
 ---
 
-# Dependency Management
+## Dependency Management
 
 Plugins should minimize dependencies.
 
@@ -489,7 +500,7 @@ The platform remains responsible for dependency resolution.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Plugin failures are isolated.
 
@@ -509,13 +520,14 @@ Structured Error
 ↓
 
 Remaining Plugins Continue
+
 ```
 
 A faulty plugin should not compromise the entire platform whenever recovery is possible.
 
 ---
 
-# Performance
+## Performance
 
 The Plugin System is optimized for:
 
@@ -529,7 +541,7 @@ Runtime plugin discovery is avoided after bootstrap unless explicitly supported.
 
 ---
 
-# Testing
+## Testing
 
 Plugins should be tested independently from the application core.
 
@@ -546,7 +558,7 @@ Core platform tests and plugin tests should remain separate.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The Plugin System supports future capabilities including:
 
@@ -563,7 +575,7 @@ These enhancements can be introduced without changing the existing plugin archit
 
 ---
 
-# Relationship to Other Concepts
+## Relationship to Other Concepts
 
 The Plugin System integrates closely with:
 
@@ -575,7 +587,7 @@ The Plugin System integrates closely with:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Concepts
 
@@ -616,7 +628,7 @@ The Plugin System integrates closely with:
 
 ---
 
-# Summary
+## Summary
 
 The Plugin System enables Kernschmied to be extended through independently developed modules while preserving stable contracts, strict security boundaries, and architectural consistency. Plugins contribute functionality through manifests, schemas, and documented extension points rather than modifying the application core.
 

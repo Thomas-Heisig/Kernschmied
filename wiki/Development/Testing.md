@@ -8,7 +8,7 @@ Testing supports confident refactoring, incremental development, and reliable re
 
 ---
 
-# Goals
+## Goals
 
 The Testing strategy is designed to provide:
 
@@ -23,7 +23,7 @@ The Testing strategy is designed to provide:
 
 ---
 
-# Testing Philosophy
+## Testing Philosophy
 
 Testing verifies observable behavior rather than implementation details.
 
@@ -41,13 +41,14 @@ Tests
 ↓
 
 Verified Behavior
+
 ```
 
 A test should confirm **what** the system does, not **how** it is implemented.
 
 ---
 
-# Testing Pyramid
+## Testing Pyramid
 
 Kernschmied follows a layered testing strategy.
 
@@ -57,13 +58,14 @@ Kernschmied follows a layered testing strategy.
         Integration Tests
       ────────────────────
          Unit Tests
+
 ```
 
 Most tests should be unit tests, with progressively fewer integration and end-to-end tests.
 
 ---
 
-# Test Categories
+## Test Categories
 
 The platform uses several complementary testing categories.
 
@@ -82,7 +84,7 @@ Each category validates a different aspect of the system.
 
 ---
 
-# Unit Testing
+## Unit Testing
 
 Unit tests verify isolated components.
 
@@ -107,13 +109,14 @@ Mock Repository
 ↓
 
 Unit Test
+
 ```
 
 Unit tests should execute quickly and deterministically.
 
 ---
 
-# Integration Testing
+## Integration Testing
 
 Integration tests verify collaboration between components.
 
@@ -134,13 +137,14 @@ Component B
 ↓
 
 Verified Integration
+
 ```
 
 Integration tests validate architectural interactions.
 
 ---
 
-# API Testing
+## API Testing
 
 Public REST APIs must be tested.
 
@@ -157,7 +161,7 @@ APIs are tested through their public contracts rather than internal implementati
 
 ---
 
-# Streaming Tests
+## Streaming Tests
 
 Streaming endpoints require dedicated testing.
 
@@ -174,7 +178,7 @@ Streaming tests ensure protocol stability.
 
 ---
 
-# Schema Validation Tests
+## Schema Validation Tests
 
 Schemas represent versioned contracts and require dedicated validation.
 
@@ -191,7 +195,7 @@ Every schema should be validated before use.
 
 ---
 
-# Configuration Testing
+## Configuration Testing
 
 Runtime Configuration requires extensive testing.
 
@@ -208,7 +212,7 @@ Configuration tests ensure deterministic runtime behavior.
 
 ---
 
-# Registry Testing
+## Registry Testing
 
 Every registry should be verified independently.
 
@@ -230,7 +234,7 @@ Testing should verify:
 
 ---
 
-# Plugin Testing
+## Plugin Testing
 
 Plugins should be tested independently from the application core.
 
@@ -247,7 +251,7 @@ Plugins should never rely on internal implementation details.
 
 ---
 
-# Frontend Testing
+## Frontend Testing
 
 Frontend testing focuses on rendering and user interaction.
 
@@ -264,7 +268,7 @@ Business rules remain the responsibility of backend tests.
 
 ---
 
-# UI Schema Testing
+## UI Schema Testing
 
 The Schema Renderer should be validated using representative schemas.
 
@@ -280,7 +284,7 @@ The renderer should fail safely.
 
 ---
 
-# End-to-End Testing
+## End-to-End Testing
 
 End-to-end tests verify complete user workflows.
 
@@ -304,13 +308,14 @@ Streaming
 ↓
 
 Response
+
 ```
 
 These tests validate that all major subsystems work together.
 
 ---
 
-# Performance Testing
+## Performance Testing
 
 Performance testing verifies scalability and responsiveness.
 
@@ -327,7 +332,7 @@ Performance testing should use realistic workloads.
 
 ---
 
-# Load Testing
+## Load Testing
 
 Load testing evaluates behavior under increasing demand.
 
@@ -343,7 +348,7 @@ Load testing identifies operational bottlenecks.
 
 ---
 
-# Security Testing
+## Security Testing
 
 Security-related testing verifies that protections remain effective.
 
@@ -360,7 +365,7 @@ Security tests should verify both successful and rejected operations.
 
 ---
 
-# Regression Testing
+## Regression Testing
 
 Regression tests ensure previously working functionality continues to behave correctly.
 
@@ -374,13 +379,14 @@ Regression Test Added
 ↓
 
 Future Releases Protected
+
 ```
 
 Every significant bug should result in a corresponding regression test.
 
 ---
 
-# Contract Testing
+## Contract Testing
 
 Public contracts should remain stable across releases.
 
@@ -396,7 +402,7 @@ Contract testing detects unintended breaking changes.
 
 ---
 
-# Test Data
+## Test Data
 
 Test data should be:
 
@@ -409,7 +415,7 @@ Avoid depending on production data whenever possible.
 
 ---
 
-# Test Isolation
+## Test Isolation
 
 Tests should not depend on one another.
 
@@ -423,7 +429,7 @@ Independent tests improve reliability.
 
 ---
 
-# Continuous Integration
+## Continuous Integration
 
 Automated tests should execute during every integration workflow.
 
@@ -447,13 +453,14 @@ Automated Tests
 ↓
 
 Result
+
 ```
 
 Failed tests prevent integration of unstable changes.
 
 ---
 
-# Code Coverage
+## Code Coverage
 
 Code coverage can help identify untested areas, but it should not be treated as a quality metric by itself.
 
@@ -467,7 +474,7 @@ Useful tests are more valuable than high percentages.
 
 ---
 
-# Manual Testing
+## Manual Testing
 
 Some scenarios remain better suited for manual verification.
 
@@ -483,7 +490,7 @@ Manual testing complements automated testing rather than replacing it.
 
 ---
 
-# Test Review
+## Test Review
 
 Tests should receive the same level of review as production code.
 
@@ -499,7 +506,7 @@ Poor tests increase maintenance costs.
 
 ---
 
-# Best Practices
+## Best Practices
 
 Recommended testing practices include:
 
@@ -515,7 +522,7 @@ Testing should support confident development rather than becoming a maintenance 
 
 ---
 
-# Common Anti-Patterns
+## Common Anti-Patterns
 
 Avoid:
 
@@ -531,7 +538,7 @@ These patterns reduce confidence in the test suite.
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 The testing strategy supports future enhancements including:
 
@@ -546,7 +553,7 @@ These additions strengthen quality assurance while preserving the existing testi
 
 ---
 
-# Relationship to Development
+## Relationship to Development
 
 Testing supports every phase of development.
 
@@ -568,13 +575,14 @@ Release
 ↓
 
 Maintenance
+
 ```
 
 Testing is a continuous activity rather than a final project phase.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Development
 
@@ -611,7 +619,7 @@ Testing is a continuous activity rather than a final project phase.
 
 ---
 
-# Summary
+## Summary
 
 The Testing strategy provides a comprehensive approach to verifying the correctness, stability, and architectural integrity of the Kernschmied platform. By combining unit, integration, API, schema, registry, plugin, frontend, security, performance, and end-to-end testing, the platform ensures that every significant component behaves predictably and that public contracts remain stable across releases.
 

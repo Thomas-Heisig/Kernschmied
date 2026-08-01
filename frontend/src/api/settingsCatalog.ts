@@ -13,7 +13,9 @@ export async function fetchSettingsCatalog(
   });
 
   if (!response.ok) {
-    throw new Error(`Settings-Katalog konnte nicht geladen werden (${response.status}).`);
+    throw new Error(
+      `Settings-Katalog konnte nicht geladen werden (${response.status}).`,
+    );
   }
 
   return (await response.json()) as SettingsCatalogResponse;

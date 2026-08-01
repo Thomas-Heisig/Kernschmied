@@ -138,6 +138,45 @@ class ModelListResponse(BaseModel):
     request_id: str | None = None
 
 
+class ProviderEntry(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
+    id: str
+    name: str
+    description: str | None = None
+
+    model_count: int = Field(
+        default=0,
+        ge=0,
+    )
+
+    available_model_count: int = Field(
+        default=0,
+        ge=0,
+    )
+
+
+class ProviderListResponse(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+
+    schema_version: str = MODEL_API_SCHEMA_VERSION
+
+    registry_revision: int = Field(
+        default=0,
+        ge=0,
+    )
+
+    items: list[ProviderEntry] = Field(
+        default_factory=lambda: list[ProviderEntry](),
+    )
+
+    request_id: str | None = None
+
+
 def get_request_id(
     request: Request,
 ) -> str | None:
@@ -1127,6 +1166,148 @@ def is_model_visible(
     return normalized_capability in {
         item.casefold() for item in model.capabilities.additional
     }
+
+
+def _provider_display_name(
+    provider_id: str,
+) -> str:
+    known_names: dict[str, str] = {
+        "ollama": "Ollama",
+        "openai": "OpenAI",
+        "openai_compatible": "OpenAI-kompatibel",
+        "azure_openai": "Azure OpenAI",
+        "anthropic": "Anthropic",
+        "google_gemini": "Google Gemini",
+        "llama_cpp": "llama.cpp",
+        "mlx": "MLX",
+        "http_generic": "Generischer HTTP-Provider",
+    }
+
+    return known_names.get(
+        provider_id.casefold(),
+        provider_id.replace("_", " ").title(),
+    )
+
+
+@router.get(
+    "/providers",
+    response_model=ProviderListResponse,
+    response_model_exclude_none=True,
+    summary="Verfügbare Modellprovider auflisten",
+    description=(
+        "Liefert die Provider der registrierten Modelle. "
+        "Es werden keine Zugangsdaten oder internen Providerdetails ausgegeben."
+    ),
+)
+async def providers(
+    request: Request,
+    response: Response,
+    include_disabled: bool = Query(
+        default=False,
+    ),
+) -> ProviderListResponse:
+    registry = get_model_registry(
+        request,
+    )
+
+    try:
+        raw_models = await list_registry_models(
+            registry,
+        )
+    except Exception as exc:
+        logger.exception(
+            "Model provider listing failed",
+            extra={
+                "request_id": get_request_id(
+                    request,
+                ),
+            },
+        )
+
+        raise structured_error(
+            request=request,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="MODEL_PROVIDER_LIST_FAILED",
+            message="Die Providerliste konnte nicht geladen werden.",
+        ) from exc
+
+    provider_models: dict[str, list[ModelEntry]] = {}
+
+    for raw_model in raw_models:
+        try:
+            model = normalize_model_entry(
+                raw_model,
+            )
+        except (
+            TypeError,
+            ValueError,
+        ):
+            logger.exception(
+                "Invalid model registry entry ignored",
+                extra={
+                    "request_id": get_request_id(
+                        request,
+                    ),
+                },
+            )
+            continue
+
+        if not include_disabled and not model.enabled:
+            continue
+
+        provider_models.setdefault(
+            model.provider,
+            [],
+        ).append(
+            model,
+        )
+
+    entries: list[ProviderEntry] = []
+
+    for provider_id, registered_models in provider_models.items():
+        available_count = sum(
+            1
+            for model in registered_models
+            if model.enabled and model.available and model.selectable
+        )
+
+        entries.append(
+            ProviderEntry(
+                id=provider_id,
+                name=_provider_display_name(
+                    provider_id,
+                ),
+                description=(
+                    f"{len(registered_models)} registrierte Modelle, "
+                    f"{available_count} verfügbar."
+                ),
+                model_count=len(
+                    registered_models,
+                ),
+                available_model_count=available_count,
+            ),
+        )
+
+    entries.sort(
+        key=lambda item: (
+            item.name.casefold(),
+            item.id.casefold(),
+        ),
+    )
+
+    registry_revision = await get_registry_revision(
+        registry,
+    )
+
+    response.headers["Cache-Control"] = "no-store, private"
+
+    return ProviderListResponse(
+        registry_revision=registry_revision,
+        items=entries,
+        request_id=get_request_id(
+            request,
+        ),
+    )
 
 
 @router.get(

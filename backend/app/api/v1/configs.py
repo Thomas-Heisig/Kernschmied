@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import inspect
 import logging
+import math
 import re
 from collections.abc import (
     Awaitable,
@@ -12,8 +13,18 @@ from collections.abc import (
     Sequence,
 )
 from enum import StrEnum
-from typing import Literal, TypeAlias, cast
+from functools import lru_cache
+from typing import (
+    Literal,
+    TypeAlias,
+    TypeGuard,
+    cast,
+)
 from uuid import UUID
+from zoneinfo import (
+    ZoneInfo,
+    ZoneInfoNotFoundError,
+)
 
 from fastapi import (
     APIRouter,
@@ -26,28 +37,47 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    JsonValue,  # <-- NEU: Pydantic's JsonValue
+    JsonValue,
     field_validator,
 )
 
+from app.config.service import ConfigValidationError
 from app.core.security_profile import get_security_profile
+from app.schemas.settings_catalog import (
+    SettingsControl,
+    SettingsFieldDescriptor,
+    SettingsSource,
+)
+from app.services.settings_catalog import build_settings_catalog
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 
-CONFIG_API_SCHEMA_VERSION = "1.1"
+# ============================================================
+# Öffentlicher Config-Vertrag
+# ============================================================
+
+CONFIG_API_SCHEMA_VERSION = "1.2"
 
 CONFIG_NAME_PATTERN = re.compile(
     r"^[a-z][a-z0-9_-]{0,63}$",
 )
 
+LANGUAGE_CODE_PATTERN = re.compile(
+    r"^[a-z]{2,3}(?:-[A-Z]{2})?$",
+)
+
+
+# ============================================================
+# Sicherheitsgrenzen
+# ============================================================
+
 RESERVED_GROUPS: frozenset[str] = frozenset(
     {
         "bootstrap",
         "infrastructure",
-        "security",
         "security_secrets",
         "secrets",
     },
@@ -68,17 +98,88 @@ SENSITIVE_KEY_PARTS: frozenset[str] = frozenset(
 )
 
 
-# Eigene rekursive Definition ENTFERNEN – stattdessen Pydantic's JsonValue verwenden
-ConfigScalar = str | int | float | bool | None
-ConfigValue = JsonValue  # JsonValue kommt jetzt aus pydantic
-ConfigIdentifier: TypeAlias = tuple[str, str]
-ConfigEntries: TypeAlias = Mapping[ConfigIdentifier, ConfigValue]
+# ============================================================
+# Zusätzliche Identitätsvalidierung
+# ============================================================
 
-DynamicCallable: TypeAlias = Callable[..., object]
+IDENTITY_STRING_LIMITS: Mapping[
+    str,
+    tuple[int, int],
+] = {
+    "name": (
+        1,
+        100,
+    ),
+    "role_description": (
+        1,
+        2_000,
+    ),
+    "mission": (
+        1,
+        10_000,
+    ),
+    "organization_description": (
+        0,
+        5_000,
+    ),
+    "default_language": (
+        2,
+        20,
+    ),
+    "timezone": (
+        1,
+        100,
+    ),
+    "behavior_principles": (
+        1,
+        10_000,
+    ),
+    "tone": (
+        1,
+        50,
+    ),
+    "response_depth": (
+        1,
+        50,
+    ),
+    "autonomy_level": (
+        1,
+        100,
+    ),
+}
+
+
+# ============================================================
+# Typen
+# ============================================================
+
+ConfigScalar: TypeAlias = str | int | float | bool | None
+
+ConfigValue: TypeAlias = JsonValue
+
+ConfigIdentifier: TypeAlias = tuple[
+    str,
+    str,
+]
+
+ConfigEntries: TypeAlias = Mapping[
+    ConfigIdentifier,
+    ConfigValue,
+]
+
+DynamicCallable: TypeAlias = Callable[
+    ...,
+    object,
+]
 
 
 class ConfigOperationStatus(StrEnum):
     UPDATED = "updated"
+
+
+# ============================================================
+# API-Schemas
+# ============================================================
 
 
 class ConfigUpdateRequest(BaseModel):
@@ -108,10 +209,12 @@ class ConfigUpdateRequest(BaseModel):
     reason: str | None = Field(
         default=None,
         max_length=500,
-        description="Optionale Begründung für das Audit-Log.",
+        description=("Optionale Begründung für das Audit-Log."),
     )
 
-    @field_validator("reason")
+    @field_validator(
+        "reason",
+    )
     @classmethod
     def normalize_reason(
         cls,
@@ -133,8 +236,12 @@ class ConfigEntryResponse(BaseModel):
     group: str
     key: str
     value: ConfigValue
+
     editable: bool = True
     sensitive: bool = False
+    requires_confirmation: bool = False
+
+    control: str | None = None
 
 
 class ConfigListResponse(BaseModel):
@@ -143,10 +250,13 @@ class ConfigListResponse(BaseModel):
     )
 
     schema_version: str = CONFIG_API_SCHEMA_VERSION
+
     revision: int = Field(
         ge=0,
     )
+
     items: list[ConfigEntryResponse]
+
     request_id: str | None = None
 
 
@@ -156,11 +266,14 @@ class ConfigUpdateResponse(BaseModel):
     )
 
     status: Literal["updated"] = "updated"
+
     group: str
     key: str
+
     revision: int = Field(
         ge=0,
     )
+
     request_id: str | None = None
 
 
@@ -171,8 +284,75 @@ class ConfigErrorDetails(BaseModel):
 
     group: str | None = None
     key: str | None = None
+
     expected_revision: int | None = None
     current_revision: int | None = None
+
+
+# ============================================================
+# Type Guards
+# ============================================================
+
+
+def normalize_config_number(
+    value: object,
+) -> float | None:
+    """
+    Konvertiert einen zulässigen numerischen JSON-Wert in float.
+
+    Boolesche Werte werden ausgeschlossen, obwohl bool eine
+    Unterklasse von int ist.
+    """
+
+    if isinstance(
+        value,
+        bool,
+    ):
+        return None
+
+    if isinstance(
+        value,
+        int,
+    ):
+        return float(
+            value,
+        )
+
+    if isinstance(
+        value,
+        float,
+    ):
+        if not math.isfinite(
+            value,
+        ):
+            return None
+
+        return value
+
+    return None
+
+
+def is_config_string_list(
+    value: ConfigValue,
+) -> TypeGuard[list[str]]:
+    if not isinstance(
+        value,
+        list,
+    ):
+        return False
+
+    return all(
+        isinstance(
+            item,
+            str,
+        )
+        for item in value
+    )
+
+
+# ============================================================
+# Request-Kontext und Fehler
+# ============================================================
 
 
 def get_request_id(
@@ -202,7 +382,13 @@ def structured_http_error(
     message: str,
     details: Mapping[str, object] | None = None,
 ) -> HTTPException:
-    normalized_details: dict[str, object] = dict(details) if details is not None else {}
+    normalized_details: dict[str, object] = (
+        dict(
+            details,
+        )
+        if details is not None
+        else {}
+    )
 
     return HTTPException(
         status_code=status_code,
@@ -215,6 +401,11 @@ def structured_http_error(
             ),
         },
     )
+
+
+# ============================================================
+# ConfigService-Zugriff
+# ============================================================
 
 
 def get_config_service(
@@ -240,7 +431,9 @@ def get_config_service(
 async def resolve_maybe_awaitable(
     value: object,
 ) -> object:
-    if inspect.isawaitable(value):
+    if inspect.isawaitable(
+        value,
+    ):
         return await cast(
             Awaitable[object],
             value,
@@ -254,28 +447,43 @@ def normalize_revision(
     *,
     default: int = 0,
 ) -> int:
-    if isinstance(value, bool):
-        return int(value)
+    if isinstance(
+        value,
+        bool,
+    ):
+        return int(
+            value,
+        )
 
-    if isinstance(value, int):
+    if isinstance(
+        value,
+        int,
+    ):
         return max(
             value,
             0,
         )
 
-    if isinstance(value, str):
+    if isinstance(
+        value,
+        str,
+    ):
         normalized = value.strip()
 
         if not normalized:
             return default
 
         try:
-            return max(
-                int(normalized),
-                0,
+            parsed = int(
+                normalized,
             )
         except ValueError:
             return default
+
+        return max(
+            parsed,
+            0,
+        )
 
     return default
 
@@ -291,9 +499,12 @@ async def get_service_revision(
         None,
     )
 
-    if callable(revision_getter):
+    if callable(
+        revision_getter,
+    ):
         try:
-            raw_revision = revision_getter()
+            raw_revision: object = revision_getter()
+
             resolved_revision = await resolve_maybe_awaitable(
                 raw_revision,
             )
@@ -308,6 +519,10 @@ async def get_service_revision(
             ValueError,
             RuntimeError,
         ):
+            logger.exception(
+                "Config revision getter failed",
+            )
+
             return default
 
     revision_value: object = getattr(
@@ -316,17 +531,24 @@ async def get_service_revision(
         default,
     )
 
-    if inspect.isawaitable(revision_value):
+    if inspect.isawaitable(
+        revision_value,
+    ):
         try:
             revision_value = await cast(
                 Awaitable[object],
                 revision_value,
             )
+
         except (
             TypeError,
             ValueError,
             RuntimeError,
         ):
+            logger.exception(
+                "Awaiting config revision failed",
+            )
+
             return default
 
     return normalize_revision(
@@ -335,10 +557,18 @@ async def get_service_revision(
     )
 
 
+# ============================================================
+# Bezeichner und sensible Werte
+# ============================================================
+
+
 def validate_config_name(
     value: str,
     *,
-    field_name: Literal["group", "key"],
+    field_name: Literal[
+        "group",
+        "key",
+    ],
     request: Request,
 ) -> str:
     normalized = value.strip().lower()
@@ -376,12 +606,20 @@ def is_reserved_group(
     return group.lower() in RESERVED_GROUPS
 
 
+# ============================================================
+# Principal und Berechtigungen
+# ============================================================
+
+
 def read_mapping_value(
     source: object,
     key: str,
     default: object = None,
 ) -> object:
-    if isinstance(source, Mapping):
+    if isinstance(
+        source,
+        Mapping,
+    ):
         typed_mapping = cast(
             Mapping[object, object],
             source,
@@ -424,7 +662,10 @@ def normalize_optional_identifier(
     if value is None:
         return None
 
-    if isinstance(value, UUID):
+    if isinstance(
+        value,
+        UUID,
+    ):
         return str(
             value,
         )
@@ -439,13 +680,6 @@ def normalize_optional_identifier(
 def get_actor_id(
     request: Request,
 ) -> str | None:
-    """
-    Liest den durch die Authentifizierungs-Middleware gesetzten
-    Benutzerbezeichner.
-
-    Unterstützt sowohl Mapping- als auch Objekt-Principals.
-    """
-
     principal = get_principal(
         request,
     )
@@ -481,7 +715,10 @@ def normalize_string_collection(
     if value is None:
         return set()
 
-    if isinstance(value, str):
+    if isinstance(
+        value,
+        str,
+    ):
         normalized = value.strip()
 
         return (
@@ -492,11 +729,19 @@ def normalize_string_collection(
             else set()
         )
 
-    if isinstance(value, Mapping):
+    if isinstance(
+        value,
+        Mapping,
+    ):
         return set()
 
-    if isinstance(value, Sequence):
-        items: Sequence[object] = cast(
+    items: Sequence[object]
+
+    if isinstance(
+        value,
+        Sequence,
+    ):
+        items = cast(
             Sequence[object],
             value,
         )
@@ -543,13 +788,13 @@ def get_permissions(
     if principal is None:
         return set()
 
-    raw_permissions: object = read_mapping_value(
+    raw_permissions = read_mapping_value(
         principal,
         "permissions",
         [],
     )
 
-    raw_roles: object = read_mapping_value(
+    raw_roles = read_mapping_value(
         principal,
         "roles",
         [],
@@ -566,7 +811,9 @@ def get_permissions(
     if {
         "admin",
         "administrator",
-    }.intersection(roles):
+    }.intersection(
+        roles,
+    ):
         permissions.add(
             "*",
         )
@@ -578,11 +825,8 @@ def development_fallback_allowed(
     request: Request,
 ) -> bool:
     """
-    Der vereinfachte lokale Zugriff ist ausschließlich im festen
-    Development-Sicherheitsprofil zulässig.
-
-    Die Datenbankkonfiguration darf diese Sicherheitsgrenze nicht
-    verändern oder abschwächen.
+    Der vereinfachte Zugriff ist nur im fest konfigurierten
+    Development-Profil zulässig.
     """
 
     security_profile = get_security_profile()
@@ -599,7 +843,14 @@ def development_fallback_allowed(
         environment_value,
     )
 
-    return str(raw_environment).strip().lower() == "development"
+    return (
+        str(
+            raw_environment,
+        )
+        .strip()
+        .lower()
+        == "development"
+    )
 
 
 def require_config_permission(
@@ -628,6 +879,7 @@ def require_config_permission(
                 ),
             },
         )
+
         return
 
     raise structured_http_error(
@@ -641,17 +893,22 @@ def require_config_permission(
     )
 
 
+# ============================================================
+# JSON-Normalisierung
+# ============================================================
+
+
 def normalize_config_value(
     value: object,
     *,
     path: str = "value",
 ) -> ConfigValue:
     """
-    Wandelt einen unbekannten Servicewert in den erlaubten
-    ConfigValue-Vertrag um.
+    Konvertiert einen unbekannten Servicewert in einen gültigen
+    JSON-Konfigurationswert.
 
-    Nicht unterstützte Objekte werden sichtbar abgelehnt und nicht
-    stillschweigend per `str()` serialisiert.
+    Nicht unterstützte Objekte werden abgelehnt und nicht implizit
+    in Strings umgewandelt.
     """
 
     if value is None:
@@ -659,22 +916,59 @@ def normalize_config_value(
 
     if isinstance(
         value,
-        str | int | float | bool,
+        bool,
     ):
         return value
 
-    if isinstance(value, Mapping):
+    if isinstance(
+        value,
+        int,
+    ):
+        return value
+
+    if isinstance(
+        value,
+        float,
+    ):
+        if not math.isfinite(
+            value,
+        ):
+            raise TypeError(
+                f"{path} enthält keine endliche Zahl.",
+            )
+
+        return value
+
+    if isinstance(
+        value,
+        str,
+    ):
+        return value
+
+    if isinstance(
+        value,
+        Mapping,
+    ):
         typed_mapping = cast(
             Mapping[object, object],
             value,
         )
 
-        result: dict[str, ConfigValue] = {}
+        result: dict[
+            str,
+            ConfigValue,
+        ] = {}
 
-        for raw_key, raw_value in typed_mapping.items():
-            if not isinstance(raw_key, str):
+        for (
+            raw_key,
+            raw_value,
+        ) in typed_mapping.items():
+            if not isinstance(
+                raw_key,
+                str,
+            ):
                 raise TypeError(
-                    f"{path} enthält einen nicht unterstützten Mapping-Schlüssel."
+                    f"{path} enthält einen nicht unterstützten Mapping-Schlüssel.",
                 )
 
             result[raw_key] = normalize_config_value(
@@ -684,14 +978,17 @@ def normalize_config_value(
 
         return result
 
-    if isinstance(value, Sequence):
+    if isinstance(
+        value,
+        Sequence,
+    ):
         if isinstance(
             value,
             bytes | bytearray,
         ):
             raise TypeError(
                 f"{path} enthält Binärdaten, die nicht als "
-                "Konfigurationswert unterstützt werden."
+                "Konfigurationswert unterstützt werden.",
             )
 
         typed_sequence = cast(
@@ -704,7 +1001,10 @@ def normalize_config_value(
                 item,
                 path=f"{path}[{index}]",
             )
-            for index, item in enumerate(
+            for (
+                index,
+                item,
+            ) in enumerate(
                 typed_sequence,
             )
         ]
@@ -723,13 +1023,16 @@ def normalize_config_value(
                 item,
                 path=f"{path}[{index}]",
             )
-            for index, item in enumerate(
+            for (
+                index,
+                item,
+            ) in enumerate(
                 typed_set,
             )
         ]
 
     raise TypeError(
-        f"{path} besitzt den nicht unterstützten Typ '{type(value).__name__}'."
+        f"{path} besitzt den nicht unterstützten Typ '{type(value).__name__}'.",
     )
 
 
@@ -747,7 +1050,12 @@ def normalize_config_identifier(
         identifier,
     )
 
-    if len(typed_identifier) != 2:
+    if (
+        len(
+            typed_identifier,
+        )
+        != 2
+    ):
         return None
 
     raw_group = typed_identifier[0]
@@ -765,8 +1073,8 @@ def normalize_config_identifier(
     ):
         return None
 
-    group = raw_group.strip()
-    key = raw_key.strip()
+    group = raw_group.strip().lower()
+    key = raw_key.strip().lower()
 
     if not group or not key:
         return None
@@ -777,16 +1085,636 @@ def normalize_config_identifier(
     )
 
 
+# ============================================================
+# Settings-Katalog als Schreib-Policy
+# ============================================================
+
+
+@lru_cache(
+    maxsize=1,
+)
+def get_settings_field_map() -> dict[
+    ConfigIdentifier,
+    SettingsFieldDescriptor,
+]:
+    """
+    Erzeugt die serverseitige Schreib-Policy aus dem Settings-Katalog.
+
+    Nur Felder mit:
+
+    - source=config
+    - editable=true
+    - config_group
+    - config_key
+
+    dürfen über die generische Config-API verändert werden.
+    """
+
+    catalog = build_settings_catalog()
+
+    result: dict[
+        ConfigIdentifier,
+        SettingsFieldDescriptor,
+    ] = {}
+
+    for settings_group in catalog.groups:
+        for section in settings_group.sections:
+            for field in section.fields:
+                if field.source is not SettingsSource.CONFIG:
+                    continue
+
+                if not field.editable:
+                    continue
+
+                if field.config_group is None:
+                    continue
+
+                if field.config_key is None:
+                    continue
+
+                group = field.config_group.strip().lower()
+
+                key = field.config_key.strip().lower()
+
+                if not group or not key:
+                    continue
+
+                result[
+                    (
+                        group,
+                        key,
+                    )
+                ] = field
+
+    return result
+
+
+def get_config_field_descriptor(
+    *,
+    group: str,
+    key: str,
+    request: Request,
+) -> SettingsFieldDescriptor:
+    descriptor = get_settings_field_map().get(
+        (
+            group,
+            key,
+        ),
+    )
+
+    if descriptor is None:
+        raise structured_http_error(
+            request=request,
+            status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+            code="CONFIG_FIELD_NOT_REGISTERED",
+            message=(
+                "Dieser Konfigurationswert ist nicht im Settings-Katalog registriert."
+            ),
+            details={
+                "group": group,
+                "key": key,
+            },
+        )
+
+    return descriptor
+
+
+# ============================================================
+# Katalogbasierte Validierung
+# ============================================================
+
+
+def validate_confirmation_requirement(
+    *,
+    descriptor: SettingsFieldDescriptor,
+    payload: ConfigUpdateRequest,
+    request: Request,
+) -> None:
+    if not descriptor.requires_confirmation:
+        return
+
+    if payload.reason is not None:
+        return
+
+    raise structured_http_error(
+        request=request,
+        status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+        code="CONFIG_CHANGE_REASON_REQUIRED",
+        message=(
+            "Für diese sicherheits- oder verhaltensrelevante "
+            "Änderung ist eine Begründung erforderlich."
+        ),
+        details={
+            "group": descriptor.config_group,
+            "key": descriptor.config_key,
+            "field_id": descriptor.id,
+        },
+    )
+
+
+def raise_invalid_type(
+    *,
+    descriptor: SettingsFieldDescriptor,
+    expected_type: str,
+    value: ConfigValue,
+    request: Request,
+) -> None:
+    raise structured_http_error(
+        request=request,
+        status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+        code="CONFIG_VALUE_TYPE_INVALID",
+        message=("Der Konfigurationswert besitzt einen ungültigen Datentyp."),
+        details={
+            "group": descriptor.config_group,
+            "key": descriptor.config_key,
+            "expected_type": expected_type,
+            "actual_type": type(
+                value,
+            ).__name__,
+        },
+    )
+
+
+def validate_control_type(
+    *,
+    descriptor: SettingsFieldDescriptor,
+    value: ConfigValue,
+    request: Request,
+) -> None:
+    control = descriptor.control
+
+    if control in {
+        SettingsControl.TEXT,
+        SettingsControl.TEXTAREA,
+        SettingsControl.SELECT,
+    }:
+        if not isinstance(
+            value,
+            str,
+        ):
+            raise_invalid_type(
+                descriptor=descriptor,
+                expected_type="string",
+                value=value,
+                request=request,
+            )
+
+        return
+
+    if control is SettingsControl.BOOLEAN:
+        if not isinstance(
+            value,
+            bool,
+        ):
+            raise_invalid_type(
+                descriptor=descriptor,
+                expected_type="boolean",
+                value=value,
+                request=request,
+            )
+
+        return
+
+    if control is SettingsControl.NUMBER:
+        numeric_value = normalize_config_number(
+            value,
+        )
+
+        if numeric_value is None:
+            raise_invalid_type(
+                descriptor=descriptor,
+                expected_type="number",
+                value=value,
+                request=request,
+            )
+
+        return
+
+    if control is SettingsControl.MULTISELECT:
+        if not is_config_string_list(
+            value,
+        ):
+            raise_invalid_type(
+                descriptor=descriptor,
+                expected_type="array[string]",
+                value=value,
+                request=request,
+            )
+
+        return
+
+    raise structured_http_error(
+        request=request,
+        status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+        code="CONFIG_CONTROL_NOT_EDITABLE",
+        message=(
+            "Der konfigurierte Darstellungstyp darf "
+            "nicht über die generische Config-API "
+            "bearbeitet werden."
+        ),
+        details={
+            "group": descriptor.config_group,
+            "key": descriptor.config_key,
+            "control": control.value,
+        },
+    )
+
+
+def validate_allowed_options(
+    *,
+    descriptor: SettingsFieldDescriptor,
+    value: ConfigValue,
+    request: Request,
+) -> None:
+    options = tuple(
+        descriptor.options or (),
+    )
+
+    if not options:
+        return
+
+    allowed_values: frozenset[str] = frozenset(option.value for option in options)
+
+    if descriptor.control is SettingsControl.SELECT:
+        if (
+            not isinstance(
+                value,
+                str,
+            )
+            or value not in allowed_values
+        ):
+            raise structured_http_error(
+                request=request,
+                status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+                code="CONFIG_OPTION_INVALID",
+                message=("Der ausgewählte Konfigurationswert ist nicht zulässig."),
+                details={
+                    "group": descriptor.config_group,
+                    "key": descriptor.config_key,
+                    "allowed_values": sorted(
+                        allowed_values,
+                    ),
+                },
+            )
+
+        return
+
+    if descriptor.control is SettingsControl.MULTISELECT:
+        if not is_config_string_list(
+            value,
+        ):
+            return
+
+        invalid_values: list[str] = [
+            item for item in value if item not in allowed_values
+        ]
+
+        if invalid_values:
+            raise structured_http_error(
+                request=request,
+                status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+                code="CONFIG_OPTIONS_INVALID",
+                message=(
+                    "Mindestens ein ausgewählter Konfigurationswert ist nicht zulässig."
+                ),
+                details={
+                    "group": descriptor.config_group,
+                    "key": descriptor.config_key,
+                    "invalid_values": invalid_values,
+                    "allowed_values": sorted(
+                        allowed_values,
+                    ),
+                },
+            )
+
+
+def validate_numeric_range(
+    *,
+    descriptor: SettingsFieldDescriptor,
+    value: ConfigValue,
+    request: Request,
+) -> None:
+    if descriptor.control is not SettingsControl.NUMBER:
+        return
+
+    numeric_value = normalize_config_number(
+        value,
+    )
+
+    if numeric_value is None:
+        return
+
+    minimum = descriptor.minimum
+    maximum = descriptor.maximum
+
+    if minimum is not None and numeric_value < minimum:
+        raise structured_http_error(
+            request=request,
+            status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+            code="CONFIG_VALUE_BELOW_MINIMUM",
+            message=(
+                "Der Konfigurationswert unterschreitet den erlaubten Mindestwert."
+            ),
+            details={
+                "group": descriptor.config_group,
+                "key": descriptor.config_key,
+                "minimum": minimum,
+                "actual": numeric_value,
+            },
+        )
+
+    if maximum is not None and numeric_value > maximum:
+        raise structured_http_error(
+            request=request,
+            status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+            code="CONFIG_VALUE_ABOVE_MAXIMUM",
+            message=("Der Konfigurationswert überschreitet den erlaubten Höchstwert."),
+            details={
+                "group": descriptor.config_group,
+                "key": descriptor.config_key,
+                "maximum": maximum,
+                "actual": numeric_value,
+            },
+        )
+
+
+# ============================================================
+# Identitätsvalidierung
+# ============================================================
+
+
+def validate_identity_value(
+    *,
+    key: str,
+    value: ConfigValue,
+    request: Request,
+) -> ConfigValue:
+    """
+    Zusätzliche fachliche Validierung der Identitätskonfiguration.
+    """
+
+    validated_value = value
+
+    limits = IDENTITY_STRING_LIMITS.get(
+        key,
+    )
+
+    if limits is not None:
+        if not isinstance(
+            validated_value,
+            str,
+        ):
+            raise structured_http_error(
+                request=request,
+                status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+                code="IDENTITY_VALUE_TYPE_INVALID",
+                message=("Der Identitätswert muss eine Zeichenkette sein."),
+                details={
+                    "key": key,
+                    "actual_type": type(
+                        validated_value,
+                    ).__name__,
+                },
+            )
+
+        normalized = validated_value.strip()
+
+        (
+            minimum_length,
+            maximum_length,
+        ) = limits
+
+        if (
+            len(
+                normalized,
+            )
+            < minimum_length
+        ):
+            raise structured_http_error(
+                request=request,
+                status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+                code="IDENTITY_VALUE_TOO_SHORT",
+                message=("Der Identitätswert ist zu kurz."),
+                details={
+                    "key": key,
+                    "minimum_length": minimum_length,
+                },
+            )
+
+        if (
+            len(
+                normalized,
+            )
+            > maximum_length
+        ):
+            raise structured_http_error(
+                request=request,
+                status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+                code="IDENTITY_VALUE_TOO_LONG",
+                message=("Der Identitätswert ist zu lang."),
+                details={
+                    "key": key,
+                    "maximum_length": maximum_length,
+                },
+            )
+
+        validated_value = normalized
+
+    if key == "default_language":
+        if not isinstance(
+            validated_value,
+            str,
+        ):
+            raise structured_http_error(
+                request=request,
+                status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+                code="IDENTITY_LANGUAGE_TYPE_INVALID",
+                message=("Die Standardsprache muss als Zeichenkette angegeben werden."),
+                details={
+                    "key": key,
+                },
+            )
+
+        if not LANGUAGE_CODE_PATTERN.fullmatch(
+            validated_value,
+        ):
+            raise structured_http_error(
+                request=request,
+                status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+                code="IDENTITY_LANGUAGE_INVALID",
+                message=(
+                    "Die Standardsprache muss als gültiger Sprachcode angegeben werden."
+                ),
+                details={
+                    "key": key,
+                    "value": validated_value,
+                    "example": "de",
+                },
+            )
+
+    if key == "timezone":
+        if not isinstance(
+            validated_value,
+            str,
+        ):
+            raise structured_http_error(
+                request=request,
+                status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+                code="IDENTITY_TIMEZONE_TYPE_INVALID",
+                message=("Die Zeitzone muss als Zeichenkette angegeben werden."),
+                details={
+                    "key": key,
+                },
+            )
+
+        try:
+            ZoneInfo(
+                validated_value,
+            )
+
+        except ZoneInfoNotFoundError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=(status.HTTP_422_UNPROCESSABLE_ENTITY),
+                code="IDENTITY_TIMEZONE_INVALID",
+                message=("Die angegebene Zeitzone ist keine gültige IANA-Zeitzone."),
+                details={
+                    "key": key,
+                    "value": validated_value,
+                    "example": "Europe/Berlin",
+                },
+            ) from exc
+
+    return validated_value
+
+
+def validate_catalog_config_value(
+    *,
+    group: str,
+    key: str,
+    payload: ConfigUpdateRequest,
+    request: Request,
+) -> tuple[
+    SettingsFieldDescriptor,
+    ConfigValue,
+]:
+    descriptor = get_config_field_descriptor(
+        group=group,
+        key=key,
+        request=request,
+    )
+
+    validate_confirmation_requirement(
+        descriptor=descriptor,
+        payload=payload,
+        request=request,
+    )
+
+    validate_control_type(
+        descriptor=descriptor,
+        value=payload.value,
+        request=request,
+    )
+
+    validate_allowed_options(
+        descriptor=descriptor,
+        value=payload.value,
+        request=request,
+    )
+
+    validate_numeric_range(
+        descriptor=descriptor,
+        value=payload.value,
+        request=request,
+    )
+
+    validated_value: ConfigValue = payload.value
+
+    if group == "identity":
+        validated_value = validate_identity_value(
+            key=key,
+            value=validated_value,
+            request=request,
+        )
+
+    return (
+        descriptor,
+        validated_value,
+    )
+
+
+# ============================================================
+# Lesen der Service-Konfiguration
+# ============================================================
+
+
+def add_normalized_entry(
+    *,
+    target: dict[
+        ConfigIdentifier,
+        ConfigValue,
+    ],
+    group: str,
+    key: str,
+    value: object,
+) -> None:
+    normalized_group = group.strip().lower()
+    normalized_key = key.strip().lower()
+
+    if not normalized_group or not normalized_key:
+        return
+
+    try:
+        normalized_value = normalize_config_value(
+            value,
+            path=(f"{normalized_group}.{normalized_key}"),
+        )
+
+    except TypeError:
+        logger.exception(
+            "Ignoring unsupported config value",
+            extra={
+                "group": normalized_group,
+                "key": normalized_key,
+                "value_type": type(
+                    value,
+                ).__name__,
+            },
+        )
+
+        return
+
+    target[
+        (
+            normalized_group,
+            normalized_key,
+        )
+    ] = normalized_value
+
+
 async def read_config_entries(
     service: object,
     request: Request,
-) -> dict[ConfigIdentifier, ConfigValue]:
+) -> dict[
+    ConfigIdentifier,
+    ConfigValue,
+]:
     """
-    Verwendet ausschließlich öffentliche Lesemethoden.
+    Liest Konfigurationswerte über öffentliche Service-Methoden.
 
-    Bevorzugt wird `get_all()`. `list_values()` wird als kompatible
-    Alternative unterstützt. Beide Methoden dürfen synchron oder
-    asynchron implementiert sein.
+    Unterstützt die aktuelle gruppierte ConfigService-Ausgabe:
+
+        {
+            "identity": {
+                "name": "Kernschmied",
+            },
+        }
+
+    sowie die ältere flache Darstellung:
+
+        {
+            ("identity", "name"): "Kernschmied",
+        }
     """
 
     get_all_value: object = getattr(
@@ -795,8 +1723,10 @@ async def read_config_entries(
         None,
     )
 
-    if callable(get_all_value):
-        raw_entries = get_all_value()
+    if callable(
+        get_all_value,
+    ):
+        raw_entries: object = get_all_value()
 
     else:
         list_values_value: object = getattr(
@@ -811,7 +1741,7 @@ async def read_config_entries(
             raise structured_http_error(
                 request=request,
                 status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
-                code=("CONFIG_SERVICE_CONTRACT_UNSUPPORTED"),
+                code="CONFIG_SERVICE_CONTRACT_UNSUPPORTED",
                 message=(
                     "Der Konfigurationsdienst unterstützt "
                     "keine öffentliche Methode zum Auflisten "
@@ -856,7 +1786,74 @@ async def read_config_entries(
         ConfigValue,
     ] = {}
 
-    for raw_identifier, raw_value in typed_entries.items():
+    for (
+        raw_identifier,
+        raw_value,
+    ) in typed_entries.items():
+        # Aktuelle ConfigService-Struktur:
+        #
+        # {
+        #     "identity": {
+        #         "name": "Kernschmied",
+        #     },
+        # }
+
+        if isinstance(
+            raw_identifier,
+            str,
+        ) and isinstance(
+            raw_value,
+            Mapping,
+        ):
+            normalized_group = raw_identifier.strip().lower()
+
+            if not normalized_group:
+                logger.warning(
+                    "Ignoring empty config group",
+                )
+
+                continue
+
+            group_values = cast(
+                Mapping[object, object],
+                raw_value,
+            )
+
+            for (
+                raw_key,
+                nested_value,
+            ) in group_values.items():
+                if not isinstance(
+                    raw_key,
+                    str,
+                ):
+                    logger.warning(
+                        "Ignoring invalid config key",
+                        extra={
+                            "group": normalized_group,
+                            "key": repr(
+                                raw_key,
+                            ),
+                        },
+                    )
+
+                    continue
+
+                add_normalized_entry(
+                    target=normalized_entries,
+                    group=normalized_group,
+                    key=raw_key,
+                    value=nested_value,
+                )
+
+            continue
+
+        # Kompatible ältere Struktur:
+        #
+        # {
+        #     ("identity", "name"): "Kernschmied",
+        # }
+
         identifier = normalize_config_identifier(
             raw_identifier,
         )
@@ -870,32 +1867,27 @@ async def read_config_entries(
                     ),
                 },
             )
+
             continue
 
-        group, key = identifier
+        (
+            group,
+            key,
+        ) = identifier
 
-        try:
-            normalized_value = normalize_config_value(
-                raw_value,
-                path=f"{group}.{key}",
-            )
-
-        except TypeError:
-            logger.exception(
-                "Ignoring unsupported config value",
-                extra={
-                    "group": group,
-                    "key": key,
-                    "value_type": type(
-                        raw_value,
-                    ).__name__,
-                },
-            )
-            continue
-
-        normalized_entries[identifier] = normalized_value
+        add_normalized_entry(
+            target=normalized_entries,
+            group=group,
+            key=key,
+            value=raw_value,
+        )
 
     return normalized_entries
+
+
+# ============================================================
+# API-Ausgabe
+# ============================================================
 
 
 def build_config_items(
@@ -903,8 +1895,16 @@ def build_config_items(
 ) -> list[ConfigEntryResponse]:
     items: list[ConfigEntryResponse] = []
 
-    for identifier, value in entries.items():
-        group, key = identifier
+    field_map = get_settings_field_map()
+
+    for (
+        identifier,
+        value,
+    ) in entries.items():
+        (
+            group,
+            key,
+        ) = identifier
 
         sensitive = is_sensitive_key(
             group,
@@ -915,13 +1915,29 @@ def build_config_items(
             group,
         )
 
+        descriptor = field_map.get(
+            identifier,
+        )
+
+        catalog_editable = (
+            descriptor is not None
+            and descriptor.editable
+            and (descriptor.source is SettingsSource.CONFIG)
+        )
+
         items.append(
             ConfigEntryResponse(
                 group=group,
                 key=key,
                 value=(None if sensitive else value),
-                editable=(not reserved and not sensitive),
+                editable=(catalog_editable and not reserved and not sensitive),
                 sensitive=sensitive,
+                requires_confirmation=(
+                    descriptor.requires_confirmation
+                    if descriptor is not None
+                    else False
+                ),
+                control=(descriptor.control.value if descriptor is not None else None),
             ),
         )
 
@@ -935,11 +1951,70 @@ def build_config_items(
     return items
 
 
+# ============================================================
+# Schreiben über den ConfigService
+# ============================================================
+
+
+def build_config_set_kwargs(
+    *,
+    setter: Callable[..., object],
+    payload: ConfigUpdateRequest,
+    actor_id: str | None,
+    request_id: str | None,
+) -> dict[str, object]:
+    """
+    Baut die optionalen Schlüsselwortargumente anhand der tatsächlich
+    unterstützten Signatur des ConfigService.
+
+    Die Kernparameter group, key und value bleiben immer positional.
+    """
+
+    try:
+        signature = inspect.signature(
+            setter,
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return {
+            "expected_revision": payload.expected_revision,
+            "actor_id": actor_id,
+            "request_id": request_id,
+        }
+
+    parameters = signature.parameters
+
+    accepts_var_keyword = any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters.values()
+    )
+
+    candidate_values: dict[str, object] = {
+        "expected_revision": payload.expected_revision,
+        "actor_id": actor_id,
+        "request_id": request_id,
+        "reason": payload.reason,
+    }
+
+    return {
+        name: value
+        for (
+            name,
+            value,
+        ) in candidate_values.items()
+        if (accepts_var_keyword or name in parameters)
+    }
+
+
 async def call_config_set(
     *,
     service: object,
     group: str,
     key: str,
+    value: ConfigValue,
     payload: ConfigUpdateRequest,
     request: Request,
 ) -> None:
@@ -972,14 +2047,19 @@ async def call_config_set(
         request,
     )
 
+    setter_kwargs = build_config_set_kwargs(
+        setter=setter,
+        payload=payload,
+        actor_id=actor_id,
+        request_id=request_id,
+    )
+
     try:
-        raw_result = setter(
+        raw_result: object = setter(
             group,
             key,
-            payload.value,
-            expected_revision=(payload.expected_revision),
-            actor_id=actor_id,
-            request_id=request_id,
+            value,
+            **setter_kwargs,
         )
 
         await resolve_maybe_awaitable(
@@ -993,24 +2073,25 @@ async def call_config_set(
                 "group": group,
                 "key": key,
                 "request_id": request_id,
+                "supported_kwargs": sorted(
+                    setter_kwargs,
+                ),
             },
         )
 
         raise structured_http_error(
             request=request,
             status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
-            code=("CONFIG_SERVICE_CONTRACT_UNSUPPORTED"),
+            code="CONFIG_SERVICE_CONTRACT_UNSUPPORTED",
             message=(
                 "Der Konfigurationsdienst unterstützt "
                 "den benötigten versionierten "
-                "Änderungsvertrag noch nicht."
+                "Änderungsvertrag nicht."
             ),
             details={
-                "required_parameters": [
-                    "expected_revision",
-                    "actor_id",
-                    "request_id",
-                ],
+                "provided_parameters": sorted(
+                    setter_kwargs,
+                ),
             },
         ) from exc
 
@@ -1028,6 +2109,25 @@ async def call_config_set(
                 ),
             },
         ) from exc
+    except Exception as exc:
+        # Special handling for ConfigValidationError from the service
+        if isinstance(exc, ConfigValidationError):
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                code=exc.code,
+                message=exc.message,
+                details={
+                    "group": group,
+                    "key": key,
+                },
+            ) from exc
+        raise
+
+
+# ============================================================
+# API-Endpunkte
+# ============================================================
 
 
 @router.get(
@@ -1063,10 +2163,13 @@ async def list_config(
     )
 
     response.headers["Cache-Control"] = "no-store, private"
+
     response.headers["Pragma"] = "no-cache"
+
     response.headers["X-Config-Revision"] = str(
         revision,
     )
+
     response.headers["X-Config-Schema-Version"] = CONFIG_API_SCHEMA_VERSION
 
     return ConfigListResponse(
@@ -1080,14 +2183,103 @@ async def list_config(
     )
 
 
+class BulkConfigUpdateRequest(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+        str_strip_whitespace=True,
+    )
+
+    values: dict = Field(
+        default_factory=dict,
+        description="Gruppierte Konfigurationswerte als Objekt { group: { key: value } }",
+    )
+
+    expected_revision: int | None = Field(
+        default=None,
+        ge=0,
+        description=("Erwartete Revision zur Vermeidung von Race-Conditions."),
+    )
+
+
+@router.put(
+    "",
+    summary="Mehrere Konfigurationswerte ändern (Bulk)",
+    description=(
+        "Nimmt ein gruppiertes `values`-Objekt entgegen und speichert alle enthaltenen Werte in einer Transaktion."
+    ),
+)
+async def bulk_update_config(
+    payload: BulkConfigUpdateRequest,
+    request: Request,
+    response: Response,
+) -> dict:
+    require_config_permission(
+        request,
+        "config:write",
+    )
+
+    service = get_config_service(request)
+
+    # Flatten grouped values into mapping of (group,key) -> value
+    updates: dict[tuple[str, str], object] = {}
+
+    for raw_group, raw_group_value in payload.values.items():
+        if not isinstance(raw_group, str):
+            continue
+
+        if not isinstance(raw_group_value, Mapping):
+            # ignore non-object group values
+            continue
+
+        for raw_key, raw_value in cast(
+            Mapping[object, object], raw_group_value
+        ).items():
+            if not isinstance(raw_key, str):
+                continue
+
+            updates[(raw_group.strip().lower(), raw_key.strip().lower())] = raw_value
+
+    try:
+        # Dispatch to service.set_many (supports validation and atomic commit)
+        await service.set_many(
+            updates,
+            expected_revision=payload.expected_revision,
+        )
+    except ConfigValidationError as exc:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            code=exc.code,
+            message=exc.message,
+            details={},
+        ) from exc
+
+    # Return the current configuration values (grouped) and revision
+    revision = await get_service_revision(service)
+
+    entries = await read_config_entries(service, request)
+
+    grouped: dict[str, dict[str, object]] = {}
+
+    for (group, key), value in entries.items():
+        grouped.setdefault(group, {})[key] = value
+
+    response.headers["Cache-Control"] = "no-store, private"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["X-Config-Revision"] = str(revision)
+    response.headers["X-Config-Schema-Version"] = CONFIG_API_SCHEMA_VERSION
+
+    return {"values": grouped, "revision": revision}
+
+
 @router.put(
     "/{group}/{key}",
     response_model=ConfigUpdateResponse,
     summary="Konfigurationswert ändern",
     description=(
-        "Ändert einen runtime-editierbaren Konfigurationswert. "
-        "Die Änderung muss durch den ConfigService validiert, "
-        "versioniert und protokolliert werden."
+        "Ändert einen registrierten, runtime-editierbaren "
+        "Konfigurationswert. Die Änderung wird anhand des "
+        "Settings-Katalogs validiert, versioniert und protokolliert."
     ),
     responses={
         status.HTTP_200_OK: {
@@ -1162,6 +2354,16 @@ async def update_config(
             },
         )
 
+    (
+        descriptor,
+        validated_value,
+    ) = validate_catalog_config_value(
+        group=normalized_group,
+        key=normalized_key,
+        payload=payload,
+        request=request,
+    )
+
     service = get_config_service(
         request,
     )
@@ -1170,9 +2372,8 @@ async def update_config(
         service,
     )
 
-    if (
-        payload.expected_revision is not None
-        and payload.expected_revision != current_revision
+    if payload.expected_revision is not None and (
+        payload.expected_revision != current_revision
     ):
         raise structured_http_error(
             request=request,
@@ -1195,23 +2396,27 @@ async def update_config(
         service=service,
         group=normalized_group,
         key=normalized_key,
+        value=validated_value,
         payload=payload,
         request=request,
     )
 
     new_revision = await get_service_revision(
         service,
-        default=current_revision + 1,
+        default=(current_revision + 1),
     )
 
     if new_revision <= current_revision:
         new_revision = current_revision + 1
 
     response.headers["Cache-Control"] = "no-store, private"
+
     response.headers["Pragma"] = "no-cache"
+
     response.headers["X-Config-Revision"] = str(
         new_revision,
     )
+
     response.headers["X-Config-Schema-Version"] = CONFIG_API_SCHEMA_VERSION
 
     logger.info(
@@ -1219,6 +2424,8 @@ async def update_config(
         extra={
             "group": normalized_group,
             "key": normalized_key,
+            "field_id": descriptor.id,
+            "control": descriptor.control.value,
             "revision": new_revision,
             "actor_id": get_actor_id(
                 request,

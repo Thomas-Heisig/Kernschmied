@@ -170,7 +170,10 @@ export function SelectedNodeWorkspace({
         aria-label={`Schema view: ${node.name}`}
       >
         <div className="mx-auto w-full max-w-6xl">
-          <SchemaRenderer schema={schema.node_types?.[normalizedType]} context={{ nodeId: node.id }} />
+          <SchemaRenderer
+            schema={schema.node_types?.[normalizedType]}
+            context={{ nodeId: node.id }}
+          />
         </div>
       </section>
     );
