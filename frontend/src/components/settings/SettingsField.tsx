@@ -11,57 +11,19 @@ import JsonSetting from "./fields/JsonSetting";
 import TagsSetting from "./fields/TagsSetting";
 import UnsupportedSetting from "./UnsupportedSetting";
 
-type LegacyProps = {
-  fieldKey?: string;
-  label?: string;
-  value?: ConfigValue;
+export function SettingsField({
+  entry,
+  path = [],
+  valuesByFullKey = null,
+  disabled = false,
+  onChange,
+}: {
+  entry: ConfigEntryResponse;
   path?: string[];
-  disabled?: boolean;
-  description?: string;
-  sensitive?: boolean;
-  readOnly?: boolean;
-  required?: boolean;
-  placeholder?: string;
-  minimum?: number;
-  maximum?: number;
-  step?: number;
-  options?: { value: string | number | boolean; label: string }[];
-  dynamicOptions?: unknown | null;
   valuesByFullKey?: Record<string, ConfigValue> | null;
+  disabled?: boolean;
   onChange?: (path: string[], value: ConfigValue) => void;
-};
-
-export function SettingsField(props: { entry?: ConfigEntryResponse } & Partial<LegacyProps>) {
-  const { entry: maybeEntry, path = [], valuesByFullKey = null, disabled = false, onChange } = props as any;
-
-  const entry: ConfigEntryResponse = maybeEntry
-    ? maybeEntry
-    : ({
-        group: "",
-        key: props.fieldKey ?? String(path.slice(-1)[0] ?? ""),
-        full_key: (path ?? []).concat(props.fieldKey ?? []).join("."),
-        display_name: props.label ?? String(props.fieldKey ?? ""),
-        description: props.description ?? "",
-        value: props.value as ConfigValue,
-        default_value: props.value as ConfigValue,
-        schema_version: "",
-        editable: !props.readOnly,
-        sensitive: Boolean(props.sensitive),
-        requires_restart: false,
-        runtime_editable: true,
-        nullable: !Boolean(props.required),
-        visibility: "",
-        allowed_scopes: [],
-        current_scope: "",
-        ui: {
-          component: undefined,
-          placeholder: props.placeholder ?? null,
-          help_text: null,
-          options: props.options as any,
-          dynamic_options: (props.dynamicOptions as any) ?? null,
-        },
-      } as ConfigEntryResponse);
-
+}) {
   const readOnly = entry.ui.readonly ?? !entry.editable;
   const required = !entry.nullable;
 
