@@ -29,7 +29,11 @@ interface AppWorkspaceProps {
   onOpenDocumentation: () => void;
   onCloseDocumentation: () => void;
   onCreateHierarchyNode?: (parentId: string) => Promise<void>;
-  onMoveHierarchyNode?: (id: string, newParentId: string | null) => Promise<void>;
+  onMoveHierarchyNode?: (
+    id: string,
+    newParentId: string | null,
+    position?: number | null,
+  ) => Promise<void>;
   onUpdateHierarchyNode?: (id: string, payload: unknown) => Promise<void>;
   onDeleteHierarchyNode?: (id: string) => Promise<void>;
   isHierarchyBusy?: boolean;

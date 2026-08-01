@@ -198,8 +198,8 @@ function TreeNode(props: any) {
       e.preventDefault();
       try {
         const source =
-          e.dataTransfer.getData("application/x-kernschmied-node") ||
-          e.dataTransfer.getData("text/plain");
+          e.dataTransfer.getData('application/x-kernschmied-node') ||
+          e.dataTransfer.getData('text/plain');
         if (!source || !onNodeDrop || source === node.id) return;
 
         // Determine drop position: before / inside / after based on pointer

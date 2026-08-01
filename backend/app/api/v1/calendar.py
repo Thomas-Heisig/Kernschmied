@@ -25,10 +25,13 @@ class CalendarSelectionOut(BaseModel):
 
 
 @router.post("/selection", response_model=CalendarSelectionOut, status_code=status.HTTP_201_CREATED)
-async def select_date(payload: CalendarSelectionIn, session: AsyncSession = Depends(get_session)):
+async def select_date(payload: CalendarSelectionIn, request: Request, session: AsyncSession = Depends(get_session)):
     """Persist a selected calendar date. Integration point for frontend calendar."""
     try:
+        user = getattr(request.state, "user", None)
+
         obj = CalendarSelection(
+            user_id=getattr(user, "id", None),
             selected_at=payload.selected,
             note=payload.note,
         )

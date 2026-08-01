@@ -89,20 +89,41 @@ export async function loadFullSystemConfig(signal?: AbortSignal): Promise<Loaded
   return loaded;
 }
 
+export interface BulkUpdateChange {
+  group: string;
+  key: string;
+  value: unknown;
+}
+
+export interface BulkUpdateRequest {
+  values?: ConfigObject;
+  changes?: BulkUpdateChange[];
+  expected_revision?: number | null;
+}
+
 export async function updateSystemConfig(
-  request: UpdateSystemConfigRequest,
+  request: BulkUpdateRequest,
   signal?: AbortSignal,
 ): Promise<SystemConfigSnapshot> {
+  const body: Record<string, unknown> = {};
+
+  if (Array.isArray(request.changes) && request.changes.length > 0) {
+    body.changes = request.changes;
+  } else if (request.values) {
+    body.values = request.values;
+  } else {
+    body.values = {};
+  }
+
+  body.expected_revision = request.expected_revision ?? null;
+
   const response = await fetch(`${API_BASE_URL}/config`, {
     method: 'PUT',
     headers: {
       Accept: 'application/json',
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      values: request.values,
-      expected_revision: request.expected_revision ?? null,
-    }),
+    body: JSON.stringify(body),
     credentials: 'same-origin',
     signal,
   });
@@ -114,8 +135,6 @@ export async function updateSystemConfig(
   const payload = await readJsonResponse(response);
 
   return normalizeConfigSnapshot(payload);
-  // The legacy bulk-update flow was removed; we already returned the
-  // normalized snapshot above. Ensure function ends here.
 }
 
 async function readJsonResponse(response: Response): Promise<unknown> {

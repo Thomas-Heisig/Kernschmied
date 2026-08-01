@@ -8,7 +8,12 @@ import {
   loadFullSystemConfig,
   updateSystemConfig,
 } from '../api/config';
-import type { ConfigObject, ConfigValue, ConfigEntryResponse } from '../contracts/config';
+import type {
+  ConfigObject,
+  ConfigValue,
+  ConfigEntryResponse,
+  ConfigGroupResponse,
+} from '../contracts/config';
 
 export type UseSystemConfigReturn = ReturnType<typeof useSystemConfig>;
 
@@ -19,8 +24,13 @@ interface SystemConfigError {
 }
 
 interface UseSystemConfigResult {
+  // Draft values currently edited in the UI
   values: ConfigObject;
+  // Persisted snapshot metadata
+  groups?: ConfigGroupResponse[] | null;
   entriesByFullKey?: Record<string, ConfigEntryResponse> | null;
+  persistedEntriesByFullKey?: Record<string, ConfigEntryResponse> | null;
+  draftValues?: ConfigObject;
   revision: number | null;
   isLoading: boolean;
   isSaving: boolean;
@@ -28,6 +38,7 @@ interface UseSystemConfigResult {
   error: SystemConfigError | null;
 
   setValues: (values: ConfigObject) => void;
+  setDraftValues?: (values: ConfigObject) => void;
 
   reload: () => Promise<void>;
   save: () => Promise<boolean>;

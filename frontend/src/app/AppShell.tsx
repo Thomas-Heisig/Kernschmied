@@ -186,12 +186,16 @@ function AppShellContent() {
 
     if (!nodeToMove) throw new Error('Knoten konnte nicht entfernt werden.');
 
-
     // insert into new parent
     if (newParentId === null) {
       clone.root.children = clone.root.children || [];
       if (insertPosition === null) clone.root.children.push(nodeToMove);
-      else clone.root.children.splice(Math.max(0, Math.min(clone.root.children.length, insertPosition)), 0, nodeToMove);
+      else
+        clone.root.children.splice(
+          Math.max(0, Math.min(clone.root.children.length, insertPosition)),
+          0,
+          nodeToMove,
+        );
       return clone;
     }
 
@@ -199,7 +203,12 @@ function AppShellContent() {
       if (parent.id === newParentId) {
         parent.children = parent.children || [];
         if (insertPosition === null) parent.children.push(nodeToMove);
-        else parent.children.splice(Math.max(0, Math.min(parent.children.length, insertPosition)), 0, nodeToMove);
+        else
+          parent.children.splice(
+            Math.max(0, Math.min(parent.children.length, insertPosition)),
+            0,
+            nodeToMove,
+          );
         return true;
       }
       if (!parent.children) return false;
