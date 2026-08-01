@@ -1,7 +1,7 @@
 # Kernschmied Wiki
 
-> **Version:** 1.0  
-> **Status:** Living Documentation  
+> **Version:** 1.0
+> **Status:** Living Documentation
 > **Repository:** <https://github.com/Thomas-Heisig/Kernschmied>
 
 ---

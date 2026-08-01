@@ -134,13 +134,19 @@ if (Test-Path variable:PSNativeCommandUseErrorActionPreference) {
 }
 
 # Plattform-Flag robust bestimmen (funktioniert in PS Core und Windows PowerShell)
-# Nur setzen, wenn die Variable noch nicht existiert (vermeidet Überschreiben von ReadOnly-Variablen)
-if (-not (Test-Path variable:IsWindows)) {
+# Verwende eine eigene Variable, um keine automatische Variable zu überschreiben.
+if (-not (Test-Path variable:IsWindowsPlatform)) {
     try {
-        $IsWindows = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
+        $existing = Get-Variable -Name IsWindows -ErrorAction SilentlyContinue
+        if ($null -ne $existing) {
+            $IsWindowsPlatform = [bool]$existing.Value
+        }
+        else {
+            $IsWindowsPlatform = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
+        }
     }
     catch {
-        $IsWindows = $env:OS -eq 'Windows_NT'
+        $IsWindowsPlatform = $env:OS -eq 'Windows_NT'
     }
 }
 
@@ -1233,7 +1239,7 @@ function Test-LocalNodeCommand {
         return $true
     }
 
-    $ExecutableName = if ($IsWindows) { "$Command.cmd" } else { $Command }
+    $ExecutableName = if ($IsWindowsPlatform) { "$Command.cmd" } else { $Command }
 
     $Candidates = @(
         (Join-Path $WorkingDirectory "node_modules\.bin\$ExecutableName"),
@@ -3365,39 +3371,56 @@ print("Pfade:", len(schema["paths"]))
         -ErrorAction SilentlyContinue
 
     if ($null -ne $ScriptAnalyzerCommand) {
-        $AnalyzerParameters = @{
-            Name   = "PSScriptAnalyzer: PowerShell prüfen"
-            Action = {
-                $Results = @(
-                    Invoke-ScriptAnalyzer `
-                        -Path $ScriptDirectory `
-                        -Recurse `
-                        -Severity @(
-                            "Error",
-                            "Warning"
-                        )
-                )
-
-                if ($Results.Count -gt 0) {
-                    $Results |
-                        Select-Object `
-                            RuleName,
-                            Severity,
-                            ScriptName,
-                            Line,
-                            Message |
-                        Format-Table `
-                            -AutoSize |
-                        Out-Host
-
-                    throw (
-                        "$($Results.Count) PowerShell-Probleme gefunden."
+            $AnalyzerParameters = @{
+                Name   = "PSScriptAnalyzer: PowerShell prüfen"
+                Action = {
+                    $Results = @(
+                        Invoke-ScriptAnalyzer `
+                            -Path $ScriptDirectory `
+                            -Recurse `
+                            -Severity @(
+                                "Error",
+                                "Warning"
+                            )
                     )
-                }
 
-                Write-Host "Keine PowerShell-Probleme gefunden."
+                    $AnalyzerErrors = @($Results | Where-Object { $_.Severity -eq 'Error' })
+                    $AnalyzerWarnings = @($Results | Where-Object { $_.Severity -eq 'Warning' })
+
+                    if ($AnalyzerErrors.Count -gt 0) {
+                        Write-Host "PSScriptAnalyzer: Fehler gefunden:" -ForegroundColor Red
+                        $AnalyzerErrors |
+                            Select-Object RuleName, Severity, ScriptName, Line, Message |
+                            Format-Table -AutoSize |
+                            Out-Host
+
+                        if ($AnalyzerWarnings.Count -gt 0) {
+                            Write-Host "PSScriptAnalyzer: Zusätzlich Warnungen:" -ForegroundColor Yellow
+                            $AnalyzerWarnings |
+                                Select-Object RuleName, Severity, ScriptName, Line, Message |
+                                Format-Table -AutoSize |
+                                Out-Host
+                        }
+
+                        throw (
+                            "{0} PowerShell-Fehler und {1} Warnungen gefunden." -f $AnalyzerErrors.Count, $AnalyzerWarnings.Count
+                        )
+                    }
+
+                    if ($AnalyzerWarnings.Count -gt 0) {
+                        Write-Host "PSScriptAnalyzer: Warnungen gefunden:" -ForegroundColor Yellow
+                        $AnalyzerWarnings |
+                            Select-Object RuleName, Severity, ScriptName, Line, Message |
+                            Format-Table -AutoSize |
+                            Out-Host
+
+                        return New-StepResult -Status "Warning" -Message ("{0} PowerShell-Warnungen gefunden." -f $AnalyzerWarnings.Count)
+                    }
+
+                    Write-Host "Keine PowerShell-Probleme gefunden."
+                    return New-StepResult -Status "Passed"
+                }
             }
-        }
 
         if (-not $StrictPowerShell) {
             $AnalyzerParameters.WarningOnly = $true
@@ -3527,7 +3550,7 @@ print("Pfade:", len(schema["paths"]))
             $diffCheckExit = $LASTEXITCODE
 
             if ($diffCheckExit -ne 0) {
-                # If the only messages are line-ending warnings (LF/CRLF), downgrade to warning
+                # If the only messages are line-ending warnings (LF/CRLF) or purely trailing whitespace, downgrade to warning
                 $lines = $diffCheckOutput -split "\r?\n" | ForEach-Object { $_.Trim() } | Where-Object { $_ -ne "" }
 
                 $nonLineEnding = @($lines | Where-Object { $_ -notmatch "LF will be replaced by CRLF" -and $_ -notmatch "CRLF will be replaced by LF" -and $_ -notmatch "trailing whitespace" })

@@ -17,14 +17,23 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
   const [events, setEvents] = useState<components['schemas']['EventOut'][]>([]);
   const [newCalName, setNewCalName] = useState('');
   const [newEventTitle, setNewEventTitle] = useState('');
+  const [loadingCals, setLoadingCals] = useState(false);
+  const [calError, setCalError] = useState<string | null>(null);
+  const [editingCalendarId, setEditingCalendarId] = useState<string | null>(null);
+  const [editingCalendarName, setEditingCalendarName] = useState<string>('');
 
   async function reloadCalendars() {
+    setCalError(null);
+    setLoadingCals(true);
     try {
       const c = await listCalendars();
       setCalendars(c || []);
       if (!selectedCalendar && c && c.length) setSelectedCalendar(c[0].id);
-    } catch {
+    } catch (err: any) {
+      setCalError(String(err));
       setCalendars([]);
+    } finally {
+      setLoadingCals(false);
     }
   }
 
@@ -71,30 +80,84 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
           <ul className="mt-2 space-y-2">
             {calendars.map((c) => (
               <li key={c.id} className="flex items-center justify-between">
-                <button
-                  className={`text-left flex-1 ${selectedCalendar === c.id ? 'font-semibold' : ''}`}
-                  onClick={() => setSelectedCalendar(c.id)}
-                >
-                  {c.name}
-                </button>
-                <div className="flex items-center gap-2">
-                  <button
-                    className="text-sm text-red-600"
-                    onClick={async () => {
-                      try {
-                        await deleteCalendar(c.id);
-                        await reloadCalendars();
-                      } catch (e) {
-                        // ignore
-                      }
-                    }}
-                  >
-                    Löschen
-                  </button>
+                <div className="flex-1">
+                  {editingCalendarId === c.id ? (
+                    <input
+                      className="w-full rounded border px-2 py-1 text-sm"
+                      value={editingCalendarName}
+                      onChange={(e) => setEditingCalendarName(e.target.value)}
+                    />
+                  ) : (
+                    <button
+                      className={`text-left w-full ${selectedCalendar === c.id ? 'font-semibold' : ''}`}
+                      onClick={() => setSelectedCalendar(c.id)}
+                    >
+                      {c.name}
+                    </button>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 ml-2">
+                  {editingCalendarId === c.id ? (
+                    <>
+                      <button
+                        className="text-sm px-2"
+                        onClick={async () => {
+                          // save
+                          try {
+                            await patchCalendar(c.id, { name: editingCalendarName } as any);
+                            setEditingCalendarId(null);
+                            setEditingCalendarName('');
+                            await reloadCalendars();
+                          } catch (err) {
+                            setCalError(String(err));
+                          }
+                        }}
+                      >
+                        Speichern
+                      </button>
+                      <button
+                        className="text-sm px-2"
+                        onClick={() => {
+                          setEditingCalendarId(null);
+                          setEditingCalendarName('');
+                        }}
+                      >
+                        Abbrechen
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        className="text-sm px-2"
+                        onClick={() => {
+                          setEditingCalendarId(c.id);
+                          setEditingCalendarName(c.name);
+                        }}
+                      >
+                        Bearbeiten
+                      </button>
+                      <button
+                        className="text-sm text-red-600 px-2"
+                        onClick={async () => {
+                          try {
+                            await deleteCalendar(c.id);
+                            await reloadCalendars();
+                          } catch (e) {
+                            setCalError(String(e));
+                          }
+                        }}
+                      >
+                        Löschen
+                      </button>
+                    </>
+                  )}
                 </div>
               </li>
             ))}
           </ul>
+
+          {loadingCals ? <div className="text-sm text-slate-500 mt-2">Lade Kalender …</div> : null}
+          {calError ? <div className="text-sm text-red-600 mt-2">{calError}</div> : null}
 
           <div className="mt-4">
             <input

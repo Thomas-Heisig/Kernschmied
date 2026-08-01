@@ -130,7 +130,7 @@ The application core communicates only with registries and never directly with i
 
 > **Core systems depend on registries.  
 > Registries depend on implementations.  
-> Implementations never modify the core.**
+> Implementations never modify the core.
 
 ---
 

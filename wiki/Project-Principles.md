@@ -1,7 +1,7 @@
 # Project Principles
 
-> **Version:** 1.0  
-> **Status:** Living Document  
+> **Version:** 1.0
+> **Status:** Living Document
 > **Applies to:** Entire Kernschmied Project
 
 ---

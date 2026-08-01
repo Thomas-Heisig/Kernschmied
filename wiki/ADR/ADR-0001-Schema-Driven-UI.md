@@ -107,7 +107,7 @@ Business-specific React components are intentionally avoided.
 
 The guiding principle is:
 
-> **The backend defines what should be rendered.  
+> **The backend defines what should be rendered.
 > The frontend defines how it is rendered.**
 
 ---

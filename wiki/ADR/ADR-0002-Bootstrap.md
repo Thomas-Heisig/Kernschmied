@@ -109,7 +109,7 @@ Runtime configuration is loaded after the application has initialized and is sto
 
 ## Architectural Principle
 
-> **Bootstrap configuration starts the platform.  
+> **Bootstrap configuration starts the platform.
 > Runtime configuration defines platform behavior.**
 
 ---

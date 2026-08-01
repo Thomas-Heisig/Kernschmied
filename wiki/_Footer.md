@@ -6,13 +6,13 @@
 
 ## Quick Links
 
-📦 **Repository**  
+📦 **Repository**
 <https://github.com/Thomas-Heisig/Kernschmied>
 
-🐞 **Issue Tracker**  
+🐞 **Issue Tracker**
 <https://github.com/Thomas-Heisig/Kernschmied/issues>
 
-📖 **Wiki Home**  
+📖 **Wiki Home**
 [[Home]]
 
 ---

@@ -4,6 +4,9 @@ import {
   listCalendars,
   listEvents,
   selectDate as apiSelectDate,
+  getEvent,
+  patchEvent,
+  deleteEvent,
 } from '../../api/fetchCalendarClient';
 
 export default function FooterCalendar({
@@ -22,15 +25,29 @@ export default function FooterCalendar({
   const [calendars, setCalendars] = useState<components['schemas']['CalendarOut'][]>([]);
   const [events, setEvents] = useState<components['schemas']['EventOut'][]>([]);
   const [selectedDate, setSelectedDate] = useState<Date>(initialDate);
+  const [loadingCals, setLoadingCals] = useState(false);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editingEvent, setEditingEvent] = useState<components['schemas']['EventOut'] | null>(null);
 
   useEffect(() => {
     let mounted = true;
+    setLoadingCals(true);
+    setError(null);
     listCalendars()
       .then((c) => {
         if (!mounted) return;
         setCalendars(c || []);
       })
-      .catch(() => {});
+      .catch((err) => {
+        if (!mounted) return;
+        setError(String(err));
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoadingCals(false);
+      });
 
     return () => {
       mounted = false;
@@ -48,14 +65,21 @@ export default function FooterCalendar({
     const start = new Date(t0.setHours(0, 0, 0, 0)).toISOString();
     const end = new Date(t0.setHours(23, 59, 59, 999)).toISOString();
 
+    setLoadingEvents(true);
+    setError(null);
     listEvents(targetCalendarId, { time_min: start, time_max: end })
       .then((ev) => {
         if (!mounted) return;
         setEvents(ev || []);
       })
-      .catch(() => {
+      .catch((err) => {
         if (!mounted) return;
+        setError(String(err));
         setEvents([]);
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoadingEvents(false);
       });
 
     return () => {
@@ -76,6 +100,55 @@ export default function FooterCalendar({
     setSelectedDate(chosen);
     onSelect(chosen);
     void apiSelectDate({ selected: chosen.toISOString() }).catch(() => {});
+  }
+
+  async function openEventDetail(eventId: string) {
+    setError(null);
+    try {
+      const ev = await getEvent(targetCalendarId!, eventId);
+      setEditingEvent(ev as any);
+      setEditingEventId(eventId);
+    } catch (err: any) {
+      setError(String(err));
+    }
+  }
+
+  async function saveEventEdits() {
+    if (!editingEventId || !targetCalendarId || !editingEvent) return;
+    try {
+      await patchEvent(targetCalendarId, editingEventId, {
+        title: editingEvent.title,
+        description: editingEvent.description ?? undefined,
+        start: editingEvent.start as any,
+        end: editingEvent.end as any,
+        all_day: editingEvent.all_day ?? false,
+      } as any);
+      setEditingEventId(null);
+      setEditingEvent(null);
+      // reload events
+      const t0 = new Date(selectedDate);
+      const start = new Date(t0.setHours(0, 0, 0, 0)).toISOString();
+      const end = new Date(t0.setHours(23, 59, 59, 999)).toISOString();
+      const ev = await listEvents(targetCalendarId, { time_min: start, time_max: end });
+      setEvents(ev || []);
+    } catch (err: any) {
+      setError(String(err));
+    }
+  }
+
+  async function removeEvent(id: string) {
+    if (!targetCalendarId) return;
+    try {
+      await deleteEvent(targetCalendarId, id);
+      // reload
+      const t0 = new Date(selectedDate);
+      const start = new Date(t0.setHours(0, 0, 0, 0)).toISOString();
+      const end = new Date(t0.setHours(23, 59, 59, 999)).toISOString();
+      const ev = await listEvents(targetCalendarId, { time_min: start, time_max: end });
+      setEvents(ev || []);
+    } catch (err: any) {
+      setError(String(err));
+    }
   }
 
   return (
@@ -134,22 +207,79 @@ export default function FooterCalendar({
 
         <div className="mt-2">
           <div className="text-xs font-semibold">Ereignisse</div>
-          <ul className="mt-1 max-h-40 overflow-auto text-xs">
-            {events.length === 0 ? (
-              <li className="text-slate-500">Keine Ereignisse</li>
+          <div className="mt-1 max-h-40 overflow-auto text-xs">
+            {loadingEvents ? (
+              <div className="text-slate-500">Lade Ereignisse …</div>
+            ) : error ? (
+              <div className="text-red-600">{error}</div>
+            ) : events.length === 0 ? (
+              <div className="text-slate-500">Keine Ereignisse</div>
             ) : (
-              events.map((e) => (
-                <li key={e.id} className="py-1 border-b last:border-b-0">
-                  <div className="font-medium">{e.title}</div>
-                  <div className="text-slate-500 text-xs">
-                    {new Date(e.start).toLocaleTimeString('de-DE')}
-                  </div>
-                </li>
-              ))
+              <ul>
+                {events.map((e) => (
+                  <li key={e.id} className="py-1 border-b last:border-b-0">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <button
+                          className="font-medium text-left"
+                          onClick={() => openEventDetail(e.id)}
+                        >
+                          {e.title}
+                        </button>
+                        <div className="text-slate-500 text-xs">
+                          {new Date(e.start).toLocaleTimeString('de-DE')}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          className="text-xs text-red-600"
+                          onClick={() => void removeEvent(e.id)}
+                        >
+                          Löschen
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             )}
-          </ul>
+          </div>
         </div>
       </div>
+      {editingEventId && editingEvent ? (
+        <div className="mt-2 border-t pt-2">
+          <h4 className="text-sm font-semibold">Ereignis bearbeiten</h4>
+          <input
+            className="w-full rounded border px-2 py-1 text-sm mt-2"
+            value={editingEvent.title}
+            onChange={(e) => setEditingEvent({ ...editingEvent, title: e.target.value } as any)}
+          />
+          <textarea
+            className="w-full rounded border px-2 py-1 text-sm mt-2"
+            rows={3}
+            value={editingEvent.description ?? ''}
+            onChange={(e) => setEditingEvent({ ...editingEvent, description: e.target.value } as any)}
+          />
+          <div className="mt-2 flex gap-2 justify-end">
+            <button
+              className="rounded px-3 py-1 text-sm"
+              onClick={() => {
+                setEditingEventId(null);
+                setEditingEvent(null);
+              }}
+            >
+              Abbrechen
+            </button>
+            <button
+              className="rounded bg-sky-600 px-3 py-1 text-sm text-white"
+              onClick={() => void saveEventEdits()}
+            >
+              Speichern
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
