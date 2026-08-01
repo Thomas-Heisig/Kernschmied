@@ -56,6 +56,17 @@ export function AppFooter({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
   const autoRefreshIntervalMs = 30000; // 30s
+  const [saveSelectionsEnabled, setSaveSelectionsEnabled] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem('calendar.saveSelection');
+      return v === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [modelsCount, setModelsCount] = useState<number | null>(null);
+  const [toolsCount, setToolsCount] = useState<number | null>(null);
 
   // bootstrap/health loader (unchanged)
 
@@ -77,6 +88,27 @@ export function AppFooter({
         setOnline(true);
         setLastChecked(new Date());
         setRequestId((data as any)?.request_id ?? res.headers.get('X-Request-Id'));
+        // fetch counts for models/tools if endpoints provided
+        try {
+          const m = await fetch('/api/v1/models', { cache: 'no-store' });
+          if (m.ok) {
+            const md = await m.json();
+            // if API returns array or object with items
+            if (Array.isArray(md)) setModelsCount(md.length);
+            else if (typeof md === 'object' && md?.items) setModelsCount(md.items.length ?? null);
+            else if (typeof md === 'object' && md?.length) setModelsCount(md.length ?? null);
+          }
+        } catch {}
+
+        try {
+          const t = await fetch('/api/v1/tools', { cache: 'no-store' });
+          if (t.ok) {
+            const td = await t.json();
+            if (Array.isArray(td)) setToolsCount(td.length);
+            else if (typeof td === 'object' && td?.items) setToolsCount(td.items.length ?? null);
+            else if (typeof td === 'object' && td?.length) setToolsCount(td.length ?? null);
+          }
+        } catch {}
       } catch (err: any) {
         // Fallback: try health endpoint to at least determine online state
         try {
@@ -242,6 +274,23 @@ export function AppFooter({
           >
             ⓘ Systeminfo
           </button>
+
+          {/* opt-in toggle for saving calendar selections */}
+          <div className="ml-3 flex items-center gap-2 text-xs">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={saveSelectionsEnabled}
+                onChange={(e) => {
+                  setSaveSelectionsEnabled(e.target.checked);
+                  try {
+                    localStorage.setItem('calendar.saveSelection', e.target.checked ? 'true' : 'false');
+                  } catch {}
+                }}
+              />
+              <span>Speichern</span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -493,8 +542,10 @@ function DatePicker({
     setSelectedDay(day);
     setSelectedDate(chosen);
     onSelect(chosen);
-    // send to backend (prepared endpoint). ignore errors silently.
-    sendSelectedDate(chosen).catch(() => {});
+    // send to backend (prepared endpoint) only if user enabled saving
+    if (saveSelectionsEnabled) {
+      sendSelectedDate(chosen).catch(() => {});
+    }
   }
 
   // keyboard navigation
