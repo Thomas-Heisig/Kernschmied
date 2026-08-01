@@ -1141,15 +1141,20 @@ def register_exception_handlers(
             error_message=str(exc),
         )
 
-        # In development environment include traceback in details to aid debugging.
+        # Include traceback in details only when explicitly enabled for development.
+        include_traceback = False
         try:
             runtime_cfg = get_runtime_config(request.app)
             is_dev = runtime_cfg.environment == ApplicationEnvironment.DEVELOPMENT
+            # Allow an explicit bootstrap setting to enable tracebacks in dev.
+            include_traceback = (
+                is_dev and setting_as_bool("include_traceback_in_error_responses", False)
+            )
         except Exception:
-            is_dev = False
+            include_traceback = False
 
         details: dict[str, object] | None = None
-        if is_dev:
+        if include_traceback:
             import traceback as _tb
 
             details = {"traceback": _tb.format_exc()}
