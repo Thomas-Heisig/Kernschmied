@@ -59,9 +59,11 @@ export function AppFooter({
   const [saveSelectionsEnabled, setSaveSelectionsEnabled] = useState<boolean>(() => {
     try {
       const v = localStorage.getItem('calendar.saveSelection');
+      // Default to true when no explicit preference is stored (opt-in default true)
+      if (v === null) return true;
       return v === 'true';
     } catch {
-      return false;
+      return true;
     }
   });
 
@@ -234,6 +236,8 @@ export function AppFooter({
     { title: 'Speicherung', ok: caps.chat_persistence ?? null, emoji: '💾' },
     { title: 'Datei-Upload', ok: caps.file_upload ?? null, emoji: '📎' },
   ];
+  
+ 
 
   return (
     <footer className="z-30 shrink-0 border-t border-border bg-white/90 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/90">
@@ -267,6 +271,20 @@ export function AppFooter({
         <div className="flex items-center gap-4">
           <span className="text-xs text-text-muted">API {bootstrap?.versions?.api ?? apiVersion} · Schema {bootstrap?.schema_version ?? schemaVersion}</span>
 
+          {/* Clock and calendar trigger */}
+          <div className="flex items-center gap-2">
+            <Clock />
+            <button
+              className="text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center gap-2"
+              onClick={() => setShowDatePicker(true)}
+              aria-label="Datum auswählen"
+              title="Datum auswählen"
+            >
+              <CalendarDays className="w-4 h-4" />
+              <span className="hidden sm:inline">Kalender</span>
+            </button>
+          </div>
+
           <button
             className="text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800"
             onClick={() => setSystemInfoOpen(true)}
@@ -293,6 +311,28 @@ export function AppFooter({
           </div>
         </div>
       </div>
+
+      {/* Inline DatePicker modal when requested */}
+      {showDatePicker ? (
+        <div className="fixed right-4 bottom-16 z-50 w-[min(520px,95%)] max-w-full rounded border bg-white p-4 shadow dark:bg-slate-800">
+          <div className="flex items-center justify-between">
+            <strong>Datum auswählen</strong>
+            <button className="text-sm text-gray-500" onClick={() => setShowDatePicker(false)}>✕</button>
+          </div>
+          <div className="mt-3">
+            {/* use the DatePicker defined inside this component */}
+            <DatePicker
+              initialDate={selectedDate ?? new Date()}
+              setSelectedDate={(d) => setSelectedDate(d)}
+              onSelect={(d) => {
+                setSelectedDate(d);
+                setShowDatePicker(false);
+              }}
+              onCancel={() => setShowDatePicker(false)}
+            />
+          </div>
+        </div>
+      ) : null}
 
       {systemInfoOpen && (
         <div className="fixed right-4 bottom-16 z-50 w-[min(720px,95%)] max-w-full rounded border bg-white p-4 shadow dark:bg-slate-800">
@@ -388,18 +428,22 @@ export function AppFooter({
                 <div>
                   <h3 className="font-semibold">Funktionen</h3>
                   <div className="mt-3 grid grid-cols-2 gap-3">
-                    {friendlyCaps.map((c) => (
-                      <div key={c.title} className="rounded border p-3 text-sm flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span>{c.emoji}</span>
-                          <div>
-                            <div className="font-medium">{c.title}</div>
-                            <div className="text-xs text-text-muted">{c.ok === true ? 'Verfügbar' : c.ok === false ? 'Nicht aktiviert' : 'Unbekannt'}</div>
+                    {friendlyCaps.map((c) => {
+                      const count = c.title === 'KI-Modelle' ? modelsCount : c.title === 'Werkzeuge' ? toolsCount : null;
+
+                      return (
+                        <div key={c.title} className="rounded border p-3 text-sm flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span>{c.emoji}</span>
+                            <div>
+                              <div className="font-medium">{c.title} {count !== null ? <span className="ml-2 text-xs text-text-muted">{count}</span> : null}</div>
+                              <div className="text-xs text-text-muted">{c.ok === true ? 'Verfügbar' : c.ok === false ? 'Nicht aktiviert' : 'Unbekannt'}</div>
+                            </div>
                           </div>
+                          {c.ok === true ? <span className="text-emerald-600">●</span> : c.ok === false ? <span className="text-gray-400">○</span> : <span className="text-gray-500">–</span>}
                         </div>
-                        {c.ok === true ? <span className="text-emerald-600">●</span> : c.ok === false ? <span className="text-gray-400">○</span> : <span className="text-gray-500">–</span>}
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -504,11 +548,27 @@ function DatePicker({
   setSelectedDate,
   onSelect,
   onCancel,
+  saveSelectionsEnabled,
+  autoRefresh,
+  setAutoRefresh,
+  setSystemTab,
+  bootstrap,
+  configRevision,
+  modelsCount,
+  toolsCount,
 }: {
   initialDate: Date;
   setSelectedDate: (d: Date) => void;
   onSelect: (d: Date) => void;
   onCancel: () => void;
+  saveSelectionsEnabled: boolean;
+  autoRefresh: boolean;
+  setAutoRefresh: React.Dispatch<React.SetStateAction<boolean>>;
+  setSystemTab: (t: 'overview' | 'functions' | 'versions' | 'technical') => void;
+  bootstrap: BootstrapResponse | null;
+  configRevision: number;
+  modelsCount: number | null;
+  toolsCount: number | null;
 }) {
   const [viewDate, setViewDate] = useState<Date>(new Date(initialDate));
   const [selectedDay, setSelectedDay] = useState<number | null>(initialDate.getDate());
@@ -544,7 +604,7 @@ function DatePicker({
     onSelect(chosen);
     // send to backend (prepared endpoint) only if user enabled saving
     if (saveSelectionsEnabled) {
-      sendSelectedDate(chosen).catch(() => {});
+        sendSelectedDateIfOptIn(chosen).catch(() => {});
     }
   }
 
@@ -630,7 +690,7 @@ function DatePicker({
         />
             <button
               className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-50 dark:bg-slate-700"
-              onClick={() => setAutoRefresh((v) => !v)}
+              onClick={() => setAutoRefresh((v: boolean) => !v)}
               title="Automatisch aktualisieren (30s)"
             >
               {autoRefresh ? 'Auto‑Refresh: Ein' : 'Auto‑Refresh: Aus'}
@@ -647,27 +707,26 @@ function DatePicker({
 
             {/* Modelle/Werkzeuge indicators (compact) */}
             <div className="hidden md:flex items-center gap-2 ml-2 text-xs">
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <span className={bootstrap?.revisions?.model_registry ? 'text-emerald-600' : 'text-gray-400'}>🤖</span>
                 <span>{bootstrap?.revisions?.model_registry ? 'Modelle bereit' : 'Modelle'}</span>
+                <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded bg-gray-100 dark:bg-slate-700">{modelsCount ?? '—'}</span>
               </div>
-              <div className="flex items-center gap-1 ml-3">
+              <div className="flex items-center gap-2 ml-3">
                 <span className={bootstrap?.revisions?.tool_registry ? 'text-emerald-600' : 'text-gray-400'}>🧰</span>
                 <span>{bootstrap?.revisions?.tool_registry ? 'Werkzeuge bereit' : 'Werkzeuge'}</span>
+                <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded bg-gray-100 dark:bg-slate-700">{toolsCount ?? '—'}</span>
               </div>
             </div>
 
             {/* Feedback link */}
             <a className="hidden md:inline-block ml-3 text-xs text-sky-600 hover:underline" href="https://github.com/Thomas-Heisig/Kernschmied/issues/new" target="_blank" rel="noreferrer">Feedback</a>
-        >
-          OK
-        </button>
       </div>
     </div>
   );
 }
 
-async function sendSelectedDate(date: Date) {
+export async function sendSelectedDate(date: Date) {
   try {
     const res = await fetch('/api/v1/calendar/selection', {
       method: 'POST',
@@ -685,4 +744,19 @@ async function sendSelectedDate(date: Date) {
     // swallow; integration point prepared
     return null;
   }
+}
+
+export function shouldSendSelection(): boolean {
+  try {
+    const v = localStorage.getItem('calendar.saveSelection');
+    if (v === null) return true;
+    return v === 'true';
+  } catch {
+    return true;
+  }
+}
+
+export async function sendSelectedDateIfOptIn(date: Date) {
+  if (!shouldSendSelection()) return null;
+  return sendSelectedDate(date);
 }
