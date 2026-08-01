@@ -931,7 +931,7 @@ def normalize_config_value(
         Mapping,
     ):
         typed_mapping = cast(
-            Mapping[object, object],
+            Mapping[str, object],
             value,
         )
 
@@ -1796,7 +1796,7 @@ async def read_config_entries(
                 continue
 
             group_values = cast(
-                Mapping[object, object],
+                Mapping[str, object],
                 raw_value,
             )
 
