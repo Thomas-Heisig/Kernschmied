@@ -26,7 +26,7 @@ export function DocumentationDialog({
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
-  const navRef = useRef<HTMLElement | null>(null);
+  const navRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoadingIndex, setIsLoadingIndex] = useState(false);
   const [isLoadingPage, setIsLoadingPage] = useState(false);
