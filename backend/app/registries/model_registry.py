@@ -41,7 +41,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Final
+from typing import Any, Final, Optional, Callable, Awaitable, Sequence
 
 from app.models.errors import (
     DuplicateModelManifestError,
@@ -226,6 +226,9 @@ class ModelRegistrySnapshot:
     registered_at_monotonic: float
 
     metadata: dict[str, Any] = field(default_factory=dict)  # type: ignore[reportUnknownVariableType]
+    # runtime fields (may be updated by registry health checks)
+    available: bool = True
+    selectable: bool = True
 
 
 class ModelRegistry:
@@ -293,6 +296,13 @@ class ModelRegistry:
         self._default_model_id: str | None = None
         if default_model_id is not None:
             self._default_model_id = self._normalize_model_id(default_model_id)
+        # Optional async availability checker: Callable[[ModelRegistryEntry], Awaitable[tuple[bool, bool]]]
+        # returns (available, selectable). If None, registry uses manifest.is_enabled as availability.
+        self._availability_checker: Optional[Callable[[ModelRegistryEntry], Awaitable[tuple[bool, bool]]]] = None
+        # cache: model_id -> (available, selectable, timestamp)
+        self._availability_cache: dict[str, tuple[bool, bool, float]] = {}
+        # TTL for availability cache in seconds
+        self._availability_cache_ttl: float = 30.0
 
     # ========================================================
     # Basis-Verzeichnisse
@@ -380,43 +390,102 @@ class ModelRegistry:
             str(tag).strip().lower() for tag in (tags or ()) if str(tag).strip()
         )
 
+        # Copy candidate entries under lock, decide which need availability refresh,
+        # perform async checks outside the lock, then return the filtered/sorted result.
         async with self._lock:
-            entries: list[ModelRegistryEntry] = []
+            all_entries: list[ModelRegistryEntry] = list(self._entries.values())
 
-            for entry in self._entries.values():
-                manifest = entry.manifest
+        # Determine which entries pass the static filters (provider, capability, tags, enabled_only)
+        candidates: list[ModelRegistryEntry] = []
+        now = time.monotonic()
+        to_refresh: list[ModelRegistryEntry] = []
 
-                if enabled_only and not manifest.is_enabled:
-                    continue
+        for entry in all_entries:
+            manifest = entry.manifest
 
-                if (
-                    normalized_provider_type is not None
-                    and entry.provider_type != normalized_provider_type
-                ):
-                    continue
+            if enabled_only and not manifest.is_enabled:
+                continue
 
-                if normalized_capability is not None and not manifest.supports(
-                    normalized_capability,
-                ):
-                    continue
+            if (
+                normalized_provider_type is not None
+                and entry.provider_type != normalized_provider_type
+            ):
+                continue
 
-                if required_tags and not required_tags.issubset(
-                    manifest.tags,
-                ):
-                    continue
+            if normalized_capability is not None and not manifest.supports(
+                normalized_capability,
+            ):
+                continue
 
-                entries.append(entry)
+            if required_tags and not required_tags.issubset(
+                manifest.tags,
+            ):
+                continue
 
-            return tuple(
-                sorted(
-                    entries,
-                    key=lambda item: (
-                        item.manifest.presentation.sort_order,
-                        item.manifest.display_name.lower(),
-                        item.model_id,
-                    ),
-                ),
-            )
+            candidates.append(entry)
+
+            # availability cache check
+            if self._availability_checker is not None:
+                cache = self._availability_cache.get(entry.model_id)
+                if cache is None or (now - cache[2]) > self._availability_cache_ttl:
+                    to_refresh.append(entry)
+
+        # Refresh availability for candidates that need it (outside lock)
+        if to_refresh and self._availability_checker is not None:
+            await self._refresh_availabilities(to_refresh)
+
+        # Return filtered and sorted entries
+        filtered = sorted(
+            candidates,
+            key=lambda item: (
+                item.manifest.presentation.sort_order,
+                item.manifest.display_name.lower(),
+                item.model_id,
+            ),
+        )
+
+        return tuple(filtered)
+
+    async def _refresh_availabilities(self, entries: Sequence[ModelRegistryEntry]) -> None:
+        """
+        Runs availability checks for the given entries concurrently and updates the cache.
+        The availability checker is provided by the application and must be async.
+        """
+        if self._availability_checker is None:
+            return
+
+        async def _check(entry: ModelRegistryEntry) -> tuple[str, bool, bool]:
+            try:
+                result = await self._availability_checker(entry)
+                if not isinstance(result, tuple) or len(result) != 2:
+                    return (entry.model_id, bool(result), True)
+                return (entry.model_id, bool(result[0]), bool(result[1]))
+            except Exception:
+                # On error, conservatively mark as unavailable/selectable=False
+                return (entry.model_id, False, False)
+
+        tasks = [_check(entry) for entry in entries]
+        results = await asyncio.gather(*tasks)
+
+        now = time.monotonic()
+        async with self._lock:
+            for model_id, available, selectable in results:
+                self._availability_cache[model_id] = (available, selectable, now)
+
+    def set_availability_checker(
+        self,
+        checker: Optional[Callable[[ModelRegistryEntry], Awaitable[tuple[bool, bool]]]],
+        *,
+        ttl: float | None = None,
+    ) -> None:
+        """Set an optional async availability checker and cache TTL (seconds).
+
+        The checker is called as `await checker(entry)` and must return
+        `(available: bool, selectable: bool)`.
+        """
+        self._availability_checker = checker
+        if ttl is not None:
+            self._availability_cache_ttl = float(ttl)
 
     async def list_model_ids(
         self,
@@ -865,8 +934,8 @@ class ModelRegistry:
     # Diagnose
     # ========================================================
 
-    @staticmethod
     def _create_snapshot(
+        self,
         entry: ModelRegistryEntry,
     ) -> ModelRegistrySnapshot:
         manifest = entry.manifest
@@ -890,6 +959,14 @@ class ModelRegistry:
             ),
         }
 
+        # determine runtime availability/selectability from cache if present
+        cache = self._availability_cache.get(entry.model_id)
+        if cache is None:
+            available = manifest.is_enabled
+            selectable = True
+        else:
+            available, selectable, _ts = cache
+
         return ModelRegistrySnapshot(
             model_id=manifest.id,
             display_name=manifest.display_name,
@@ -909,6 +986,8 @@ class ModelRegistry:
             registration_index=(entry.registration_index),
             registered_at_monotonic=(entry.registered_at_monotonic),
             metadata=metadata,
+            available=available,
+            selectable=selectable,
         )
 
     @staticmethod
@@ -923,8 +1002,9 @@ class ModelRegistry:
             "provider": snapshot.provider_type,
             "provider_type": snapshot.provider_type,
             "schema_version": snapshot.schema_version,
-            "available": snapshot.enabled,
+            "available": snapshot.available,
             "enabled": snapshot.enabled,
+            "selectable": snapshot.selectable,
             "status": snapshot.status,
             "runtime": snapshot.runtime,
             "capabilities": {capability: True for capability in snapshot.capabilities},
