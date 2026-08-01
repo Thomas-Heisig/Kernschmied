@@ -63,6 +63,11 @@ from app.schemas.configuration import (
     ConfigUIResponse,
 )
 
+# small utilities reused across api modules
+from .tools import read_mapping_value
+
+# Validation helpers are defined in this module (kept local for clarity)
+
 # Service helpers moved to configs_service module
 from .configs_service import (
     get_config_service,
@@ -330,6 +335,78 @@ def structured_http_error(
             "request_id": get_request_id(request),
         },
     )
+
+
+def get_principal(
+    request: Request,
+) -> object | None:
+    """Return the principal object stored in request.state by auth middleware."""
+
+    candidates = (
+        "principal",
+        "user",
+        "authenticated_principal",
+        "authenticated_user",
+        "session_user",
+    )
+
+    for name in candidates:
+        principal = getattr(request.state, name, None)
+
+        if principal is not None:
+            return principal
+
+    return None
+
+
+def normalize_optional_identifier(value: object) -> str | None:
+    if value is None:
+        return None
+
+    normalized = str(value).strip()
+
+    return normalized or None
+
+
+def validate_config_name(value: str, *, field_name: str = "value", request: Request | None = None) -> str:
+    if not isinstance(value, str):
+        raise structured_http_error(
+            request=(request or Request),
+            status_code=HTTP_422_UNPROCESSABLE_CONTENT,
+            code="CONFIG_NAME_INVALID",
+            message=("Der Konfigurationsname ist ungültig."),
+            details={"field": field_name},
+        )
+
+    normalized = value.strip().lower()
+
+    if not CONFIG_NAME_PATTERN.fullmatch(normalized):
+        raise structured_http_error(
+            request=(request or Request),
+            status_code=HTTP_422_UNPROCESSABLE_CONTENT,
+            code="CONFIG_NAME_INVALID",
+            message=("Der Konfigurationsname erfüllt nicht das erforderliche Format."),
+            details={"field": field_name, "value": value},
+        )
+
+    return normalized
+
+
+def is_reserved_group(group: str) -> bool:
+    return group.strip().lower() in RESERVED_GROUPS
+
+
+def is_sensitive_key(group: str, key: str) -> bool:
+    if group.strip().lower() in {"secrets", "security_secrets"}:
+        return True
+
+    lowered = key.strip().lower()
+
+    for part in SENSITIVE_KEY_PARTS:
+        if part in lowered:
+            return True
+
+    return False
 
 
 def get_actor_id(

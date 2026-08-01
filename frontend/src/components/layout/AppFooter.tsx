@@ -49,6 +49,11 @@ export function AppFooter({
   const [eventTitle, setEventTitle] = useState('');
   const [copied, setCopied] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [systemInfoOpen, setSystemInfoOpen] = useState(false);
+  const [systemTab, setSystemTab] = useState<'overview' | 'functions' | 'versions' | 'technical'>('overview');
+  const [lastChecked, setLastChecked] = useState<Date | null>(null);
+  const [requestId, setRequestId] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // bootstrap/health loader (unchanged)
 
@@ -68,6 +73,8 @@ export function AppFooter({
         const data = (await res.json()) as BootstrapResponse;
         setBootstrap(data);
         setOnline(true);
+        setLastChecked(new Date());
+        setRequestId((data as any)?.request_id ?? res.headers.get('X-Request-Id'));
       } catch (err: any) {
         // Fallback: try health endpoint to at least determine online state
         try {
@@ -140,238 +147,199 @@ export function AppFooter({
     setDetailContent(null);
   }
 
+  // derive friendly values
+  const appName = bootstrap?.application?.name ?? 'Kernschmied';
+  const appVersion = bootstrap?.application?.version ?? applicationVersion;
+  const env = (bootstrap?.environment ?? environment) as string;
+  const envLabel = env === 'production' ? 'Produktiv' : env === 'development' ? 'Entwicklung' : env;
+  const statusLabel = online ? 'System bereit' : online === false ? 'System nicht erreichbar' : 'Unbekannt';
+  const statusColor = online ? 'text-emerald-600' : online === false ? 'text-red-500' : 'text-gray-500';
+
+  // capabilities mapping for friendly display
+  const caps = (bootstrap?.capabilities ?? bootstrap?.features ?? {}) as Record<string, any>;
+  const friendlyCaps: Array<{ title: string; ok: boolean | null; emoji?: string }> = [
+    { title: 'Live-Chat', ok: !!caps.chat_streaming, emoji: '💬' },
+    { title: 'KI-Modelle', ok: !!caps.model_service, emoji: '🤖' },
+    { title: 'Werkzeuge', ok: !!caps.tool_registry, emoji: '🧰' },
+    { title: 'Speicherung', ok: caps.chat_persistence ?? null, emoji: '💾' },
+    { title: 'Datei-Upload', ok: caps.file_upload ?? null, emoji: '📎' },
+  ];
+
   return (
     <footer className="z-30 shrink-0 border-t border-border bg-white/90 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/90">
-      <div className="flex h-10 items-center justify-between gap-6 overflow-x-auto px-4 text-xs text-text-muted dark:text-gray-400">
-        {/* Linke Seite */}
-
-        <div className="flex shrink-0 items-center gap-5">
-          <StatusItem
-            onClick={() =>
-              openDetail(
-                'Application',
-                bootstrap?.application ?? { name: 'Kernschmied', version: applicationVersion },
-              )
-            }
-          >
-            <strong className="font-semibold text-text dark:text-white">
-              {bootstrap?.application?.name ?? 'Kernschmied'}{' '}
-              {bootstrap?.application?.version ?? applicationVersion}
-            </strong>
-          </StatusItem>
-
-          <StatusItem
-            onClick={() =>
-              openDetail('Environment', { environment: bootstrap?.environment ?? environment })
-            }
-          >
-            {bootstrap?.environment ?? environment}
-          </StatusItem>
-
-          <StatusItem
-            icon={<Server size={14} />}
-            onClick={() => openDetail('API', bootstrap?.versions ?? { api: apiVersion })}
-          >
-            API {bootstrap?.versions?.api ?? apiVersion}
-          </StatusItem>
-
-          {(bootstrap?.schema_version ?? schemaVersion) && (
-            <StatusItem
-              icon={<FolderTree size={14} />}
-              onClick={() =>
-                openDetail('Schema', { schema: bootstrap?.schema_version ?? schemaVersion })
-              }
-            >
-              Schema {bootstrap?.schema_version ?? schemaVersion}
-            </StatusItem>
-          )}
-        </div>
-
-        {/* Mitte */}
-
-        <div className="flex shrink-0 items-center gap-5">
-          <StatusItem
-            icon={<Database size={14} />}
-            onClick={() =>
-              openDetail('Config', {
-                config_revision: bootstrap?.config_revision ?? configRevision,
-                endpoints: bootstrap?.endpoints ?? null,
-              })
-            }
-          >
-            Config {bootstrap?.config_revision ?? configRevision}
-          </StatusItem>
-
-          <StatusItem
-            icon={<Database size={14} />}
-            onClick={async () => {
-              setLoadingDetail(true);
-              try {
-                const r = await fetch('/api/v1/models', { cache: 'no-store' });
-                const data = await r.json();
-                openDetail('Models', data);
-              } catch (e) {
-                openDetail('Models', { error: String(e) });
-              } finally {
-                setLoadingDetail(false);
-              }
-            }}
-          >
-            Models {bootstrap?.revisions?.model_registry ?? modelRevision}
-          </StatusItem>
-
-          <StatusItem
-            icon={<Plug size={14} />}
-            onClick={async () => {
-              setLoadingDetail(true);
-              try {
-                const r = await fetch('/api/v1/tools', { cache: 'no-store' });
-                const data = await r.json();
-                openDetail('Tools', data);
-              } catch (e) {
-                openDetail('Tools', { error: String(e) });
-              } finally {
-                setLoadingDetail(false);
-              }
-            }}
-          >
-            Tools {bootstrap?.revisions?.tool_registry ?? toolRevision}
-          </StatusItem>
-
-          <StatusItem
-            icon={<Wifi size={14} />}
-            onClick={() => openDetail('Health', { online, error, bootstrap })}
-          >
-            <span className={online ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}>
-              ●
-            </span>
-
-            {online ? ' Backend online' : ' Backend offline'}
-
-            {error ? <span className="ml-2 text-xs text-red-500">({error})</span> : null}
-          </StatusItem>
-        </div>
-
-        {/* Rechte Seite */}
-
-        <div className="flex shrink-0 items-center gap-2 font-medium relative">
+      <div className="flex h-10 items-center justify-between gap-4 overflow-x-auto px-4 text-sm text-text-muted dark:text-gray-400">
+        <div className="flex items-center gap-4">
           <button
-            type="button"
-            className="p-1"
-            onClick={() => setShowDatePicker((s) => !s)}
-            aria-label="Datum wählen"
-            aria-expanded={showDatePicker}
+            className="flex items-baseline gap-2 hover:underline focus:outline-none"
+            onClick={() => {
+              setSystemTab('overview');
+              setSystemInfoOpen(true);
+            }}
           >
-            <CalendarDays size={14} className="text-text-muted dark:text-gray-400" />
+            <strong className="text-sm font-semibold text-text dark:text-white">{appName}</strong>
+            <span className="text-xs text-text-muted">{appVersion}</span>
           </button>
 
-          <Clock />
+          <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-slate-800">
+            {envLabel}
+          </span>
 
-          {showDatePicker && (
-            <div
-              role="dialog"
-              aria-modal="false"
-              className="fixed right-4 bottom-16 z-50 w-72 max-w-full rounded border bg-white p-2 shadow dark:bg-slate-800"
-            >
-              <FooterCalendar
-                initialDate={new Date()}
-                targetCalendarId={targetCalendarId}
-                setTargetCalendarId={setTargetCalendarId}
-                onCancel={() => setShowDatePicker(false)}
-                onSelect={(d) => {
-                  setShowDatePicker(false);
-                  setSelectedDate(d);
-                  if (targetCalendarId) {
-                    setEventModalOpen(true);
-                    setEventTitle('');
-                  } else {
-                    openDetail('Ausgewähltes Datum', { selected: d.toISOString() });
-                  }
-                }}
-              />
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            <span className={`${statusColor} font-medium`} aria-hidden>
+              ●
+            </span>
+            <button className="text-xs hover:underline" onClick={() => setSystemInfoOpen(true)}>
+              {statusLabel}
+            </button>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <span className="text-xs text-text-muted">API {bootstrap?.versions?.api ?? apiVersion} · Schema {bootstrap?.schema_version ?? schemaVersion}</span>
+
+          <button
+            className="text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800"
+            onClick={() => setSystemInfoOpen(true)}
+            aria-label="Systeminfo"
+          >
+            ⓘ Systeminfo
+          </button>
         </div>
       </div>
-      {detailOpen && (
-        <div className="absolute right-4 bottom-12 z-50 w-80 max-w-full rounded border bg-white p-3 shadow dark:bg-slate-800">
-          <div className="flex items-center justify-between">
-            <strong>{detailTitle}</strong>
-            <div className="flex items-center gap-2">
-              {detailContent && (
-                <button
-                  className="text-sm text-gray-600 hover:text-black"
-                  onClick={async () => {
-                    try {
-                      await navigator.clipboard.writeText(detailContent);
-                      setCopied(true);
-                      setTimeout(() => setCopied(false), 1500);
-                    } catch {}
-                  }}
-                >
-                  {copied ? 'Copied' : 'Copy'}
-                </button>
-              )}
 
-              <button className="text-sm text-gray-500" onClick={closeDetail}>
+      {systemInfoOpen && (
+        <div className="fixed right-4 bottom-16 z-50 w-[min(720px,95%)] max-w-full rounded border bg-white p-4 shadow dark:bg-slate-800">
+          <div className="flex items-center justify-between">
+            <strong>Systeminformationen</strong>
+            <div className="flex items-center gap-2">
+                <div className="text-xs text-text-muted">{lastChecked ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(lastChecked) : new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(new Date())}</div>
+              <button className="text-sm text-gray-500" onClick={() => setSystemInfoOpen(false)}>
                 ✕
               </button>
             </div>
           </div>
 
-          <pre className="mt-2 max-h-64 overflow-auto text-xs whitespace-pre-wrap">
-            {detailContent}
-          </pre>
-        </div>
-      )}
+          <div className="mt-3 flex gap-4">
+            <nav className="w-40">
+              <ul className="space-y-1 text-sm">
+                <li>
+                  <button className={`w-full text-left p-2 rounded ${systemTab === 'overview' ? 'bg-gray-100 dark:bg-slate-700' : ''}`} onClick={() => setSystemTab('overview')}>Übersicht</button>
+                </li>
+                <li>
+                  <button className={`w-full text-left p-2 rounded ${systemTab === 'functions' ? 'bg-gray-100 dark:bg-slate-700' : ''}`} onClick={() => setSystemTab('functions')}>Funktionen</button>
+                </li>
+                <li>
+                  <button className={`w-full text-left p-2 rounded ${systemTab === 'versions' ? 'bg-gray-100 dark:bg-slate-700' : ''}`} onClick={() => setSystemTab('versions')}>Versionen</button>
+                </li>
+                <li>
+                  <button className={`w-full text-left p-2 rounded ${systemTab === 'technical' ? 'bg-gray-100 dark:bg-slate-700' : ''}`} onClick={() => setSystemTab('technical')}>Technik</button>
+                </li>
+              </ul>
+            </nav>
 
-      {eventModalOpen && selectedDate && (
-        <div className="absolute right-4 bottom-28 z-50 w-80 max-w-full rounded border bg-white p-3 shadow dark:bg-slate-800">
-          <div className="flex items-center justify-between">
-            <strong>Neues Ereignis</strong>
-            <button className="text-sm text-gray-500" onClick={() => setEventModalOpen(false)}>
-              ✕
-            </button>
-          </div>
+            <div className="flex-1">
+              {systemTab === 'overview' && (
+                <div>
+                  <h3 className="font-semibold">{appName} {appVersion}</h3>
+                  <p className="text-sm text-text-muted">Lokale Chat- und Assistenzplattform</p>
 
-          <div className="mt-2">
-            <label className="text-xs">Titel</label>
-            <input
-              className="w-full rounded border px-2 py-1 text-sm"
-              value={eventTitle}
-              onChange={(e) => setEventTitle(e.target.value)}
-            />
-            <div className="mt-2 flex justify-end gap-2">
-              <button
-                className="rounded bg-gray-200 px-3 py-1 text-sm"
-                onClick={() => setEventModalOpen(false)}
-              >
-                Abbrechen
-              </button>
-              <button
-                className="rounded bg-sky-600 px-3 py-1 text-sm text-white"
-                onClick={async () => {
-                  if (!targetCalendarId) return;
-                  const body = {
-                    title: eventTitle || 'Neues Ereignis',
-                    description: '',
-                    start: selectedDate.toISOString(),
-                    end: new Date(selectedDate.getTime() + 60 * 60 * 1000).toISOString(),
-                    all_day: false,
-                  };
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded border p-3">
+                      <div className="font-medium">Dienste</div>
+                      <ul className="mt-2 space-y-1">
+                        <li>Backend: <span className={online ? 'text-emerald-600' : 'text-red-500'}>{online ? 'Online' : online === false ? 'Nicht erreichbar' : 'Unbekannt'}</span></li>
+                        <li>Authentifizierung: {bootstrap?.authenticated ? 'Aktiv' : 'Nicht aktiv'}</li>
+                        <li>Live-Chat: {caps.chat_streaming ? 'Verfügbar' : 'Nicht verfügbar'}</li>
+                        <li>Modelle: {caps.model_service ? 'Verfügbar' : 'Nicht verfügbar'}</li>
+                      </ul>
+                    </div>
 
-                  try {
-                    const data = await createEvent(targetCalendarId, body as any);
-                    openDetail('Ereignis erstellt', data);
-                  } catch (e: any) {
-                    openDetail('Fehler beim Erstellen', { error: String(e) });
-                  } finally {
-                    setEventModalOpen(false);
-                  }
-                }}
-              >
-                Erstellen
-              </button>
+                    <div className="rounded border p-3">
+                      <div className="font-medium">Konfiguration</div>
+                      <div className="mt-2 text-sm">Status: {bootstrap?.config_revision ? 'Aktuell' : 'Unbekannt'}</div>
+                      <div className="text-sm">Revision: {bootstrap?.config_revision ?? configRevision}</div>
+                      <div className="mt-2">
+                            <button className="text-xs px-2 py-1 rounded bg-gray-100" onClick={() => { setSystemTab('versions'); }}>Details</button>
+                      </div>
+                    </div>
+                  </div>
+
+                      <div className="mt-3">
+                        <button
+                          className="text-sm px-3 py-1 rounded bg-sky-600 text-white flex items-center gap-2"
+                          onClick={async () => {
+                            setIsRefreshing(true);
+                            try {
+                              const res = await fetch('/api/v1/bootstrap', { cache: 'no-store' });
+                              if (res.ok) {
+                                const data = await res.json();
+                                setBootstrap(data);
+                                setOnline(true);
+                                setError(null);
+                                setLastChecked(new Date());
+                                setRequestId((data as any)?.request_id ?? res.headers.get('X-Request-Id'));
+                              } else {
+                                setOnline(false);
+                                setError(`${res.status} ${res.statusText}`);
+                              }
+                            } catch (e: any) {
+                              setOnline(false);
+                              setError(String(e));
+                            } finally {
+                              setIsRefreshing(false);
+                            }
+                          }}
+                        >
+                          {isRefreshing ? <span className="animate-spin">⟳</span> : null}
+                          <span>Status neu prüfen</span>
+                        </button>
+                      </div>
+                </div>
+              )}
+
+              {systemTab === 'functions' && (
+                <div>
+                  <h3 className="font-semibold">Funktionen</h3>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    {friendlyCaps.map((c) => (
+                      <div key={c.title} className="rounded border p-3 text-sm flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span>{c.emoji}</span>
+                          <div>
+                            <div className="font-medium">{c.title}</div>
+                            <div className="text-xs text-text-muted">{c.ok === true ? 'Verfügbar' : c.ok === false ? 'Nicht aktiviert' : 'Unbekannt'}</div>
+                          </div>
+                        </div>
+                        {c.ok === true ? <span className="text-emerald-600">●</span> : c.ok === false ? <span className="text-gray-400">○</span> : <span className="text-gray-500">–</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {systemTab === 'versions' && (
+                <div>
+                  <h3 className="font-semibold">Schnittstellen & Versionen</h3>
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
+                    <div className="rounded border p-3">API: {bootstrap?.versions?.api ?? apiVersion}</div>
+                    <div className="rounded border p-3">Schema: {bootstrap?.schema_version ?? schemaVersion}</div>
+                    <div className="rounded border p-3">UI Schema: {bootstrap?.ui_schema ?? 'n/a'}</div>
+                    <div className="rounded border p-3">Bootstrap Schema: {bootstrap?.bootstrap_schema ?? 'n/a'}</div>
+                  </div>
+                </div>
+              )}
+
+              {systemTab === 'technical' && (
+                <div>
+                  <h3 className="font-semibold">Technische Details</h3>
+                  <div className="mt-3 text-xs">
+                    <div className="mb-2 text-xs text-text-muted">Request ID: {requestId ?? '—'} · Letzte Prüfung: {lastChecked ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(lastChecked) : '—'}</div>
+                    <div className="rounded border p-3 max-h-64 overflow-auto bg-gray-50 dark:bg-slate-900">
+                      <pre className="whitespace-pre-wrap">{JSON.stringify(bootstrap ?? { online, error, versions: bootstrap?.versions }, null, 2)}</pre>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
