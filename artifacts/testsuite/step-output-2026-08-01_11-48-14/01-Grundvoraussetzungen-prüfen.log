@@ -1,0 +1,26 @@
+COMMAND: python --version
+WORKING DIRECTORY: F:\Kernschmied
+EXIT CODE: 0
+
+Python 3.12.10
+
+------------------------------------------------------------------------------
+COMMAND: node --version
+WORKING DIRECTORY: F:\Kernschmied
+EXIT CODE: 0
+
+v22.12.0
+
+------------------------------------------------------------------------------
+COMMAND: npm --version
+WORKING DIRECTORY: F:\Kernschmied
+EXIT CODE: 0
+
+11.18.0
+
+------------------------------------------------------------------------------
+COMMAND: git --version
+WORKING DIRECTORY: F:\Kernschmied
+EXIT CODE: 0
+
+git version 2.55.0.windows.3

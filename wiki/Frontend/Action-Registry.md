@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 The **Action Registry** is the central mechanism responsible for resolving **UI actions** defined by backend-provided UI Schemas.
 
@@ -20,7 +20,7 @@ This keeps rendering independent from interaction logic while maintaining stable
 
 ---
 
-# Purpose
+## Purpose
 
 The Action Registry provides:
 
@@ -34,7 +34,7 @@ The Action Registry provides:
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 Backend
@@ -58,11 +58,12 @@ Action Handler
 ↓
 
 API Client / Navigation / UI
+
 ```
 
 ---
 
-# Design Philosophy
+## Design Philosophy
 
 Traditional applications often embed event handlers directly into components.
 
@@ -98,13 +99,14 @@ Registered Handler
 ↓
 
 Execution
+
 ```
 
 The renderer never knows what an action actually does.
 
 ---
 
-# Responsibilities
+## Responsibilities
 
 The Action Registry is responsible for:
 
@@ -125,7 +127,7 @@ The registry is **not** responsible for:
 
 ---
 
-# Action Lifecycle
+## Action Lifecycle
 
 ```text
 User Click
@@ -161,11 +163,12 @@ Response
 ↓
 
 UI Update
+
 ```
 
 ---
 
-# Registration
+## Registration
 
 Every supported action must be explicitly registered during application startup.
 
@@ -181,13 +184,14 @@ Register Actions
 ↓
 
 Registry Ready
+
 ```
 
 Only registered actions may be executed.
 
 ---
 
-# Example Registration
+## Example Registration
 
 ```tsx
 registerAction("submit", submitAction);
@@ -201,7 +205,7 @@ registerAction("dialog", dialogAction);
 
 ---
 
-# Registry Lookup
+## Registry Lookup
 
 ```text
 "submit"
@@ -217,13 +221,14 @@ Submit Handler
 ↓
 
 Execute
+
 ```
 
 Lookup should be deterministic and efficient.
 
 ---
 
-# Action Metadata
+## Action Metadata
 
 The registry may expose metadata.
 
@@ -248,7 +253,7 @@ Example:
 
 ---
 
-# Common Action Types
+## Common Action Types
 
 Typical actions include:
 
@@ -310,7 +315,7 @@ Typical actions include:
 
 ---
 
-# Action Definition
+## Action Definition
 
 Example:
 
@@ -328,7 +333,7 @@ The handler defines **how** the frontend performs the action.
 
 ---
 
-# Parameters
+## Parameters
 
 Actions may receive parameters.
 
@@ -345,7 +350,7 @@ Handlers receive the complete action object.
 
 ---
 
-# Handler Responsibilities
+## Handler Responsibilities
 
 Action handlers may:
 
@@ -363,7 +368,7 @@ Handlers should **not**:
 
 ---
 
-# Backend Integration
+## Backend Integration
 
 Many actions ultimately invoke backend APIs.
 
@@ -387,13 +392,14 @@ Backend
 ↓
 
 Result
+
 ```
 
 Business decisions remain entirely on the backend.
 
 ---
 
-# Navigation Actions
+## Navigation Actions
 
 Example:
 
@@ -408,7 +414,7 @@ The handler delegates navigation to the routing system.
 
 ---
 
-# Dialog Actions
+## Dialog Actions
 
 Example:
 
@@ -423,7 +429,7 @@ The handler requests the dialog service to display the dialog.
 
 ---
 
-# Refresh Actions
+## Refresh Actions
 
 ```text
 Refresh
@@ -443,11 +449,12 @@ Updated Data
 ↓
 
 Re-render
+
 ```
 
 ---
 
-# Unknown Actions
+## Unknown Actions
 
 Unknown action types never crash the application.
 
@@ -463,13 +470,14 @@ Fallback Handler
 ↓
 
 Diagnostic Message
+
 ```
 
 The user receives a meaningful message while the application remains functional.
 
 ---
 
-# Duplicate Registration
+## Duplicate Registration
 
 Only one handler may exist for a given action type.
 
@@ -485,13 +493,14 @@ Handler A
 ↓
 
 Handler B
+
 ```
 
 Duplicate registrations are rejected during startup.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Errors during action execution should be isolated.
 
@@ -509,13 +518,14 @@ Notification
 ↓
 
 Continue Application
+
 ```
 
 Failures should not terminate the application.
 
 ---
 
-# Security
+## Security
 
 The Action Registry follows a strict allow-list model.
 
@@ -531,7 +541,7 @@ Actions must never:
 
 ---
 
-# Accessibility
+## Accessibility
 
 Actions should remain fully accessible.
 
@@ -545,7 +555,7 @@ Examples include:
 
 ---
 
-# Performance
+## Performance
 
 The registry should:
 
@@ -556,7 +566,7 @@ The registry should:
 
 ---
 
-# Plugin Integration
+## Plugin Integration
 
 Future plugins may register additional actions.
 
@@ -576,13 +586,14 @@ Register Action
 ↓
 
 Registry
+
 ```
 
 Plugin actions must follow the same validation rules as built-in actions.
 
 ---
 
-# Version Compatibility
+## Version Compatibility
 
 Each action handler supports one or more schema versions.
 
@@ -590,7 +601,7 @@ Unsupported versions are rejected before execution.
 
 ---
 
-# Testing
+## Testing
 
 Typical tests include:
 
@@ -605,7 +616,7 @@ Typical tests include:
 
 ---
 
-# Best Practices
+## Best Practices
 
 Recommended:
 
@@ -626,7 +637,7 @@ Avoid:
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 The Action Registry is designed to support future capabilities such as:
 
@@ -643,9 +654,9 @@ These additions should preserve the existing public contract.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
-## Architecture
+## Architecture (2)
 
 - [[Architecture]]
 - [[Schema-Renderer]]
@@ -680,7 +691,7 @@ These additions should preserve the existing public contract.
 
 ---
 
-# Summary
+## Summary
 
 The Action Registry is the execution counterpart to the Component Registry.
 

@@ -8,7 +8,7 @@ This architecture allows administrators to modify application behavior without r
 
 ---
 
-# Goals
+## Goals
 
 The Runtime Configuration architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The Runtime Configuration architecture is designed to provide:
 
 ---
 
-# Core Principle
+## Core Principle
 
 Runtime configuration separates **how the application behaves** from **how the application starts**.
 
@@ -41,13 +41,14 @@ Runtime Configuration
 ↓
 
 Application Behavior
+
 ```
 
 Infrastructure remains static during startup, while business behavior can evolve during operation.
 
 ---
 
-# Why Runtime Configuration?
+## Why Runtime Configuration?
 
 Traditional applications often store nearly all settings in configuration files.
 
@@ -61,6 +62,7 @@ Restart Application
 ↓
 
 New Behavior
+
 ```
 
 This approach creates operational challenges:
@@ -90,13 +92,14 @@ Revision++
 ↓
 
 Next Request Uses New Configuration
+
 ```
 
 No restart is required.
 
 ---
 
-# Infrastructure vs Runtime Configuration
+## Infrastructure vs Runtime Configuration
 
 A clear separation exists between infrastructure configuration and runtime configuration.
 
@@ -134,7 +137,7 @@ These values are stored in the database.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Environment
@@ -158,13 +161,14 @@ Resolved Configuration
 ↓
 
 Application Services
+
 ```
 
 Each component has a clearly defined responsibility.
 
 ---
 
-# Runtime Configuration Lifecycle
+## Runtime Configuration Lifecycle
 
 Configuration changes follow a deterministic lifecycle.
 
@@ -194,13 +198,14 @@ Cache Invalidation
 ↓
 
 Next Request
+
 ```
 
 Every successful update becomes effective for future requests.
 
 ---
 
-# Configuration Storage
+## Configuration Storage
 
 Runtime configuration is stored as structured data.
 
@@ -216,7 +221,7 @@ The database acts as the authoritative source of runtime behavior.
 
 ---
 
-# Configuration Resolution
+## Configuration Resolution
 
 Application services never read configuration directly.
 
@@ -236,13 +241,14 @@ Resolved Configuration
 ↓
 
 Business Service
+
 ```
 
 The resolver applies inheritance, merge rules, and validation before returning an immutable configuration object.
 
 ---
 
-# Configuration Scopes
+## Configuration Scopes
 
 Runtime configuration may be defined at multiple levels.
 
@@ -274,13 +280,14 @@ User
 ↓
 
 Request
+
 ```
 
 Lower scopes extend or override inherited configuration according to defined merge strategies.
 
 ---
 
-# Inheritance
+## Inheritance
 
 Configuration follows the hierarchy.
 
@@ -304,13 +311,14 @@ Conversation
 ↓
 
 Effective Configuration
+
 ```
 
 Every request receives exactly one resolved configuration.
 
 ---
 
-# Merge Strategies
+## Merge Strategies
 
 Configuration sections may define different merge strategies.
 
@@ -327,7 +335,7 @@ Merge behavior is determined by configuration schemas rather than application co
 
 ---
 
-# Schema Validation
+## Schema Validation
 
 Every runtime configuration entry is validated.
 
@@ -344,7 +352,7 @@ Invalid configuration is rejected before activation.
 
 ---
 
-# Configuration Revisions
+## Configuration Revisions
 
 Each successful configuration update increments the configuration revision.
 
@@ -358,13 +366,14 @@ Configuration Updated
 ↓
 
 Revision 25
+
 ```
 
 Revision numbers allow efficient cache invalidation and synchronization between frontend and backend.
 
 ---
 
-# Cache Invalidation
+## Cache Invalidation
 
 Configuration changes invalidate cached configuration automatically.
 
@@ -382,13 +391,14 @@ Cache Invalid
 ↓
 
 Reload Configuration
+
 ```
 
 Neither the backend nor the frontend compares complete configuration objects.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Every configuration change generates an audit record.
 
@@ -405,7 +415,7 @@ Audit logs provide traceability for administrative actions.
 
 ---
 
-# Runtime Updates
+## Runtime Updates
 
 Runtime-editable configuration becomes active immediately after successful validation and persistence.
 
@@ -421,7 +431,7 @@ Existing requests continue using the configuration that was resolved when they s
 
 ---
 
-# Backend Integration
+## Backend Integration
 
 Many backend subsystems depend on runtime configuration.
 
@@ -438,7 +448,7 @@ The Configuration Service acts as the single source of truth.
 
 ---
 
-# Frontend Integration
+## Frontend Integration
 
 The frontend does not resolve configuration itself.
 
@@ -458,13 +468,14 @@ Generated UI Schema
 ↓
 
 Frontend
+
 ```
 
 The frontend only consumes backend-generated contracts.
 
 ---
 
-# Bootstrap Integration
+## Bootstrap Integration
 
 Bootstrap initializes the runtime configuration subsystem.
 
@@ -486,13 +497,14 @@ Initialize Resolver
 ↓
 
 Application Ready
+
 ```
 
 After startup, configuration updates occur dynamically.
 
 ---
 
-# Security
+## Security
 
 Runtime configuration is protected through multiple layers.
 
@@ -508,7 +520,7 @@ Only authorized administrators may modify runtime configuration.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Configuration updates fail atomically.
 
@@ -526,6 +538,7 @@ Commit
 ↓
 
 Revision++
+
 ```
 
 If validation or persistence fails:
@@ -540,13 +553,14 @@ Rollback
 ↓
 
 Revision Unchanged
+
 ```
 
 The previous configuration remains active.
 
 ---
 
-# Performance
+## Performance
 
 Runtime configuration is optimized through:
 
@@ -560,7 +574,7 @@ Configuration resolution is inexpensive enough to occur for every request.
 
 ---
 
-# Benefits
+## Benefits
 
 The Runtime Configuration architecture provides several important advantages.
 
@@ -582,7 +596,7 @@ Every request follows the same deterministic configuration resolution process.
 
 ---
 
-## Security
+## Security (2)
 
 Configuration changes are validated, authorized, and audited.
 
@@ -594,7 +608,7 @@ The architecture supports increasingly complex applications without introducing 
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture supports future capabilities including:
 
@@ -610,7 +624,7 @@ These features can be introduced without changing the existing configuration mod
 
 ---
 
-# Relationship to Other Concepts
+## Relationship to Other Concepts
 
 Runtime Configuration integrates closely with:
 
@@ -622,7 +636,7 @@ Runtime Configuration integrates closely with:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Concepts
 
@@ -662,7 +676,7 @@ Runtime Configuration integrates closely with:
 
 ---
 
-# Summary
+## Summary
 
 Runtime Configuration enables Kernschmied to modify application behavior dynamically while the system is running by storing business configuration in the database instead of static configuration files.
 

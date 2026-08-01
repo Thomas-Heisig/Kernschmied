@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 One of Kernschmied's core architectural principles is that the user interface is **described by data rather than implemented through business-specific React components**.
 
@@ -22,7 +22,7 @@ The frontend is responsible only for **rendering** the schema using generic comp
 
 ---
 
-# Design Goals
+## Design Goals
 
 The UI Schema exists to achieve several goals.
 
@@ -37,7 +37,7 @@ The UI Schema exists to achieve several goals.
 
 ---
 
-# Philosophy
+## Philosophy
 
 Traditional applications typically contain code such as:
 
@@ -72,13 +72,14 @@ Generic Components
 ↓
 
 Rendered Application
+
 ```
 
 This allows entirely new pages to be introduced through configuration and schemas rather than new frontend implementations.
 
 ---
 
-# Rendering Pipeline
+## Rendering Pipeline
 
 ```text
 REST API
@@ -106,13 +107,14 @@ React Components
 ↓
 
 Browser
+
 ```
 
 Each step validates its input before continuing.
 
 ---
 
-# Backend Responsibility
+## Backend Responsibility
 
 The backend determines:
 
@@ -131,7 +133,7 @@ The backend never sends executable code.
 
 ---
 
-# Frontend Responsibility
+## Frontend Responsibility
 
 The frontend is responsible for:
 
@@ -146,7 +148,7 @@ The frontend never invents business logic.
 
 ---
 
-# Schema Structure
+## Schema Structure
 
 A UI Schema typically consists of:
 
@@ -159,11 +161,12 @@ Page
 ├── Components
 ├── Actions
 └── Validation
+
 ```
 
 ---
 
-# Example
+## Example
 
 ```json
 {
@@ -187,7 +190,7 @@ Page
 
 ---
 
-# Schema Versioning
+## Schema Versioning
 
 Every schema contains a version.
 
@@ -205,7 +208,7 @@ Unknown versions are rejected gracefully.
 
 ---
 
-# Metadata
+## Metadata
 
 Typical metadata includes:
 
@@ -217,6 +220,7 @@ permissions
 breadcrumbs
 help
 documentation
+
 ```
 
 Example:
@@ -231,7 +235,7 @@ Example:
 
 ---
 
-# Layouts
+## Layouts
 
 Layouts define how content is arranged.
 
@@ -249,7 +253,7 @@ The renderer selects the appropriate generic layout component.
 
 ---
 
-# Sections
+## Sections
 
 Pages may contain multiple sections.
 
@@ -263,13 +267,14 @@ Permissions
 Advanced
 
 Diagnostics
+
 ```
 
 Sections improve readability and organization.
 
 ---
 
-# Components
+## Components
 
 Every UI element is represented as a component definition.
 
@@ -286,7 +291,7 @@ Component types are resolved through the Component Registry.
 
 ---
 
-# Supported Component Types
+## Supported Component Types
 
 Typical components include:
 
@@ -317,7 +322,7 @@ Future components can be added without changing existing schemas.
 
 ---
 
-# Component Registry
+## Component Registry
 
 The frontend never renders components directly.
 
@@ -333,13 +338,14 @@ Component Registry
 ↓
 
 TextField
+
 ```
 
 Unknown components produce a visible placeholder rather than crashing the application.
 
 ---
 
-# Actions
+## Actions
 
 Actions describe user operations.
 
@@ -359,7 +365,7 @@ Business logic is never executed locally.
 
 ---
 
-# Action Registry
+## Action Registry
 
 Action types are also resolved through a registry.
 
@@ -377,7 +383,7 @@ Unknown actions are rejected.
 
 ---
 
-# Validation
+## Validation
 
 Validation rules are included in the schema.
 
@@ -397,7 +403,7 @@ The backend always performs authoritative validation.
 
 ---
 
-# Conditional Visibility
+## Conditional Visibility
 
 Schemas can describe visibility rules.
 
@@ -409,13 +415,14 @@ Show field B
 only if
 
 Field A == true
+
 ```
 
 This avoids frontend-specific business logic.
 
 ---
 
-# Read-Only Fields
+## Read-Only Fields
 
 Components may be marked as read-only.
 
@@ -433,7 +440,7 @@ The backend remains authoritative.
 
 ---
 
-# Permissions
+## Permissions
 
 Visibility and editability may depend on permissions.
 
@@ -451,7 +458,7 @@ The backend always verifies permissions.
 
 ---
 
-# Dynamic Data Sources
+## Dynamic Data Sources
 
 Selection controls may receive data from:
 
@@ -471,7 +478,7 @@ Example:
 
 ---
 
-# Error Handling
+## Error Handling
 
 Invalid schemas never crash the application.
 
@@ -486,7 +493,7 @@ The renderer displays diagnostic information when appropriate.
 
 ---
 
-# Unknown Components
+## Unknown Components
 
 Unknown component types are rendered as unsupported placeholders.
 
@@ -497,13 +504,14 @@ Example:
 │ Unsupported Component      │
 │ type: custom-widget        │
 └────────────────────────────┘
+
 ```
 
 This ensures the application remains usable.
 
 ---
 
-# Security
+## Security
 
 The schema:
 
@@ -516,7 +524,7 @@ Schemas describe data only.
 
 ---
 
-# Benefits
+## Benefits
 
 The schema-driven architecture provides:
 
@@ -530,7 +538,7 @@ The schema-driven architecture provides:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -559,7 +567,7 @@ The schema-driven architecture provides:
 
 ---
 
-# Summary
+## Summary
 
 The UI Schema is the contract between the backend and the frontend.
 

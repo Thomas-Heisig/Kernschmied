@@ -1,0 +1,145 @@
+ M README.md
+ M backend/app/api/v1/configs.py
+ M backend/app/api/v1/documentation.py
+ M backend/app/api/v1/hierarchy.py
+ M backend/app/api/v1/models.py
+ M backend/app/api/v1/router.py
+ M backend/app/api/v1/settings_catalog.py
+ D backend/app/auth/development_identity.py
+ M backend/app/config/definitions.py
+ M backend/app/config/service.py
+ M backend/app/core/bootstrap.py
+ M backend/app/schemas/configuration.py
+ M backend/app/schemas/settings_catalog.py
+ M backend/app/services/chat_service.py
+ M backend/app/services/settings_catalog.py
+ M backend/main.py
+ M backend/tools/websearch/implementation.py
+ M backend/tools/websearch/tool.json
+ M data/websites/heisig-naturstein-modern/website.json
+ M frontend/src/api/config.ts
+ M frontend/src/api/settingsCatalog.ts
+ M frontend/src/app/AppShell.tsx
+ M frontend/src/app/AppWorkspace.tsx
+ M frontend/src/app/useAppBootstrap.ts
+ M frontend/src/components/documentation/DocumentationDialog.tsx
+ M frontend/src/components/documentation/MarkdownDocument.tsx
+ M frontend/src/components/layout/AppHierarchySidebar.tsx
+ D frontend/src/components/schema/GenericTree.tsx
+ M frontend/src/components/schema/index.ts
+ M frontend/src/components/settings/SettingsCatalogView.tsx
+ M frontend/src/components/settings/SettingsContent.tsx
+ M frontend/src/components/settings/SettingsDialog.tsx
+ M frontend/src/components/settings/SettingsField.tsx
+ M frontend/src/components/settings/SettingsSidebar.tsx
+ M frontend/src/components/settings/index.ts
+ M frontend/src/components/workspace/SelectedNodeWorkspace.tsx
+ M frontend/src/contracts/config.ts
+ M frontend/src/contracts/hierarchy.ts
+ M frontend/src/contracts/settings.ts
+ M frontend/src/hooks/useSystemConfig.ts
+ M frontend/src/registry/componentRegistry.tsx
+ M frontend/tsconfig.tsbuildinfo
+ M frontend/vite.config.ts
+ D scripts/quality-full.ps1
+ D scripts/quality.ps1
+ M wiki/ADR/ADR-0001-Schema-Driven-UI.md
+ M wiki/ADR/ADR-0002-Bootstrap.md
+ M wiki/ADR/ADR-0003-Registries.md
+ M wiki/ADR/ADR-0004-Security-Profiles.md
+ M wiki/ADR/ADR-0005-Versioned-Contracts.md
+ M wiki/ADR/ADR-0006-API-Contracts-and-Versioning.md
+ M wiki/ADR/ADR-0007-Database-and-Storage-Architecture.md
+ M wiki/ADR/ADR-0008-Tool-Architecture.md
+ M wiki/ADR/ADR-0009-Authentication-and-Authorization.md
+ M wiki/ADR/ADR-0010-Configuration-Management.md
+ M wiki/ADR/ADR-0011-Hierarchy-and-Prompt-Inheritance.md
+ M wiki/ADR/ADR-0012-Frontend-Architecture.md
+ M wiki/ADR/ADR-0013-Error-Handling-and-Logging.md
+ M wiki/ADR/ADR-0014-Deployment-Profiles.md
+ M wiki/ADR/ADR-0015-LLM-Provider-Architecture.md
+ M wiki/API/Bootstrap.md
+ M wiki/API/Chat.md
+ M wiki/API/Configuration.md
+ M wiki/API/Errors.md
+ M wiki/API/Hierarchy.md
+ M wiki/API/Models.md
+ M wiki/API/SSE.md
+ M wiki/API/Tools.md
+ M wiki/API/UI-Schema.md
+ M wiki/Architecture.md
+ M wiki/Architecture/Architecture-Decision-Index.md
+ M wiki/Architecture/Bootstrap-Lifecycle.md
+ M wiki/Architecture/C4-Container.md
+ M wiki/Architecture/Configuration-Architecture.md
+ M wiki/Architecture/Contract-Versioning.md
+ M wiki/Architecture/Deployment-Architecture.md
+ M wiki/Architecture/Extension-Points.md
+ M wiki/Architecture/Hierarchy-Architecture.md
+ M wiki/Architecture/Manifest-System.md
+ M wiki/Architecture/Prompt-Inheritance.md
+ M wiki/Architecture/Registry-Architecture.md
+ M wiki/Architecture/Repository-Structure.md
+ M wiki/Architecture/Request-Lifecycle.md
+ M wiki/Architecture/Security-Architecture.md
+ M wiki/Architecture/System-Context.md
+ M wiki/Architecture/UI-Schema-Pipeline.md
+ M wiki/Backend/Backend-Overview.md
+ M wiki/Backend/Bootstrap.md
+ M wiki/Backend/Chat.md
+ M wiki/Backend/Configuration.md
+ M wiki/Backend/Contracts.md
+ M wiki/Backend/Database.md
+ M wiki/Backend/Dependency-Injection.md
+ M wiki/Backend/Error-Handling.md
+ M wiki/Backend/Hierarchy.md
+ M wiki/Backend/Model-Registry.md
+ M wiki/Backend/Security.md
+ M wiki/Backend/Tool-Registry.md
+ M wiki/Concepts/Configuration-Revisions.md
+ M wiki/Concepts/Dynamic-UI.md
+ M wiki/Concepts/Plugin-System.md
+ M wiki/Concepts/Prompt-Inheritance.md
+ M wiki/Concepts/Runtime-Configuration.md
+ M wiki/Concepts/Schema-Versioning.md
+ M wiki/Deployment/Development.md
+ M wiki/Deployment/Internet.md
+ M wiki/Deployment/Intranet.md
+ M wiki/Development/Coding-Guidelines.md
+ M wiki/Development/Release-Process.md
+ M wiki/Development/Roadmap.md
+ M wiki/Development/TODO.md
+ M wiki/Development/Testing.md
+ M wiki/FAQ.md
+ M wiki/Frontend/API-Client.md
+ M wiki/Frontend/Action-Registry.md
+ M wiki/Frontend/Component-Registry.md
+ M wiki/Frontend/Forms.md
+ M wiki/Frontend/Frontend-Overview.md
+ M wiki/Frontend/Generic-Tree.md
+ M wiki/Frontend/Routing.md
+ M wiki/Frontend/Schema-Renderer.md
+ M wiki/Frontend/State-Management.md
+ M wiki/Frontend/Streaming.md
+ M wiki/Frontend/UI-Schema.md
+ M wiki/Getting-Started.md
+ M wiki/Glossary.md
+ M wiki/Home.md
+ M wiki/Installation.md
+ M wiki/Project-Principles.md
+ M wiki/Work-Documents/Fehlerbehebung_der_chat_Pipelien.md
+ D wiki/todo.md
+?? .gitrestore.tmp
+?? artifacts/
+?? backend/app/core/development_identity.py
+?? frontend/src/api/hierarchy.ts
+?? frontend/src/components/schema/GenericTreeClean.tsx
+?? frontend/src/components/schema/SchemaRenderer.tsx
+?? frontend/src/components/schema/UnsupportedSchemaComponent.tsx
+?? frontend/src/components/ui/
+?? frontend/src/hooks/useConfigApi.ts
+?? scripts/assign_fence_langs.ps1
+?? scripts/dedupe_headings.ps1
+?? scripts/patch_wiki.ps1
+?? wiki/Architecture/Settings-Catalog.md
+?? wiki/Work-Documents/PROJECT_PROMPT.md

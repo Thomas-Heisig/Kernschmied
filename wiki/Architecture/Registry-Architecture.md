@@ -8,7 +8,7 @@ The Registry Architecture works closely with the **Manifest System**, **Configur
 
 ---
 
-# Goals
+## Goals
 
 The Registry Architecture is designed to provide:
 
@@ -24,7 +24,7 @@ The Registry Architecture is designed to provide:
 
 ---
 
-# Architectural Principles
+## Architectural Principles
 
 The registry subsystem follows several fundamental principles.
 
@@ -63,6 +63,7 @@ Implementation
 ↓
 
 Runtime
+
 ```
 
 ---
@@ -81,7 +82,7 @@ This isolates implementation changes from business logic.
 
 ---
 
-# Registry Overview
+## Registry Overview
 
 ```text
                     Registry Layer
@@ -101,13 +102,14 @@ This isolates implementation changes from business logic.
                     │
 
              Application Services
+
 ```
 
 Each registry owns a single category of runtime components.
 
 ---
 
-# Why Registries?
+## Why Registries?
 
 Without registries, services would need to know:
 
@@ -128,13 +130,14 @@ Registry
 ↓
 
 Resolved Component
+
 ```
 
 The service remains independent of implementation details.
 
 ---
 
-# Registry Lifecycle
+## Registry Lifecycle
 
 Every registry follows the same lifecycle.
 
@@ -160,13 +163,14 @@ Ready
 ↓
 
 Runtime Lookup
+
 ```
 
 This lifecycle is deterministic and repeatable.
 
 ---
 
-# Discovery
+## Discovery
 
 Registries discover components through the Manifest System.
 
@@ -182,6 +186,7 @@ model.json
 ↓
 
 Model Registry
+
 ```
 
 ```text
@@ -194,13 +199,14 @@ tool.json
 ↓
 
 Tool Registry
+
 ```
 
 Discovery never executes arbitrary code.
 
 ---
 
-# Validation
+## Validation
 
 Before registration, every component is validated.
 
@@ -217,7 +223,7 @@ Invalid components are rejected.
 
 ---
 
-# Registration
+## Registration
 
 Validated components are added to the registry.
 
@@ -231,13 +237,14 @@ Registry
 ↓
 
 Available Component
+
 ```
 
 Registration creates the runtime metadata used by the application.
 
 ---
 
-# Runtime Lookup
+## Runtime Lookup
 
 Application services resolve components through identifiers.
 
@@ -257,13 +264,14 @@ Model Registry
 ↓
 
 Provider Instance
+
 ```
 
 The service remains unaware of provider implementations.
 
 ---
 
-# Registry Responsibilities
+## Registry Responsibilities
 
 A registry is responsible for:
 
@@ -280,7 +288,7 @@ Registries do **not** perform business operations.
 
 ---
 
-# Model Registry
+## Model Registry
 
 The Model Registry manages all available AI models.
 
@@ -297,7 +305,7 @@ The Chat Service depends exclusively on the Model Registry.
 
 ---
 
-# Tool Registry
+## Tool Registry
 
 The Tool Registry manages executable tools.
 
@@ -314,7 +322,7 @@ The Chat Service never scans the filesystem directly.
 
 ---
 
-# Future Registries
+## Future Registries
 
 The architecture allows additional registries.
 
@@ -332,7 +340,7 @@ These can be introduced without modifying existing registries.
 
 ---
 
-# Registry Data Model
+## Registry Data Model
 
 Every registered component exposes common metadata.
 
@@ -351,7 +359,7 @@ Business-specific metadata remains component-specific.
 
 ---
 
-# Registry Identifiers
+## Registry Identifiers
 
 Identifiers uniquely identify components.
 
@@ -367,13 +375,14 @@ filesystem
 qwen25
 
 gemma3
+
 ```
 
 Identifiers are immutable after registration.
 
 ---
 
-# Registry Revisions
+## Registry Revisions
 
 Every registry maintains an independent revision number.
 
@@ -389,13 +398,14 @@ Revision 12
 Tool Registry
 
 Revision 8
+
 ```
 
 Clients use revisions to detect runtime changes.
 
 ---
 
-# Bootstrap Integration
+## Bootstrap Integration
 
 Bootstrap exposes registry revisions.
 
@@ -414,7 +424,7 @@ Clients reload registry data only when revisions change.
 
 ---
 
-# Registry Lookup
+## Registry Lookup
 
 Typical lookup process:
 
@@ -436,13 +446,14 @@ Resolved Metadata
 ↓
 
 Implementation
+
 ```
 
 Lookup should execute in constant or near-constant time.
 
 ---
 
-# Dependency Injection
+## Dependency Injection
 
 Application services receive registries through dependency injection.
 
@@ -456,13 +467,14 @@ Model Registry
 ↓
 
 Chat Service
+
 ```
 
 Services never instantiate registries manually.
 
 ---
 
-# Provider Resolution
+## Provider Resolution
 
 The Model Registry delegates provider creation to provider factories.
 
@@ -480,13 +492,14 @@ Provider Factory
 ↓
 
 Provider Backend
+
 ```
 
 Provider implementations remain isolated.
 
 ---
 
-# Capability Discovery
+## Capability Discovery
 
 Registries expose supported capabilities.
 
@@ -510,13 +523,14 @@ Tool Use
 ↓
 
 Vision
+
 ```
 
 Application services use capabilities instead of provider-specific checks.
 
 ---
 
-# Runtime Availability
+## Runtime Availability
 
 Configuration may disable registered components.
 
@@ -530,13 +544,14 @@ Configuration
 ↓
 
 Available Models
+
 ```
 
 Registration and availability are separate concerns.
 
 ---
 
-# Caching
+## Caching
 
 Registries cache validated metadata.
 
@@ -551,7 +566,7 @@ Caches are refreshed only when revisions change.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Registry failures are isolated.
 
@@ -571,13 +586,14 @@ Registry Skips Component
 ↓
 
 Continue Startup
+
 ```
 
 One faulty component should not prevent unrelated components from loading.
 
 ---
 
-# Security
+## Security
 
 Registries enforce multiple security boundaries.
 
@@ -592,7 +608,7 @@ Only validated components become available.
 
 ---
 
-# Performance
+## Performance
 
 Registries are optimized for:
 
@@ -606,7 +622,7 @@ Runtime lookups should avoid filesystem access entirely.
 
 ---
 
-# Version Compatibility
+## Version Compatibility
 
 Registries validate manifest versions before registration.
 
@@ -624,13 +640,14 @@ Supported?
 ↓
 
 Register / Reject
+
 ```
 
 Unsupported manifests remain inactive.
 
 ---
 
-# Runtime Reload
+## Runtime Reload
 
 Future implementations may support hot reload.
 
@@ -654,13 +671,14 @@ Revision++
 ↓
 
 Clients Reload
+
 ```
 
 The architecture already accommodates this workflow.
 
 ---
 
-# Relationship to Other Architecture
+## Relationship to Other Architecture
 
 The Registry Architecture connects several architectural subsystems.
 
@@ -682,13 +700,14 @@ Dependency Injection
 ↓
 
 Application Services
+
 ```
 
 Registries therefore act as the central integration layer between metadata and runtime execution.
 
 ---
 
-# Best Practices
+## Best Practices
 
 Recommended guidelines:
 
@@ -703,7 +722,7 @@ Recommended guidelines:
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 The Registry Architecture supports future capabilities including:
 
@@ -719,7 +738,7 @@ These enhancements can be implemented without changing existing application serv
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -748,7 +767,7 @@ These enhancements can be implemented without changing existing application serv
 
 ---
 
-# Summary
+## Summary
 
 The Registry Architecture provides a centralized and deterministic mechanism for discovering, validating, registering, and resolving extensible platform components.
 

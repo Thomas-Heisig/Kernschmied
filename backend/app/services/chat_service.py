@@ -31,7 +31,6 @@ Abwärtskompatibilität erhalten.
 
 from __future__ import annotations
 
-
 import asyncio
 import inspect
 import json
@@ -69,7 +68,6 @@ from app.contracts.model_backend import (
     ToolDefinition,
     Usage,
 )
-
 from app.models.errors import (
     ModelError,
     ModelGenerationCancelledError,
@@ -137,7 +135,6 @@ def _normalize_json_object(
     return _JSON_OBJECT_ADAPTER.validate_python(
         value,
     )
-
 
 
 def _event_type_value(
@@ -1985,6 +1982,7 @@ class ChatService:
             }  # Removed the trailing comma and extra closing brace
 
         return payload
+
     # ========================================================
     # Response-Aufbereitung
     # ========================================================

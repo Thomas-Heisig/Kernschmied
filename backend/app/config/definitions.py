@@ -87,6 +87,7 @@ class ConfigUIComponent(StrEnum):
     TAGS = "tags"
     JSON = "json"
     URL = "url"
+    PROVIDER_SELECT = "provider_select"
     MODEL_SELECT = "model_select"
     TOOL_SELECT = "tool_select"
     NODE_SELECT = "node_select"
@@ -113,6 +114,7 @@ class ConfigValueSource(StrEnum):
     """
 
     STATIC = "static"
+    PROVIDERS = "providers"
     MODELS = "models"
     TOOLS = "tools"
     HIERARCHY_NODES = "hierarchy_nodes"
@@ -180,6 +182,18 @@ class ConfigDynamicOptions(BaseModel):
 
     filters: dict[str, Any] = Field(default_factory=dict)
 
+    depends_on: str | None = Field(
+        default=None,
+        max_length=255,
+        pattern=r"^[a-z][a-z0-9_]*\.[a-z][a-z0-9_]*$",
+    )
+
+    dependency_parameter: str | None = Field(
+        default=None,
+        max_length=100,
+        pattern=r"^[a-z][a-z0-9_]*$",
+    )
+
     @model_validator(mode="after")
     def validate_endpoint(self) -> ConfigDynamicOptions:
         if self.source == ConfigValueSource.API:
@@ -192,6 +206,20 @@ class ConfigDynamicOptions(BaseModel):
                 raise ValueError(
                     "Dynamische Config-Endpunkte müssen mit '/api/' beginnen.",
                 )
+
+        if self.depends_on is None and self.dependency_parameter is not None:
+            raise ValueError(
+                "dependency_parameter benötigt depends_on.",
+            )
+
+        if self.depends_on is not None and self.dependency_parameter is None:
+            raise ValueError(
+                "depends_on benötigt dependency_parameter.",
+            )
+
+        # Note: preventing depends_on from referencing the same key
+        # requires knowledge of the parent definition's full key and is
+        # validated later when all definitions are available.
 
         return self
 
@@ -677,6 +705,277 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         },
     ),
     # ============================================================
+    # Identität und Verhalten
+    # ============================================================
+    config_definition(
+        group="identity",
+        key="name",
+        display_name="Name",
+        description="Anzeigename der KI-Arbeitskraft.",
+        value_schema={
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+        },
+        default_value="Kernschmied",
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXT,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=10,
+            placeholder="Kernschmied",
+        ),
+        tags={
+            "identity",
+            "name",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="role_description",
+        display_name="Rollenbeschreibung",
+        description=(
+            "Beschreibt die grundsätzliche Rolle von Kernschmied "
+            "innerhalb der Organisation."
+        ),
+        value_schema={
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000,
+        },
+        default_value=(
+            "Kernschmied ist eine allgemeine KI-Arbeitskraft und ein "
+            "digitaler Mitarbeiter. Er erkennt Aufgaben, plant geeignete "
+            "Arbeitsschritte, verwendet freigegebene Werkzeuge und erzeugt "
+            "strukturierte, veränderbare Arbeitsergebnisse."
+        ),
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXTAREA,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=20,
+        ),
+        tags={
+            "identity",
+            "role",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="mission",
+        display_name="Grundauftrag",
+        description=(
+            "Übergeordneter Auftrag, an dem sich Kernschmied "
+            "bei allen Aufgaben orientiert."
+        ),
+        value_schema={
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+        },
+        default_value=(
+            "Bearbeite freigegebene Aufgaben sorgfältig, nachvollziehbar "
+            "und möglichst selbstständig. Erkenne das Ziel einer Anfrage, "
+            "bestimme die erforderlichen Informationen, plane geeignete "
+            "Arbeitsschritte und nutze freigegebene Modelle, Werkzeuge und "
+            "Wissensquellen. Erzeuge Ergebnisse strukturiert, versionierbar "
+            "und veränderbar. Beachte stets Berechtigungen, "
+            "Bestätigungspflichten, Sicherheitsgrenzen und versionierte "
+            "Systemverträge."
+        ),
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXTAREA,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=30,
+            help_text=(
+                "Der Grundauftrag beeinflusst das allgemeine Verhalten "
+                "von Kernschmied und sollte nur bewusst geändert werden."
+            ),
+        ),
+        tags={
+            "identity",
+            "mission",
+            "behavior",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="organization_description",
+        display_name="Organisationsbeschreibung",
+        description=(
+            "Beschreibung des Unternehmens oder der Organisation, "
+            "für die Kernschmied arbeitet."
+        ),
+        value_schema={
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 5000,
+        },
+        default_value=(
+            "Heisig Naturstein ist ein Steinmetz- und "
+            "Steinbildhauer-Meisterbetrieb. Das Unternehmen bearbeitet "
+            "unter anderem Naturstein, Treppenanlagen, Bodenbeläge, "
+            "Denkmalpflege, Restaurierung, Grabmale sowie kaufmännische "
+            "und organisatorische Aufgaben."
+        ),
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXTAREA,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=40,
+        ),
+        tags={
+            "identity",
+            "organization",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="default_language",
+        display_name="Standardsprache",
+        description=(
+            "Bevorzugte Sprache für Antworten und erzeugte Arbeitsergebnisse."
+        ),
+        value_schema={
+            "type": "string",
+            "enum": [
+                "de",
+                "en",
+            ],
+        },
+        default_value="de",
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.SELECT,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=50,
+            options=(
+                ConfigOption(
+                    value="de",
+                    label="Deutsch",
+                ),
+                ConfigOption(
+                    value="en",
+                    label="Englisch",
+                ),
+            ),
+        ),
+        tags={
+            "identity",
+            "language",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="timezone",
+        display_name="Zeitzone",
+        description=("IANA-Zeitzone für Termine, Fristen und zeitabhängige Aufgaben."),
+        value_schema={
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+        },
+        default_value="Europe/Berlin",
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXT,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=60,
+            placeholder="Europe/Berlin",
+            help_text=(
+                "Die Zeitzone muss als gültiger IANA-Bezeichner angegeben werden."
+            ),
+        ),
+        tags={
+            "identity",
+            "timezone",
+        },
+    ),
+    config_definition(
+        group="identity",
+        key="behavior_principles",
+        display_name="Allgemeine Verhaltensgrundsätze",
+        description=(
+            "Grundlegende Regeln für sorgfältiges, nachvollziehbares "
+            "und sicheres Arbeiten."
+        ),
+        value_schema={
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 10000,
+        },
+        default_value=(
+            "Arbeite sorgfältig, transparent, nachvollziehbar und "
+            "lösungsorientiert. Prüfe Informationen und Ergebnisse auf "
+            "Plausibilität, Vollständigkeit und Konsistenz. Kennzeichne "
+            "Unsicherheiten und erfinde keine Tatsachen. Nutze nur "
+            "freigegebene Modelle, Werkzeuge und Datenquellen. Führe "
+            "wirkungsstarke, externe, schreibende oder löschende Aktionen "
+            "nur innerhalb der geltenden Berechtigungen und "
+            "Bestätigungspflichten aus. Verändere keine unveränderlichen "
+            "Sicherheitsgrenzen, Berechtigungen oder produktiven Verträge "
+            "eigenständig."
+        ),
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXTAREA,
+            category="Identität und Verhalten",
+            section="Identität",
+            order=70,
+            help_text=(
+                "Diese Regeln ergänzen die festen Sicherheitsgrenzen, "
+                "können diese aber niemals abschwächen."
+            ),
+        ),
+        tags={
+            "identity",
+            "behavior",
+            "governance",
+        },
+    ),
+    # ============================================================
     # Uploads
     # ============================================================
     config_definition(
@@ -755,18 +1054,68 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
     # ============================================================
     config_definition(
         group="models",
-        key="default_model",
-        display_name="Standardmodell",
+        key="default_provider",
+        display_name="Standardprovider",
         description=(
-            "Standardmäßig ausgewähltes Modell, sofern kein höher "
-            "priorisierter Scope ein anderes Modell festlegt."
+            "Provider, dessen Modelle standardmäßig für neue Chats angeboten werden."
         ),
         value_schema={
             "type": "string",
             "minLength": 1,
+            "maxLength": 100,
+        },
+        default_value="ollama",
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.NODE,
+            ConfigScope.PROJECT,
+            ConfigScope.CHAT,
+            ConfigScope.USER,
+            ConfigScope.REQUEST,
+        },
+        request_override_allowed=True,
+        value_type=ConfigValueType.STRING,
+        permissions=ConfigPermissions(
+            read="models:read",
+            write="models:configure",
+        ),
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.PROVIDER_SELECT,
+            category="Modelle",
+            section="Standardauswahl",
+            order=10,
+            dynamic_options=ConfigDynamicOptions(
+                source=ConfigValueSource.PROVIDERS,
+                endpoint="/api/v1/models/providers",
+                value_field="id",
+                label_field="name",
+                description_field="description",
+            ),
+        ),
+        tags={
+            "models",
+            "providers",
+            "defaults",
+        },
+    ),
+    config_definition(
+        group="models",
+        key="default_model",
+        display_name="Standardmodell",
+        description=(
+            "Standardmodell für neue Chats. "
+            "Die Auswahl wird automatisch auf den aktuellen Provider gefiltert."
+        ),
+        value_schema={
+            "type": [
+                "string",
+                "null",
+            ],
+            "minLength": 1,
             "maxLength": 255,
         },
         default_value="ollama-qwen2.5-coder-7b",
+        nullable=True,
         allowed_scopes={
             ConfigScope.SYSTEM,
             ConfigScope.NODE,
@@ -785,7 +1134,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             component=ConfigUIComponent.MODEL_SELECT,
             category="Modelle",
             section="Standardauswahl",
-            order=10,
+            order=20,
             dynamic_options=ConfigDynamicOptions(
                 source=ConfigValueSource.MODELS,
                 endpoint="/api/v1/models",
@@ -794,7 +1143,10 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
                 description_field="description",
                 filters={
                     "include_disabled": False,
+                    "capability": "chat",
                 },
+                depends_on="models.default_provider",
+                dependency_parameter="provider",
             ),
         ),
         tags={

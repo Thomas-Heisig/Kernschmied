@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 One of the primary goals of Kernschmied is to build an AI platform that can safely interact with external systems.
 
@@ -33,7 +33,7 @@ Every tool must behave predictably, be independently testable, and integrate int
 
 ---
 
-# Problem
+## Problem
 
 Without a structured tool architecture, AI integrations typically evolve into tightly coupled code where:
 
@@ -53,7 +53,7 @@ This leads to:
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied adopts a **registry-based tool architecture**.
 
@@ -72,7 +72,7 @@ They request tool execution through a structured Tool Call contract.
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > Models request capabilities.
 >
@@ -80,7 +80,7 @@ They request tool execution through a structured Tool Call contract.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 LLM
@@ -126,11 +126,12 @@ Output Validation
         ▼
 
 Structured Result
+
 ```
 
 ---
 
-# Goals
+## Goals
 
 The Tool Architecture should provide:
 
@@ -145,7 +146,7 @@ The Tool Architecture should provide:
 
 ---
 
-# Tool Lifecycle
+## Tool Lifecycle
 
 Every tool follows the same lifecycle.
 
@@ -171,11 +172,12 @@ Registry Ready
 ↓
 
 Execute on Demand
+
 ```
 
 ---
 
-# Tool Definition
+## Tool Definition
 
 Every tool implements the common tool interface.
 
@@ -191,7 +193,7 @@ Business services remain outside the tool itself.
 
 ---
 
-# Tool Manifest
+## Tool Manifest
 
 Each tool provides a declarative manifest.
 
@@ -199,6 +201,7 @@ Example:
 
 ```text
 tool.json
+
 ```
 
 The manifest typically contains:
@@ -217,7 +220,7 @@ The manifest is validated before registration.
 
 ---
 
-# Why Manifests?
+## Why Manifests?
 
 Manifests allow the platform to:
 
@@ -231,7 +234,7 @@ without executing tool code.
 
 ---
 
-# Tool Registry
+## Tool Registry
 
 The Tool Registry is responsible for:
 
@@ -246,7 +249,7 @@ Business services interact with the registry rather than individual tools.
 
 ---
 
-# Tool Factory Registry
+## Tool Factory Registry
 
 Tool construction is delegated to the Tool Factory Registry.
 
@@ -261,7 +264,7 @@ Tool instances should never be created manually.
 
 ---
 
-# Execution Pipeline
+## Execution Pipeline
 
 Tool execution follows a deterministic process.
 
@@ -295,13 +298,14 @@ Output Validation
 ↓
 
 Return Result
+
 ```
 
 Every step is mandatory.
 
 ---
 
-# Tool Calls
+## Tool Calls
 
 Models never execute tools directly.
 
@@ -322,7 +326,7 @@ The backend validates the request before execution.
 
 ---
 
-# Input Validation
+## Input Validation
 
 Every tool defines a structured input schema.
 
@@ -338,7 +342,7 @@ Invalid requests are rejected before execution.
 
 ---
 
-# Output Validation
+## Output Validation
 
 Tool responses are validated before being returned to the model.
 
@@ -351,7 +355,7 @@ Benefits include:
 
 ---
 
-# Tool Categories
+## Tool Categories
 
 Typical categories include:
 
@@ -412,7 +416,7 @@ Future plugins may introduce additional categories.
 
 ---
 
-# Permission Model
+## Permission Model
 
 Tool execution is always authorized.
 
@@ -429,7 +433,7 @@ Authorization remains backend responsibility.
 
 ---
 
-# User Confirmation
+## User Confirmation
 
 Some tools require explicit confirmation.
 
@@ -456,11 +460,12 @@ User Approves
 ↓
 
 Execute
+
 ```
 
 ---
 
-# Tool Isolation
+## Tool Isolation
 
 Tools should remain isolated.
 
@@ -475,7 +480,7 @@ Cross-tool coordination belongs to application services.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Tools return structured errors.
 
@@ -495,7 +500,7 @@ Unexpected exceptions are converted into structured platform errors.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Tools represent one of the largest attack surfaces within the platform.
 
@@ -513,7 +518,7 @@ Models never execute arbitrary Python code.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The architecture supports:
 
@@ -527,7 +532,7 @@ Tools should perform only the work necessary for the requested operation.
 
 ---
 
-# Dynamic Discovery
+## Dynamic Discovery
 
 During startup the registry discovers tool manifests.
 
@@ -545,6 +550,7 @@ Validation
 ↓
 
 Registration
+
 ```
 
 Unknown or invalid manifests are rejected.
@@ -553,7 +559,7 @@ Discovery never implies automatic trust.
 
 ---
 
-# Provider Independence
+## Provider Independence
 
 The tool interface is independent from any specific LLM provider.
 
@@ -569,7 +575,7 @@ the execution pipeline remains identical.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 The architecture enables:
 
@@ -583,7 +589,7 @@ Operations teams can determine exactly which tools are installed and available.
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -604,7 +610,7 @@ Operations teams can determine exactly which tools are installed and available.
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Direct Function Calls
 
@@ -634,7 +640,7 @@ Rejected because it fragments the architecture and complicates maintenance.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -655,7 +661,7 @@ Mitigation includes:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -673,7 +679,7 @@ Tool execution should always remain deterministic and observable.
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0003-Registries]]
 - [[ADR-0004-Security-Profiles]]
@@ -683,7 +689,7 @@ Tool execution should always remain deterministic and observable.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -717,7 +723,7 @@ Tool execution should always remain deterministic and observable.
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **registry-based tool architecture** in which every tool is defined through a common contract, described by a validated `tool.json` manifest, registered explicitly, and executed through a centralized validation and authorization pipeline.
 

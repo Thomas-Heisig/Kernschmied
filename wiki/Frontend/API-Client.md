@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 The **API Client** is the single entry point for all communication between the Kernschmied frontend and backend.
 
@@ -27,7 +27,7 @@ The API Client acts as the transport layer between the user interface and the ba
 
 ---
 
-# Design Goals
+## Design Goals
 
 The API Client is designed to provide:
 
@@ -43,7 +43,7 @@ The API Client is designed to provide:
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 React Component
@@ -95,11 +95,12 @@ Hook
         ▼
 
 React Component
+
 ```
 
 ---
 
-# Responsibilities
+## Responsibilities
 
 The API Client is responsible for:
 
@@ -122,7 +123,7 @@ The API Client is **not** responsible for:
 
 ---
 
-# Design Principles
+## Design Principles
 
 The API Client follows several architectural principles.
 
@@ -137,7 +138,7 @@ The API Client follows several architectural principles.
 
 ---
 
-# Request Lifecycle
+## Request Lifecycle
 
 ```text
 Component
@@ -169,11 +170,12 @@ Deserialize Response
 ↓
 
 Return Result
+
 ```
 
 ---
 
-# HTTP Methods
+## HTTP Methods
 
 The API Client supports the standard HTTP methods.
 
@@ -187,7 +189,7 @@ The API Client supports the standard HTTP methods.
 
 ---
 
-# Example
+## Example
 
 Instead of:
 
@@ -211,7 +213,7 @@ The implementation details remain hidden.
 
 ---
 
-# Base URL
+## Base URL
 
 The API Client manages the backend base URL centrally.
 
@@ -219,13 +221,14 @@ Example:
 
 ```text
 /api
+
 ```
 
 Changing the API prefix requires only one configuration change.
 
 ---
 
-# Serialization
+## Serialization
 
 Requests are serialized automatically.
 
@@ -239,11 +242,12 @@ JSON
 ↓
 
 HTTP Body
+
 ```
 
 ---
 
-# Deserialization
+## Deserialization
 
 Responses are converted into typed objects.
 
@@ -257,11 +261,12 @@ Validation
 ↓
 
 Typed Object
+
 ```
 
 ---
 
-# Type Safety
+## Type Safety
 
 All public API methods should use TypeScript types.
 
@@ -275,7 +280,7 @@ Strong typing improves maintainability and IDE support.
 
 ---
 
-# Error Handling
+## Error Handling
 
 The backend returns structured errors.
 
@@ -294,7 +299,7 @@ The API Client converts these into typed frontend errors.
 
 ---
 
-# Error Categories
+## Error Categories
 
 Typical categories include:
 
@@ -310,7 +315,7 @@ Each category should produce a consistent user experience.
 
 ---
 
-# Request IDs
+## Request IDs
 
 Every backend response may contain a request identifier.
 
@@ -330,13 +335,14 @@ Logs
 ↓
 
 Support
+
 ```
 
 Request IDs simplify troubleshooting.
 
 ---
 
-# Authentication
+## Authentication
 
 Authentication headers are attached automatically.
 
@@ -350,7 +356,7 @@ Individual components never construct authentication headers manually.
 
 ---
 
-# Authorization
+## Authorization
 
 Authorization is always performed by the backend.
 
@@ -358,7 +364,7 @@ The API Client only transports credentials.
 
 ---
 
-# Request Cancellation
+## Request Cancellation
 
 Long-running requests should be cancellable.
 
@@ -378,13 +384,14 @@ AbortController
 ↓
 
 Request Aborted
+
 ```
 
 This is especially important for AI generation.
 
 ---
 
-# Streaming Support
+## Streaming Support
 
 Streaming requests use Server-Sent Events.
 
@@ -406,13 +413,14 @@ Streaming Hook
 ↓
 
 UI
+
 ```
 
 Streaming remains independent from standard REST requests.
 
 ---
 
-# Response Validation
+## Response Validation
 
 The API Client validates response structures whenever practical.
 
@@ -422,7 +430,7 @@ This prevents undefined behavior caused by malformed data.
 
 ---
 
-# Retry Strategy
+## Retry Strategy
 
 The API Client may automatically retry transient failures.
 
@@ -436,7 +444,7 @@ Requests that modify data should never be retried automatically unless explicitl
 
 ---
 
-# Timeouts
+## Timeouts
 
 Requests should use reasonable timeout values.
 
@@ -444,7 +452,7 @@ Timeouts prevent the application from waiting indefinitely for unavailable servi
 
 ---
 
-# Configuration
+## Configuration
 
 Typical configuration includes:
 
@@ -458,7 +466,7 @@ Configuration is centralized.
 
 ---
 
-# Logging
+## Logging
 
 The API Client may log:
 
@@ -472,7 +480,7 @@ Sensitive information must never be logged.
 
 ---
 
-# Hooks Integration
+## Hooks Integration
 
 Components typically communicate through custom hooks.
 
@@ -490,13 +498,14 @@ API Client
 ↓
 
 Backend
+
 ```
 
 Hooks encapsulate data loading while the API Client focuses on transport.
 
 ---
 
-# Security
+## Security
 
 The API Client must never:
 
@@ -510,7 +519,7 @@ All security-sensitive decisions remain on the backend.
 
 ---
 
-# Testing
+## Testing
 
 Typical tests include:
 
@@ -526,7 +535,7 @@ Tests should mock backend responses rather than real servers.
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 The API Client is designed to support future capabilities such as:
 
@@ -542,7 +551,7 @@ These additions should not require changes to application components.
 
 ---
 
-# Best Practices
+## Best Practices
 
 Recommended:
 
@@ -564,9 +573,9 @@ Avoid:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
-## Architecture
+## Architecture (2)
 
 - [[Architecture]]
 - [[Request-Lifecycle]]
@@ -600,7 +609,7 @@ Avoid:
 
 ---
 
-# Summary
+## Summary
 
 The API Client provides the single, consistent communication layer between the Kernschmied frontend and backend.
 

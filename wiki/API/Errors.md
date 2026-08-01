@@ -8,7 +8,7 @@ This enables clients to implement reliable error handling without depending on i
 
 ---
 
-# Goals
+## Goals
 
 The Error API is designed to provide:
 
@@ -23,7 +23,7 @@ The Error API is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 The error system follows several core principles.
 
@@ -72,7 +72,7 @@ Examples include:
 
 ---
 
-# Error Response Format
+## Error Response Format
 
 Every REST error follows the same structure.
 
@@ -87,7 +87,7 @@ Every REST error follows the same structure.
 
 ---
 
-# Fields
+## Fields
 
 | Field      | Description                        |
 | ---------- | ---------------------------------- |
@@ -98,7 +98,7 @@ Every REST error follows the same structure.
 
 ---
 
-# Error Code
+## Error Code
 
 The `code` field is intended for application logic.
 
@@ -114,7 +114,7 @@ Frontend applications should never parse the message text.
 
 ---
 
-# Message
+## Message
 
 The message explains the error for humans.
 
@@ -130,7 +130,7 @@ Messages may be localized in future versions.
 
 ---
 
-# Details
+## Details
 
 Additional information may be supplied.
 
@@ -148,7 +148,7 @@ The structure depends on the error type.
 
 ---
 
-# Request ID
+## Request ID
 
 Every request receives a unique identifier.
 
@@ -164,7 +164,7 @@ This identifier simplifies diagnostics and support.
 
 ---
 
-# HTTP Status Codes
+## HTTP Status Codes
 
 Kernschmied follows standard HTTP semantics.
 
@@ -182,7 +182,7 @@ Kernschmied follows standard HTTP semantics.
 
 ---
 
-# Common Error Codes
+## Common Error Codes
 
 Typical platform error codes include:
 
@@ -203,7 +203,7 @@ These codes are stable public contracts.
 
 ---
 
-# Validation Errors
+## Validation Errors
 
 Validation failures return structured information.
 
@@ -223,7 +223,7 @@ Example:
 
 ---
 
-# Authentication Errors
+## Authentication Errors
 
 Example:
 
@@ -240,11 +240,12 @@ HTTP status:
 
 ```text
 401 Unauthorized
+
 ```
 
 ---
 
-# Authorization Errors
+## Authorization Errors
 
 Example:
 
@@ -261,11 +262,12 @@ HTTP status:
 
 ```text
 403 Forbidden
+
 ```
 
 ---
 
-# Not Found Errors
+## Not Found Errors
 
 Example:
 
@@ -282,7 +284,7 @@ Example:
 
 ---
 
-# Provider Errors
+## Provider Errors
 
 Provider-specific failures are normalized.
 
@@ -301,7 +303,7 @@ Clients never receive provider-specific exception names.
 
 ---
 
-# Configuration Errors
+## Configuration Errors
 
 Example:
 
@@ -318,7 +320,7 @@ Example:
 
 ---
 
-# Internal Errors
+## Internal Errors
 
 Unexpected failures are converted into a generic response.
 
@@ -337,7 +339,7 @@ Implementation details are intentionally omitted.
 
 ---
 
-# Streaming Errors
+## Streaming Errors
 
 Streaming endpoints use Server-Sent Events (SSE).
 
@@ -353,13 +355,14 @@ data:
     "code":"provider_timeout",
     "message":"Generation timed out."
 }
+
 ```
 
 After an error event the stream terminates.
 
 ---
 
-# Validation Pipeline
+## Validation Pipeline
 
 ```text
 Incoming Request
@@ -383,13 +386,14 @@ Execution
 ↓
 
 Structured Response
+
 ```
 
 Errors can occur at every stage.
 
 ---
 
-# Exception Translation
+## Exception Translation
 
 Internal exceptions are translated before leaving the backend.
 
@@ -407,13 +411,14 @@ REST Error
 ↓
 
 JSON Response
+
 ```
 
 This keeps the public API independent from implementation details.
 
 ---
 
-# Logging
+## Logging
 
 Errors are logged internally with additional diagnostic information.
 
@@ -431,7 +436,7 @@ Only safe information is returned to clients.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Administrative failures may also generate audit events.
 
@@ -444,7 +449,7 @@ Examples include:
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Error responses must never reveal:
 
@@ -460,7 +465,7 @@ Security always takes precedence over diagnostic detail.
 
 ---
 
-# Client Recommendations
+## Client Recommendations
 
 Clients should:
 
@@ -472,7 +477,7 @@ Clients should:
 
 ---
 
-# Versioning
+## Versioning
 
 The error contract is part of the public API.
 
@@ -482,7 +487,7 @@ Existing fields retain their semantics.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Error generation should remain lightweight.
 
@@ -495,7 +500,7 @@ The platform avoids:
 
 ---
 
-# Related APIs
+## Related APIs
 
 - [[Bootstrap]]
 - [[Chat]]
@@ -504,7 +509,7 @@ The platform avoids:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 - [[REST-API]]
 - [[Architecture]]
@@ -513,7 +518,7 @@ The platform avoids:
 
 ---
 
-# Summary
+## Summary
 
 The Kernschmied Error API provides a consistent, secure, and provider-independent error contract for both REST and streaming interfaces.
 

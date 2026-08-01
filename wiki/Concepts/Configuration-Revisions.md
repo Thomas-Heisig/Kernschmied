@@ -8,7 +8,7 @@ This approach provides deterministic cache invalidation, efficient synchronizati
 
 ---
 
-# Goals
+## Goals
 
 The Configuration Revision system is designed to provide:
 
@@ -23,7 +23,7 @@ The Configuration Revision system is designed to provide:
 
 ---
 
-# Why Revisions?
+## Why Revisions?
 
 Without revisions, clients would have to repeatedly download configuration or compare large configuration objects.
 
@@ -41,6 +41,7 @@ Compare Objects
 ↓
 
 Detect Changes
+
 ```
 
 This approach becomes increasingly inefficient as configuration grows.
@@ -61,11 +62,12 @@ Backend Revision = 42
 ↓
 
 No Reload Required
+
 ```
 
 ---
 
-# Basic Principle
+## Basic Principle
 
 Every successful configuration modification increments a revision number.
 
@@ -79,13 +81,14 @@ Configuration Updated
 ↓
 
 Revision 11
+
 ```
 
 The revision represents the current logical state of the configuration.
 
 ---
 
-# Revision Lifecycle
+## Revision Lifecycle
 
 Configuration updates follow a deterministic workflow.
 
@@ -115,13 +118,14 @@ Invalidate Cache
 ↓
 
 Return Updated Revision
+
 ```
 
 Clients receive the new revision together with the successful response.
 
 ---
 
-# Revision Storage
+## Revision Storage
 
 Revision information is stored separately from configuration values.
 
@@ -136,7 +140,7 @@ Separating revisions from configuration simplifies synchronization.
 
 ---
 
-# Immutable History
+## Immutable History
 
 A revision number is never reused.
 
@@ -152,13 +156,14 @@ Example:
 4
 
 5
+
 ```
 
 If revision **5** exists, revisions **1–4** always refer to earlier states.
 
 ---
 
-# Monotonic Growth
+## Monotonic Growth
 
 Revisions always increase.
 
@@ -170,6 +175,7 @@ Invalid sequence:
 8
 
 6
+
 ```
 
 Valid sequence:
@@ -180,13 +186,14 @@ Valid sequence:
 8
 
 9
+
 ```
 
 This property makes synchronization deterministic.
 
 ---
 
-# Backend Usage
+## Backend Usage
 
 Application services compare revisions before using cached configuration.
 
@@ -204,6 +211,7 @@ Equal?
 ↓
 
 Use Cache
+
 ```
 
 Otherwise:
@@ -214,11 +222,12 @@ Reload Configuration
 ↓
 
 Replace Cache
+
 ```
 
 ---
 
-# Frontend Usage
+## Frontend Usage
 
 The frontend receives revision information through Bootstrap and configuration endpoints.
 
@@ -230,6 +239,7 @@ Bootstrap
 ↓
 
 configuration_revision = 17
+
 ```
 
 If the revision changes later:
@@ -244,13 +254,14 @@ If the revision changes later:
 ↓
 
 Reload Configuration
+
 ```
 
 The frontend never needs to compare complete configuration objects.
 
 ---
 
-# Bootstrap Integration
+## Bootstrap Integration
 
 The Bootstrap endpoint exposes current revision information.
 
@@ -270,13 +281,14 @@ Hierarchy Revision
 ↓
 
 Registry Revisions
+
 ```
 
 Clients can synchronize all runtime metadata immediately after startup.
 
 ---
 
-# Cache Invalidation
+## Cache Invalidation
 
 Revision changes invalidate cached configuration automatically.
 
@@ -294,13 +306,14 @@ Cache Invalid
 ↓
 
 Next Request Reloads
+
 ```
 
 The cache never needs to inspect individual configuration values.
 
 ---
 
-# Scope Awareness
+## Scope Awareness
 
 Future versions may maintain revisions for multiple scopes.
 
@@ -320,13 +333,14 @@ Project
 ↓
 
 Conversation
+
 ```
 
 Each scope could evolve independently while preserving deterministic behavior.
 
 ---
 
-# Relationship to Configuration
+## Relationship to Configuration
 
 Configuration stores business values.
 
@@ -342,13 +356,14 @@ Revision
 ↓
 
 Cache Synchronization
+
 ```
 
 The two concepts remain separate.
 
 ---
 
-# Relationship to Hierarchy
+## Relationship to Hierarchy
 
 Hierarchy changes may also affect effective configuration.
 
@@ -364,13 +379,14 @@ Hierarchy Revision++
 ↓
 
 Configuration Recalculated
+
 ```
 
 Clients compare both revisions independently.
 
 ---
 
-# Relationship to Registries
+## Relationship to Registries
 
 Model and Tool Registries maintain independent revisions.
 
@@ -380,13 +396,14 @@ Configuration Revision
 Model Registry Revision
 
 Tool Registry Revision
+
 ```
 
 A change in one subsystem does not invalidate unrelated caches.
 
 ---
 
-# Runtime Updates
+## Runtime Updates
 
 Runtime-editable configuration becomes active immediately.
 
@@ -404,13 +421,14 @@ Revision++
 ↓
 
 Next Request Uses New Configuration
+
 ```
 
 No application restart is required.
 
 ---
 
-# Distributed Systems
+## Distributed Systems
 
 Revision numbers become even more important in multi-worker deployments.
 
@@ -428,6 +446,7 @@ Worker B
 ↓
 
 Revision 25
+
 ```
 
 After an update:
@@ -442,13 +461,14 @@ Workers Detect Change
 ↓
 
 Invalidate Local Cache
+
 ```
 
 Workers remain synchronized without exchanging complete configuration data.
 
 ---
 
-# Performance
+## Performance
 
 Revision comparison is extremely inexpensive.
 
@@ -456,19 +476,21 @@ Instead of:
 
 ```text
 Compare Hundreds of Values
+
 ```
 
 the backend performs:
 
 ```text
 Compare Integer
+
 ```
 
 This significantly reduces synchronization overhead.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Revision updates occur only after successful persistence.
 
@@ -484,6 +506,7 @@ Save Configuration
 ↓
 
 Failure
+
 ```
 
 Correct sequence:
@@ -502,13 +525,14 @@ Increment Revision
 ↓
 
 Return Success
+
 ```
 
 This guarantees consistency.
 
 ---
 
-# Security
+## Security
 
 Revision values contain no sensitive information.
 
@@ -522,7 +546,7 @@ The revision reveals only that something changed—not what changed.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The revision architecture supports future enhancements including:
 
@@ -538,7 +562,7 @@ These features can be introduced without changing the core revision concept.
 
 ---
 
-# Relationship to Other Concepts
+## Relationship to Other Concepts
 
 Configuration Revisions interact closely with:
 
@@ -550,7 +574,7 @@ Configuration Revisions interact closely with:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Concepts
 
@@ -578,7 +602,7 @@ Configuration Revisions interact closely with:
 
 ---
 
-# Summary
+## Summary
 
 Configuration Revisions provide a lightweight, deterministic mechanism for detecting runtime configuration changes throughout the Kernschmied platform. Instead of comparing complete configuration objects, clients and backend services compare simple revision numbers to determine whether cached information remains valid.
 

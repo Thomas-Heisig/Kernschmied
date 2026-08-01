@@ -8,7 +8,7 @@ The deployment profile influences infrastructure, authentication, transport secu
 
 ---
 
-# Goals
+## Goals
 
 The deployment architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The deployment architecture is designed to provide:
 
 ---
 
-# Architectural Principles
+## Architectural Principles
 
 ## One Application
 
@@ -73,7 +73,7 @@ Deployment does **not** influence:
 
 ---
 
-# Deployment Profiles
+## Deployment Profiles
 
 Kernschmied currently defines three official deployment profiles.
 
@@ -87,13 +87,14 @@ Intranet
 ↓
 
 Internet
+
 ```
 
 Each profile provides progressively stronger security guarantees.
 
 ---
 
-# Development Profile
+## Development Profile
 
 Purpose:
 
@@ -119,6 +120,7 @@ SQLite
 ↓
 
 Local Ollama
+
 ```
 
 Characteristics:
@@ -133,7 +135,7 @@ Characteristics:
 
 ---
 
-# Intranet Profile
+## Intranet Profile
 
 Purpose:
 
@@ -159,6 +161,7 @@ Database
 ↓
 
 Local AI Models
+
 ```
 
 Characteristics:
@@ -173,7 +176,7 @@ Characteristics:
 
 ---
 
-# Internet Profile
+## Internet Profile
 
 Purpose:
 
@@ -203,6 +206,7 @@ Database
 ↓
 
 AI Providers
+
 ```
 
 Characteristics:
@@ -217,7 +221,7 @@ Characteristics:
 
 ---
 
-# Deployment Comparison
+## Deployment Comparison
 
 | Feature        | Development | Intranet    | Internet |
 | -------------- | ----------- | ----------- | -------- |
@@ -231,7 +235,7 @@ Characteristics:
 
 ---
 
-# Deployment Overview
+## Deployment Overview
 
 ```text
                Deployment
@@ -243,13 +247,14 @@ Characteristics:
       │             │             │
 
 Development     Intranet      Internet
+
 ```
 
 Each profile shares the same application code.
 
 ---
 
-# Runtime Components
+## Runtime Components
 
 Every deployment consists of the same logical components.
 
@@ -279,13 +284,14 @@ Repositories
 ↓
 
 Database
+
 ```
 
 Additional infrastructure may surround these components.
 
 ---
 
-# Development Deployment
+## Development Deployment
 
 Typical local setup:
 
@@ -311,13 +317,14 @@ SQLite
 Ollama
 
 +-------------------------+
+
 ```
 
 Everything executes on one machine.
 
 ---
 
-# Intranet Deployment
+## Intranet Deployment
 
 Example:
 
@@ -343,13 +350,14 @@ PostgreSQL
 ↓
 
 Internal Ollama Server
+
 ```
 
 Multiple users share the same application.
 
 ---
 
-# Internet Deployment
+## Internet Deployment
 
 Typical production architecture:
 
@@ -379,13 +387,14 @@ Database
 ↓
 
 Provider Layer
+
 ```
 
 The architecture supports horizontal scaling.
 
 ---
 
-# Reverse Proxy
+## Reverse Proxy
 
 A reverse proxy is recommended for production deployments.
 
@@ -407,7 +416,7 @@ Common implementations:
 
 ---
 
-# Database Deployment
+## Database Deployment
 
 Supported databases:
 
@@ -415,19 +424,21 @@ Development:
 
 ```text
 SQLite
+
 ```
 
 Production:
 
 ```text
 PostgreSQL
+
 ```
 
 The repository layer hides database differences from application services.
 
 ---
 
-# AI Model Deployment
+## AI Model Deployment
 
 The provider architecture supports multiple deployment options.
 
@@ -441,6 +452,7 @@ FastAPI
 ↓
 
 Ollama
+
 ```
 
 Remote:
@@ -451,6 +463,7 @@ FastAPI
 ↓
 
 OpenAI
+
 ```
 
 Hybrid:
@@ -465,13 +478,14 @@ Provider Registry
 ↓
 
 Multiple Providers
+
 ```
 
 Deployment is transparent to the frontend.
 
 ---
 
-# Configuration
+## Configuration
 
 Bootstrap configuration is provided before startup.
 
@@ -487,7 +501,7 @@ Business configuration remains in the database.
 
 ---
 
-# Security
+## Security
 
 Security is determined by deployment profile.
 
@@ -504,7 +518,7 @@ Business services remain unchanged.
 
 ---
 
-# HTTPS
+## HTTPS
 
 Recommended usage:
 
@@ -512,25 +526,28 @@ Development
 
 ```text
 Optional
+
 ```
 
 Intranet
 
 ```text
 Recommended
+
 ```
 
 Internet
 
 ```text
 Mandatory
+
 ```
 
 The backend should never expose unsecured production endpoints.
 
 ---
 
-# Authentication
+## Authentication
 
 Possible authentication providers include:
 
@@ -545,7 +562,7 @@ The authentication mechanism is independent of business logic.
 
 ---
 
-# Authorization
+## Authorization
 
 Authorization is always performed server-side.
 
@@ -559,7 +576,7 @@ This behavior is identical across all deployments.
 
 ---
 
-# Scaling
+## Scaling
 
 The architecture supports horizontal scaling.
 
@@ -577,13 +594,14 @@ FastAPI Instance 3
 ↓
 
 Shared Database
+
 ```
 
 Application services remain stateless whenever possible.
 
 ---
 
-# High Availability
+## High Availability
 
 Future deployments may introduce:
 
@@ -596,7 +614,7 @@ The architecture already supports these additions.
 
 ---
 
-# Monitoring
+## Monitoring
 
 Typical monitoring includes:
 
@@ -611,7 +629,7 @@ Monitoring remains external to business logic.
 
 ---
 
-# Logging
+## Logging
 
 Logging varies by deployment profile.
 
@@ -631,7 +649,7 @@ Sensitive information must never be logged.
 
 ---
 
-# Backup Strategy
+## Backup Strategy
 
 Persistent data should include:
 
@@ -645,7 +663,7 @@ Bootstrap configuration should be stored separately.
 
 ---
 
-# Disaster Recovery
+## Disaster Recovery
 
 Recovery typically consists of:
 
@@ -663,13 +681,14 @@ Restore Configuration
 ↓
 
 Start Application
+
 ```
 
 Because bootstrap configuration is minimal, recovery remains straightforward.
 
 ---
 
-# Deployment Independence
+## Deployment Independence
 
 Business functionality is identical regardless of deployment.
 
@@ -686,7 +705,7 @@ Only operational characteristics change.
 
 ---
 
-# Future Deployment Options
+## Future Deployment Options
 
 The architecture can later support:
 
@@ -701,7 +720,7 @@ No architectural redesign is required.
 
 ---
 
-# Relationship to Bootstrap
+## Relationship to Bootstrap
 
 Bootstrap informs clients about:
 
@@ -714,7 +733,7 @@ Clients adapt presentation but never security behavior.
 
 ---
 
-# Relationship to Security
+## Relationship to Security
 
 Deployment determines operational security.
 
@@ -729,7 +748,7 @@ Together they provide consistent platform security.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -757,7 +776,7 @@ Together they provide consistent platform security.
 
 ---
 
-# Summary
+## Summary
 
 The Deployment Architecture enables Kernschmied to operate consistently across development, intranet, and Internet environments without changing application behavior or public contracts.
 

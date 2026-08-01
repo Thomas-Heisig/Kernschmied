@@ -5,7 +5,7 @@
 
 ---
 
-# Introduction
+## Introduction
 
 This page answers the most common questions about **Kernschmied**.
 
@@ -17,7 +17,7 @@ Repository:
 
 ---
 
-# General
+## General
 
 ## What is Kernschmied?
 
@@ -67,7 +67,7 @@ The architecture is intended to support many future applications, including:
 
 ---
 
-# Architecture
+## Architecture
 
 ## Why is the frontend schema-driven?
 
@@ -127,7 +127,7 @@ Breaking changes require a new schema version.
 
 ---
 
-# Configuration
+## Configuration
 
 ## Why is business configuration stored in the database?
 
@@ -161,7 +161,7 @@ Business configuration should never be stored in `.env`.
 
 ---
 
-# Frontend
+## Frontend
 
 ## Can I create custom React pages?
 
@@ -193,7 +193,7 @@ Authorization is always performed by the backend.
 
 ---
 
-# Backend
+## Backend
 
 ## Why does the backend generate UI schemas?
 
@@ -232,7 +232,7 @@ Pydantic provides:
 
 ---
 
-# Registries
+## Registries
 
 ## What is a registry?
 
@@ -257,7 +257,7 @@ A plugin, model or tool may exist but still require explicit approval before use
 
 ---
 
-# Plugins
+## Plugins
 
 ## Does Kernschmied support plugins?
 
@@ -284,7 +284,7 @@ Dynamic discovery does not mean unrestricted execution.
 
 ---
 
-# AI Models
+## AI Models
 
 ## Can multiple AI providers be used?
 
@@ -308,7 +308,7 @@ Models are described by manifests and managed through the Model Registry.
 
 ---
 
-# Security
+## Security
 
 ## Why is the backend authoritative?
 
@@ -348,7 +348,7 @@ Each profile enforces a minimum security baseline.
 
 ---
 
-# Development
+## Development
 
 ## How should I contribute?
 
@@ -385,7 +385,7 @@ Preferred order:
 
 ---
 
-# Documentation
+## Documentation
 
 ## Where should I start reading?
 
@@ -413,7 +413,7 @@ Examples:
 
 ---
 
-# Repository
+## Repository
 
 ## Where can I report bugs?
 
@@ -425,9 +425,9 @@ GitHub Issues:
 
 ## Where can I discuss ideas?
 
-GitHub Discussions (if enabled):
+Please use the Issue tracker on GitHub to discuss ideas:
 
-<https://github.com/Thomas-Heisig/Kernschmied/discussions>
+<https://github.com/Thomas-Heisig/Kernschmied/issues>
 
 ---
 
@@ -439,7 +439,7 @@ Repository:
 
 ---
 
-# Related Pages
+## Related Pages
 
 - [[Home]]
 - [[Getting-Started]]

@@ -6,6 +6,7 @@ import { Globe2, Plus } from "lucide-react";
 import { GenericChatView } from "../chat";
 import { SettingsDialog } from "../settings";
 import { WebsiteWorkspace } from "../websites";
+import SchemaRenderer from "../schema/SchemaRenderer";
 
 /* ============================================================
  * Typen und Konstanten
@@ -19,6 +20,7 @@ export interface SelectedWorkspaceNode {
 
 interface SelectedNodeWorkspaceProps {
   node: SelectedWorkspaceNode | null;
+  schema?: any;
 }
 
 const SETTINGS_NODE_TYPES = new Set<string>([
@@ -48,7 +50,10 @@ const WEBSITE_NODE_TYPES = new Set<string>([
  * Hauptkomponente
  * ============================================================ */
 
-export function SelectedNodeWorkspace({ node }: SelectedNodeWorkspaceProps) {
+export function SelectedNodeWorkspace({
+  node,
+  schema,
+}: SelectedNodeWorkspaceProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const normalizedType = node ? normalizeNodeType(node.type) : null;
@@ -150,7 +155,107 @@ export function SelectedNodeWorkspace({ node }: SelectedNodeWorkspaceProps) {
     return <WebsiteWorkspace websiteId={node.id} title={node.name} />;
   }
 
-  return <NodePlaceholder node={node} />;
+  // If the schema provides a node definition for this type, render the SchemaRenderer
+  if (schema && schema.node_types && schema.node_types[normalizedType]) {
+    return (
+      <section
+        className={[
+          "flex min-h-0 min-w-0",
+          "w-full flex-1",
+          "overflow-auto",
+          "bg-slate-50 p-6",
+          "dark:bg-slate-950/30",
+          "sm:p-8",
+        ].join(" ")}
+        aria-label={`Schema view: ${node.name}`}
+      >
+        <div className="mx-auto w-full max-w-6xl">
+          <SchemaRenderer
+            schema={schema.node_types?.[normalizedType]}
+            context={{ nodeId: node.id }}
+          />
+        </div>
+      </section>
+    );
+  }
+
+  return <NodePlaceholder node={node} schema={schema} />;
+}
+function NodePlaceholder({
+  node,
+  schema,
+}: NodePlaceholderProps & { schema?: any }) {
+  const titleId = createElementId("workspace-node-title", node.id);
+
+  return (
+    <section
+      className={[
+        "flex min-h-0 min-w-0",
+        "w-full flex-1",
+        "items-center justify-center",
+        "overflow-auto",
+        "bg-slate-50 p-6",
+        "dark:bg-slate-950/30",
+        "sm:p-8",
+      ].join(" ")}
+      aria-labelledby={titleId}
+    >
+      <div
+        className={[
+          "w-full max-w-xl",
+          "rounded-2xl",
+          "border border-slate-200",
+          "bg-white p-6",
+          "shadow-sm",
+          "dark:border-white/10",
+          "dark:bg-slate-900/50",
+        ].join(" ")}
+      >
+        <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+          {node.type}
+        </p>
+
+        <h1
+          id={titleId}
+          className="mt-2 text-xl font-semibold text-slate-950 dark:text-white"
+        >
+          {node.name}
+        </h1>
+
+        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
+          {/** prefer schema-driven description if available */}
+          {schema &&
+          schema.node_types &&
+          schema.node_types[node.type] &&
+          schema.node_types[node.type].description
+            ? schema.node_types[node.type].description
+            : "Für diesen Knotentyp wird künftig die passende schema-gesteuerte Ansicht über den zentralen SchemaRenderer dargestellt."}
+        </p>
+
+        <dl className="mt-5 grid gap-3 rounded-xl bg-slate-100 p-4 text-sm dark:bg-white/5">
+          <div className="flex min-w-0 gap-3">
+            <dt className="w-20 shrink-0 font-medium text-slate-500 dark:text-slate-400">
+              ID
+            </dt>
+
+            <dd className="min-w-0 flex-1 wrap-break-words font-mono text-slate-800 dark:text-slate-200">
+              {node.id}
+            </dd>
+          </div>
+
+          <div className="flex min-w-0 gap-3">
+            <dt className="w-20 shrink-0 font-medium text-slate-500 dark:text-slate-400">
+              Typ
+            </dt>
+
+            <dd className="min-w-0 flex-1 wrap-break-words font-mono text-slate-800 dark:text-slate-200">
+              {node.type}
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </section>
+  );
 }
 
 /* ============================================================
@@ -317,75 +422,6 @@ function WebsiteCollectionView({ node }: WebsiteCollectionViewProps) {
 
 interface NodePlaceholderProps {
   node: SelectedWorkspaceNode;
-}
-
-function NodePlaceholder({ node }: NodePlaceholderProps) {
-  const titleId = createElementId("workspace-node-title", node.id);
-
-  return (
-    <section
-      className={[
-        "flex min-h-0 min-w-0",
-        "w-full flex-1",
-        "items-center justify-center",
-        "overflow-auto",
-        "bg-slate-50 p-6",
-        "dark:bg-slate-950/30",
-        "sm:p-8",
-      ].join(" ")}
-      aria-labelledby={titleId}
-    >
-      <div
-        className={[
-          "w-full max-w-xl",
-          "rounded-2xl",
-          "border border-slate-200",
-          "bg-white p-6",
-          "shadow-sm",
-          "dark:border-white/10",
-          "dark:bg-slate-900/50",
-        ].join(" ")}
-      >
-        <p className="text-xs font-semibold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-          {node.type}
-        </p>
-
-        <h1
-          id={titleId}
-          className="mt-2 text-xl font-semibold text-slate-950 dark:text-white"
-        >
-          {node.name}
-        </h1>
-
-        <p className="mt-3 text-sm leading-6 text-slate-600 dark:text-slate-400">
-          Für diesen Knotentyp wird künftig die passende schema-gesteuerte
-          Ansicht über den zentralen SchemaRenderer dargestellt.
-        </p>
-
-        <dl className="mt-5 grid gap-3 rounded-xl bg-slate-100 p-4 text-sm dark:bg-white/5">
-          <div className="flex min-w-0 gap-3">
-            <dt className="w-20 shrink-0 font-medium text-slate-500 dark:text-slate-400">
-              ID
-            </dt>
-
-            <dd className="min-w-0 flex-1 wrap-break-words font-mono text-slate-800 dark:text-slate-200">
-              {node.id}
-            </dd>
-          </div>
-
-          <div className="flex min-w-0 gap-3">
-            <dt className="w-20 shrink-0 font-medium text-slate-500 dark:text-slate-400">
-              Typ
-            </dt>
-
-            <dd className="min-w-0 flex-1 wrap-break-words font-mono text-slate-800 dark:text-slate-200">
-              {node.type}
-            </dd>
-          </div>
-        </dl>
-      </div>
-    </section>
-  );
 }
 
 /* ============================================================

@@ -19,7 +19,7 @@ The API intentionally exposes validated configuration rather than direct databas
 
 ---
 
-# Goals
+## Goals
 
 The Configuration API provides:
 
@@ -34,7 +34,7 @@ The Configuration API provides:
 
 ---
 
-# Endpoints
+## Endpoints
 
 ## Read Effective Configuration
 
@@ -78,7 +78,7 @@ POST /api/v1/config/export
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 REST API
@@ -106,13 +106,14 @@ Database
         ▼
 
 Effective Configuration
+
 ```
 
 Business services never access configuration tables directly.
 
 ---
 
-# Configuration Categories
+## Configuration Categories
 
 Configuration is divided into two categories.
 
@@ -148,7 +149,7 @@ Examples:
 
 ---
 
-# Read Configuration
+## Read Configuration
 
 ```http
 GET /api/v1/config
@@ -169,7 +170,7 @@ Example response:
 
 ---
 
-# Update Configuration
+## Update Configuration (2)
 
 ```http
 PUT /api/v1/config
@@ -189,7 +190,7 @@ Successful updates increment the global configuration revision.
 
 ---
 
-# Configuration Scopes
+## Configuration Scopes
 
 Configuration values exist in hierarchical scopes.
 
@@ -206,7 +207,7 @@ Supported scopes include:
 
 ---
 
-# Configuration Resolution
+## Configuration Resolution
 
 The Configuration Resolver combines all scopes into one immutable configuration.
 
@@ -236,13 +237,14 @@ REQUEST
 ↓
 
 Effective Configuration
+
 ```
 
 Business services consume only the effective configuration.
 
 ---
 
-# Merge Strategies
+## Merge Strategies
 
 Every configuration entry defines how inheritance behaves.
 
@@ -266,7 +268,7 @@ Nested objects are merged recursively.
 
 ---
 
-# Runtime Editable Values
+## Runtime Editable Values
 
 Some configuration can be changed without restarting the application.
 
@@ -281,7 +283,7 @@ Infrastructure settings remain immutable during runtime.
 
 ---
 
-# Validation
+## Validation
 
 Every configuration update is validated before persistence.
 
@@ -298,7 +300,7 @@ Invalid configuration is rejected.
 
 ---
 
-# Configuration Revision
+## Configuration Revision
 
 Every successful update increases the global revision.
 
@@ -314,6 +316,7 @@ Configuration Updated
 ↓
 
 Revision 13
+
 ```
 
 The revision is returned by:
@@ -325,7 +328,7 @@ Clients use revisions for cache invalidation.
 
 ---
 
-# Cache Invalidation
+## Cache Invalidation
 
 Configuration is cached.
 
@@ -345,13 +348,14 @@ Invalidate Cache
 ↓
 
 Reload
+
 ```
 
 This mechanism supports multiple backend workers.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Every configuration modification generates an immutable audit entry.
 
@@ -367,7 +371,7 @@ Audit information typically includes:
 
 ---
 
-# Authorization
+## Authorization
 
 Reading configuration may require authentication depending on the deployment profile.
 
@@ -377,13 +381,14 @@ Typical permission:
 
 ```text
 configuration.write
+
 ```
 
 Backend authorization is always authoritative.
 
 ---
 
-# Error Responses
+## Error Responses
 
 Errors follow the standard platform contract.
 
@@ -402,19 +407,20 @@ Example:
 
 ---
 
-# Versioning
+## Versioning
 
 Configuration follows the REST API version.
 
 ```text
 /api/v1/config
+
 ```
 
 The configuration schema itself may evolve independently through schema versioning.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 The Configuration API never exposes:
 
@@ -427,7 +433,7 @@ Sensitive infrastructure configuration remains outside runtime configuration.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Performance is achieved through:
 
@@ -440,7 +446,7 @@ Configuration should not require repeated database queries during a single reque
 
 ---
 
-# Typical Workflow
+## Typical Workflow
 
 ```text
 Administrator
@@ -472,11 +478,12 @@ Invalidate Cache
 ↓
 
 Done
+
 ```
 
 ---
 
-# Related Endpoints
+## Related Endpoints
 
 ```http
 GET /api/v1/bootstrap
@@ -490,7 +497,7 @@ GET /api/v1/tools
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 - [[Architecture]]
 - [[Bootstrap]]
@@ -502,7 +509,7 @@ GET /api/v1/tools
 
 ---
 
-# Summary
+## Summary
 
 The Configuration API provides centralized management of Kernschmied's runtime configuration.
 

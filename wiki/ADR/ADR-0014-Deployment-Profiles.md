@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is intended to run in very different operational environments while maintaining a single code base.
 
@@ -36,7 +36,7 @@ A deployment architecture based solely on configuration flags often results in i
 
 ---
 
-# Problem
+## Problem
 
 Applications frequently allow arbitrary combinations of security settings.
 
@@ -55,7 +55,7 @@ The platform requires predefined deployment profiles with mandatory security gua
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied introduces **Deployment Profiles**.
 
@@ -67,7 +67,7 @@ Only operational characteristics differ.
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > Deployment profiles define operational behavior.
 >
@@ -75,7 +75,7 @@ Only operational characteristics differ.
 
 ---
 
-# Supported Profiles
+## Supported Profiles
 
 Kernschmied currently defines three deployment profiles.
 
@@ -89,7 +89,7 @@ Additional profiles may be introduced in future releases.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Bootstrap
@@ -121,11 +121,12 @@ Authorization
         ▼
 
 Business Services
+
 ```
 
 ---
 
-# Profile Selection
+## Profile Selection
 
 The deployment profile is selected during application startup.
 
@@ -133,13 +134,14 @@ Example:
 
 ```text
 APP_PROFILE=development
+
 ```
 
 The profile becomes immutable until the application restarts.
 
 ---
 
-# Why Immutable?
+## Why Immutable?
 
 Changing deployment profiles at runtime could:
 
@@ -152,7 +154,7 @@ Therefore the profile is part of bootstrap configuration.
 
 ---
 
-# Development Profile
+## Development Profile
 
 The development profile prioritizes productivity.
 
@@ -171,7 +173,7 @@ Development mode should only be used on trusted development systems.
 
 ---
 
-# Development Authentication
+## Development Authentication
 
 Typical authentication:
 
@@ -189,13 +191,14 @@ local-user
 ↓
 
 Application
+
 ```
 
 This eliminates unnecessary setup during local development.
 
 ---
 
-# Development Logging
+## Development Logging
 
 Logging is intentionally verbose.
 
@@ -203,13 +206,14 @@ Typical log level:
 
 ```text
 DEBUG
+
 ```
 
 Additional diagnostic information may be enabled.
 
 ---
 
-# Intranet Profile
+## Intranet Profile
 
 The intranet profile targets trusted internal company networks.
 
@@ -227,7 +231,7 @@ The intranet profile assumes organizational network protection but still enforce
 
 ---
 
-# Typical Authentication Providers
+## Typical Authentication Providers
 
 Examples include:
 
@@ -242,7 +246,7 @@ Authentication providers remain interchangeable.
 
 ---
 
-# Internet Profile
+## Internet Profile
 
 The internet profile represents the highest security level.
 
@@ -262,7 +266,7 @@ Security requirements cannot be disabled.
 
 ---
 
-# Security Comparison
+## Security Comparison
 
 | Feature        | Development | Intranet    | Internet  |
 | -------------- | ----------- | ----------- | --------- |
@@ -276,7 +280,7 @@ Security requirements cannot be disabled.
 
 ---
 
-# CORS Policy
+## CORS Policy
 
 Each deployment profile defines its own CORS policy.
 
@@ -286,25 +290,28 @@ Development:
 localhost
 
 127.0.0.1
+
 ```
 
 Intranet:
 
 ```text
 Corporate Domains
+
 ```
 
 Internet:
 
 ```text
 Explicit Allow List
+
 ```
 
 Wildcards should never be used in internet deployments.
 
 ---
 
-# HTTPS Requirements
+## HTTPS Requirements
 
 Development:
 
@@ -322,7 +329,7 @@ The backend should refuse insecure production deployments whenever possible.
 
 ---
 
-# HTTP Security Headers
+## HTTP Security Headers
 
 Internet deployments automatically enable headers including:
 
@@ -336,7 +343,7 @@ These headers are considered part of the deployment profile rather than runtime 
 
 ---
 
-# Rate Limiting
+## Rate Limiting
 
 Rate limiting depends on the deployment profile.
 
@@ -356,7 +363,7 @@ The implementation may evolve without changing the deployment architecture.
 
 ---
 
-# Session Management
+## Session Management
 
 Session handling varies between profiles.
 
@@ -376,7 +383,7 @@ Business services remain unaware of session implementation details.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Administrative operations are audited in:
 
@@ -396,7 +403,7 @@ Development deployments may reduce audit verbosity.
 
 ---
 
-# Bootstrap Visibility
+## Bootstrap Visibility
 
 The frontend receives deployment information through the bootstrap endpoint.
 
@@ -416,7 +423,7 @@ The frontend never decides security.
 
 ---
 
-# Frontend Behavior
+## Frontend Behavior
 
 The deployment profile may influence:
 
@@ -430,7 +437,7 @@ Authorization decisions always remain backend responsibilities.
 
 ---
 
-# Configuration Restrictions
+## Configuration Restrictions
 
 Certain configuration values cannot override deployment guarantees.
 
@@ -448,7 +455,7 @@ Security baselines are enforced by the platform.
 
 ---
 
-# Monitoring
+## Monitoring
 
 Production deployments should integrate with monitoring solutions.
 
@@ -465,7 +472,7 @@ Monitoring configuration depends on deployment profile.
 
 ---
 
-# Logging
+## Logging
 
 Recommended logging levels:
 
@@ -473,12 +480,14 @@ Development:
 
 ```text
 DEBUG
+
 ```
 
 Intranet:
 
 ```text
 INFO
+
 ```
 
 Internet:
@@ -489,13 +498,14 @@ INFO
 WARNING
 
 ERROR
+
 ```
 
 Sensitive production environments should avoid excessive debug logging.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 Deployment profiles simplify operations by providing predefined security baselines.
 
@@ -503,7 +513,7 @@ Administrators no longer need to manually configure dozens of security options f
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Deployment profiles enforce:
 
@@ -517,7 +527,7 @@ Security should never depend upon frontend behavior.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Profile-specific optimizations include:
 
@@ -531,7 +541,7 @@ Performance tuning never weakens security requirements.
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -550,7 +560,7 @@ Performance tuning never weakens security requirements.
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Individual Security Flags
 
@@ -576,7 +586,7 @@ Rejected because duplicated functionality significantly increases maintenance ef
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -594,7 +604,7 @@ Mitigation includes:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -611,7 +621,7 @@ Business services should remain completely independent from deployment-specific 
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0002-Bootstrap]]
 - [[ADR-0004-Security-Profiles]]
@@ -621,7 +631,7 @@ Business services should remain completely independent from deployment-specific 
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -656,7 +666,7 @@ Business services should remain completely independent from deployment-specific 
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **deployment profile architecture** that defines immutable operational environments with predefined security guarantees.
 

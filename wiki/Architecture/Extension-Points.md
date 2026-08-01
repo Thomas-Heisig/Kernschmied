@@ -8,7 +8,7 @@ This architecture allows the platform to evolve while maintaining stable contrac
 
 ---
 
-# Goals
+## Goals
 
 The Extension Point architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The Extension Point architecture is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 The extension architecture follows several fundamental principles.
 
@@ -72,13 +72,14 @@ The platform separates the immutable core from optional extensions.
           │                        │
 
      Core Platform            Extensions
+
 ```
 
 The core platform defines extension mechanisms but remains independent of individual extensions.
 
 ---
 
-# Extension Categories
+## Extension Categories
 
 The platform currently supports several categories of extensions.
 
@@ -97,7 +98,7 @@ Each category has its own validation rules and lifecycle.
 
 ---
 
-# Overview
+## Overview
 
 ```text
                  Extension
@@ -109,13 +110,14 @@ Each category has its own validation rules and lifecycle.
       │               │                │
 
    Backend        Frontend        Runtime
+
 ```
 
 Extensions may affect one or more architectural layers.
 
 ---
 
-# Backend Extension Points
+## Backend Extension Points
 
 The backend exposes the following extension points:
 
@@ -130,7 +132,7 @@ Each extension point has a dedicated validation process.
 
 ---
 
-# Frontend Extension Points
+## Frontend Extension Points
 
 Frontend extensions are intentionally limited.
 
@@ -146,7 +148,7 @@ Unknown components are displayed safely rather than executed.
 
 ---
 
-# Model Extensions
+## Model Extensions
 
 New AI providers are integrated through the Model Registry.
 
@@ -168,13 +170,14 @@ Provider Factory
 ↓
 
 Available Model
+
 ```
 
 The chat service remains provider-independent.
 
 ---
 
-# Tool Extensions
+## Tool Extensions
 
 New tools are added through tool manifests.
 
@@ -192,13 +195,14 @@ Tool Registry
 ↓
 
 Execution
+
 ```
 
 Tools cannot bypass authorization or configuration policies.
 
 ---
 
-# UI Schema Extensions
+## UI Schema Extensions
 
 The frontend renders interfaces from schemas supplied by the backend.
 
@@ -216,13 +220,14 @@ Component Registry
 ↓
 
 Rendered View
+
 ```
 
 Unknown schema elements are rejected or rendered using fallback components.
 
 ---
 
-# Component Registry
+## Component Registry
 
 The Component Registry maps schema component types to React components.
 
@@ -236,13 +241,14 @@ Component Registry
 ↓
 
 React Component
+
 ```
 
 Only registered component types may be rendered.
 
 ---
 
-# Action Registry
+## Action Registry
 
 User interactions are handled through the Action Registry.
 
@@ -260,13 +266,14 @@ Handler
 ↓
 
 API
+
 ```
 
 Unknown actions are never executed.
 
 ---
 
-# Configuration Extensions
+## Configuration Extensions
 
 Configuration schemas allow runtime customization.
 
@@ -282,7 +289,7 @@ Configuration is always validated before activation.
 
 ---
 
-# Hierarchy Extensions
+## Hierarchy Extensions
 
 Hierarchy nodes support dynamic specialization.
 
@@ -298,7 +305,7 @@ New node types can be introduced without changing the hierarchy engine.
 
 ---
 
-# Prompt Extensions
+## Prompt Extensions
 
 Prompt inheritance extends conversational behavior.
 
@@ -320,13 +327,14 @@ Chat
 ↓
 
 Resolved Prompt
+
 ```
 
 Prompt resolution uses the standard configuration pipeline.
 
 ---
 
-# Manifest-Based Extensions
+## Manifest-Based Extensions
 
 Most backend extensions are manifest-driven.
 
@@ -336,6 +344,7 @@ Supported manifests include:
 model.json
 
 tool.json
+
 ```
 
 Future manifests may include:
@@ -346,7 +355,7 @@ Future manifests may include:
 
 ---
 
-# Registry-Based Extensions
+## Registry-Based Extensions
 
 Registries provide controlled discovery.
 
@@ -370,13 +379,14 @@ Lookup
 ↓
 
 Usage
+
 ```
 
 Registries isolate extension loading from application logic.
 
 ---
 
-# Factory Extensions
+## Factory Extensions
 
 Factories create implementation instances.
 
@@ -389,7 +399,7 @@ Factories separate contracts from concrete implementations.
 
 ---
 
-# Configuration-Driven Extensions
+## Configuration-Driven Extensions
 
 Many behaviors are enabled through configuration.
 
@@ -404,7 +414,7 @@ No code modification is required.
 
 ---
 
-# API Extensions
+## API Extensions
 
 Future versions may introduce additional REST endpoints.
 
@@ -420,7 +430,7 @@ Public APIs remain stable.
 
 ---
 
-# Event Extensions
+## Event Extensions
 
 The SSE protocol supports additional event types.
 
@@ -440,13 +450,14 @@ tool_call
 ↓
 
 custom_event
+
 ```
 
 Clients should safely ignore unknown events.
 
 ---
 
-# Validation
+## Validation
 
 Every extension undergoes validation before activation.
 
@@ -463,7 +474,7 @@ Invalid extensions are rejected.
 
 ---
 
-# Security
+## Security
 
 Extensions operate within strict security boundaries.
 
@@ -478,7 +489,7 @@ All execution remains under backend control.
 
 ---
 
-# Lifecycle
+## Lifecycle
 
 A typical extension lifecycle:
 
@@ -508,13 +519,14 @@ Deactivation
 ↓
 
 Removal
+
 ```
 
 Every stage is deterministic.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Extension failures remain isolated.
 
@@ -532,13 +544,14 @@ Structured Error
 ↓
 
 Continue Platform
+
 ```
 
 One faulty extension should not prevent the platform from starting whenever possible.
 
 ---
 
-# Versioning
+## Versioning
 
 Every extension contract is versioned independently.
 
@@ -553,7 +566,7 @@ Version validation occurs before registration.
 
 ---
 
-# Dependency Management
+## Dependency Management
 
 Extensions should depend only on public contracts.
 
@@ -569,13 +582,14 @@ Registry
 ↓
 
 Public Interface
+
 ```
 
 Extensions must not depend on internal implementation details.
 
 ---
 
-# Future Extension Types
+## Future Extension Types
 
 The architecture allows future support for:
 
@@ -592,7 +606,7 @@ These additions can be introduced without redesigning the platform.
 
 ---
 
-# Best Practices
+## Best Practices
 
 Recommended guidelines:
 
@@ -607,7 +621,7 @@ Recommended guidelines:
 
 ---
 
-# Relationship to Other Architecture
+## Relationship to Other Architecture
 
 Extension Points build upon several architectural subsystems.
 
@@ -629,6 +643,7 @@ Configuration
 ↓
 
 Runtime
+
 ```
 
 The extension architecture therefore depends on:
@@ -641,7 +656,7 @@ The extension architecture therefore depends on:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -674,7 +689,7 @@ The extension architecture therefore depends on:
 
 ---
 
-# Summary
+## Summary
 
 The Extension Point architecture defines the controlled mechanisms through which Kernschmied can be expanded while preserving stability, security, and maintainability.
 

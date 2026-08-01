@@ -10,7 +10,7 @@ This architecture allows administrators to modify business behavior without rede
 
 ---
 
-# Goals
+## Goals
 
 The configuration architecture is designed to provide:
 
@@ -26,7 +26,7 @@ The configuration architecture is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 The configuration subsystem follows several fundamental principles.
 
@@ -86,7 +86,7 @@ Runtime configuration may be modified without restarting the application.
 
 ---
 
-# Separation of Responsibilities
+## Separation of Responsibilities
 
 ```text
                 Configuration
@@ -100,13 +100,14 @@ Runtime configuration may be modified without restarting the application.
 Bootstrap Configuration   Runtime Configuration
 
 (.env)                    (Database)
+
 ```
 
 This separation prevents accidental modification of infrastructure settings.
 
 ---
 
-# Bootstrap Configuration
+## Bootstrap Configuration
 
 Bootstrap configuration includes infrastructure values that are required before the application can start.
 
@@ -123,7 +124,7 @@ These values are immutable while the application is running.
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Runtime configuration contains all business-specific settings.
 
@@ -141,7 +142,7 @@ Runtime configuration is resolved dynamically for every request.
 
 ---
 
-# Configuration Sources
+## Configuration Sources
 
 The platform may obtain configuration from multiple sources.
 
@@ -163,13 +164,14 @@ Request Context
 ↓
 
 Resolved Configuration
+
 ```
 
 Higher-priority sources override lower-priority sources where appropriate.
 
 ---
 
-# Configuration Storage
+## Configuration Storage
 
 Runtime configuration is stored in the database.
 
@@ -185,7 +187,7 @@ The storage format remains independent of the consuming services.
 
 ---
 
-# Configuration Schema
+## Configuration Schema
 
 Every configuration entry is validated using a schema.
 
@@ -208,7 +210,7 @@ The schema determines:
 
 ---
 
-# Configuration Validation
+## Configuration Validation
 
 Validation occurs before configuration becomes active.
 
@@ -226,7 +228,7 @@ Invalid configuration is rejected.
 
 ---
 
-# Configuration Resolver
+## Configuration Resolver
 
 Applications never access configuration storage directly.
 
@@ -246,13 +248,14 @@ Configuration Resolver
 ↓
 
 Business Service
+
 ```
 
 The resolver is responsible for inheritance and merging.
 
 ---
 
-# Configuration Scopes
+## Configuration Scopes
 
 Configuration exists at multiple scopes.
 
@@ -278,13 +281,14 @@ USER
 ↓
 
 REQUEST
+
 ```
 
 Each scope may override values defined by higher scopes.
 
 ---
 
-# Scope Definitions
+## Scope Definitions
 
 ## System
 
@@ -358,7 +362,7 @@ Examples:
 
 ---
 
-# Configuration Resolution
+## Configuration Resolution
 
 Configuration is resolved from top to bottom.
 
@@ -388,13 +392,14 @@ Request
 ↓
 
 Resolved Configuration
+
 ```
 
 Each level overrides previous values where permitted.
 
 ---
 
-# Merge Strategies
+## Merge Strategies
 
 Different configuration types require different merge behavior.
 
@@ -410,7 +415,7 @@ The merge strategy is defined by the configuration schema.
 
 ---
 
-# Example Resolution
+## Example Resolution
 
 ```text
 System
@@ -432,13 +437,14 @@ default_model = gemma
 ↓
 
 Resolved = gemma
+
 ```
 
 The request scope has the highest priority.
 
 ---
 
-# Configuration Revisions
+## Configuration Revisions
 
 Every successful runtime modification increments the global configuration revision.
 
@@ -456,13 +462,14 @@ Clients Detect Change
 ↓
 
 Reload
+
 ```
 
 This allows efficient cache invalidation.
 
 ---
 
-# Runtime Updates
+## Runtime Updates
 
 Configuration changes become active immediately if marked as runtime editable.
 
@@ -488,13 +495,14 @@ Revision++
 ↓
 
 Runtime
+
 ```
 
 No restart is required.
 
 ---
 
-# Non-Runtime Configuration
+## Non-Runtime Configuration
 
 Some configuration changes require a restart.
 
@@ -508,7 +516,7 @@ These values remain outside the runtime configuration system.
 
 ---
 
-# Caching
+## Caching
 
 Configuration resolution is optimized using caching.
 
@@ -522,7 +530,7 @@ Caches are invalidated using configuration revisions.
 
 ---
 
-# Dependency Injection
+## Dependency Injection
 
 Services receive configuration through dependency injection.
 
@@ -536,13 +544,14 @@ Application Service
 ↓
 
 Business Logic
+
 ```
 
 Services never access configuration storage directly.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Every configuration modification generates an audit log entry.
 
@@ -559,7 +568,7 @@ This enables complete traceability.
 
 ---
 
-# Security
+## Security
 
 Configuration architecture enforces several security rules.
 
@@ -577,7 +586,7 @@ Authorization is required for all configuration changes.
 
 ---
 
-# Versioning
+## Versioning
 
 Configuration schemas are versioned independently.
 
@@ -592,7 +601,7 @@ Applications resolve configuration according to the active schema version.
 
 ---
 
-# Failure Handling
+## Failure Handling
 
 Invalid configuration never becomes active.
 
@@ -610,13 +619,14 @@ Reject Update
 ↓
 
 Previous Configuration Remains Active
+
 ```
 
 This guarantees platform stability.
 
 ---
 
-# Relationship to Bootstrap
+## Relationship to Bootstrap
 
 Bootstrap exposes only metadata about configuration.
 
@@ -629,7 +639,7 @@ The actual configuration is retrieved through dedicated APIs.
 
 ---
 
-# Relationship to Hierarchy
+## Relationship to Hierarchy
 
 Hierarchy nodes may contribute configuration.
 
@@ -647,13 +657,14 @@ Resolver
 ↓
 
 Resolved Configuration
+
 ```
 
 Hierarchy therefore becomes part of the configuration pipeline.
 
 ---
 
-# Relationship to Prompt Inheritance
+## Relationship to Prompt Inheritance
 
 Prompt inheritance is implemented using the same configuration resolution mechanism.
 
@@ -661,7 +672,7 @@ Prompt values participate in the standard scope resolution process.
 
 ---
 
-# Relationship to Registries
+## Relationship to Registries
 
 Model and tool registries consume configuration to determine:
 
@@ -674,7 +685,7 @@ Registries never modify configuration directly.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Configuration resolution is optimized for:
 
@@ -687,7 +698,7 @@ Resolution should be inexpensive enough to occur for every request.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture allows future additions such as:
 
@@ -702,7 +713,7 @@ These extensions can be introduced without changing the public configuration con
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -731,7 +742,7 @@ These extensions can be introduced without changing the public configuration con
 
 ---
 
-# Summary
+## Summary
 
 The Configuration Architecture provides a deterministic, validated, and versioned runtime configuration system that clearly separates immutable bootstrap settings from dynamic business configuration.
 

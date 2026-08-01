@@ -369,6 +369,7 @@ System
 → Projekt
 → Chat
 → Request
+
 ```
 
 Das Ergebnis sollte ein unveränderlicher Laufzeitvertrag sein:
@@ -477,6 +478,7 @@ usage
 complete
 error
 heartbeat
+
 ```
 
 Python-Vertrag:
@@ -757,6 +759,7 @@ Empfohlener Ablauf:
 5. Antwort puffern oder kontrolliert aktualisieren
 6. Assistentennachricht finalisieren
 7. Usage und Status speichern
+
 ```
 
 Eine Datenbanktransaktion sollte nicht minutenlang über den vollständigen Modellstream geöffnet bleiben.
@@ -791,13 +794,14 @@ Wir bearbeiten die Dateien in dieser Reihenfolge:
 
 Als ersten Block benötigen wir gemeinsam:
 
-```text
+```ts
 GenericChatView.tsx
 zentraler API-Client
 ChatRequest-/SSE-TypeScript-Typen
 Backend-Router chat.py
 Backend-Chat-Schemas
 ChatService
+
 ```
 
 Ich werde bei jeder Datei dann jeweils direkt liefern:
@@ -809,6 +813,7 @@ Ich werde bei jeder Datei dann jeweils direkt liefern:
 4. vollständige korrigierte Datei
 5. benötigte Folgedateien
 6. passende Tests
+
 ```
 
 Beginnen sollten wir mit `GenericChatView.tsx`, weil dort die Pipeline sichtbar startet und sich bereits feststellen lässt, ob Request, Stream-Abbruch, SSE-Verarbeitung und State-Verwaltung korrekt zusammenspielen.

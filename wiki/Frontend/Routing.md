@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 Routing in Kernschmied is responsible for navigating between application views while remaining consistent with the project's architecture:
 
@@ -16,7 +16,7 @@ Business behavior is always implemented by the backend and exposed through APIs 
 
 ---
 
-# Design Goals
+## Design Goals
 
 The routing system has several objectives:
 
@@ -32,7 +32,7 @@ The routing system has several objectives:
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 Browser URL
@@ -78,11 +78,12 @@ UI Schema
         ▼
 
 Schema Renderer
+
 ```
 
 ---
 
-# Responsibilities
+## Responsibilities
 
 The router is responsible for:
 
@@ -104,7 +105,7 @@ The router is **not** responsible for:
 
 ---
 
-# Route Categories
+## Route Categories
 
 Routes can be grouped into several categories.
 
@@ -118,11 +119,12 @@ Application
 ├── Project
 ├── Chat
 └── Error Pages
+
 ```
 
 ---
 
-# Example Route Tree
+## Example Route Tree
 
 ```text
 /
@@ -144,45 +146,51 @@ Application
 ├── admin
 │
 └── settings
+
 ```
 
 ---
 
-# Recommended URL Structure
+## Recommended URL Structure
 
 The URL should describe **resources**, not implementation details.
 
 Good examples:
 
-```
+```text
 /workspace/123
-```
 
 ```
+
+```text
 /workspace/123/project/55
-```
 
 ```
+
+```text
 /chat/84
+
 ```
 
 Avoid URLs such as:
 
-```
+```text
 /projectEditor?id=55
+
 ```
 
 or
 
-```
+```text
 /showProject/55
+
 ```
 
 Resources are easier to understand and remain stable over time.
 
 ---
 
-# Route Parameters
+## Route Parameters
 
 Dynamic routes contain identifiers.
 
@@ -190,19 +198,21 @@ Example:
 
 ```text
 /project/:projectId
+
 ```
 
 Possible URL:
 
-```
+```text
 /project/42
+
 ```
 
 The frontend extracts the parameter and requests the corresponding data from the backend.
 
 ---
 
-# Nested Routing
+## Nested Routing
 
 Nested routes mirror the hierarchy.
 
@@ -216,19 +226,21 @@ Workspace
     └── Folder
 
         └── Chat
+
 ```
 
 Possible URL:
 
-```
+```text
 /workspace/1/project/3/folder/7/chat/19
+
 ```
 
 Nested routing improves readability and deep linking.
 
 ---
 
-# Navigation Flow
+## Navigation Flow
 
 ```text
 User clicks navigation
@@ -252,11 +264,12 @@ Load Data
 ↓
 
 Render UI
+
 ```
 
 ---
 
-# Browser History
+## Browser History
 
 The router integrates with the browser history.
 
@@ -272,7 +285,7 @@ The application should behave consistently regardless of how navigation occurs.
 
 ---
 
-# Deep Linking
+## Deep Linking
 
 Every important application state should be reachable through a URL.
 
@@ -288,11 +301,11 @@ Deep links improve collaboration and usability.
 
 ---
 
-# Lazy Loading
+## Lazy Loading
 
 Pages should be loaded only when required.
 
-```text
+```python
 Navigate
 
 ↓
@@ -302,6 +315,7 @@ Import Page
 ↓
 
 Render
+
 ```
 
 Benefits:
@@ -312,7 +326,7 @@ Benefits:
 
 ---
 
-# Authentication
+## Authentication
 
 Some routes require authentication.
 
@@ -328,13 +342,14 @@ Protected Route
 ↓
 
 Redirect to Login
+
 ```
 
 After successful authentication, the user returns to the originally requested page.
 
 ---
 
-# Authorization
+## Authorization
 
 The frontend may hide routes based on permissions.
 
@@ -346,7 +361,7 @@ Even if a user manually enters a URL, unauthorized requests must be rejected by 
 
 ---
 
-# Error Routes
+## Error Routes
 
 Typical error pages include:
 
@@ -363,11 +378,12 @@ Unknown URL
 ↓
 
 404 Page
+
 ```
 
 ---
 
-# Route Metadata
+## Route Metadata
 
 Routes may define metadata such as:
 
@@ -388,7 +404,7 @@ Example:
 
 ---
 
-# Breadcrumbs
+## Breadcrumbs
 
 Navigation hierarchy should be reflected in breadcrumbs.
 
@@ -408,13 +424,14 @@ Project
 >
 
 Chat
+
 ```
 
 Breadcrumbs improve orientation within complex hierarchies.
 
 ---
 
-# Integration with the Hierarchy
+## Integration with the Hierarchy
 
 Navigation should integrate naturally with the generic hierarchy.
 
@@ -436,13 +453,14 @@ URL
 ↓
 
 Page
+
 ```
 
 The hierarchy remains the primary organizational structure of the application.
 
 ---
 
-# UI Schema Integration
+## UI Schema Integration
 
 Routes typically do not contain page definitions.
 
@@ -462,13 +480,14 @@ UI Schema
 ↓
 
 Schema Renderer
+
 ```
 
 This allows backend-controlled pages without changing frontend routing.
 
 ---
 
-# Plugin Integration
+## Plugin Integration
 
 Future plugins may contribute additional routes.
 
@@ -488,6 +507,7 @@ Route Registration
 ↓
 
 Router
+
 ```
 
 Plugins must register routes explicitly.
@@ -496,7 +516,7 @@ Unknown routes are ignored.
 
 ---
 
-# Navigation Components
+## Navigation Components
 
 Common navigation elements include:
 
@@ -511,7 +531,7 @@ These components should remain independent from the routing implementation.
 
 ---
 
-# State Synchronization
+## State Synchronization
 
 Navigation should remain synchronized with:
 
@@ -525,7 +545,7 @@ This ensures a consistent user experience.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Routing should:
 
@@ -538,7 +558,7 @@ Navigation should feel instantaneous.
 
 ---
 
-# Security
+## Security
 
 Routing must never be treated as a security boundary.
 
@@ -557,7 +577,7 @@ Only the backend can:
 
 ---
 
-# Testing
+## Testing
 
 Typical routing tests include:
 
@@ -574,7 +594,7 @@ Tests should verify behavior rather than implementation details.
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 The routing architecture is designed to support future capabilities such as:
 
@@ -590,9 +610,9 @@ These extensions should not require breaking changes to existing routes.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
-## Architecture
+## Architecture (2)
 
 - [[Architecture]]
 - [[Request-Lifecycle]]
@@ -626,7 +646,7 @@ These extensions should not require breaking changes to existing routes.
 
 ---
 
-# Summary
+## Summary
 
 Routing in Kernschmied provides a stable, predictable navigation layer while remaining completely independent of business logic.
 

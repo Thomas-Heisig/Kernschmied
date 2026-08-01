@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 The **Component Registry** is the central mechanism that maps **UI Schema component types** to concrete React components.
 
@@ -16,7 +16,7 @@ Instead, every renderable component must be explicitly registered.
 
 ---
 
-# Design Goals
+## Design Goals
 
 The Component Registry has several objectives:
 
@@ -31,7 +31,7 @@ The Component Registry has several objectives:
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 Backend
@@ -55,6 +55,7 @@ React Component
 ↓
 
 Rendered UI
+
 ```
 
 The Schema Renderer never knows which React component it will receive.
@@ -63,7 +64,7 @@ It only knows the requested component type.
 
 ---
 
-# Why a Registry?
+## Why a Registry?
 
 Without a registry, rendering often looks like this:
 
@@ -95,13 +96,14 @@ Registry Lookup
 ↓
 
 TextField
+
 ```
 
 This approach is easier to extend and test.
 
 ---
 
-# Responsibilities
+## Responsibilities
 
 The Component Registry is responsible for:
 
@@ -122,7 +124,7 @@ The registry is **not** responsible for:
 
 ---
 
-# Registration
+## Registration
 
 Components are registered explicitly during application startup.
 
@@ -142,13 +144,14 @@ Registry Ready
 ↓
 
 Application Starts
+
 ```
 
 Unknown components cannot be rendered.
 
 ---
 
-# Example Registration
+## Example Registration
 
 ```tsx
 registerComponent("text", TextField);
@@ -162,7 +165,7 @@ Every registration associates a schema type with a React component.
 
 ---
 
-# Registry Lookup
+## Registry Lookup
 
 Rendering follows a simple process.
 
@@ -180,13 +183,14 @@ TextField
 ↓
 
 Render
+
 ```
 
 If no component exists, the fallback component is used.
 
 ---
 
-# Component Metadata
+## Component Metadata
 
 The registry may expose metadata such as:
 
@@ -210,7 +214,7 @@ Example:
 
 ---
 
-# Supported Components
+## Supported Components
 
 Typical component categories include:
 
@@ -272,7 +276,7 @@ Typical component categories include:
 
 ---
 
-# Version Compatibility
+## Version Compatibility
 
 Every registered component supports one or more schema versions.
 
@@ -288,13 +292,14 @@ Registry
 ↓
 
 Compatible Component
+
 ```
 
 If compatibility cannot be guaranteed, rendering is rejected gracefully.
 
 ---
 
-# Unknown Components
+## Unknown Components
 
 Unknown component types never crash the application.
 
@@ -308,13 +313,14 @@ Example:
 │                             │
 │ type: custom-widget         │
 └─────────────────────────────┘
+
 ```
 
 This simplifies debugging and prevents complete rendering failures.
 
 ---
 
-# Duplicate Registration
+## Duplicate Registration
 
 Each component type must be unique.
 
@@ -330,13 +336,14 @@ TextField
 ↓
 
 AnotherTextField
+
 ```
 
 The registry rejects duplicate registrations during startup.
 
 ---
 
-# Lazy Loading
+## Lazy Loading
 
 Large or rarely used components may be loaded on demand.
 
@@ -354,13 +361,14 @@ Dynamic Import
 ↓
 
 Render
+
 ```
 
 Lazy loading reduces the initial bundle size.
 
 ---
 
-# Component Isolation
+## Component Isolation
 
 Every component should be self-contained.
 
@@ -375,7 +383,7 @@ Components receive only the properties defined by the schema.
 
 ---
 
-# Interaction with the Schema Renderer
+## Interaction with the Schema Renderer
 
 The renderer delegates all component resolution to the registry.
 
@@ -393,13 +401,14 @@ Resolved Component
 ↓
 
 React Element
+
 ```
 
 This keeps the renderer small and focused.
 
 ---
 
-# Interaction with the Action Registry
+## Interaction with the Action Registry
 
 Components may expose actions.
 
@@ -419,13 +428,14 @@ Action Handler
 ↓
 
 Backend
+
 ```
 
 Component rendering and action execution remain separate concerns.
 
 ---
 
-# Accessibility
+## Accessibility
 
 Every registered component should provide:
 
@@ -439,7 +449,7 @@ Accessibility is the responsibility of the component implementation.
 
 ---
 
-# Performance
+## Performance
 
 The registry should:
 
@@ -453,7 +463,7 @@ Registry lookup should be effectively constant time.
 
 ---
 
-# Security
+## Security
 
 The Component Registry follows a strict allow-list model.
 
@@ -470,7 +480,7 @@ All component types must be explicitly registered by the application.
 
 ---
 
-# Testing
+## Testing
 
 Typical registry tests include:
 
@@ -484,7 +494,7 @@ Typical registry tests include:
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 Possible future capabilities include:
 
@@ -500,7 +510,7 @@ These extensions should preserve the registry's public contract.
 
 ---
 
-# Best Practices
+## Best Practices
 
 Recommended:
 
@@ -522,9 +532,9 @@ Avoid:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
-## Architecture
+## Architecture (2)
 
 - [[Architecture]]
 - [[Schema-Renderer]]
@@ -557,7 +567,7 @@ Avoid:
 
 ---
 
-# Summary
+## Summary
 
 The Component Registry is the central lookup mechanism that connects backend-defined UI Schemas with generic React components.
 

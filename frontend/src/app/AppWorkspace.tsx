@@ -32,6 +32,16 @@ interface AppWorkspaceProps {
   onCloseSettings: () => void;
   onOpenDocumentation: () => void;
   onCloseDocumentation: () => void;
+  onCreateHierarchyNode?: (parentId: string) => Promise<void>;
+  onMoveHierarchyNode?: (
+    id: string,
+    newParentId: string | null,
+  ) => Promise<void>;
+  onUpdateHierarchyNode?: (id: string, payload: unknown) => Promise<void>;
+  onDeleteHierarchyNode?: (id: string) => Promise<void>;
+  isHierarchyBusy?: boolean;
+  recentlyMovedNodeId?: string | null;
+  onAction?: (action: string, node: any) => void;
 }
 
 export function AppWorkspace({
@@ -53,6 +63,13 @@ export function AppWorkspace({
   onCloseSettings,
   onOpenDocumentation,
   onCloseDocumentation,
+  onCreateHierarchyNode,
+  onMoveHierarchyNode,
+  onUpdateHierarchyNode,
+  onDeleteHierarchyNode,
+  onAction,
+  isHierarchyBusy,
+  recentlyMovedNodeId,
 }: AppWorkspaceProps) {
   return (
     <>
@@ -73,6 +90,15 @@ export function AppWorkspace({
             expandedNodeIds={expandedNodeIds}
             onSelect={onSelectNode}
             onExpandedNodeIdsChange={onExpandedNodeIdsChange}
+            onCreateChat={(id) => {
+              void onCreateHierarchyNode?.(id);
+            }}
+            onNodeDrop={(sourceId, targetId) => {
+              void onMoveHierarchyNode?.(sourceId, targetId);
+            }}
+            isBusy={isHierarchyBusy}
+            onAction={onAction}
+            recentlyMovedNodeId={recentlyMovedNodeId}
           />
         }
         contextSidebar={
@@ -82,7 +108,7 @@ export function AppWorkspace({
           />
         }
       >
-        <SelectedNodeWorkspace node={selectedNode} />
+        <SelectedNodeWorkspace node={selectedNode} schema={schema} />
       </AppLayout>
       <SettingsDialog isOpen={isSettingsOpen} onClose={onCloseSettings} />
       <DocumentationDialog

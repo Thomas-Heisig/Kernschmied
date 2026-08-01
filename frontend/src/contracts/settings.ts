@@ -1,5 +1,6 @@
 export type SettingsAvailability = "available" | "prepared" | "planned";
-export type SettingsSource = "config" | "resource" | "runtime" | "local_preference";
+export type SettingsSource =
+  "config" | "resource" | "runtime" | "local_preference";
 export type SettingsControl =
   | "text"
   | "textarea"

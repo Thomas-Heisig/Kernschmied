@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 The **Generic Tree** is one of the fundamental UI components of the Kernschmied frontend.
 
@@ -16,7 +16,7 @@ The Generic Tree is entirely driven by data received from the backend and render
 
 ---
 
-# Design Goals
+## Design Goals
 
 The Generic Tree has several objectives:
 
@@ -32,7 +32,7 @@ The Generic Tree has several objectives:
 
 ---
 
-# Design Philosophy
+## Design Philosophy
 
 Traditional applications often contain many specialized tree implementations.
 
@@ -48,6 +48,7 @@ Settings Tree
 Model Tree
 
 Plugin Tree
+
 ```
 
 Each implementation duplicates behavior.
@@ -68,13 +69,14 @@ Tree Node Renderer
 ↓
 
 Browser
+
 ```
 
 The frontend does not know whether a node represents a project, chat, model, workspace, or future entity.
 
 ---
 
-# Tree Architecture
+## Tree Architecture
 
 ```text
 Backend
@@ -98,13 +100,14 @@ Tree Node
 ↓
 
 React Components
+
 ```
 
 The Generic Tree renders only what the backend describes.
 
 ---
 
-# Node Model
+## Node Model
 
 Every node follows a common contract.
 
@@ -123,7 +126,7 @@ The renderer relies on the contract rather than business-specific types.
 
 ---
 
-# Typical Node Properties
+## Typical Node Properties
 
 A node may contain:
 
@@ -146,7 +149,7 @@ Additional metadata may be included without modifying the renderer.
 
 ---
 
-# Tree Structure
+## Tree Structure
 
 Example hierarchy:
 
@@ -162,13 +165,14 @@ Workspace
 │
 └── Project Beta
     └── Chat
+
 ```
 
 The renderer supports arbitrary depth.
 
 ---
 
-# Recursive Rendering
+## Recursive Rendering
 
 Rendering is naturally recursive.
 
@@ -190,13 +194,14 @@ Node
 ↓
 
 Children
+
 ```
 
 There is no predefined nesting limit.
 
 ---
 
-# Rendering Pipeline
+## Rendering Pipeline
 
 ```text
 Hierarchy Data
@@ -224,11 +229,12 @@ Render Children
 ↓
 
 Finished Tree
+
 ```
 
 ---
 
-# Tree Node Component
+## Tree Node Component
 
 Each node is rendered using the same generic component.
 
@@ -245,7 +251,7 @@ Business logic is intentionally excluded.
 
 ---
 
-# Selection
+## Selection
 
 The Generic Tree supports single selection.
 
@@ -263,13 +269,14 @@ Selection State Updated
 ↓
 
 Application Notified
+
 ```
 
 Future extensions may include multi-selection.
 
 ---
 
-# Expansion
+## Expansion
 
 Expansion state determines whether children are visible.
 
@@ -287,13 +294,14 @@ Render Children
 ↓
 
 Expanded
+
 ```
 
 Expansion state may be restored between sessions.
 
 ---
 
-# Lazy Loading
+## Lazy Loading
 
 Large hierarchies may load children on demand.
 
@@ -311,13 +319,14 @@ Children Loaded
 ↓
 
 Render
+
 ```
 
 This minimizes initial loading time.
 
 ---
 
-# Virtualization
+## Virtualization
 
 Very large trees may use virtualization.
 
@@ -331,7 +340,7 @@ Virtualization should remain transparent to users.
 
 ---
 
-# Drag & Drop
+## Drag & Drop
 
 The Generic Tree is designed to support drag-and-drop operations.
 
@@ -355,13 +364,14 @@ Backend Validation
 ↓
 
 Tree Updated
+
 ```
 
 The backend remains responsible for validating every move.
 
 ---
 
-# Context Menus
+## Context Menus
 
 Nodes may expose contextual actions.
 
@@ -377,7 +387,7 @@ Available actions are determined by the backend.
 
 ---
 
-# Icons
+## Icons
 
 Icons are determined using node metadata.
 
@@ -395,7 +405,7 @@ Unknown icons fall back to a default representation.
 
 ---
 
-# Badges
+## Badges
 
 Nodes may display badges.
 
@@ -410,7 +420,7 @@ Badges are purely visual.
 
 ---
 
-# Search
+## Search
 
 The tree supports filtering.
 
@@ -430,13 +440,14 @@ Expand Parents
 ↓
 
 Highlight Matches
+
 ```
 
 Filtering does not modify the underlying hierarchy.
 
 ---
 
-# Sorting
+## Sorting
 
 Sorting is determined by the backend whenever possible.
 
@@ -452,7 +463,7 @@ The frontend should not invent sorting rules.
 
 ---
 
-# Accessibility
+## Accessibility
 
 The Generic Tree should support:
 
@@ -466,7 +477,7 @@ Accessibility is considered a first-class requirement.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The tree should:
 
@@ -480,7 +491,7 @@ Performance should remain predictable even with thousands of nodes.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Invalid nodes should not break rendering.
 
@@ -495,7 +506,7 @@ Invalid nodes should be reported and skipped when possible.
 
 ---
 
-# Security
+## Security
 
 The Generic Tree does not perform authorization.
 
@@ -510,7 +521,7 @@ The frontend only renders the provided hierarchy.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture allows future enhancements such as:
 
@@ -528,7 +539,7 @@ These capabilities can be added without changing the public tree contract.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -563,7 +574,7 @@ These capabilities can be added without changing the public tree contract.
 
 ---
 
-# Summary
+## Summary
 
 The Generic Tree provides a single, reusable mechanism for rendering hierarchical data throughout the Kernschmied platform.
 

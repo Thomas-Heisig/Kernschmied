@@ -5,7 +5,7 @@
 
 ---
 
-# Welcome
+## Welcome
 
 Welcome to **Kernschmied**.
 
@@ -15,7 +15,7 @@ If this is your first time working with Kernschmied, this page is the recommende
 
 ---
 
-# What is Kernschmied?
+## What is Kernschmied?
 
 Kernschmied is a **modular, schema-driven AI platform** built with **FastAPI**, **React**, and **TypeScript**.
 
@@ -34,7 +34,7 @@ The frontend renders generic UI components from these descriptions.
 
 ---
 
-# Project Goals
+## Project Goals
 
 Kernschmied focuses on five long-term goals:
 
@@ -48,7 +48,7 @@ These principles allow the platform to evolve without requiring architectural re
 
 ---
 
-# Architecture at a Glance
+## Architecture at a Glance
 
 ```text
                 +-----------------------+
@@ -72,11 +72,12 @@ These principles allow the platform to evolve without requiring architectural re
                 +-----------v-----------+
                 | SQLite / PostgreSQL   |
                 +-----------------------+
+
 ```
 
 ---
 
-# Before You Begin
+## Before You Begin
 
 Recommended knowledge:
 
@@ -96,7 +97,7 @@ Helpful but optional:
 
 ---
 
-# Install the Project
+## Install the Project
 
 Follow the installation guide:
 
@@ -104,7 +105,7 @@ Follow the installation guide:
 
 ---
 
-# Clone the Repository
+## Clone the Repository
 
 ```bash
 git clone https://github.com/Thomas-Heisig/Kernschmied.git
@@ -114,9 +115,9 @@ cd Kernschmied
 
 ---
 
-# Project Structure
+## Project Structure
 
-```
+```text
 Kernschmied/
 
 backend/
@@ -129,11 +130,12 @@ scripts/
 README.md
 LICENSE
 CHANGELOG.md
+
 ```
 
 ---
 
-# Start the Backend
+## Start the Backend
 
 ```bash
 cd backend
@@ -143,13 +145,14 @@ uvicorn app.main:app --reload
 
 Default address:
 
-```
+```text
 http://localhost:8000
+
 ```
 
 ---
 
-# Start the Frontend
+## Start the Frontend
 
 ```bash
 cd frontend
@@ -161,31 +164,34 @@ npm run dev
 
 Default address:
 
-```
+```text
 http://localhost:5173
+
 ```
 
 ---
 
-# Verify the Installation
+## Verify the Installation
 
 Open:
 
-```
+```text
 http://localhost:8000/docs
+
 ```
 
 You should see the automatically generated OpenAPI documentation.
 
 Then open the frontend:
 
-```
+```text
 http://localhost:5173
+
 ```
 
 ---
 
-# Read These Documents Next
+## Read These Documents Next
 
 New contributors should read the following pages in order.
 
@@ -229,7 +235,7 @@ Coding standards.
 
 ---
 
-# Understanding the Project
+## Understanding the Project
 
 The project consists of several major subsystems.
 
@@ -293,7 +299,7 @@ Registries ensure that unknown resources cannot be executed automatically.
 
 ---
 
-# Development Workflow
+## Development Workflow
 
 Typical workflow:
 
@@ -308,7 +314,7 @@ Typical workflow:
 
 ---
 
-# First Contribution Checklist
+## First Contribution Checklist
 
 - Clone the repository.
 - Install backend dependencies.
@@ -322,7 +328,7 @@ Typical workflow:
 
 ---
 
-# Where to Find Things
+## Where to Find Things
 
 | Topic         | Documentation         |
 | ------------- | --------------------- |
@@ -338,7 +344,7 @@ Typical workflow:
 
 ---
 
-# Need Help?
+## Need Help?
 
 Useful pages:
 
@@ -354,7 +360,7 @@ For repository-related information, see:
 
 ---
 
-# Next Steps
+## Next Steps
 
 After completing this guide, continue with:
 

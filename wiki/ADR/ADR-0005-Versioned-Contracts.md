@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is designed as a long-lived platform whose frontend, backend, plugins, AI providers, tools, and configuration system evolve independently over time.
 
@@ -31,7 +31,7 @@ Without explicit versioning, even small changes can unintentionally break existi
 
 ---
 
-# Problem
+## Problem
 
 Software systems frequently evolve by modifying data structures directly.
 
@@ -58,7 +58,7 @@ For a configurable platform such as Kernschmied, this risk is unacceptable.
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied adopts **explicit versioning for every externally visible contract**.
 
@@ -70,7 +70,7 @@ Backward-compatible extensions should preserve the existing version whenever pos
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > **Contracts evolve deliberately, never accidentally.**
 
@@ -78,7 +78,7 @@ Every breaking change must be intentional, documented, and versioned.
 
 ---
 
-# Scope
+## Scope
 
 This decision applies to all stable contracts, including:
 
@@ -97,7 +97,7 @@ Internal implementation details are not considered public contracts.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Producer
@@ -119,13 +119,14 @@ Validation
         ▼
 
 Consumer
+
 ```
 
 Both producer and consumer understand exactly which contract version is being exchanged.
 
 ---
 
-# Contract Categories
+## Contract Categories
 
 ---
 
@@ -141,6 +142,7 @@ GET /api/v1/bootstrap
 ↓
 
 BootstrapResponse v1
+
 ```
 
 API versions remain stable for their supported lifecycle.
@@ -227,13 +229,14 @@ model.json
 tool.json
 
 plugin.json
+
 ```
 
 The registry validates manifests before registration.
 
 ---
 
-# Compatibility Model
+## Compatibility Model
 
 The platform distinguishes between two categories of changes.
 
@@ -270,7 +273,7 @@ These changes must not silently replace existing contracts.
 
 ---
 
-# Version Negotiation
+## Version Negotiation
 
 Where appropriate, producer and consumer may negotiate supported versions.
 
@@ -294,13 +297,14 @@ Highest Compatible Version
 ↓
 
 Communication
+
 ```
 
 When negotiation is not supported, incompatible versions result in a controlled failure.
 
 ---
 
-# Validation
+## Validation
 
 Every contract is validated before use.
 
@@ -316,7 +320,7 @@ Invalid contracts are rejected before entering the runtime.
 
 ---
 
-# Unknown Fields
+## Unknown Fields
 
 Consumers should ignore unknown optional fields whenever possible.
 
@@ -336,7 +340,7 @@ If `future_property` is optional, older consumers simply ignore it.
 
 ---
 
-# Unknown Versions
+## Unknown Versions
 
 Unknown versions must never be processed blindly.
 
@@ -360,13 +364,14 @@ Yes → Continue
 ↓
 
 No → Reject Gracefully
+
 ```
 
 This prevents undefined behavior.
 
 ---
 
-# Deprecation
+## Deprecation
 
 Contracts may be deprecated before removal.
 
@@ -390,13 +395,14 @@ Removal Announced
 ↓
 
 Removed in Next Major Version
+
 ```
 
 Deprecation periods provide consumers sufficient time to migrate.
 
 ---
 
-# Migration
+## Migration
 
 Configuration and data migrations should be explicit.
 
@@ -412,13 +418,14 @@ Migration
 ↓
 
 Version 2
+
 ```
 
 Migration logic should remain deterministic and testable.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Version mismatches should produce structured errors.
 
@@ -438,7 +445,7 @@ Consumers receive actionable diagnostics instead of generic failures.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Version validation improves security by ensuring:
 
@@ -452,7 +459,7 @@ Unsupported contract versions must never bypass validation.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 Versioned contracts simplify:
 
@@ -467,7 +474,7 @@ Operations teams can identify incompatibilities before users encounter runtime f
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -519,7 +526,7 @@ Some contract changes require explicit migration code.
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Unversioned Contracts
 
@@ -573,7 +580,7 @@ Rejected.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -592,7 +599,7 @@ Mitigation strategies include:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 Every public contract should provide:
 
@@ -607,7 +614,7 @@ Breaking changes must never replace an existing contract silently.
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0001-Schema-Driven-UI]]
 - [[ADR-0002-Bootstrap]]
@@ -616,7 +623,7 @@ Breaking changes must never replace an existing contract silently.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -652,7 +659,7 @@ Breaking changes must never replace an existing contract silently.
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts **explicit versioning for every public contract** exchanged between independently evolving parts of the platform.
 

@@ -1,7 +1,7 @@
-export { SettingsDialog } from "./SettingsDialog";
+// F:\Kernschmied\frontend\src\components\settings\index.ts
 
-export { SettingsField } from "./SettingsField";
-
+export { SettingsCatalogView } from "./SettingsCatalogView";
 export { SettingsContent } from "./SettingsContent";
-
+export { SettingsDialog } from "./SettingsDialog";
+export { SettingsField } from "./SettingsField";
 export { SettingsSidebar } from "./SettingsSidebar";

@@ -8,7 +8,7 @@ The backend is implemented using **Python 3.12**, **FastAPI**, **Pydantic v2**, 
 
 ---
 
-# Goals
+## Goals
 
 The backend architecture is designed to provide:
 
@@ -24,7 +24,7 @@ The backend architecture is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 The backend follows several architectural principles.
 
@@ -67,6 +67,7 @@ Repositories
 ↓
 
 Database / Providers
+
 ```
 
 Responsibilities are never duplicated across layers.
@@ -93,6 +94,7 @@ Provider Interface
 ↓
 
 Ollama / OpenAI / Future Providers
+
 ```
 
 This abstraction enables multiple providers without changing business logic.
@@ -113,7 +115,7 @@ The frontend interprets these schemas using trusted components.
 
 ---
 
-# Technology Stack
+## Technology Stack
 
 The backend is built using:
 
@@ -130,7 +132,7 @@ The backend is built using:
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
                 Backend
@@ -158,13 +160,14 @@ Repositories   Providers
                     │
 
                Database
+
 ```
 
 Each subsystem communicates only through well-defined interfaces.
 
 ---
 
-# Backend Responsibilities
+## Backend Responsibilities
 
 The backend is responsible for:
 
@@ -185,7 +188,7 @@ The frontend is intentionally lightweight and delegates these responsibilities t
 
 ---
 
-# HTTP API Layer
+## HTTP API Layer
 
 The API layer exposes REST and SSE endpoints.
 
@@ -206,7 +209,7 @@ Endpoints validate requests and delegate processing to services.
 
 ---
 
-# Application Services
+## Application Services
 
 Services coordinate business logic.
 
@@ -222,7 +225,7 @@ Services orchestrate repositories, registries, and providers without containing 
 
 ---
 
-# Configuration System
+## Configuration System
 
 Runtime configuration is stored in the database rather than in source code.
 
@@ -238,7 +241,7 @@ The Configuration Resolver computes the effective configuration for each request
 
 ---
 
-# Hierarchy System
+## Hierarchy System
 
 The hierarchy represents the logical structure of the application.
 
@@ -255,7 +258,7 @@ The backend resolves inheritance and visibility before returning hierarchy infor
 
 ---
 
-# Prompt Resolution
+## Prompt Resolution
 
 AI prompts are assembled dynamically from multiple configuration scopes.
 
@@ -281,13 +284,14 @@ Request
 ↓
 
 Final Prompt
+
 ```
 
 Prompt generation is deterministic and provider-independent.
 
 ---
 
-# Model Management
+## Model Management
 
 Available AI models are managed through the Model Registry.
 
@@ -302,7 +306,7 @@ Services interact with the registry rather than provider implementations.
 
 ---
 
-# Tool Management
+## Tool Management
 
 Tools are managed through the Tool Registry.
 
@@ -317,7 +321,7 @@ Tool execution is always mediated by the backend.
 
 ---
 
-# Registry Layer
+## Registry Layer
 
 Registries provide stable runtime access to extensible components.
 
@@ -330,7 +334,7 @@ Future registries may manage plugins, workflows, or notification providers.
 
 ---
 
-# Repository Layer
+## Repository Layer
 
 Repositories encapsulate persistence logic.
 
@@ -345,7 +349,7 @@ Repositories are the only components that interact directly with the database.
 
 ---
 
-# Database Layer
+## Database Layer
 
 The backend currently uses SQLite by default.
 
@@ -361,7 +365,7 @@ Database responsibilities include:
 
 ---
 
-# Dependency Injection
+## Dependency Injection
 
 FastAPI's dependency injection system provides shared infrastructure.
 
@@ -377,7 +381,7 @@ This reduces coupling and improves testability.
 
 ---
 
-# Validation
+## Validation
 
 Validation occurs at every system boundary.
 
@@ -393,7 +397,7 @@ Pydantic models define stable contracts for all public APIs.
 
 ---
 
-# Streaming
+## Streaming
 
 Chat responses are delivered using Server-Sent Events (SSE).
 
@@ -417,13 +421,14 @@ SSE Events
 ↓
 
 Frontend
+
 ```
 
 Streaming is independent of the underlying AI provider.
 
 ---
 
-# Security
+## Security
 
 The backend enforces all security decisions.
 
@@ -439,7 +444,7 @@ The frontend never bypasses these checks.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Errors are returned using a structured format.
 
@@ -458,7 +463,7 @@ Internal implementation details remain hidden from clients.
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Configuration marked as runtime editable may be modified without restarting the application.
 
@@ -482,13 +487,14 @@ Revision++
 ↓
 
 Next Request Uses New Configuration
+
 ```
 
 This enables dynamic system behavior while preserving stability.
 
 ---
 
-# Caching
+## Caching
 
 The backend uses revision-based caching for runtime data.
 
@@ -503,7 +509,7 @@ Caches are invalidated whenever relevant revisions change.
 
 ---
 
-# Extensibility
+## Extensibility
 
 The backend is designed for controlled extensibility.
 
@@ -520,7 +526,7 @@ New functionality should integrate through these mechanisms rather than modifyin
 
 ---
 
-# Testing
+## Testing
 
 The backend architecture supports comprehensive testing.
 
@@ -537,7 +543,7 @@ Dependency injection simplifies test isolation.
 
 ---
 
-# Performance
+## Performance
 
 The backend is optimized for:
 
@@ -552,7 +558,7 @@ These optimizations allow the platform to scale from local development to enterp
 
 ---
 
-# Relationship to Other Architecture
+## Relationship to Other Architecture
 
 The backend connects all major architectural subsystems.
 
@@ -590,13 +596,14 @@ Providers
 ↓
 
 Database
+
 ```
 
 It forms the operational core of the Kernschmied platform.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -635,7 +642,7 @@ It forms the operational core of the Kernschmied platform.
 
 ---
 
-# Summary
+## Summary
 
 The Kernschmied Backend provides the execution core of the platform by combining asynchronous request processing, schema-driven configuration, hierarchical context resolution, provider-independent AI integration, structured validation, and secure runtime management.
 

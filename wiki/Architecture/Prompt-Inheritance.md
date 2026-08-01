@@ -8,7 +8,7 @@ Prompt inheritance is tightly integrated with the **Hierarchy Architecture** and
 
 ---
 
-# Goals
+## Goals
 
 The Prompt Inheritance architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The Prompt Inheritance architecture is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 The prompt subsystem follows several architectural principles.
 
@@ -57,6 +57,7 @@ Prompt Resolver
 ↓
 
 Same Prompt
+
 ```
 
 This deterministic behavior simplifies debugging and reproducibility.
@@ -85,13 +86,14 @@ Conversation Context
 ↓
 
 Request Context
+
 ```
 
 The final prompt is assembled from these layers according to defined merge rules.
 
 ---
 
-# Prompt Resolution Pipeline
+## Prompt Resolution Pipeline
 
 The Prompt Resolver is responsible for building the final prompt.
 
@@ -113,13 +115,14 @@ Prompt Resolution
 ↓
 
 Model Backend
+
 ```
 
 Application services never assemble prompts manually.
 
 ---
 
-# Prompt Sources
+## Prompt Sources
 
 Prompts may originate from multiple scopes.
 
@@ -137,7 +140,7 @@ Each scope contributes only the information relevant to its responsibility.
 
 ---
 
-# Hierarchical Inheritance
+## Hierarchical Inheritance
 
 Prompt inheritance follows the hierarchy defined by the Hierarchy Architecture.
 
@@ -163,13 +166,14 @@ Conversation
 ↓
 
 Request
+
 ```
 
 Lower levels override or extend higher levels according to the configured merge strategy.
 
 ---
 
-# Prompt Components
+## Prompt Components
 
 A resolved prompt may consist of multiple logical sections.
 
@@ -188,7 +192,7 @@ These sections are combined into the final prompt.
 
 ---
 
-# Global Prompt
+## Global Prompt
 
 The global prompt defines platform-wide behavior.
 
@@ -203,7 +207,7 @@ Every request inherits the global prompt.
 
 ---
 
-# Organizational Prompt
+## Organizational Prompt
 
 Organizations may define additional instructions.
 
@@ -218,7 +222,7 @@ These prompts apply to all descendants.
 
 ---
 
-# Department Prompt
+## Department Prompt
 
 Departments may specialize behavior.
 
@@ -233,7 +237,7 @@ Only descendants inherit these prompts.
 
 ---
 
-# Project Prompt
+## Project Prompt
 
 Projects may introduce project-specific context.
 
@@ -248,7 +252,7 @@ This context remains isolated from unrelated projects.
 
 ---
 
-# Conversation Prompt
+## Conversation Prompt
 
 Conversation-specific prompts capture temporary context.
 
@@ -262,7 +266,7 @@ These prompts apply only to the active conversation.
 
 ---
 
-# User Prompt
+## User Prompt
 
 User preferences may contribute additional context.
 
@@ -277,7 +281,7 @@ These settings never override mandatory safety rules.
 
 ---
 
-# Request Prompt
+## Request Prompt
 
 The request scope has the highest priority.
 
@@ -291,7 +295,7 @@ Request prompts exist only for a single request.
 
 ---
 
-# Prompt Composition
+## Prompt Composition
 
 The Prompt Resolver combines prompt fragments in deterministic order.
 
@@ -325,13 +329,14 @@ Request
 ↓
 
 Final Prompt
+
 ```
 
 Each stage contributes context before the next stage is applied.
 
 ---
 
-# Merge Strategies
+## Merge Strategies
 
 Different prompt sections may use different merge strategies.
 
@@ -348,7 +353,7 @@ The merge strategy is defined by the prompt schema.
 
 ---
 
-# Example
+## Example
 
 Consider the following hierarchy:
 
@@ -370,13 +375,14 @@ Conversation
 
 Request
   "Generate Python code."
+
 ```
 
 The resulting prompt contains all four levels in deterministic order.
 
 ---
 
-# Prompt Templates
+## Prompt Templates
 
 Prompt fragments may contain placeholders.
 
@@ -388,13 +394,14 @@ Current Project: {{project_name}}
 Current User: {{user_name}}
 
 Current Date: {{date}}
+
 ```
 
 Templates are expanded before prompt delivery.
 
 ---
 
-# Context Variables
+## Context Variables
 
 The resolver may provide runtime variables.
 
@@ -410,7 +417,7 @@ Variables are resolved before the prompt is sent to the provider.
 
 ---
 
-# Tool Context
+## Tool Context
 
 When tools are enabled, the resolver may inject additional instructions.
 
@@ -426,13 +433,14 @@ Tool Instructions
 ↓
 
 Prompt
+
 ```
 
 Only authorized tools contribute prompt content.
 
 ---
 
-# Model Independence
+## Model Independence
 
 Prompt generation is independent of the underlying AI provider.
 
@@ -450,13 +458,14 @@ Provider
 ↓
 
 Model
+
 ```
 
 The same logical prompt may be used with Ollama, OpenAI, Anthropic, or future providers.
 
 ---
 
-# Prompt Caching
+## Prompt Caching
 
 Resolved prompts may be cached for performance.
 
@@ -472,13 +481,14 @@ Configuration Revision
 +
 
 Prompt Version
+
 ```
 
 Caches are invalidated when relevant revisions change.
 
 ---
 
-# Validation
+## Validation
 
 Prompt definitions are validated before activation.
 
@@ -494,7 +504,7 @@ Invalid prompts are rejected.
 
 ---
 
-# Security
+## Security
 
 Prompt inheritance enforces several security principles.
 
@@ -511,7 +521,7 @@ Prompt content is always treated as configuration rather than trusted executable
 
 ---
 
-# Auditing
+## Auditing
 
 Prompt changes are recorded through the configuration audit system.
 
@@ -527,7 +537,7 @@ This ensures complete traceability.
 
 ---
 
-# Runtime Updates
+## Runtime Updates
 
 Prompt modifications become active immediately if marked as runtime editable.
 
@@ -549,13 +559,14 @@ Prompt Resolver
 ↓
 
 Next Request
+
 ```
 
 No application restart is required.
 
 ---
 
-# Error Handling
+## Error Handling
 
 If prompt resolution fails:
 
@@ -569,13 +580,14 @@ Structured Error
 ↓
 
 Request Aborted
+
 ```
 
 The platform never generates partially resolved prompts.
 
 ---
 
-# Relationship to Configuration
+## Relationship to Configuration
 
 Prompt inheritance is implemented using the Configuration Resolver.
 
@@ -583,7 +595,7 @@ Prompt fragments participate in the same inheritance and merge pipeline as other
 
 ---
 
-# Relationship to Hierarchy
+## Relationship to Hierarchy
 
 Hierarchy determines the inheritance path.
 
@@ -593,7 +605,7 @@ No prompt logic is embedded in hierarchy nodes themselves.
 
 ---
 
-# Relationship to Registries
+## Relationship to Registries
 
 Model and tool registries contribute metadata but do not assemble prompts.
 
@@ -601,7 +613,7 @@ Prompt generation remains the exclusive responsibility of the Prompt Resolver.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Prompt resolution is optimized for:
 
@@ -614,7 +626,7 @@ The resolver is lightweight enough to execute for every request.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture supports future capabilities including:
 
@@ -630,7 +642,7 @@ These extensions can be introduced without changing the public prompt contract.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -659,7 +671,7 @@ These extensions can be introduced without changing the public prompt contract.
 
 ---
 
-# Summary
+## Summary
 
 The Prompt Inheritance architecture provides a deterministic and hierarchical mechanism for constructing AI prompts from multiple configuration scopes.
 

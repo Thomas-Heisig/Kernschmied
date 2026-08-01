@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 Kernschmied uses **Server-Sent Events (SSE)** as the primary streaming protocol between the frontend and the backend.
 
@@ -16,7 +16,7 @@ The frontend treats streaming as a generic transport mechanism. It is independen
 
 ---
 
-# Why Server-Sent Events?
+## Why Server-Sent Events?
 
 Several technologies were evaluated.
 
@@ -31,7 +31,7 @@ For the current architecture, SSE provides the best balance between simplicity, 
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 +-----------+
@@ -65,11 +65,12 @@ For the current architecture, SSE provides the best balance between simplicity, 
 +----------------+
 | React Client   |
 +----------------+
+
 ```
 
 ---
 
-# Streaming Lifecycle
+## Streaming Lifecycle
 
 ```text
 User sends message
@@ -105,28 +106,31 @@ Completion event
 ↓
 
 Connection closes
+
 ```
 
 ---
 
-# HTTP Endpoint
+## HTTP Endpoint
 
 Typical endpoint:
 
-```
+```text
 POST /api/chat/stream
+
 ```
 
 The endpoint returns
 
-```
+```text
 Content-Type:
 text/event-stream
+
 ```
 
 ---
 
-# Event Flow
+## Event Flow
 
 A complete conversation consists of multiple events.
 
@@ -156,13 +160,14 @@ usage
 ↓
 
 complete
+
 ```
 
 Errors interrupt the stream and are reported as dedicated events.
 
 ---
 
-# Typical Event Types
+## Typical Event Types
 
 ## Start
 
@@ -253,13 +258,14 @@ Example:
 
 ---
 
-# Event Format
+## Event Format
 
 Each SSE event follows the standard format.
 
-```
+```text
 event: token
 data: {"text":"Hello"}
+
 
 ```
 
@@ -267,7 +273,7 @@ Multiple events are separated by a blank line.
 
 ---
 
-# Frontend Responsibilities
+## Frontend Responsibilities
 
 The frontend is responsible for:
 
@@ -283,7 +289,7 @@ The frontend never generates response content.
 
 ---
 
-# State Management
+## State Management
 
 Typical streaming state:
 
@@ -305,6 +311,7 @@ Completed
 ↓
 
 Idle
+
 ```
 
 If an error occurs:
@@ -319,11 +326,12 @@ Error
 ↓
 
 Idle
+
 ```
 
 ---
 
-# Token Rendering
+## Token Rendering
 
 Incoming tokens are appended incrementally.
 
@@ -343,13 +351,14 @@ Hello World
 ↓
 
 Hello World!
+
 ```
 
 Rendering should be efficient to avoid unnecessary React re-renders.
 
 ---
 
-# Cancellation
+## Cancellation
 
 Users may cancel generation.
 
@@ -373,13 +382,14 @@ Backend stops generation
 ↓
 
 Resources released
+
 ```
 
 Cancellation should be immediate.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Possible errors include:
 
@@ -395,7 +405,7 @@ Errors should always be presented in a user-friendly way.
 
 ---
 
-# Reconnection
+## Reconnection
 
 If supported by the endpoint, the frontend may reconnect after temporary network failures.
 
@@ -407,7 +417,7 @@ However:
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The frontend should:
 
@@ -421,7 +431,7 @@ Streaming should remain responsive even during long responses.
 
 ---
 
-# Security
+## Security
 
 Streaming endpoints follow the same security model as all REST endpoints.
 
@@ -438,7 +448,7 @@ The frontend must never assume that a stream is authorized simply because it cou
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The streaming protocol is designed to support additional event types, including:
 
@@ -456,9 +466,9 @@ Unknown event types should be ignored gracefully or displayed using a generic fa
 
 ---
 
-# Related Documentation
+## Related Documentation
 
-## Architecture
+## Architecture (2)
 
 - [[Architecture]]
 - [[Request-Lifecycle]]
@@ -489,7 +499,7 @@ Unknown event types should be ignored gracefully or displayed using a generic fa
 
 ---
 
-# Summary
+## Summary
 
 Streaming is a fundamental part of the Kernschmied user experience.
 

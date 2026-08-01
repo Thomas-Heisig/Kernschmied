@@ -8,7 +8,7 @@ This approach provides maximum flexibility while maintaining stable APIs, determ
 
 ---
 
-# Goals
+## Goals
 
 The Hierarchy Architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The Hierarchy Architecture is designed to provide:
 
 ---
 
-# Architectural Principles
+## Architectural Principles
 
 The hierarchy subsystem follows several core principles.
 
@@ -61,6 +61,7 @@ Rendered View
 ↓
 
 Available Actions
+
 ```
 
 The backend remains independent of frontend presentation.
@@ -83,7 +84,7 @@ Overrides are applied deterministically.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
                      Hierarchy
@@ -115,13 +116,14 @@ Overrides are applied deterministically.
             │
 
           Request
+
 ```
 
 The number and meaning of intermediate levels are configurable.
 
 ---
 
-# Generic Node Model
+## Generic Node Model
 
 Every hierarchy node shares the same core structure.
 
@@ -140,7 +142,7 @@ Business semantics are defined externally through schemas.
 
 ---
 
-# Node Identity
+## Node Identity
 
 Each node has a globally unique identifier.
 
@@ -148,6 +150,7 @@ Example:
 
 ```text
 node_7c41d8
+
 ```
 
 Identifiers remain stable even if:
@@ -160,7 +163,7 @@ This allows reliable references throughout the platform.
 
 ---
 
-# Parent-Child Relationships
+## Parent-Child Relationships
 
 Nodes form a directed tree.
 
@@ -174,13 +177,14 @@ Root
 │   └── Team B
 
 └── Shared
+
 ```
 
 Every node has exactly one parent except the root node.
 
 ---
 
-# Root Node
+## Root Node
 
 The root node represents the global application context.
 
@@ -195,7 +199,7 @@ There is exactly one root node.
 
 ---
 
-# Node Schemas
+## Node Schemas
 
 A node's schema determines:
 
@@ -210,7 +214,7 @@ The hierarchy engine itself remains schema-independent.
 
 ---
 
-# Hierarchy Levels
+## Hierarchy Levels
 
 Although generic, many installations use logical levels such as:
 
@@ -236,13 +240,14 @@ Conversation
 ↓
 
 Request
+
 ```
 
 These are conventions rather than hardcoded entity types.
 
 ---
 
-# Configuration Inheritance
+## Configuration Inheritance
 
 Configuration is resolved along the hierarchy.
 
@@ -264,13 +269,14 @@ Conversation
 ↓
 
 Resolved Configuration
+
 ```
 
 Child nodes override inherited values where permitted.
 
 ---
 
-# Prompt Inheritance
+## Prompt Inheritance
 
 Prompt inheritance follows the same traversal.
 
@@ -292,13 +298,14 @@ Conversation Prompt
 ↓
 
 Resolved Prompt
+
 ```
 
 The resulting prompt is deterministic and reproducible.
 
 ---
 
-# Permission Inheritance
+## Permission Inheritance
 
 Authorization policies may also be inherited.
 
@@ -318,13 +325,14 @@ Project
 ↓
 
 User Access
+
 ```
 
 More specific rules override inherited defaults where applicable.
 
 ---
 
-# Metadata
+## Metadata
 
 Hierarchy nodes may contain arbitrary metadata.
 
@@ -339,7 +347,7 @@ Metadata is validated by the node schema.
 
 ---
 
-# UI Representation
+## UI Representation
 
 The frontend renders hierarchy nodes using the Generic Tree.
 
@@ -357,13 +365,14 @@ Schema Renderer
 ↓
 
 Node View
+
 ```
 
 No frontend component is tied to a specific business entity.
 
 ---
 
-# Node Creation
+## Node Creation
 
 Typical lifecycle:
 
@@ -385,13 +394,14 @@ Persistence
 ↓
 
 Revision Update
+
 ```
 
 Invalid nodes are rejected before persistence.
 
 ---
 
-# Node Update
+## Node Update
 
 Updates follow the same validation pipeline.
 
@@ -407,7 +417,7 @@ Hierarchy integrity is preserved.
 
 ---
 
-# Node Deletion
+## Node Deletion
 
 Deletion policies are implementation dependent.
 
@@ -422,7 +432,7 @@ The chosen strategy should remain deterministic.
 
 ---
 
-# Ordering
+## Ordering
 
 Sibling nodes may define an explicit ordering.
 
@@ -436,7 +446,7 @@ Ordering has no effect on inheritance semantics.
 
 ---
 
-# Hierarchy Traversal
+## Hierarchy Traversal
 
 Traversal occurs in two primary directions.
 
@@ -462,7 +472,7 @@ Both traversals are deterministic.
 
 ---
 
-# Validation
+## Validation
 
 Hierarchy operations validate:
 
@@ -476,7 +486,7 @@ Invalid structures are rejected.
 
 ---
 
-# Cyclic Dependency Prevention
+## Cyclic Dependency Prevention
 
 The hierarchy must remain a tree.
 
@@ -496,13 +506,14 @@ C
 ↓
 
 A
+
 ```
 
 Cycles are detected during updates.
 
 ---
 
-# Configuration Resolution
+## Configuration Resolution
 
 The Configuration Resolver walks the hierarchy upward.
 
@@ -524,13 +535,14 @@ Root
 ↓
 
 Resolved Configuration
+
 ```
 
 Each level contributes configuration according to merge rules.
 
 ---
 
-# Prompt Resolution
+## Prompt Resolution
 
 Prompt resolution uses the same traversal.
 
@@ -540,7 +552,7 @@ This guarantees consistent conversational context.
 
 ---
 
-# API Integration
+## API Integration
 
 Hierarchy nodes are exposed through dedicated REST endpoints.
 
@@ -556,7 +568,7 @@ The API contract remains independent of specific node types.
 
 ---
 
-# Revision Tracking
+## Revision Tracking
 
 Hierarchy changes increment the hierarchy revision.
 
@@ -570,13 +582,14 @@ Revision++
 ↓
 
 Frontend Reload
+
 ```
 
 Clients reload cached trees only when revisions change.
 
 ---
 
-# Caching
+## Caching
 
 Frequently cached elements include:
 
@@ -588,7 +601,7 @@ Caches are invalidated using hierarchy revisions.
 
 ---
 
-# Security
+## Security
 
 Hierarchy operations require authorization.
 
@@ -603,7 +616,7 @@ Authorization is always evaluated server-side.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The hierarchy is optimized for:
 
@@ -616,7 +629,7 @@ Recursive queries should remain inexpensive for typical organizational sizes.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The hierarchy architecture allows future support for:
 
@@ -632,7 +645,7 @@ These additions can be implemented without changing the core node model.
 
 ---
 
-# Relationship to Other Architecture
+## Relationship to Other Architecture
 
 The hierarchy subsystem interacts with several architectural components.
 
@@ -654,13 +667,14 @@ Schema Renderer
 ↓
 
 Generic Tree
+
 ```
 
 It therefore forms the structural backbone of the platform.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -697,7 +711,7 @@ It therefore forms the structural backbone of the platform.
 
 ---
 
-# Summary
+## Summary
 
 The Hierarchy Architecture provides a generic, schema-driven organizational model that replaces fixed business entities with flexible hierarchy nodes.
 

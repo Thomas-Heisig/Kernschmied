@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is designed as an AI platform that must support multiple Large Language Model (LLM) providers throughout its lifetime.
 
@@ -36,7 +36,7 @@ Business services should remain completely independent from these differences.
 
 ---
 
-# Problem
+## Problem
 
 Directly integrating provider-specific SDKs into business logic leads to:
 
@@ -51,7 +51,7 @@ Adding a new provider should not require changes throughout the application.
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied adopts a **provider abstraction architecture**.
 
@@ -63,7 +63,7 @@ Concrete providers are discovered and managed through the **Model Registry**.
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > Models are interchangeable.
 >
@@ -73,7 +73,7 @@ Concrete providers are discovered and managed through the **Model Registry**.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Chat Service
@@ -101,11 +101,12 @@ Provider Backend
         ▼
 
 External Model
+
 ```
 
 ---
 
-# Goals
+## Goals
 
 The architecture should provide:
 
@@ -119,7 +120,7 @@ The architecture should provide:
 
 ---
 
-# Provider Abstraction
+## Provider Abstraction
 
 Every provider implements a common interface.
 
@@ -136,7 +137,7 @@ Business services never call provider SDKs directly.
 
 ---
 
-# BaseModelBackend
+## BaseModelBackend
 
 All providers derive from a common abstraction.
 
@@ -153,7 +154,7 @@ The abstraction defines stable contracts for the rest of the platform.
 
 ---
 
-# Provider Registry
+## Provider Registry
 
 The Provider Registry manages available provider implementations.
 
@@ -169,7 +170,7 @@ Providers are registered during application startup.
 
 ---
 
-# Model Registry
+## Model Registry
 
 The Model Registry exposes available models independently from provider implementation details.
 
@@ -186,7 +187,7 @@ Business services request models through the registry.
 
 ---
 
-# Model Manifest
+## Model Manifest
 
 Each model is described through a declarative manifest.
 
@@ -194,6 +195,7 @@ Example:
 
 ```text
 model.json
+
 ```
 
 Typical fields include:
@@ -211,7 +213,7 @@ The manifest is validated before registration.
 
 ---
 
-# Why Manifests?
+## Why Manifests?
 
 Model manifests allow:
 
@@ -225,7 +227,7 @@ without loading provider-specific code.
 
 ---
 
-# Supported Providers
+## Supported Providers
 
 The architecture is designed for providers such as:
 
@@ -296,7 +298,7 @@ Future providers exposing compatible APIs may be integrated through a generic HT
 
 ---
 
-# Capability Model
+## Capability Model
 
 Providers expose supported capabilities.
 
@@ -314,7 +316,7 @@ Capabilities are queried through the Model Registry.
 
 ---
 
-# Model Selection
+## Model Selection
 
 Business services request a model by identifier.
 
@@ -338,13 +340,14 @@ Resolve Provider
 ↓
 
 Execute
+
 ```
 
 Business services never instantiate providers.
 
 ---
 
-# Streaming
+## Streaming
 
 Streaming is normalized across providers.
 
@@ -364,7 +367,7 @@ Provider-specific protocols are translated into the common event model.
 
 ---
 
-# Tool Calling
+## Tool Calling
 
 Different providers implement tool calling differently.
 
@@ -374,7 +377,7 @@ Business services receive a uniform tool call structure.
 
 ---
 
-# Configuration
+## Configuration
 
 Provider configuration is stored through the Configuration Management system.
 
@@ -390,7 +393,7 @@ Configuration remains provider-independent wherever possible.
 
 ---
 
-# Provider Health
+## Provider Health
 
 Each provider may expose health information.
 
@@ -405,7 +408,7 @@ The registry exposes provider health to administration interfaces.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Provider-specific exceptions are translated into structured platform errors.
 
@@ -421,7 +424,7 @@ Clients never receive provider-specific exception types.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Providers never bypass platform security.
 
@@ -437,7 +440,7 @@ API keys should never be stored inside manifests.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Performance techniques include:
 
@@ -451,7 +454,7 @@ Provider abstraction should introduce minimal overhead.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 The architecture enables:
 
@@ -466,7 +469,7 @@ Operations teams may introduce new providers without modifying business services
 
 ---
 
-# Future Capabilities
+## Future Capabilities
 
 The architecture is intentionally extensible.
 
@@ -484,7 +487,7 @@ The provider abstraction should evolve without breaking existing integrations.
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -505,7 +508,7 @@ The provider abstraction should evolve without breaking existing integrations.
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Direct Provider Integration
 
@@ -531,7 +534,7 @@ Rejected because providers should be explicitly registered and validated.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -550,7 +553,7 @@ Mitigation strategies include:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -568,7 +571,7 @@ Business services should never depend directly on provider SDKs.
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0002-Bootstrap]]
 - [[ADR-0003-Registries]]
@@ -579,7 +582,7 @@ Business services should never depend directly on provider SDKs.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -608,7 +611,7 @@ Business services should never depend directly on provider SDKs.
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **provider-independent LLM architecture** in which every model backend implements the common `BaseModelBackend` contract and is registered through the Provider Registry and Model Registry.
 

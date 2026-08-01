@@ -15,6 +15,7 @@ from app.api.v1 import (
     tools,
     ui,
 )
+from app.api.v1.settings_catalog import router as settings_catalog_router
 
 API_VERSION = "v1"
 
@@ -29,6 +30,8 @@ api_router.include_router(
     prefix="/health",
     tags=["System / Health"],
 )
+
+api_router.include_router(settings_catalog_router)
 
 api_router.include_router(
     bootstrap.router,

@@ -8,7 +8,7 @@ The default database for development is **SQLite**, while the architecture is de
 
 ---
 
-# Goals
+## Goals
 
 The database architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The database architecture is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Database Agnostic
 
@@ -55,6 +55,7 @@ Repository
 ↓
 
 Database
+
 ```
 
 Validation, authorization, and configuration resolution always occur before data reaches the database.
@@ -77,13 +78,14 @@ Repository
 ↓
 
 Database
+
 ```
 
 Repositories encapsulate persistence logic and isolate storage details.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Application Services
@@ -103,13 +105,14 @@ Database Engine
 ↓
 
 SQLite / PostgreSQL
+
 ```
 
 Each layer has a single responsibility.
 
 ---
 
-# Responsibilities
+## Responsibilities
 
 The database is responsible for storing:
 
@@ -126,7 +129,7 @@ Transient runtime objects are not persisted.
 
 ---
 
-# Database Technologies
+## Database Technologies
 
 The backend uses:
 
@@ -141,7 +144,7 @@ The ORM layer hides database-specific implementation details.
 
 ---
 
-# Database Sessions
+## Database Sessions
 
 Database access is performed through asynchronous sessions.
 
@@ -163,13 +166,14 @@ Repository
 ↓
 
 Database
+
 ```
 
 Sessions are scoped to individual requests.
 
 ---
 
-# Transaction Management
+## Transaction Management
 
 Repositories perform operations within transactions.
 
@@ -189,6 +193,7 @@ Commit
 ↓
 
 Close
+
 ```
 
 If an error occurs:
@@ -207,13 +212,14 @@ Rollback
 ↓
 
 Close
+
 ```
 
 This guarantees data consistency.
 
 ---
 
-# Entity Categories
+## Entity Categories
 
 The database stores several categories of entities.
 
@@ -231,7 +237,7 @@ Each category has its own persistence model.
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Business configuration is stored in the database.
 
@@ -248,7 +254,7 @@ Configuration is validated before persistence.
 
 ---
 
-# Hierarchy Storage
+## Hierarchy Storage
 
 The hierarchy is persisted independently of the frontend.
 
@@ -264,7 +270,7 @@ Hierarchy relationships are resolved by backend services.
 
 ---
 
-# Conversation Storage
+## Conversation Storage
 
 Conversation persistence is separated from chat generation.
 
@@ -280,7 +286,7 @@ Conversation storage policies remain configurable.
 
 ---
 
-# Message Storage
+## Message Storage
 
 Messages may contain:
 
@@ -294,7 +300,7 @@ Streaming transport is independent of persistence.
 
 ---
 
-# Audit Log
+## Audit Log
 
 Audit information is stored separately from operational data.
 
@@ -311,7 +317,7 @@ Audit logs support traceability and compliance.
 
 ---
 
-# Revision Storage
+## Revision Storage
 
 The database maintains revision information used for cache invalidation.
 
@@ -325,7 +331,7 @@ Clients use these revisions to determine when cached data should be refreshed.
 
 ---
 
-# Metadata
+## Metadata
 
 Application metadata may include:
 
@@ -338,7 +344,7 @@ Metadata supports runtime diagnostics and compatibility checks.
 
 ---
 
-# Repository Layer
+## Repository Layer
 
 Repositories provide the exclusive interface to persistent storage.
 
@@ -352,13 +358,14 @@ HierarchyRepository
 ConversationRepository
 
 AuditRepository
+
 ```
 
 Repositories isolate SQLAlchemy from business services.
 
 ---
 
-# SQLAlchemy Models
+## SQLAlchemy Models
 
 ORM models represent the database structure.
 
@@ -373,7 +380,7 @@ ORM models are internal implementation details and are not exposed through publi
 
 ---
 
-# Alembic Migrations
+## Alembic Migrations
 
 Database schema changes are managed through Alembic.
 
@@ -397,13 +404,14 @@ Apply
 ↓
 
 Database Updated
+
 ```
 
 Manual schema modifications should be avoided.
 
 ---
 
-# Migration Strategy
+## Migration Strategy
 
 Schema evolution follows versioned migrations.
 
@@ -418,7 +426,7 @@ Production databases should never be modified outside the migration system.
 
 ---
 
-# Constraints
+## Constraints
 
 Database constraints complement application validation.
 
@@ -434,7 +442,7 @@ Business rules remain enforced by application services.
 
 ---
 
-# Indexing
+## Indexing
 
 Indexes improve lookup performance.
 
@@ -449,7 +457,7 @@ Indexes should be introduced based on measured requirements.
 
 ---
 
-# Asynchronous Access
+## Asynchronous Access
 
 The backend uses asynchronous database communication.
 
@@ -463,7 +471,7 @@ All repositories should use asynchronous SQLAlchemy APIs.
 
 ---
 
-# Performance
+## Performance
 
 Database performance is improved through:
 
@@ -477,7 +485,7 @@ Caching reduces unnecessary database access for frequently used runtime data.
 
 ---
 
-# Security
+## Security
 
 Database access is restricted to repositories.
 
@@ -492,7 +500,7 @@ Sensitive information should never be exposed through public APIs.
 
 ---
 
-# Backup Strategy
+## Backup Strategy
 
 Production deployments should implement regular backups.
 
@@ -507,7 +515,7 @@ Backup procedures are deployment-specific and remain independent of application 
 
 ---
 
-# Future Scalability
+## Future Scalability
 
 The database architecture supports future enhancements such as:
 
@@ -522,7 +530,7 @@ These enhancements should not require changes to application services.
 
 ---
 
-# Relationship to Other Backend Components
+## Relationship to Other Backend Components
 
 The database supports nearly every backend subsystem.
 
@@ -540,13 +548,14 @@ Database
 ↓
 
 Persistent State
+
 ```
 
 Repositories remain the only components responsible for database interaction.
 
 ---
 
-# Relationship to Architecture
+## Relationship to Architecture
 
 The database integrates closely with:
 
@@ -558,7 +567,7 @@ The database integrates closely with:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -590,7 +599,7 @@ The database integrates closely with:
 
 ---
 
-# Summary
+## Summary
 
 The Database provides the persistent foundation of the Kernschmied backend by storing configuration, hierarchy information, conversations, audit records, revisions, and application metadata in a database-independent manner.
 

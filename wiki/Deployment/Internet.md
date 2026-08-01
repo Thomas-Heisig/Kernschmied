@@ -8,7 +8,7 @@ Although operational policies become significantly stricter, the application's a
 
 ---
 
-# Goals
+## Goals
 
 The Internet deployment profile is designed to provide:
 
@@ -23,7 +23,7 @@ The Internet deployment profile is designed to provide:
 
 ---
 
-# Design Philosophy
+## Design Philosophy
 
 The deployment profile influences operational behavior—not application architecture.
 
@@ -35,13 +35,14 @@ Deployment Profile
         │
         ▼
 Internet Policies
+
 ```
 
 Business logic, APIs, schemas, and runtime behavior remain identical across deployment profiles.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Internet
@@ -75,13 +76,14 @@ Database
         ▼
 
 Model Providers
+
 ```
 
 Every incoming request passes through multiple security layers before reaching application services.
 
 ---
 
-# Typical Environment
+## Typical Environment
 
 A typical Internet deployment consists of:
 
@@ -97,7 +99,7 @@ Individual components may be distributed across multiple servers while preservin
 
 ---
 
-# Secure Communication
+## Secure Communication
 
 All external communication must use encrypted transport.
 
@@ -115,13 +117,14 @@ Reverse Proxy
 ↓
 
 Backend
+
 ```
 
 Unencrypted HTTP traffic should either be rejected or permanently redirected to HTTPS.
 
 ---
 
-# TLS
+## TLS
 
 Transport Layer Security protects:
 
@@ -136,7 +139,7 @@ TLS termination typically occurs at the reverse proxy.
 
 ---
 
-# Reverse Proxy
+## Reverse Proxy
 
 A reverse proxy provides the first security boundary.
 
@@ -153,7 +156,7 @@ The backend remains focused on business logic.
 
 ---
 
-# Authentication
+## Authentication
 
 Internet deployments require authenticated users.
 
@@ -169,7 +172,7 @@ Authentication must never be optional.
 
 ---
 
-# Session Management
+## Session Management
 
 Authenticated sessions must be protected.
 
@@ -186,7 +189,7 @@ Session management is enforced independently of business services.
 
 ---
 
-# Authorization
+## Authorization
 
 Every request undergoes server-side authorization.
 
@@ -200,13 +203,14 @@ Authorization
 ↓
 
 Business Operation
+
 ```
 
 Authorization is never delegated to the frontend.
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Business configuration continues to use the Runtime Configuration system.
 
@@ -223,7 +227,7 @@ Configuration changes remain fully validated and audited.
 
 ---
 
-# Environment Variables
+## Environment Variables
 
 Only infrastructure settings belong in environment variables.
 
@@ -239,7 +243,7 @@ Business configuration remains database-driven.
 
 ---
 
-# Database
+## Database
 
 Production Internet deployments typically use PostgreSQL.
 
@@ -259,13 +263,14 @@ Hierarchy
 Audit
 
 Application Data
+
 ```
 
 The architecture remains compatible with SQLite for development environments.
 
 ---
 
-# AI Providers
+## AI Providers
 
 The Model Registry abstracts AI providers.
 
@@ -280,7 +285,7 @@ Provider implementations remain interchangeable.
 
 ---
 
-# API Security
+## API Security
 
 Every API request is validated before processing.
 
@@ -297,7 +302,7 @@ Malformed requests never reach business logic.
 
 ---
 
-# Streaming Security
+## Streaming Security
 
 Streaming endpoints follow the same security policies as REST endpoints.
 
@@ -315,13 +320,14 @@ SSE Stream
 ↓
 
 Client
+
 ```
 
 Streaming never bypasses authentication or authorization.
 
 ---
 
-# CORS
+## CORS
 
 Cross-Origin Resource Sharing is configured explicitly.
 
@@ -339,13 +345,14 @@ CORS Validation
 ↓
 
 Request Accepted
+
 ```
 
 Unknown origins are rejected.
 
 ---
 
-# Rate Limiting
+## Rate Limiting
 
 Rate limiting protects the platform against abuse.
 
@@ -361,7 +368,7 @@ Rate limiting policies depend on deployment requirements.
 
 ---
 
-# Request Validation
+## Request Validation
 
 Every request is validated before execution.
 
@@ -377,7 +384,7 @@ Invalid requests generate structured error responses.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Administrative operations are fully audited.
 
@@ -394,7 +401,7 @@ Audit records support compliance and incident investigation.
 
 ---
 
-# Logging
+## Logging
 
 Operational logging should include:
 
@@ -409,7 +416,7 @@ Sensitive information must never be written to logs.
 
 ---
 
-# Secrets
+## Secrets
 
 Secrets must never be stored in runtime configuration.
 
@@ -424,7 +431,7 @@ Secrets belong to protected infrastructure configuration.
 
 ---
 
-# Plugin Security
+## Plugin Security
 
 Plugins operate under the same security rules as the core platform.
 
@@ -440,7 +447,7 @@ Plugins cannot bypass platform security.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Internet deployments always return structured error responses.
 
@@ -454,13 +461,14 @@ message
 details
 
 request_id
+
 ```
 
 Internal implementation details are never exposed to external users.
 
 ---
 
-# Monitoring
+## Monitoring
 
 Operational monitoring typically includes:
 
@@ -476,7 +484,7 @@ Monitoring improves reliability without changing application behavior.
 
 ---
 
-# Backup Strategy
+## Backup Strategy
 
 Internet deployments should include regular backups for:
 
@@ -490,7 +498,7 @@ Backup procedures should be tested periodically.
 
 ---
 
-# High Availability
+## High Availability
 
 The Internet profile supports multi-instance deployments.
 
@@ -510,13 +518,14 @@ Backend   Backend
       ▼
 
  PostgreSQL
+
 ```
 
 Shared runtime configuration and revision tracking keep all instances synchronized.
 
 ---
 
-# Security Principles
+## Security Principles
 
 The Internet profile enforces several mandatory principles.
 
@@ -534,7 +543,7 @@ These principles are not optional.
 
 ---
 
-# Differences from Other Profiles
+## Differences from Other Profiles
 
 | Feature          | Development | Intranet    | Internet |
 | ---------------- | ----------- | ----------- | -------- |
@@ -550,7 +559,7 @@ The underlying application architecture remains identical.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The Internet deployment profile supports future enhancements including:
 
@@ -567,7 +576,7 @@ These enhancements strengthen operational security without changing application 
 
 ---
 
-# Relationship to Other Deployment Profiles
+## Relationship to Other Deployment Profiles
 
 The Internet profile shares the same core architecture with:
 
@@ -578,7 +587,7 @@ Only deployment policies and operational security differ.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Deployment
 
@@ -616,7 +625,7 @@ Only deployment policies and operational security differ.
 
 ---
 
-# Summary
+## Summary
 
 The Internet deployment profile enables Kernschmied to operate securely in public network environments by enforcing strong authentication, encrypted communication, strict authorization, comprehensive validation, audit logging, and robust operational security practices. While security policies are significantly stricter than in other deployment profiles, the platform preserves identical APIs, schemas, registries, runtime configuration, and application architecture.
 

@@ -8,7 +8,7 @@ Kernschmied intentionally consists of a small number of clearly separated contai
 
 ---
 
-# Goals
+## Goals
 
 The container architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The container architecture is designed to provide:
 
 ---
 
-# C4 Model Overview
+## C4 Model Overview
 
 The C4 model describes software architecture on four levels:
 
@@ -38,7 +38,7 @@ This document focuses on **Level 2 – Containers**.
 
 ---
 
-# High-Level Container Diagram
+## High-Level Container Diagram
 
 ```text
                     +----------------------+
@@ -72,11 +72,12 @@ This document focuses on **Level 2 – Containers**.
      | Chat Data        |          | Gemini           |
      +------------------+          | llama.cpp        |
                                    +------------------+
+
 ```
 
 ---
 
-# Container Responsibilities
+## Container Responsibilities
 
 The platform currently consists of four primary containers:
 
@@ -91,7 +92,7 @@ Each container owns a clearly defined set of responsibilities.
 
 ---
 
-# Frontend Container
+## Frontend Container
 
 Technology:
 
@@ -114,7 +115,7 @@ The frontend never contains business rules.
 
 ---
 
-# Frontend Internal Modules
+## Frontend Internal Modules
 
 ```text
 Frontend
@@ -134,13 +135,14 @@ Frontend
 ├── Chat View
 
 └── State Management
+
 ```
 
 Each module communicates exclusively through stable frontend contracts.
 
 ---
 
-# Backend Container
+## Backend Container
 
 Technology:
 
@@ -165,7 +167,7 @@ The backend is the authoritative source of truth.
 
 ---
 
-# Backend Layers
+## Backend Layers
 
 ```text
 REST API
@@ -189,13 +191,14 @@ Repositories
 ↓
 
 Database / Providers
+
 ```
 
 Dependencies always point downward.
 
 ---
 
-# Database Container
+## Database Container
 
 Supported databases:
 
@@ -215,7 +218,7 @@ Business logic is intentionally excluded from the database.
 
 ---
 
-# LLM Provider Container
+## LLM Provider Container
 
 The provider layer is abstracted through the Provider Registry.
 
@@ -232,7 +235,7 @@ The frontend is unaware of provider-specific implementations.
 
 ---
 
-# Backend ↔ Database
+## Backend ↔ Database
 
 Communication:
 
@@ -246,13 +249,14 @@ Repositories
 ↓
 
 Database
+
 ```
 
 Repositories encapsulate all persistence logic.
 
 ---
 
-# Backend ↔ LLM Providers
+## Backend ↔ LLM Providers
 
 Communication:
 
@@ -274,13 +278,14 @@ BaseModelBackend
 ↓
 
 Provider
+
 ```
 
 Provider-specific APIs never reach business services.
 
 ---
 
-# Frontend ↔ Backend
+## Frontend ↔ Backend
 
 Communication occurs exclusively through:
 
@@ -291,7 +296,7 @@ No direct database access exists.
 
 ---
 
-# Communication Matrix
+## Communication Matrix
 
 | Source   | Destination | Protocol   |
 | -------- | ----------- | ---------- |
@@ -306,7 +311,7 @@ All communication is initiated through the backend.
 
 ---
 
-# Container Boundaries
+## Container Boundaries
 
 Each container owns its own responsibility.
 
@@ -371,7 +376,7 @@ Do **not** own:
 
 ---
 
-# Startup Sequence
+## Startup Sequence
 
 ```text
 Backend
@@ -407,13 +412,14 @@ Load Resources
 ↓
 
 Ready
+
 ```
 
 The backend is always initialized before the frontend.
 
 ---
 
-# Request Flow
+## Request Flow
 
 Typical request:
 
@@ -443,13 +449,14 @@ Database
 ↓
 
 Response
+
 ```
 
 Streaming requests additionally involve the Provider Layer.
 
 ---
 
-# Streaming Flow
+## Streaming Flow
 
 ```text
 Frontend
@@ -473,13 +480,14 @@ SSE Stream
 ↓
 
 Frontend
+
 ```
 
 The streaming contract remains provider-independent.
 
 ---
 
-# Security Boundaries
+## Security Boundaries
 
 Security is enforced entirely by the backend.
 
@@ -497,13 +505,14 @@ Authorization
 ↓
 
 Business Services
+
 ```
 
 The frontend never decides access rights.
 
 ---
 
-# Deployment
+## Deployment
 
 Typical deployment:
 
@@ -525,6 +534,7 @@ SQLite/PostgreSQL
 ↓
 
 LLM Providers
+
 ```
 
 All containers may execute on one machine during development.
@@ -533,7 +543,7 @@ Production deployments may distribute containers independently.
 
 ---
 
-# Scalability
+## Scalability
 
 The architecture allows independent scaling of:
 
@@ -546,7 +556,7 @@ Scaling strategies remain independent of business logic.
 
 ---
 
-# Failure Isolation
+## Failure Isolation
 
 Container boundaries isolate failures.
 
@@ -572,13 +582,14 @@ Structured Error
 ↓
 
 Frontend
+
 ```
 
 Database failures do not affect frontend rendering logic directly.
 
 ---
 
-# Technology Independence
+## Technology Independence
 
 The architecture intentionally isolates technologies.
 
@@ -595,7 +606,7 @@ Stable contracts minimize migration effort.
 
 ---
 
-# Relationship to the C4 System Context
+## Relationship to the C4 System Context
 
 The **System Context Diagram** identifies:
 
@@ -609,7 +620,7 @@ Together they describe the platform from the outside inward.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -643,7 +654,7 @@ Together they describe the platform from the outside inward.
 
 ---
 
-# Summary
+## Summary
 
 The C4 Container Architecture describes the major executable building blocks of the Kernschmied platform and the stable communication paths between them.
 

@@ -5,7 +5,7 @@
 
 ---
 
-# Overview
+## Overview
 
 This guide describes how to install and start **Kernschmied** for local development.
 
@@ -13,7 +13,7 @@ The project is designed to run **without Docker** and uses a modern Python and R
 
 ---
 
-# System Requirements
+## System Requirements
 
 ## Operating System
 
@@ -52,7 +52,7 @@ Recommended:
 
 ---
 
-# Clone the Repository
+## Clone the Repository
 
 ```bash
 git clone https://github.com/Thomas-Heisig/Kernschmied.git
@@ -62,9 +62,9 @@ cd Kernschmied
 
 ---
 
-# Project Structure
+## Project Structure
 
-```
+```text
 Kernschmied/
 
 backend/
@@ -75,11 +75,12 @@ scripts/
 tests/
 
 README.md
+
 ```
 
 ---
 
-# Backend Installation
+## Backend Installation
 
 Change into the backend directory:
 
@@ -123,7 +124,7 @@ pip install -r requirements.txt
 
 ---
 
-# Frontend Installation
+## Frontend Installation
 
 Open a second terminal.
 
@@ -139,12 +140,13 @@ npm install
 
 ---
 
-# Environment Configuration
+## Environment Configuration
 
 Create a local environment file.
 
-```
+```text
 backend/.env
+
 ```
 
 Example:
@@ -168,7 +170,7 @@ SECRET_KEY=CHANGE_ME
 
 ---
 
-# Database
+## Database
 
 The default database is SQLite.
 
@@ -178,7 +180,7 @@ Future versions support PostgreSQL without architectural changes.
 
 ---
 
-# Running the Backend
+## Running the Backend
 
 Example:
 
@@ -194,13 +196,14 @@ python -m app.main
 
 The backend is usually available at:
 
-```
+```text
 http://localhost:8000
+
 ```
 
 ---
 
-# Running the Frontend
+## Running the Frontend
 
 ```bash
 npm run dev
@@ -208,13 +211,14 @@ npm run dev
 
 The frontend is usually available at:
 
-```
+```text
 http://localhost:5173
+
 ```
 
 ---
 
-# First Startup
+## First Startup
 
 During the first startup the application should:
 
@@ -227,28 +231,31 @@ During the first startup the application should:
 
 ---
 
-# OpenAPI
+## OpenAPI
 
 After startup the API documentation is available at:
 
-```
+```text
 /docs
+
 ```
 
 OpenAPI schema:
 
-```
+```text
 /openapi.json
+
 ```
 
 ---
 
-# Development Mode
+## Development Mode
 
 The recommended profile is
 
-```
+```text
 development
+
 ```
 
 Characteristics:
@@ -261,7 +268,7 @@ Characteristics:
 
 ---
 
-# Production Profiles
+## Production Profiles
 
 Kernschmied supports multiple deployment profiles.
 
@@ -279,7 +286,7 @@ Public deployment with strict security settings.
 
 ---
 
-# Updating Dependencies
+## Updating Dependencies
 
 Backend
 
@@ -295,7 +302,7 @@ npm update
 
 ---
 
-# Running Tests
+## Running Tests
 
 Backend
 
@@ -311,14 +318,15 @@ npm test
 
 ---
 
-# Common Problems
+## Common Problems
 
 ## Python not found
 
 Verify the Python installation.
 
-```
+```text
 python --version
+
 ```
 
 ---
@@ -327,16 +335,18 @@ python --version
 
 Verify Node.js.
 
-```
+```text
 node --version
+
 ```
 
 ---
 
 ## npm not found
 
-```
+```text
 npm --version
+
 ```
 
 ---
@@ -353,7 +363,7 @@ Change the configured port or stop the conflicting process.
 
 ---
 
-# Updating the Repository
+## Updating the Repository
 
 ```bash
 git pull
@@ -375,7 +385,7 @@ npm install
 
 ---
 
-# Recommended Development Tools
+## Recommended Development Tools
 
 - Visual Studio Code
 - Python Extension
@@ -387,7 +397,7 @@ npm install
 
 ---
 
-# Next Steps
+## Next Steps
 
 After installation continue with:
 

@@ -1,0 +1,12 @@
+COMMAND: python -m mypy backend --show-error-codes --pretty
+WORKING DIRECTORY: F:\Kernschmied
+EXIT CODE: 2
+
+backend\tools\websearch\implementation.py: error: Duplicate module named
+"implementation" (also at "backend\tools\calculator\implementation.py")
+backend\tools\websearch\implementation.py: note: See https://mypy.readthedocs.io/en/stable/running_mypy.html#mapping-file-paths-to-modules for more info
+backend\tools\websearch\implementation.py: note: Common resolutions include:
+backend\tools\websearch\implementation.py: note:     a) using `--exclude` to avoid checking one of them,
+backend\tools\websearch\implementation.py: note:     b) adding `__init__.py` somewhere,
+backend\tools\websearch\implementation.py: note:     c) using `--explicit-package-bases` or adjusting `MYPYPATH`
+Found 1 error in 1 file (errors prevented further checking)

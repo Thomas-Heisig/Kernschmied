@@ -15,7 +15,7 @@ A well-defined repository structure improves maintainability, onboarding, scalab
 
 ---
 
-# Goals
+## Goals
 
 The repository structure is designed to provide:
 
@@ -30,7 +30,7 @@ The repository structure is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 The repository organization follows several architectural principles.
 
@@ -50,6 +50,7 @@ Repositories
 Registries
 
 Providers
+
 ```
 
 instead of:
@@ -62,6 +63,7 @@ Helpers
 Misc
 
 Stuff
+
 ```
 
 ---
@@ -99,7 +101,7 @@ Filesystem layout is never considered part of the public contract.
 
 ---
 
-# Repository Overview
+## Repository Overview
 
 A typical repository layout is shown below.
 
@@ -117,13 +119,14 @@ Kernschmied/
 ├── LICENSE
 ├── README.md
 └── pyproject.toml
+
 ```
 
 Each top-level directory has a dedicated responsibility.
 
 ---
 
-# Top-Level Directories
+## Top-Level Directories
 
 | Directory | Purpose                 |
 | --------- | ----------------------- |
@@ -138,7 +141,7 @@ Each top-level directory has a dedicated responsibility.
 
 ---
 
-# Backend Structure
+## Backend Structure
 
 The backend follows a layered architecture.
 
@@ -151,13 +154,14 @@ backend/
 ├── tests/
 ├── pyproject.toml
 └── alembic.ini
+
 ```
 
 Business logic resides inside the `app` package.
 
 ---
 
-# Backend Application Layout
+## Backend Application Layout
 
 ```text
 app/
@@ -176,13 +180,14 @@ app/
 ├── dependencies/
 ├── security/
 └── utils/
+
 ```
 
 Each package represents an architectural subsystem.
 
 ---
 
-# API Layer
+## API Layer
 
 The API layer exposes HTTP endpoints.
 
@@ -196,6 +201,7 @@ api/
 ├── models.py
 ├── tools.py
 └── health.py
+
 ```
 
 Responsibilities:
@@ -209,7 +215,7 @@ Business logic belongs elsewhere.
 
 ---
 
-# Service Layer
+## Service Layer
 
 Application services coordinate business operations.
 
@@ -220,13 +226,14 @@ services/
 ├── configuration_service.py
 ├── hierarchy_service.py
 └── prompt_service.py
+
 ```
 
 Services orchestrate repositories, registries, and providers.
 
 ---
 
-# Repository Layer
+## Repository Layer
 
 Repositories encapsulate persistence logic.
 
@@ -237,13 +244,14 @@ repositories/
 ├── hierarchy_repository.py
 ├── chat_repository.py
 └── audit_repository.py
+
 ```
 
 Repositories are the only components that communicate directly with the database.
 
 ---
 
-# Registry Layer
+## Registry Layer
 
 Registries manage runtime metadata.
 
@@ -253,13 +261,14 @@ registries/
 ├── model_registry.py
 ├── tool_registry.py
 └── provider_registry.py
+
 ```
 
 Registries expose stable runtime lookup APIs.
 
 ---
 
-# Provider Layer
+## Provider Layer
 
 Providers integrate external AI systems.
 
@@ -270,13 +279,14 @@ providers/
 ├── openai/
 ├── anthropic/
 └── llama_cpp/
+
 ```
 
 Each provider is isolated behind a common abstraction.
 
 ---
 
-# Manifest Storage
+## Manifest Storage
 
 Manifest files reside next to their implementations.
 
@@ -289,6 +299,7 @@ providers/
 
     ├── model.json
     └── provider.py
+
 ```
 
 Similarly:
@@ -300,13 +311,14 @@ tools/
 
     ├── tool.json
     └── tool.py
+
 ```
 
 This keeps metadata and implementation together while preserving separation of concerns.
 
 ---
 
-# Configuration Package
+## Configuration Package
 
 Configuration-related components are grouped together.
 
@@ -317,13 +329,14 @@ configuration/
 ├── schemas.py
 ├── validators.py
 └── service.py
+
 ```
 
 This package is responsible for runtime configuration management.
 
 ---
 
-# Hierarchy Package
+## Hierarchy Package
 
 Hierarchy functionality resides in its own module.
 
@@ -334,13 +347,14 @@ hierarchy/
 ├── resolver.py
 ├── service.py
 └── schemas.py
+
 ```
 
 Hierarchy logic remains independent of UI rendering.
 
 ---
 
-# Storage Package
+## Storage Package
 
 Database access is isolated.
 
@@ -351,13 +365,14 @@ storage/
 ├── session.py
 ├── migrations.py
 └── models.py
+
 ```
 
 The storage package abstracts the underlying database implementation.
 
 ---
 
-# Security Package
+## Security Package
 
 Security-related components are grouped together.
 
@@ -368,17 +383,18 @@ security/
 ├── authorization.py
 ├── permissions.py
 └── policies.py
+
 ```
 
 This keeps security concerns centralized.
 
 ---
 
-# Frontend Structure
+## Frontend Structure
 
 The frontend follows a feature-oriented layout.
 
-```text
+```bash
 frontend/
 
 ├── src/
@@ -386,11 +402,12 @@ frontend/
 ├── tests/
 ├── package.json
 └── vite.config.ts
+
 ```
 
 ---
 
-# Frontend Source Layout
+## Frontend Source Layout
 
 ```text
 src/
@@ -406,13 +423,14 @@ src/
 ├── styles/
 ├── types/
 └── utils/
+
 ```
 
 The frontend mirrors the architectural concepts of the backend.
 
 ---
 
-# Component Organization
+## Component Organization
 
 Reusable components reside under:
 
@@ -424,30 +442,32 @@ components/
 ├── forms/
 ├── layout/
 └── common/
+
 ```
 
 Business-specific components should be avoided.
 
 ---
 
-# Schema Components
+## Schema Components
 
 Schema-driven rendering components are grouped together.
 
-```text
+```ts
 components/schema/
 
 ├── SchemaRenderer.tsx
 ├── ComponentRegistry.ts
 ├── ActionRegistry.ts
 └── UnsupportedSchema.tsx
+
 ```
 
 These form the basis of the dynamic UI.
 
 ---
 
-# API Client
+## API Client
 
 All backend communication is centralized.
 
@@ -459,13 +479,14 @@ api/
 ├── chat.ts
 ├── configuration.ts
 └── hierarchy.ts
+
 ```
 
 Components never perform raw HTTP requests.
 
 ---
 
-# Documentation
+## Documentation
 
 Documentation is stored separately from implementation.
 
@@ -476,13 +497,14 @@ docs/
 ├── api/
 ├── frontend/
 └── adr/
+
 ```
 
 The GitHub Wiki resides in its own dedicated directory.
 
 ---
 
-# Wiki Structure
+## Wiki Structure
 
 ```text
 wiki/
@@ -494,13 +516,14 @@ wiki/
 ├── Home.md
 ├── _Sidebar.md
 └── _Footer.md
+
 ```
 
 The wiki mirrors the logical architecture of the project.
 
 ---
 
-# Tests
+## Tests
 
 Tests are organized by architectural layer.
 
@@ -512,30 +535,32 @@ tests/
 ├── api/
 ├── frontend/
 └── fixtures/
+
 ```
 
 Tests should follow the same module boundaries as production code.
 
 ---
 
-# Scripts
+## Scripts
 
 Development utilities are isolated.
 
-```text
+```powershell
 scripts/
 
 ├── start_backend.ps1
 ├── start_frontend.ps1
 ├── build.ps1
 └── lint.ps1
+
 ```
 
 Scripts should never contain application logic.
 
 ---
 
-# Naming Conventions
+## Naming Conventions
 
 Recommended naming conventions:
 
@@ -551,7 +576,7 @@ Consistency improves discoverability.
 
 ---
 
-# Dependency Direction
+## Dependency Direction
 
 Dependencies always point toward lower architectural layers.
 
@@ -569,13 +594,14 @@ Repositories
 ↓
 
 Database
+
 ```
 
 The reverse direction is prohibited.
 
 ---
 
-# Module Independence
+## Module Independence
 
 Modules communicate through stable interfaces.
 
@@ -591,13 +617,14 @@ Model Registry
 ↓
 
 Provider
+
 ```
 
 Internal implementation details remain encapsulated.
 
 ---
 
-# Scalability
+## Scalability
 
 The repository layout supports future growth.
 
@@ -613,7 +640,7 @@ Examples:
 
 ---
 
-# Best Practices
+## Best Practices
 
 Recommended guidelines:
 
@@ -627,7 +654,7 @@ Recommended guidelines:
 
 ---
 
-# Relationship to Other Architecture
+## Relationship to Other Architecture
 
 The Repository Structure reflects the overall architecture of the platform.
 
@@ -645,6 +672,7 @@ Modules
 ↓
 
 Implementation
+
 ```
 
 It therefore complements:
@@ -657,7 +685,7 @@ It therefore complements:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -688,7 +716,7 @@ It therefore complements:
 
 ---
 
-# Summary
+## Summary
 
 The Repository Structure organizes the Kernschmied codebase according to architectural responsibilities rather than implementation convenience.
 

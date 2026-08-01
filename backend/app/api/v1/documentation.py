@@ -26,163 +26,83 @@ class DocumentationPageDefinition:
     order: int = 0
 
 
-DOCUMENTATION_PAGES: tuple[DocumentationPageDefinition, ...] = (
-    DocumentationPageDefinition(
-        id="user-manual-overview",
-        title="Benutzerhandbuch",
-        section_id="user-manual",
-        section_title="Benutzerhandbuch",
-        relative_path="User-Manual/Overview.md",
-        description="Überblick über Bedienung und zentrale Funktionen.",
-        order=10,
-    ),
-    DocumentationPageDefinition(
-        id="user-manual-chat",
-        title="Chat verwenden",
-        section_id="user-manual",
-        section_title="Benutzerhandbuch",
-        relative_path="User-Manual/Chat.md",
-        description="Nachrichten senden, Modelle wählen und Antworten verstehen.",
-        order=20,
-    ),
-    DocumentationPageDefinition(
-        id="user-manual-hierarchy",
-        title="Hierarchie und Arbeitsbereiche",
-        section_id="user-manual",
-        section_title="Benutzerhandbuch",
-        relative_path="User-Manual/Hierarchy.md",
-        description="Arbeitsbereiche, Projekte und Chats organisieren.",
-        order=30,
-    ),
-    DocumentationPageDefinition(
-        id="user-manual-settings",
-        title="Einstellungen",
-        section_id="user-manual",
-        section_title="Benutzerhandbuch",
-        relative_path="User-Manual/Settings.md",
-        description="System- und Benutzereinstellungen sicher verwalten.",
-        order=40,
-    ),
-    DocumentationPageDefinition(
-        id="user-manual-troubleshooting",
-        title="Fehlerbehebung",
-        section_id="user-manual",
-        section_title="Benutzerhandbuch",
-        relative_path="User-Manual/Troubleshooting.md",
-        description="Häufige Probleme erkennen und beheben.",
-        order=50,
-    ),
-    DocumentationPageDefinition(
-        id="home",
-        title="Projektübersicht",
-        section_id="project",
-        section_title="Projekt",
-        relative_path="Home.md",
-        description="Ziele, Aufbau und aktueller Stand von Kernschmied.",
-        order=10,
-    ),
-    DocumentationPageDefinition(
-        id="getting-started",
-        title="Erste Schritte",
-        section_id="project",
-        section_title="Projekt",
-        relative_path="Getting-Started.md",
-        description="Installation und erster Start.",
-        order=20,
-    ),
-    DocumentationPageDefinition(
-        id="installation",
-        title="Installation",
-        section_id="project",
-        section_title="Projekt",
-        relative_path="Installation.md",
-        description="Technische Installationsanleitung.",
-        order=30,
-    ),
-    DocumentationPageDefinition(
-        id="faq",
-        title="FAQ",
-        section_id="project",
-        section_title="Projekt",
-        relative_path="FAQ.md",
-        description="Häufig gestellte Fragen.",
-        order=40,
-    ),
-    DocumentationPageDefinition(
-        id="architecture-overview",
-        title="Architekturübersicht",
-        section_id="architecture",
-        section_title="Architektur",
-        relative_path="Architecture/Overview.md",
-        description="Gesamtarchitektur und Leitprinzipien.",
-        order=10,
-    ),
-    DocumentationPageDefinition(
-        id="dynamic-ui",
-        title="Dynamische UI",
-        section_id="concepts",
-        section_title="Konzepte",
-        relative_path="Concepts/Dynamic-UI.md",
-        description="Schema-gesteuerte Benutzeroberfläche.",
-        order=10,
-    ),
-    DocumentationPageDefinition(
-        id="runtime-configuration",
-        title="Runtime-Konfiguration",
-        section_id="concepts",
-        section_title="Konzepte",
-        relative_path="Concepts/Runtime-Configuration.md",
-        description="Versionierte Fachkonfiguration zur Laufzeit.",
-        order=20,
-    ),
-    DocumentationPageDefinition(
-        id="schema-versioning",
-        title="Schema-Versionierung",
-        section_id="concepts",
-        section_title="Konzepte",
-        relative_path="Concepts/Schema-Versioning.md",
-        description="Stabile und versionierte Verträge.",
-        order=30,
-    ),
-    DocumentationPageDefinition(
-        id="backend-security",
-        title="Backend-Sicherheit",
-        section_id="backend",
-        section_title="Backend",
-        relative_path="Backend/Security.md",
-        description="Sicherheitsgrenzen und Autorisierung.",
-        order=10,
-    ),
-    DocumentationPageDefinition(
-        id="tool-registry",
-        title="Tool-Registry",
-        section_id="backend",
-        section_title="Backend",
-        relative_path="Backend/Tool-Registry.md",
-        description="Registrierung und Freigabe von Tools.",
-        order=20,
-    ),
-    DocumentationPageDefinition(
-        id="development-testing",
-        title="Tests",
-        section_id="development",
-        section_title="Entwicklung",
-        relative_path="Development/Testing.md",
-        description="Testsuite und Qualitätsprüfungen.",
-        order=10,
-    ),
-    DocumentationPageDefinition(
-        id="coding-guidelines",
-        title="Coding-Guidelines",
-        section_id="development",
-        section_title="Entwicklung",
-        relative_path="Development/Coding-Guidelines.md",
-        description="Verbindliche Entwicklungsregeln.",
-        order=20,
-    ),
-)
+def _scan_wiki_pages() -> list[DocumentationPageDefinition]:
+    """Dynamically scan the `wiki/` folder and construct documentation page definitions.
 
-DOCUMENTATION_PAGE_MAP = {page.id: page for page in DOCUMENTATION_PAGES}
+    Rules:
+    - Ignore files or directories starting with an underscore (`_`).
+    - Use the first H1 in the file as the page title; fall back to filename stem.
+    - Files directly under `wiki/` are grouped into the `project` section.
+    - Section id/title are derived from the immediate parent folder name.
+    - Page id is the relative path with slashes replaced by '-' and lowercased (without .md).
+    """
+    pages: list[DocumentationPageDefinition] = []
+
+    if not WIKI_ROOT.exists():
+        return pages
+
+    for path in sorted(WIKI_ROOT.rglob("*.md")):
+        try:
+            rel = path.relative_to(WIKI_ROOT)
+        except Exception:
+            continue
+
+        parts = rel.parts
+        # ignore files or folders starting with '_'
+        if any(p.startswith("_") for p in parts):
+            continue
+
+        # determine section (parent folder) and section title
+        if len(parts) == 1:
+            section_id = "project"
+            section_title = "Projekt"
+            relative_path = parts[0]
+        else:
+            section_id = parts[0].lower().replace(" ", "-")
+            section_title = parts[0]
+            relative_path = str(rel).replace("\\", "/")
+
+        # read title from first H1 if possible
+        try:
+            text = path.read_text(encoding="utf-8")
+        except Exception:
+            continue
+
+        title = None
+        for line in text.splitlines():
+            line = line.strip()
+            if line.startswith("# "):
+                title = line[2:].strip()
+                break
+
+        if not title:
+            title = path.stem
+
+        page_id = (
+            str(rel).replace("\\", "/").replace("/", "-").rsplit(".md", 1)[0].lower()
+        )
+
+        pages.append(
+            DocumentationPageDefinition(
+                id=page_id,
+                title=title,
+                section_id=section_id,
+                section_title=section_title,
+                relative_path=relative_path,
+                description="",
+                order=0,
+            )
+        )
+
+    return pages
+
+
+def _available_pages() -> tuple[DocumentationPageDefinition, ...]:
+    return tuple(
+        page
+        for page in _scan_wiki_pages()
+        if (WIKI_ROOT / page.relative_path).is_file()
+    )
 
 
 class DocumentationPageSummary(BaseModel):
@@ -234,14 +154,6 @@ def _resolve_page_path(definition: DocumentationPageDefinition) -> Path:
     return candidate
 
 
-def _available_pages() -> tuple[DocumentationPageDefinition, ...]:
-    return tuple(
-        page
-        for page in DOCUMENTATION_PAGES
-        if _resolve_page_path(page).is_file()
-    )
-
-
 @router.get(
     "",
     response_model=DocumentationIndexResponse,
@@ -251,28 +163,24 @@ async def list_documentation() -> DocumentationIndexResponse:
     pages = _available_pages()
     sections_by_id: dict[str, DocumentationSection] = {}
 
-    for page in sorted(pages, key=lambda item: (item.section_title, item.order, item.title)):
+    for page in sorted(
+        pages, key=lambda item: (item.section_title, item.order, item.title)
+    ):
         section = sections_by_id.get(page.section_id)
         if section is None:
-            section = DocumentationSection(
-                id=page.section_id,
-                title=page.section_title,
-            )
+            section = DocumentationSection(id=page.section_id, title=page.section_title)
             sections_by_id[page.section_id] = section
 
         section.pages.append(
             DocumentationPageSummary(
-                id=page.id,
-                title=page.title,
-                description=page.description,
+                id=page.id, title=page.title, description=page.description
             ),
         )
 
     default_page_id = pages[0].id if pages else None
 
     return DocumentationIndexResponse(
-        default_page_id=default_page_id,
-        sections=list(sections_by_id.values()),
+        default_page_id=default_page_id, sections=list(sections_by_id.values())
     )
 
 
@@ -282,7 +190,8 @@ async def list_documentation() -> DocumentationIndexResponse:
     summary="Dokumentationsseite laden",
 )
 async def get_documentation_page(page_id: str) -> DocumentationPageResponse:
-    definition = DOCUMENTATION_PAGE_MAP.get(page_id)
+    pages = {p.id: p for p in _available_pages()}
+    definition = pages.get(page_id)
 
     if definition is None:
         raise HTTPException(

@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is designed to operate in different environments throughout its lifecycle.
 
@@ -35,7 +35,7 @@ The platform therefore requires a deterministic mechanism for selecting security
 
 ---
 
-# Problem
+## Problem
 
 Many applications accumulate numerous security-related feature flags.
 
@@ -56,25 +56,25 @@ This creates several problems.
 
 ---
 
-## Inconsistent Deployments
+## Decision
 
 Two production systems may behave differently simply because one forgotten environment variable was configured differently.
 
 ---
 
-## Security Drift
+## Architectural Principle
 
 Over time production systems may accidentally become less secure.
 
 ---
 
-## Weak Defaults
+## High-Level Architecture
 
 Optional security features are frequently disabled "temporarily" and later forgotten.
 
 ---
 
-## Complex Configuration
+## Why Profiles Instead of Feature Flags?
 
 Administrators must understand dozens of unrelated options instead of selecting a deployment profile.
 
@@ -86,7 +86,7 @@ Every combination of feature flags potentially creates another security configur
 
 ---
 
-# Decision
+## Decision (2)
 
 Kernschmied adopts **Security Profiles**.
 
@@ -102,7 +102,7 @@ Each profile represents a complete security policy rather than a collection of i
 
 ---
 
-# Architectural Principle
+## Architectural Principle (2)
 
 > **Deployment determines the minimum security baseline.**
 >
@@ -110,7 +110,7 @@ Each profile represents a complete security policy rather than a collection of i
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture (2)
 
 ```text
 Application Startup
@@ -154,11 +154,12 @@ TLS
 Audit
 
 Logging
+
 ```
 
 ---
 
-# Why Profiles Instead of Feature Flags?
+## Why Profiles Instead of Feature Flags? (2)
 
 Profiles provide several important advantages.
 
@@ -192,11 +193,11 @@ Security reviews verify profile compliance instead of individual settings.
 
 ---
 
-# Deployment Profiles
+## Deployment Profiles
 
 ---
 
-# Development
+## Development
 
 The Development profile is intended exclusively for local development.
 
@@ -222,7 +223,7 @@ Development is **never** intended for public deployment.
 
 ---
 
-# Intranet
+## Intranet
 
 The Intranet profile targets trusted organizational networks.
 
@@ -248,7 +249,7 @@ This profile assumes authenticated users inside a controlled environment.
 
 ---
 
-# Internet
+## Internet
 
 The Internet profile is intended for publicly accessible deployments.
 
@@ -272,7 +273,7 @@ Public deployments should always use this profile.
 
 ---
 
-# Minimum Security Guarantees
+## Minimum Security Guarantees
 
 Every profile defines a minimum security baseline.
 
@@ -294,11 +295,12 @@ Runtime Configuration
 ↓
 
 Cannot Disable HTTPS
+
 ```
 
 ---
 
-# Bootstrap Responsibility
+## Bootstrap Responsibility
 
 The deployment profile belongs to the bootstrap configuration.
 
@@ -308,7 +310,7 @@ The deployment profile therefore belongs in infrastructure configuration rather 
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Runtime configuration may adjust security-related behavior where permitted.
 
@@ -325,11 +327,11 @@ However, runtime configuration may never violate the active deployment profile.
 
 ---
 
-# Authentication
+## Authentication
 
 Authentication behavior depends on the selected profile.
 
-## Development
+## Development (2)
 
 Authentication may be simplified.
 
@@ -341,7 +343,7 @@ Typical examples:
 
 ---
 
-## Intranet
+## Intranet (2)
 
 Authentication is mandatory.
 
@@ -354,7 +356,7 @@ Supported mechanisms may include:
 
 ---
 
-## Internet
+## Internet (2)
 
 Authentication must be production-grade.
 
@@ -368,7 +370,7 @@ Future integrations may include:
 
 ---
 
-# Authorization
+## Authorization
 
 Authorization is independent of deployment.
 
@@ -378,7 +380,7 @@ The frontend never makes authorization decisions.
 
 ---
 
-# Transport Security
+## Transport Security
 
 Development:
 
@@ -396,7 +398,7 @@ Public deployments must never expose unsecured HTTP endpoints except for explici
 
 ---
 
-# CORS
+## CORS
 
 CORS behavior depends on the deployment profile.
 
@@ -410,7 +412,7 @@ Wildcard origins are not appropriate for Internet deployments.
 
 ---
 
-# Session Management
+## Session Management
 
 Session behavior depends on the deployment profile.
 
@@ -426,7 +428,7 @@ Internet deployments should always use secure session cookies.
 
 ---
 
-# HTTP Security Headers
+## HTTP Security Headers
 
 The Internet profile should enable modern security headers including:
 
@@ -440,7 +442,7 @@ These headers reduce common browser-based attack vectors.
 
 ---
 
-# Rate Limiting
+## Rate Limiting
 
 Rate limiting is optional in Development.
 
@@ -456,7 +458,7 @@ Rate limiting helps mitigate:
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Development logging focuses on diagnostics.
 
@@ -474,7 +476,7 @@ Typical audit events include:
 
 ---
 
-# Secrets
+## Secrets
 
 Secrets are always part of bootstrap configuration.
 
@@ -490,7 +492,7 @@ Secrets must never be stored in runtime business configuration.
 
 ---
 
-# Failure Handling
+## Failure Handling
 
 Security initialization failures are fatal.
 
@@ -505,7 +507,7 @@ The application should fail during startup rather than operate with weakened sec
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -555,7 +557,7 @@ Each deployment profile must be clearly documented and tested.
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Independent Feature Flags
 
@@ -608,7 +610,7 @@ Rejected.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -627,7 +629,7 @@ Mitigation strategies include:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -642,7 +644,7 @@ Runtime configuration must always be validated against the active profile before
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0001-Schema-Driven-UI]]
 - [[ADR-0002-Bootstrap]]
@@ -651,7 +653,7 @@ Runtime configuration must always be validated against the active profile before
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -680,7 +682,7 @@ Runtime configuration must always be validated against the active profile before
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts **Security Profiles** to provide deterministic and environment-specific security behavior.
 

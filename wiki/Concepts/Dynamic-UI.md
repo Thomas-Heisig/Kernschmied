@@ -8,7 +8,7 @@ The Dynamic UI architecture makes Kernschmied highly extensible while preserving
 
 ---
 
-# Goals
+## Goals
 
 The Dynamic UI architecture is designed to provide:
 
@@ -23,7 +23,7 @@ The Dynamic UI architecture is designed to provide:
 
 ---
 
-# Core Principle
+## Core Principle
 
 The frontend never decides which business screen should exist.
 
@@ -47,24 +47,25 @@ Renderer
 ↓
 
 User Interface
+
 ```
 
 The frontend only interprets the schema.
 
 ---
 
-# Why Dynamic UI?
+## Why Dynamic UI?
 
 Traditional applications often hardcode every page.
 
-```text
-CustomerPage.tsx
+```ts
+CustomerPage.tsx;
 
-ProjectPage.tsx
+ProjectPage.tsx;
 
-DepartmentPage.tsx
+DepartmentPage.tsx;
 
-InvoicePage.tsx
+InvoicePage.tsx;
 ```
 
 Adding a new entity usually requires frontend development.
@@ -81,13 +82,14 @@ Renderer
 ↓
 
 Generic Components
+
 ```
 
 Business entities become data rather than code.
 
 ---
 
-# Architecture Overview
+## Architecture Overview
 
 ```text
 Database
@@ -119,13 +121,14 @@ Component Registry
 ↓
 
 Rendered Interface
+
 ```
 
 The backend owns the UI definition.
 
 ---
 
-# Schema-Driven Rendering
+## Schema-Driven Rendering
 
 Every visible element is described by a schema.
 
@@ -143,7 +146,7 @@ The renderer interprets the schema at runtime.
 
 ---
 
-# Frontend Responsibilities
+## Frontend Responsibilities
 
 The frontend is responsible for:
 
@@ -158,7 +161,7 @@ Business rules remain in the backend.
 
 ---
 
-# Backend Responsibilities
+## Backend Responsibilities
 
 The backend is responsible for:
 
@@ -173,7 +176,7 @@ The backend decides what users are allowed to see.
 
 ---
 
-# Component Registry
+## Component Registry
 
 Rendering is performed through a fixed Component Registry.
 
@@ -191,13 +194,14 @@ Component Registry
 ↓
 
 React Component
+
 ```
 
 Only registered components can be rendered.
 
 ---
 
-# Trusted Components
+## Trusted Components
 
 Every UI component is trusted application code.
 
@@ -218,7 +222,7 @@ Components are compiled into the frontend application.
 
 ---
 
-# Unknown Components
+## Unknown Components
 
 Unknown component types are never executed.
 
@@ -234,13 +238,14 @@ Unsupported Component
 ↓
 
 Safe Placeholder
+
 ```
 
 The application continues running safely.
 
 ---
 
-# Action Registry
+## Action Registry
 
 Interactive behavior follows the same pattern.
 
@@ -258,13 +263,14 @@ Action Registry
 ↓
 
 Execution
+
 ```
 
 Unknown actions are rejected safely.
 
 ---
 
-# Layout System
+## Layout System
 
 The schema describes layouts independently of implementation.
 
@@ -282,7 +288,7 @@ The renderer constructs the interface dynamically.
 
 ---
 
-# Forms
+## Forms
 
 Forms are generated entirely from schema definitions.
 
@@ -300,7 +306,7 @@ The frontend never hardcodes individual business forms.
 
 ---
 
-# Tables
+## Tables
 
 Tables are described declaratively.
 
@@ -317,7 +323,7 @@ Rendering remains generic.
 
 ---
 
-# Tree Rendering
+## Tree Rendering
 
 Hierarchy is rendered using a generic recursive tree.
 
@@ -335,13 +341,14 @@ Generic Tree
 ↓
 
 Visible Navigation
+
 ```
 
 The tree renderer has no knowledge of projects, departments, or customers.
 
 ---
 
-# Dynamic Navigation
+## Dynamic Navigation
 
 Navigation is generated from hierarchy and schema.
 
@@ -355,13 +362,14 @@ Schema
 ↓
 
 Navigation Tree
+
 ```
 
 Changing the hierarchy automatically changes navigation.
 
 ---
 
-# Dynamic Views
+## Dynamic Views
 
 A hierarchy node references a schema.
 
@@ -379,13 +387,14 @@ UI Schema
 ↓
 
 Rendered View
+
 ```
 
 The frontend renders the appropriate interface without requiring specialized pages.
 
 ---
 
-# Schema Versioning
+## Schema Versioning
 
 Every schema has an explicit version.
 
@@ -399,13 +408,14 @@ Schema Renderer
 ↓
 
 Compatible Components
+
 ```
 
 Versioning allows UI evolution while preserving compatibility.
 
 ---
 
-# Validation
+## Validation
 
 Schemas are validated before rendering.
 
@@ -421,7 +431,7 @@ Invalid schemas are rejected.
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Configuration influences generated schemas.
 
@@ -437,7 +447,7 @@ The frontend receives only the resulting schema.
 
 ---
 
-# Authorization
+## Authorization
 
 Visibility is determined by the backend.
 
@@ -453,13 +463,14 @@ Schema Generation
 ↓
 
 Visible Components
+
 ```
 
 Hidden components are never sent to unauthorized users.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Rendering failures are isolated.
 
@@ -477,13 +488,14 @@ Placeholder
 ↓
 
 Application Continues
+
 ```
 
 The entire application does not fail because of one unsupported component.
 
 ---
 
-# Performance
+## Performance
 
 Dynamic UI is optimized through:
 
@@ -497,7 +509,7 @@ Rendering remains comparable to traditional React applications.
 
 ---
 
-# Security
+## Security
 
 The Dynamic UI architecture enforces several important security guarantees.
 
@@ -512,7 +524,7 @@ Schemas describe interfaces but cannot execute logic.
 
 ---
 
-# Benefits
+## Benefits
 
 The architecture provides significant advantages.
 
@@ -534,7 +546,7 @@ Frontend developers maintain rendering components rather than business pages.
 
 ---
 
-## Security
+## Security (2)
 
 Only trusted components are executed.
 
@@ -546,7 +558,7 @@ Business logic evolves through schemas and configuration.
 
 ---
 
-# Example Rendering Flow
+## Example Rendering Flow
 
 ```text
 Hierarchy Node Selected
@@ -574,13 +586,14 @@ Component Registry
 ↓
 
 Rendered View
+
 ```
 
 Every step is deterministic.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The Dynamic UI architecture supports future enhancements including:
 
@@ -596,7 +609,7 @@ These features can be introduced while preserving the existing rendering model.
 
 ---
 
-# Relationship to Other Concepts
+## Relationship to Other Concepts
 
 Dynamic UI is closely related to:
 
@@ -608,7 +621,7 @@ Dynamic UI is closely related to:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Concepts
 
@@ -649,7 +662,7 @@ Dynamic UI is closely related to:
 
 ---
 
-# Summary
+## Summary
 
 The Dynamic UI architecture enables Kernschmied to generate complete user interfaces from backend-provided schemas instead of relying on hardcoded business pages. The backend determines what should be displayed, while the frontend renders trusted components through fixed component and action registries.
 

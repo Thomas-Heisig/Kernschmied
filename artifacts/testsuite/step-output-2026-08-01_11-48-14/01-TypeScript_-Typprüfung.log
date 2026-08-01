@@ -1,0 +1,5 @@
+COMMAND: npx --no-install tsc --noEmit --pretty false
+WORKING DIRECTORY: F:\Kernschmied\frontend
+EXIT CODE: 0
+
+

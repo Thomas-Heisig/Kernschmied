@@ -4,7 +4,8 @@ import { useAppSchema } from "../hooks/useAppSchema";
 import { useAppStoreCommands, useAppStoreState } from "../store";
 
 export function useAppBootstrap() {
-  const { schema, hierarchyTree, error, isLoading, reload } = useAppSchema();
+  const { schema, hierarchyTree, error, isLoading, reload, reloadHierarchy } =
+    useAppSchema();
 
   const state = useAppStoreState();
 
@@ -15,6 +16,46 @@ export function useAppBootstrap() {
     selectHierarchyNode,
     replaceExpandedNodeIds,
   } = useAppStoreCommands();
+
+  // Hierarchie-Mutationen
+  const createHierarchyNode = useCallback(
+    async (payload: unknown) => {
+      const { createHierarchyNode: apiCreate } =
+        await import("../api/hierarchy");
+      await apiCreate(payload as any);
+      void reloadHierarchy();
+    },
+    [reloadHierarchy],
+  );
+
+  const updateHierarchyNode = useCallback(
+    async (id: string, payload: unknown) => {
+      const { updateHierarchyNode: apiUpdate } =
+        await import("../api/hierarchy");
+      await apiUpdate(id, payload as any);
+      void reloadHierarchy();
+    },
+    [reloadHierarchy],
+  );
+
+  const moveHierarchyNode = useCallback(
+    async (id: string, newParentId: string | null) => {
+      const { moveHierarchyNode: apiMove } = await import("../api/hierarchy");
+      await apiMove(id, newParentId);
+      void reloadHierarchy();
+    },
+    [reloadHierarchy],
+  );
+
+  const deleteHierarchyNode = useCallback(
+    async (id: string) => {
+      const { deleteHierarchyNode: apiDelete } =
+        await import("../api/hierarchy");
+      await apiDelete(id);
+      void reloadHierarchy();
+    },
+    [reloadHierarchy],
+  );
 
   useEffect(() => {
     if (!isLoading) {
@@ -49,5 +90,9 @@ export function useAppBootstrap() {
     reloadApplication,
     selectHierarchyNode,
     replaceExpandedNodeIds,
+    createHierarchyNode,
+    updateHierarchyNode,
+    moveHierarchyNode,
+    deleteHierarchyNode,
   };
 }

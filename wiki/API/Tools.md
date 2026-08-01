@@ -8,7 +8,7 @@ Rather than exposing implementation details, the Tools API presents validated to
 
 ---
 
-# Goals
+## Goals
 
 The Tools API is designed to provide:
 
@@ -23,7 +23,7 @@ The Tools API is designed to provide:
 
 ---
 
-# Endpoints
+## Endpoints
 
 ## List Tools
 
@@ -63,7 +63,7 @@ POST /api/v1/tools/validate
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 REST API
@@ -91,13 +91,14 @@ Tool Implementation
         ▼
 
 External Resource
+
 ```
 
 Business services never communicate directly with tool implementations.
 
 ---
 
-# Registry-Based Design
+## Registry-Based Design
 
 The Tool Registry is responsible for:
 
@@ -112,7 +113,7 @@ Every executable tool must be registered before it can be used.
 
 ---
 
-# Tool Manifest
+## Tool Manifest
 
 Each tool is described by a validated manifest.
 
@@ -120,6 +121,7 @@ Example:
 
 ```text
 tool.json
+
 ```
 
 Typical manifest fields include:
@@ -139,7 +141,7 @@ The manifest is validated before the tool becomes available.
 
 ---
 
-# Example Response
+## Example Response
 
 ```json
 [
@@ -158,7 +160,7 @@ The response intentionally contains metadata only.
 
 ---
 
-# Tool Fields
+## Tool Fields
 
 | Field        | Description            |
 | ------------ | ---------------------- |
@@ -173,7 +175,7 @@ Future versions may add additional metadata without breaking compatibility.
 
 ---
 
-# Tool Identifier
+## Tool Identifier
 
 Each tool has a globally unique identifier.
 
@@ -181,6 +183,7 @@ Example:
 
 ```text
 calculator
+
 ```
 
 The identifier is used throughout the platform:
@@ -195,7 +198,7 @@ Identifiers should remain stable.
 
 ---
 
-# Categories
+## Categories
 
 Tools may be grouped into logical categories.
 
@@ -213,7 +216,7 @@ Categories are informational and may evolve over time.
 
 ---
 
-# Capabilities
+## Capabilities
 
 Tools advertise their supported capabilities.
 
@@ -231,7 +234,7 @@ Capability information assists administration interfaces and future automation.
 
 ---
 
-# Availability
+## Availability
 
 Availability indicates whether the tool can currently be executed.
 
@@ -254,7 +257,7 @@ Unavailable tools are omitted from execution but may remain visible for administ
 
 ---
 
-# Tool Discovery
+## Tool Discovery
 
 During startup the Tool Registry discovers available tools.
 
@@ -276,13 +279,14 @@ Registry
 ↓
 
 Tools API
+
 ```
 
 Only validated tools are registered.
 
 ---
 
-# Tool Execution
+## Tool Execution
 
 The Tools API is informational.
 
@@ -316,13 +320,14 @@ Execution
 ↓
 
 tool_result
+
 ```
 
 Frontend applications never invoke tool implementations directly.
 
 ---
 
-# Tool Factory Registry
+## Tool Factory Registry
 
 Tool implementations are instantiated through the Tool Factory Registry.
 
@@ -337,7 +342,7 @@ This keeps execution independent from registration.
 
 ---
 
-# Permissions
+## Permissions
 
 Every tool defines the permissions required for execution.
 
@@ -353,7 +358,7 @@ Permission checks are always performed server-side.
 
 ---
 
-# Validation
+## Validation
 
 Tool execution includes multiple validation stages.
 
@@ -375,13 +380,14 @@ Configuration Validation
 ↓
 
 Execution
+
 ```
 
 Invalid tool requests never reach tool implementations.
 
 ---
 
-# Input and Output Schemas
+## Input and Output Schemas
 
 Every tool exposes structured contracts.
 
@@ -398,7 +404,7 @@ This enables:
 
 ---
 
-# Runtime Refresh
+## Runtime Refresh
 
 Future versions may allow refreshing the registry without restarting the application.
 
@@ -422,13 +428,14 @@ Update Registry
 ↓
 
 Revision++
+
 ```
 
 The Bootstrap API exposes the registry revision for cache invalidation.
 
 ---
 
-# Health Information
+## Health Information
 
 Future versions may expose tool health information.
 
@@ -443,7 +450,7 @@ Health reporting remains independent from implementation details.
 
 ---
 
-# Authentication
+## Authentication
 
 Reading tool metadata depends on the active deployment profile.
 
@@ -451,7 +458,7 @@ Administrative operations always require authentication.
 
 ---
 
-# Authorization
+## Authorization
 
 Typical permissions include:
 
@@ -465,7 +472,7 @@ The backend always remains the authoritative decision maker.
 
 ---
 
-# Error Responses
+## Error Responses
 
 Errors follow the standard platform contract.
 
@@ -484,12 +491,13 @@ Example:
 
 ---
 
-# Versioning
+## Versioning
 
 The Tools API follows the REST API version.
 
 ```text
 /api/v1/tools
+
 ```
 
 The Tool Registry version is published through the Bootstrap API.
@@ -498,7 +506,7 @@ Clients should invalidate cached tool information whenever the registry revision
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The Tools API is optimized through:
 
@@ -512,7 +520,7 @@ Tool discovery should not occur during normal request processing.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 The Tools API never exposes:
 
@@ -528,7 +536,7 @@ Models cannot execute arbitrary code or bypass permission checks.
 
 ---
 
-# Frontend Integration
+## Frontend Integration
 
 The frontend retrieves available tools during initialization.
 
@@ -552,6 +560,7 @@ Chat View
 ↓
 
 Tool Execution via Chat API
+
 ```
 
 The frontend displays tool metadata only.
@@ -560,7 +569,7 @@ Execution requests are always routed through the Chat API.
 
 ---
 
-# Relationship to the Chat API
+## Relationship to the Chat API
 
 The Tools API provides **discovery**.
 
@@ -584,13 +593,14 @@ Tool Registry
 ↓
 
 Execution
+
 ```
 
 This separation keeps both APIs focused and simplifies long-term maintenance.
 
 ---
 
-# Related APIs
+## Related APIs
 
 ```http
 GET /api/v1/bootstrap
@@ -604,7 +614,7 @@ POST /api/v1/chat/stream
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 - [[Architecture]]
 - [[Bootstrap]]
@@ -618,7 +628,7 @@ POST /api/v1/chat/stream
 
 ---
 
-# Summary
+## Summary
 
 The Tools API provides a stable, provider-independent catalog of all tools available within the Kernschmied platform.
 

@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is designed as a long-lived, configurable platform rather than a traditional CRUD application.
 
@@ -40,7 +40,7 @@ The MVP intentionally targets **SQLite** for ease of installation while allowing
 
 ---
 
-# Problem
+## Problem
 
 Many applications tightly couple themselves to a specific database engine.
 
@@ -63,7 +63,7 @@ Kernschmied should instead depend on a database abstraction while still supporti
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied adopts a **database-agnostic persistence architecture** based on:
 
@@ -78,7 +78,7 @@ Business logic never depends directly on SQLite-specific behavior.
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > The database stores state.
 >
@@ -88,7 +88,7 @@ Business logic never depends directly on SQLite-specific behavior.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Application
@@ -116,11 +116,12 @@ SQLAlchemy Async ORM
         ▼
 
 SQLite / PostgreSQL
+
 ```
 
 ---
 
-# Technology Stack
+## Technology Stack
 
 The persistence layer is built upon:
 
@@ -134,7 +135,7 @@ The persistence layer is built upon:
 
 ---
 
-# Why SQLite?
+## Why SQLite?
 
 SQLite is chosen for the MVP because it offers:
 
@@ -149,7 +150,7 @@ SQLite allows developers to clone the repository and start the application immed
 
 ---
 
-# Why PostgreSQL Later?
+## Why PostgreSQL Later?
 
 As deployments grow, PostgreSQL provides:
 
@@ -165,7 +166,7 @@ The persistence architecture is designed so that switching databases requires on
 
 ---
 
-# Database Independence
+## Database Independence
 
 Business services communicate only with repositories.
 
@@ -187,11 +188,12 @@ ORM
 ↓
 
 Database
+
 ```
 
 ---
 
-# Data Categories
+## Data Categories
 
 The platform stores several categories of information.
 
@@ -287,7 +289,7 @@ Revision numbers allow:
 
 ---
 
-# Data Ownership
+## Data Ownership
 
 Every entity has a single owner.
 
@@ -303,13 +305,14 @@ Messages
 ↓
 
 Streaming Events
+
 ```
 
 Ownership remains explicit.
 
 ---
 
-# Transactions
+## Transactions
 
 Every business operation executes within a transaction.
 
@@ -333,13 +336,14 @@ Commit
 ↓
 
 Rollback on Error
+
 ```
 
 Transactions guarantee consistency.
 
 ---
 
-# AsyncSession
+## AsyncSession
 
 The platform uses SQLAlchemy AsyncSession.
 
@@ -354,7 +358,7 @@ Sessions are short-lived and request-scoped.
 
 ---
 
-# Session Lifecycle
+## Session Lifecycle
 
 Typical lifecycle:
 
@@ -376,13 +380,14 @@ Commit
 ↓
 
 Close Session
+
 ```
 
 Sessions are never shared across concurrent requests.
 
 ---
 
-# Repository Pattern
+## Repository Pattern
 
 Repositories encapsulate persistence.
 
@@ -397,7 +402,7 @@ Repositories do **not** implement business rules.
 
 ---
 
-# Service Layer
+## Service Layer
 
 Business services coordinate:
 
@@ -411,7 +416,7 @@ Services remain independent from database details.
 
 ---
 
-# Schema Migrations
+## Schema Migrations
 
 All schema changes are managed through Alembic.
 
@@ -435,13 +440,14 @@ Apply Migration
 ↓
 
 Update Schema
+
 ```
 
 Direct manual schema modifications are discouraged.
 
 ---
 
-# Migration Strategy
+## Migration Strategy
 
 Migration principles:
 
@@ -454,7 +460,7 @@ Every migration is tracked.
 
 ---
 
-# JSON Storage
+## JSON Storage
 
 Some entities contain structured configuration.
 
@@ -469,7 +475,7 @@ Structured data should remain validated by Pydantic before persistence.
 
 ---
 
-# Configuration Storage
+## Configuration Storage
 
 Configuration is stored as structured records rather than environment variables.
 
@@ -484,7 +490,7 @@ Typical fields include:
 
 ---
 
-# Hierarchy Storage
+## Hierarchy Storage
 
 The hierarchy uses generic node relationships.
 
@@ -504,13 +510,14 @@ Folder
 ↓
 
 Chat
+
 ```
 
 No business-specific node tables are required.
 
 ---
 
-# Soft Deletes
+## Soft Deletes
 
 Where appropriate, entities may use soft deletion.
 
@@ -524,7 +531,7 @@ Permanent deletion remains an explicit administrative action.
 
 ---
 
-# Concurrency
+## Concurrency
 
 SQLite has limited concurrent write capabilities.
 
@@ -538,7 +545,7 @@ PostgreSQL provides significantly improved concurrency for production deployment
 
 ---
 
-# Indexing
+## Indexing
 
 Indexes should exist for:
 
@@ -552,7 +559,7 @@ Indexes should be reviewed as the platform evolves.
 
 ---
 
-# Backup Strategy
+## Backup Strategy
 
 SQLite:
 
@@ -568,7 +575,7 @@ Backup procedures remain operational concerns rather than application logic.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 The persistence layer enforces:
 
@@ -583,7 +590,7 @@ Sensitive configuration should be protected appropriately.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Performance techniques include:
 
@@ -598,7 +605,7 @@ Performance optimizations should never compromise correctness.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 The architecture supports:
 
@@ -613,7 +620,7 @@ Database replacement should not require changes to business services.
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -633,7 +640,7 @@ Database replacement should not require changes to business services.
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Raw SQL
 
@@ -689,7 +696,7 @@ Rejected because it cannot provide reproducible deployments.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -709,7 +716,7 @@ Mitigation includes:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The persistence layer should provide:
 
@@ -726,7 +733,7 @@ Business services must never depend directly on SQL dialects.
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0002-Bootstrap]]
 - [[ADR-0003-Registries]]
@@ -735,7 +742,7 @@ Business services must never depend directly on SQL dialects.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -764,7 +771,7 @@ Business services must never depend directly on SQL dialects.
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **database-independent persistence architecture** based on SQLAlchemy Async, Alembic migrations, and a clear separation between business services and persistence.
 

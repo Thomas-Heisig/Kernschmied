@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is intended to become a highly configurable AI platform rather than a traditional web application with fixed pages and hardcoded workflows.
 
@@ -29,7 +29,7 @@ The frontend therefore acts primarily as a rendering engine driven by schemas ra
 
 ---
 
-# Problem
+## Problem
 
 Traditional React applications often contain business-specific components such as:
 
@@ -51,7 +51,7 @@ As the platform grows this becomes increasingly difficult to maintain.
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied adopts a **Schema-Driven Frontend Architecture**.
 
@@ -63,7 +63,7 @@ Business behavior remains backend-driven.
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > The backend defines intent.
 >
@@ -71,7 +71,7 @@ Business behavior remains backend-driven.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Backend
@@ -97,11 +97,12 @@ Component Registry
         ▼
 
 React Components
+
 ```
 
 ---
 
-# Design Goals
+## Design Goals
 
 The frontend architecture should provide:
 
@@ -116,7 +117,7 @@ The frontend architecture should provide:
 
 ---
 
-# Technology Stack
+## Technology Stack
 
 The frontend is based on:
 
@@ -131,7 +132,7 @@ The frontend is based on:
 
 ---
 
-# Application Shell
+## Application Shell
 
 The application shell is responsible for:
 
@@ -146,12 +147,13 @@ Business functionality resides in feature modules.
 
 ---
 
-# Bootstrap
+## Bootstrap
 
 During startup the frontend loads:
 
 ```text
 GET /api/v1/bootstrap
+
 ```
 
 The bootstrap response provides:
@@ -167,7 +169,7 @@ The bootstrap defines the capabilities available during the current session.
 
 ---
 
-# Schema Renderer
+## Schema Renderer
 
 The Schema Renderer is the central rendering engine.
 
@@ -183,7 +185,7 @@ Business rules are intentionally excluded.
 
 ---
 
-# Component Registry
+## Component Registry
 
 The Component Registry maps schema types to React components.
 
@@ -195,6 +197,7 @@ form
 ↓
 
 FormRenderer
+
 ```
 
 ```text
@@ -203,6 +206,7 @@ tree
 ↓
 
 GenericTree
+
 ```
 
 ```text
@@ -211,13 +215,14 @@ chat
 ↓
 
 GenericChatView
+
 ```
 
 Unknown components are never instantiated dynamically.
 
 ---
 
-# Why a Registry?
+## Why a Registry?
 
 A registry provides:
 
@@ -231,7 +236,7 @@ The frontend never evaluates arbitrary JavaScript received from the backend.
 
 ---
 
-# Unknown Components
+## Unknown Components
 
 Unknown schema types are handled gracefully.
 
@@ -243,6 +248,7 @@ Unknown Schema
 ↓
 
 UnsupportedSchema Component
+
 ```
 
 The application continues operating.
@@ -251,7 +257,7 @@ Unexpected schemas never crash the interface.
 
 ---
 
-# Action Registry
+## Action Registry
 
 Actions are handled through a dedicated registry.
 
@@ -269,7 +275,7 @@ Actions are identifiers rather than executable JavaScript.
 
 ---
 
-# Why Action Identifiers?
+## Why Action Identifiers?
 
 The backend communicates:
 
@@ -291,13 +297,14 @@ Registered Action
 ↓
 
 Execution
+
 ```
 
 No executable code is transferred.
 
 ---
 
-# Generic Tree
+## Generic Tree
 
 Hierarchy rendering uses a recursive Generic Tree component.
 
@@ -316,7 +323,7 @@ Future node types require no new tree implementation.
 
 ---
 
-# Dynamic Forms
+## Dynamic Forms
 
 Forms are generated from backend schemas.
 
@@ -333,7 +340,7 @@ Form validation remains consistent between frontend and backend.
 
 ---
 
-# API Client
+## API Client
 
 All HTTP communication passes through a single API client.
 
@@ -350,7 +357,7 @@ Business components never call Fetch directly.
 
 ---
 
-# State Management
+## State Management
 
 State is intentionally localized.
 
@@ -367,7 +374,7 @@ Global state is reserved for cross-cutting concerns.
 
 ---
 
-# Streaming
+## Streaming
 
 Chat responses use Server-Sent Events.
 
@@ -388,7 +395,7 @@ Unknown events are ignored safely.
 
 ---
 
-# Routing
+## Routing
 
 Routing is intentionally lightweight.
 
@@ -400,7 +407,7 @@ Future pages should be introduced through backend configuration rather than hard
 
 ---
 
-# Error Handling
+## Error Handling
 
 Frontend errors are categorized as:
 
@@ -415,7 +422,7 @@ Errors are presented consistently.
 
 ---
 
-# Accessibility
+## Accessibility
 
 The frontend follows accessibility best practices.
 
@@ -431,7 +438,7 @@ Accessibility remains part of every reusable component.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 The frontend never:
 
@@ -446,7 +453,7 @@ Authorization is always enforced by the backend.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Performance techniques include:
 
@@ -461,7 +468,7 @@ The architecture minimizes unnecessary React re-renders.
 
 ---
 
-# Plugin Readiness
+## Plugin Readiness
 
 Future plugins may contribute:
 
@@ -476,7 +483,7 @@ Dynamic runtime code loading is never implicitly trusted.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 The frontend architecture enables:
 
@@ -490,7 +497,7 @@ Administrators can evolve business workflows through configuration rather than f
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -509,7 +516,7 @@ Administrators can evolve business workflows through configuration rather than f
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Business-Specific React Components
 
@@ -535,7 +542,7 @@ Rejected because duplicated infrastructure increases maintenance.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -554,7 +561,7 @@ Mitigation strategies include:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -573,7 +580,7 @@ Business logic should remain inside backend services whenever possible.
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0001-Schema-Driven-UI]]
 - [[ADR-0002-Bootstrap]]
@@ -583,7 +590,7 @@ Business logic should remain inside backend services whenever possible.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Frontend
 
@@ -616,7 +623,7 @@ Business logic should remain inside backend services whenever possible.
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **Schema-Driven Frontend Architecture** in which the backend describes application structure through versioned schemas while the frontend provides a stable rendering engine composed of a Schema Renderer, Component Registry, Action Registry, Generic Tree, Generic Forms, and centralized API Client.
 

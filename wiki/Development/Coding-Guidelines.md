@@ -8,7 +8,7 @@ These guidelines apply to both backend and frontend development, as well as plug
 
 ---
 
-# Goals
+## Goals
 
 The Coding Guidelines are designed to provide:
 
@@ -23,7 +23,7 @@ The Coding Guidelines are designed to provide:
 
 ---
 
-# General Principles
+## General Principles
 
 Every contribution should follow these principles:
 
@@ -38,7 +38,7 @@ Every contribution should follow these principles:
 
 ---
 
-# Clean Architecture
+## Clean Architecture
 
 Application code should be organized into clearly separated layers.
 
@@ -56,13 +56,14 @@ Domain
 ↓
 
 Infrastructure
+
 ```
 
 Each layer has a well-defined responsibility.
 
 ---
 
-# Single Responsibility
+## Single Responsibility
 
 Each class, module, and function should have one primary responsibility.
 
@@ -74,6 +75,7 @@ ConfigurationResolver
 ↓
 
 Resolves configuration
+
 ```
 
 Poor example:
@@ -100,13 +102,14 @@ Logs users
 ↓
 
 Starts services
+
 ```
 
 Responsibilities should remain focused.
 
 ---
 
-# Dependency Injection
+## Dependency Injection
 
 Dependencies should always be injected rather than created internally.
 
@@ -122,6 +125,7 @@ Repository
 ↓
 
 Database
+
 ```
 
 Avoid:
@@ -132,13 +136,14 @@ Service
 ↓
 
 new Database()
+
 ```
 
 Dependency Injection improves testing and modularity.
 
 ---
 
-# Explicit Dependencies
+## Explicit Dependencies
 
 Hidden dependencies should be avoided.
 
@@ -150,13 +155,14 @@ ChatService(
     configuration,
     model_registry,
 )
+
 ```
 
 Dependencies should never appear unexpectedly through global state.
 
 ---
 
-# Avoid Global State
+## Avoid Global State
 
 Global mutable state makes systems difficult to understand and test.
 
@@ -171,7 +177,7 @@ Instead, use scoped services managed through dependency injection.
 
 ---
 
-# Type Safety
+## Type Safety
 
 Use strong typing wherever possible.
 
@@ -193,7 +199,7 @@ Avoid using untyped data structures unless absolutely necessary.
 
 ---
 
-# Small Modules
+## Small Modules
 
 Modules should remain focused.
 
@@ -207,19 +213,21 @@ Validation
 Resolver
 
 Storage
+
 ```
 
 Avoid:
 
 ```text
 ConfigurationEverything.py
+
 ```
 
 Smaller modules improve readability and testing.
 
 ---
 
-# Naming
+## Naming
 
 Names should be:
 
@@ -246,7 +254,7 @@ Poor examples:
 
 ---
 
-# Functions
+## Functions
 
 Functions should:
 
@@ -259,7 +267,7 @@ Large functions should be split into smaller units.
 
 ---
 
-# Classes
+## Classes
 
 Classes should encapsulate behavior rather than collect unrelated utilities.
 
@@ -273,7 +281,7 @@ Avoid "God Objects" responsible for unrelated features.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Errors should be explicit and structured.
 
@@ -295,13 +303,14 @@ Raise Specific Error
 ↓
 
 Structured Response
+
 ```
 
 Errors should preserve useful diagnostic information.
 
 ---
 
-# Validation
+## Validation
 
 Validate all external input.
 
@@ -318,7 +327,7 @@ Never trust external input.
 
 ---
 
-# Immutability
+## Immutability
 
 Prefer immutable objects whenever practical.
 
@@ -331,7 +340,7 @@ Immutable data:
 
 ---
 
-# Avoid Magic Values
+## Avoid Magic Values
 
 Hardcoded values should be avoided.
 
@@ -339,19 +348,21 @@ Instead of:
 
 ```text
 42
+
 ```
 
 Prefer:
 
 ```text
 DEFAULT_TIMEOUT_SECONDS
+
 ```
 
 Named constants improve readability.
 
 ---
 
-# Configuration
+## Configuration
 
 Business configuration belongs in Runtime Configuration.
 
@@ -361,7 +372,7 @@ Never mix the two.
 
 ---
 
-# Logging
+## Logging
 
 Logging should be:
 
@@ -376,7 +387,7 @@ Sensitive information must never appear in logs.
 
 ---
 
-# Documentation
+## Documentation
 
 Public components should be documented.
 
@@ -391,7 +402,7 @@ Documentation should explain **why**, not merely **what**.
 
 ---
 
-# Comments
+## Comments
 
 Comments should be rare.
 
@@ -407,7 +418,7 @@ Avoid comments that simply repeat the code.
 
 ---
 
-# Testing
+## Testing
 
 Every new feature should include appropriate tests.
 
@@ -423,7 +434,7 @@ Testing should focus on observable behavior rather than implementation details.
 
 ---
 
-# Security
+## Security
 
 Security is everyone's responsibility.
 
@@ -439,7 +450,7 @@ Never rely on frontend validation alone.
 
 ---
 
-# Performance
+## Performance
 
 Optimize only after measuring.
 
@@ -453,7 +464,7 @@ Avoid premature optimization.
 
 ---
 
-# API Design
+## API Design
 
 Public APIs should be:
 
@@ -466,7 +477,7 @@ Breaking changes require explicit version evolution.
 
 ---
 
-# Backend Guidelines
+## Backend Guidelines
 
 Backend services should:
 
@@ -480,7 +491,7 @@ Business logic should not depend on framework-specific implementation details.
 
 ---
 
-# Frontend Guidelines
+## Frontend Guidelines
 
 Frontend components should:
 
@@ -494,7 +505,7 @@ Business behavior belongs in backend-generated schemas.
 
 ---
 
-# Plugin Guidelines
+## Plugin Guidelines
 
 Plugins should:
 
@@ -508,7 +519,7 @@ Plugins extend the platform—they do not modify it.
 
 ---
 
-# Database Guidelines
+## Database Guidelines
 
 Database access should:
 
@@ -521,7 +532,7 @@ Services should not construct SQL directly.
 
 ---
 
-# Review Checklist
+## Review Checklist
 
 Before merging code, verify:
 
@@ -538,7 +549,7 @@ Before merging code, verify:
 
 ---
 
-# Common Anti-Patterns
+## Common Anti-Patterns
 
 Avoid:
 
@@ -556,7 +567,7 @@ These patterns reduce maintainability.
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 The Coding Guidelines are expected to evolve together with the platform.
 
@@ -573,7 +584,7 @@ The overall philosophy of simplicity, explicitness, and stability should remain 
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Development
 
@@ -601,7 +612,7 @@ The overall philosophy of simplicity, explicitness, and stability should remain 
 
 ---
 
-# Summary
+## Summary
 
 The Coding Guidelines establish a consistent engineering standard for every part of Kernschmied. They emphasize readability, explicit dependencies, strong typing, deterministic behavior, modular design, and secure implementations over clever or overly complex solutions.
 

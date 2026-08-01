@@ -6,7 +6,7 @@
 
 ---
 
-# Overview
+## Overview
 
 Kernschmied is a **schema-driven, modular AI platform** built around one central architectural idea:
 
@@ -18,7 +18,7 @@ The architecture is designed to support continuous evolution without requiring f
 
 ---
 
-# Architectural Goals
+## Architectural Goals
 
 The architecture aims to provide:
 
@@ -33,7 +33,7 @@ The architecture aims to provide:
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
                                 ┌──────────────────────────────┐
@@ -72,11 +72,12 @@ The architecture aims to provide:
                     │ SQLAlchemy Async    │
                     │ SQLite / PostgreSQL │
                     └─────────────────────┘
+
 ```
 
 ---
 
-# Layered Architecture
+## Layered Architecture
 
 Kernschmied follows a layered architecture.
 
@@ -163,7 +164,7 @@ Infrastructure is intentionally separated from business logic.
 
 ---
 
-# Backend Architecture
+## Backend Architecture
 
 The backend follows a service-oriented structure.
 
@@ -182,13 +183,14 @@ providers/
 config/
 database/
 core/
+
 ```
 
 Each module has clearly defined responsibilities.
 
 ---
 
-# Frontend Architecture
+## Frontend Architecture
 
 The frontend is completely schema-driven.
 
@@ -210,6 +212,7 @@ Generic Components
 ↓
 
 Rendered UI
+
 ```
 
 The backend defines **what** should be rendered.
@@ -218,7 +221,7 @@ The frontend decides **how** to render it.
 
 ---
 
-# Schema-Driven UI
+## Schema-Driven UI
 
 Instead of hardcoded pages, the backend sends UI schemas describing:
 
@@ -240,7 +243,7 @@ Advantages:
 
 ---
 
-# Generic Components
+## Generic Components
 
 The frontend should only contain generic components.
 
@@ -266,7 +269,7 @@ Business-specific behavior belongs in schemas.
 
 ---
 
-# Registries
+## Registries
 
 Kernschmied uses registries for all dynamic resources.
 
@@ -287,7 +290,7 @@ Registries guarantee controlled discovery.
 
 ---
 
-# Bootstrap Process
+## Bootstrap Process
 
 Application startup follows a defined sequence.
 
@@ -325,13 +328,14 @@ Initialize Services
 ↓
 
 Expose API
+
 ```
 
 The bootstrap process ensures that the application never starts in an inconsistent state.
 
 ---
 
-# Configuration Model
+## Configuration Model
 
 Configuration is divided into two categories.
 
@@ -339,8 +343,9 @@ Configuration is divided into two categories.
 
 Stored in:
 
-```
+```text
 .env
+
 ```
 
 Examples:
@@ -369,7 +374,7 @@ Examples:
 
 ---
 
-# Hierarchy
+## Hierarchy
 
 The hierarchy is a generic tree.
 
@@ -383,13 +388,14 @@ Workspace
     └── Folder
 
         └── Chat
+
 ```
 
 Future node types can be introduced without modifying the frontend.
 
 ---
 
-# AI Model Integration
+## AI Model Integration
 
 Models are managed through the Model Registry.
 
@@ -404,7 +410,7 @@ The frontend does not know implementation details.
 
 ---
 
-# Tool Integration
+## Tool Integration
 
 Tools are managed through the Tool Registry.
 
@@ -419,7 +425,7 @@ Unknown tools are rejected.
 
 ---
 
-# Security Model
+## Security Model
 
 Security follows a **deny-by-default** strategy.
 
@@ -435,7 +441,7 @@ must never be executed automatically.
 
 ---
 
-# Deployment Profiles
+## Deployment Profiles
 
 The architecture supports multiple deployment environments.
 
@@ -465,7 +471,7 @@ The architecture supports multiple deployment environments.
 
 ---
 
-# Contracts
+## Contracts
 
 Public contracts are treated as stable interfaces.
 
@@ -480,7 +486,7 @@ Breaking changes require versioning.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Errors follow a structured format.
 
@@ -499,7 +505,7 @@ Every request should be traceable using a request ID.
 
 ---
 
-# Design Patterns
+## Design Patterns
 
 The project primarily uses:
 
@@ -514,7 +520,7 @@ The project primarily uses:
 
 ---
 
-# Architectural Principles
+## Architectural Principles
 
 Every subsystem should follow these rules:
 
@@ -529,7 +535,7 @@ Every subsystem should follow these rules:
 
 ---
 
-# Non-Goals
+## Non-Goals
 
 The initial MVP intentionally excludes:
 
@@ -544,7 +550,7 @@ These capabilities may be added later without changing the core architecture.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Start Here
 
@@ -594,7 +600,7 @@ These capabilities may be added later without changing the core architecture.
 
 ---
 
-# Summary
+## Summary
 
 Kernschmied is designed as a **long-lived, extensible platform** rather than a single application.
 

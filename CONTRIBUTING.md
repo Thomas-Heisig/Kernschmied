@@ -58,5 +58,5 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 - Das Frontend verwendet feste Registries für Komponenten, Aktionen und Icons.
 - Unbekannte dynamische Typen werden sicher abgelehnt oder sichtbar als nicht unterstützt dargestellt.
 
-[Unreleased]: https://github.com/Thomas-Heisig/Kernschmied/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/Thomas-Heisig/Kernschmied/releases/tag/v0.1.0
+[Unreleased]: https://github.com/Thomas-Heisig/Kernschmied/compare/master...HEAD
+[0.1.0]: https://github.com/Thomas-Heisig/Kernschmied/releases

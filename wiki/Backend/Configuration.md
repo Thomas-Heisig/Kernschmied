@@ -10,7 +10,7 @@ This architecture enables runtime updates, hierarchical inheritance, auditabilit
 
 ---
 
-# Goals
+## Goals
 
 The Configuration Management subsystem is designed to provide:
 
@@ -26,7 +26,7 @@ The Configuration Management subsystem is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Infrastructure vs Business Configuration
 
@@ -96,13 +96,14 @@ Configuration Resolver
 ↓
 
 Resolved Configuration
+
 ```
 
 Deterministic resolution simplifies debugging and reproducibility.
 
 ---
 
-# Configuration Architecture
+## Configuration Architecture
 
 ```text
 Environment
@@ -126,13 +127,14 @@ Resolved Configuration
 ↓
 
 Application Services
+
 ```
 
 Each component has a clearly defined responsibility.
 
 ---
 
-# Configuration Storage
+## Configuration Storage
 
 Runtime configuration is stored in the application database.
 
@@ -148,7 +150,7 @@ Database storage enables centralized runtime management.
 
 ---
 
-# Configuration Scopes
+## Configuration Scopes
 
 Configuration is resolved from multiple scopes.
 
@@ -174,13 +176,14 @@ USER
 ↓
 
 REQUEST
+
 ```
 
 Each scope contributes configuration according to the configured merge strategy.
 
 ---
 
-# System Scope
+## System Scope
 
 The system scope defines global application behavior.
 
@@ -196,7 +199,7 @@ Every request inherits the system scope.
 
 ---
 
-# Node Scope
+## Node Scope
 
 Hierarchy nodes may define additional configuration.
 
@@ -210,7 +213,7 @@ Node configuration applies to descendants within the hierarchy.
 
 ---
 
-# Project Scope
+## Project Scope
 
 Projects may override inherited configuration.
 
@@ -225,7 +228,7 @@ Project configuration remains isolated from unrelated projects.
 
 ---
 
-# Chat Scope
+## Chat Scope
 
 Chat-specific configuration applies only to the current conversation.
 
@@ -239,7 +242,7 @@ Chat configuration is not shared with other conversations.
 
 ---
 
-# User Scope
+## User Scope
 
 User configuration represents personal preferences.
 
@@ -254,7 +257,7 @@ Mandatory system policies cannot be overridden.
 
 ---
 
-# Request Scope
+## Request Scope
 
 The request scope has the highest priority.
 
@@ -269,7 +272,7 @@ Request configuration exists only for a single request.
 
 ---
 
-# Configuration Resolution
+## Configuration Resolution
 
 Configuration is resolved using the Configuration Resolver.
 
@@ -299,13 +302,14 @@ Request
 ↓
 
 Final Configuration
+
 ```
 
 The resolver produces a single immutable configuration object.
 
 ---
 
-# Merge Strategies
+## Merge Strategies
 
 Different configuration sections may use different merge strategies.
 
@@ -321,7 +325,7 @@ The merge strategy is defined by the configuration schema.
 
 ---
 
-# Configuration Schemas
+## Configuration Schemas
 
 Every configuration section is validated against a versioned schema.
 
@@ -337,7 +341,7 @@ Schema validation occurs before configuration becomes active.
 
 ---
 
-# Validation
+## Validation
 
 Configuration updates are validated before being persisted.
 
@@ -353,7 +357,7 @@ Invalid configuration changes are rejected.
 
 ---
 
-# Runtime Updates
+## Runtime Updates
 
 Configuration marked as runtime editable becomes active immediately.
 
@@ -379,13 +383,14 @@ Revision++
 ↓
 
 Next Request
+
 ```
 
 No application restart is required.
 
 ---
 
-# Configuration Revision
+## Configuration Revision
 
 Every successful configuration update increments the configuration revision.
 
@@ -401,13 +406,14 @@ Configuration Updated
 ↓
 
 Revision 42
+
 ```
 
 Clients use revisions to determine when cached data should be refreshed.
 
 ---
 
-# Caching
+## Caching
 
 Resolved configuration may be cached.
 
@@ -423,13 +429,14 @@ Hierarchy Revision
 +
 
 Scope
+
 ```
 
 Caches are invalidated whenever a relevant revision changes.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Configuration changes generate audit records.
 
@@ -446,7 +453,7 @@ Audit logging ensures complete traceability.
 
 ---
 
-# Security
+## Security
 
 Configuration updates require authorization.
 
@@ -462,7 +469,7 @@ The frontend never modifies configuration directly.
 
 ---
 
-# Configuration Service
+## Configuration Service
 
 The Configuration Service coordinates configuration management.
 
@@ -479,7 +486,7 @@ Application services communicate only with the Configuration Service.
 
 ---
 
-# Configuration Resolver
+## Configuration Resolver
 
 The Configuration Resolver computes effective runtime configuration.
 
@@ -495,7 +502,7 @@ Business services never resolve configuration manually.
 
 ---
 
-# API Integration
+## API Integration
 
 Configuration is exposed through dedicated API endpoints.
 
@@ -510,7 +517,7 @@ The API exposes stable contracts independent of internal storage.
 
 ---
 
-# Interaction with Hierarchy
+## Interaction with Hierarchy
 
 Hierarchy determines the inheritance path.
 
@@ -524,13 +531,14 @@ Configuration Resolver
 ↓
 
 Resolved Configuration
+
 ```
 
 Changing hierarchy relationships automatically affects configuration inheritance.
 
 ---
 
-# Interaction with Prompt Resolution
+## Interaction with Prompt Resolution
 
 Prompt fragments are resolved through the same inheritance mechanism.
 
@@ -538,7 +546,7 @@ Prompt generation therefore becomes an extension of configuration resolution rat
 
 ---
 
-# Interaction with UI Schema
+## Interaction with UI Schema
 
 UI schemas are generated using resolved configuration.
 
@@ -553,7 +561,7 @@ The frontend remains unaware of how configuration is resolved.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Configuration failures return structured error responses.
 
@@ -572,7 +580,7 @@ Partial updates are not applied.
 
 ---
 
-# Performance
+## Performance
 
 The subsystem is optimized for:
 
@@ -586,7 +594,7 @@ Configuration resolution is lightweight enough to occur for every request.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture supports future capabilities including:
 
@@ -602,7 +610,7 @@ These enhancements can be introduced without changing existing application servi
 
 ---
 
-# Relationship to Other Backend Components
+## Relationship to Other Backend Components
 
 Configuration Management is used throughout the backend.
 
@@ -624,13 +632,14 @@ Providers
 ↓
 
 Responses
+
 ```
 
 Nearly every request depends on resolved runtime configuration.
 
 ---
 
-# Relationship to Architecture
+## Relationship to Architecture
 
 Configuration Management is closely integrated with:
 
@@ -643,7 +652,7 @@ Configuration Management is closely integrated with:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -674,7 +683,7 @@ Configuration Management is closely integrated with:
 
 ---
 
-# Summary
+## Summary
 
 The Configuration Management subsystem provides the foundation for all runtime behavior within the Kernschmied backend by separating infrastructure configuration from business configuration and resolving effective settings through deterministic inheritance across multiple scopes.
 

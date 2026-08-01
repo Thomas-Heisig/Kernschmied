@@ -133,6 +133,17 @@ if (Test-Path variable:PSNativeCommandUseErrorActionPreference) {
     $PSNativeCommandUseErrorActionPreference = $false
 }
 
+# Plattform-Flag robust bestimmen (funktioniert in PS Core und Windows PowerShell)
+# Nur setzen, wenn die Variable noch nicht existiert (vermeidet Überschreiben von ReadOnly-Variablen)
+if (-not (Test-Path variable:IsWindows)) {
+    try {
+        $IsWindows = [System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform([System.Runtime.InteropServices.OSPlatform]::Windows)
+    }
+    catch {
+        $IsWindows = $env:OS -eq 'Windows_NT'
+    }
+}
+
 # ============================================================
 # Laufzeit und Pfade
 # ============================================================
@@ -222,6 +233,115 @@ $WikiMarkdownConfiguration |
         -Encoding UTF8
 
 Set-Location $ProjectRoot
+
+# ------------------------------------------------------------
+# Prüfe auf erforderliche CLI-Tools und frage nach Installation
+# ------------------------------------------------------------
+function Test-CommandExists {
+    param(
+        [Parameter(Mandatory)] [string]$CommandName
+    )
+
+    return (Get-Command $CommandName -ErrorAction SilentlyContinue) -ne $null
+}
+
+function Prompt-YesNo {
+    param(
+        [Parameter(Mandatory)] [string]$Message,
+        [bool]$DefaultYes = $true
+    )
+
+    $default = if ($DefaultYes) { 'Y' } else { 'N' }
+    $choice = Read-Host "$Message [Y/n] (default: $default)"
+    if ([string]::IsNullOrWhiteSpace($choice)) { return $DefaultYes }
+    switch ($choice.ToUpper()) {
+        'Y' { return $true }
+        'YES' { return $true }
+        'N' { return $false }
+        'NO' { return $false }
+        default { return $DefaultYes }
+    }
+}
+
+function Ensure-RequiredTools {
+    # Liste der Basis-Commands, die minimal erwartet werden
+    $core = @(
+        @{ Name='git'; Cmd='git' },
+        @{ Name='python'; Cmd='python' },
+        @{ Name='pip'; Cmd='pip' },
+        @{ Name='node'; Cmd='node' },
+        @{ Name='npm'; Cmd='npm' },
+        @{ Name='npx'; Cmd='npx' }
+    )
+
+    $extra = @(
+        @{ Name='tsc'; Cmd='tsc'; NpmPkg='typescript' },
+        @{ Name='prettier'; Cmd='prettier'; NpmPkg='prettier' },
+        @{ Name='markdownlint'; Cmd='markdownlint'; NpmPkg='markdownlint-cli2' },
+        @{ Name='lychee'; Cmd='lychee'; NpmPkg='lychee' }
+    )
+
+    $missing = [System.Collections.Generic.List[object]]::new()
+
+    foreach ($item in $core) {
+        if (-not (Test-CommandExists $item.Cmd)) {
+            $missing.Add($item)
+        }
+    }
+
+    foreach ($item in $extra) {
+        if (-not (Test-CommandExists $item.Cmd)) {
+            $missing.Add($item)
+        }
+    }
+
+    if ($missing.Count -eq 0) {
+        Write-Host "Alle erforderlichen CLI-Tools sind installiert." -ForegroundColor Green
+        return
+    }
+
+    Write-Host "Die folgenden benötigten Tools fehlen oder sind nicht im PATH:" -ForegroundColor Yellow
+    foreach ($m in $missing) {
+        Write-Host (" - {0}" -f $m.Name) -ForegroundColor Yellow
+    }
+
+    if (-not (Prompt-YesNo "Möchten Sie versuchen, die fehlenden Tools jetzt automatisch zu installieren?" $false)) {
+        Write-Host "Überspringe automatische Installation. Fortfahren mit der Testsuite..." -ForegroundColor DarkYellow
+        return
+    }
+
+    foreach ($m in $missing) {
+        if ($m.NpmPkg) {
+            $cmd = "npm install -g $($m.NpmPkg)"
+            Write-Host "Versuche Installation von $($m.NpmPkg) via npm (global): $cmd" -ForegroundColor Cyan
+            try {
+                & npm install -g $($m.NpmPkg) 2>&1 | Write-Host
+                Write-Host "Installation von $($m.NpmPkg) abgeschlossen." -ForegroundColor Green
+            }
+            catch {
+                Write-Host "Fehler beim Installieren von $($m.NpmPkg): $_" -ForegroundColor Red
+                Write-Host "Sie können das Paket manuell installieren: npm install -g $($m.NpmPkg)" -ForegroundColor Yellow
+            }
+        }
+        else {
+            switch ($m.Cmd) {
+                'pip' {
+                    Write-Host "Versuche, pip zu aktualisieren..." -ForegroundColor Cyan
+                    try { & python -m pip install --upgrade pip 2>&1 | Write-Host; Write-Host 'pip aktualisiert.' -ForegroundColor Green }
+                    catch { Write-Host "pip-Aktualisierung fehlgeschlagen: $_" -ForegroundColor Red }
+                }
+                default {
+                    Write-Host "Kein automatischer Installer für $($m.Name) hinterlegt. Bitte installieren Sie $($m.Name) manuell." -ForegroundColor Yellow
+                }
+            }
+        }
+    }
+
+    Write-Host "Fertig mit Installationsversuchen. Bitte prüfen Sie PATH/Versionen und starten Sie die Testsuite ggf. erneut." -ForegroundColor Cyan
+}
+
+# Führe die Prüfung aus
+Ensure-RequiredTools
 
 # ============================================================
 # Zustand
@@ -960,11 +1080,14 @@ function Test-PythonModule {
         return $false
     }
 
-    & python `
-        -c `
-        "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec(sys.argv[1]) else 1)" `
-        $Module `
-        *> $null
+    $checkCommand = "import importlib.util, sys; sys.exit(0 if importlib.util.find_spec(sys.argv[1]) else 1)"
+
+    if ($PSVersionTable.PSVersion.Major -ge 7) {
+        & python -c $checkCommand $Module *> $null
+    }
+    else {
+        & python -c $checkCommand $Module > $null 2>&1
+    }
 
     return $LASTEXITCODE -eq 0
 }
@@ -1977,10 +2100,15 @@ try {
             Invoke-External "git" @("--version") | Out-Null
 
             Write-Host ""
-            Write-Host "PowerShell: $($PSVersionTable.PSVersion)"
-            Write-Host "Python:     $((Get-Command python).Source)"
-            Write-Host "Node:       $((Get-Command node).Source)"
-            Write-Host "NPM:        $((Get-Command npm).Source)"
+            Write-Host ("PowerShell: {0}" -f $PSVersionTable.PSVersion)
+
+            $pyCmd = Get-Command python -ErrorAction SilentlyContinue
+            $nodeCmd = Get-Command node -ErrorAction SilentlyContinue
+            $npmCmd = Get-Command npm -ErrorAction SilentlyContinue
+
+            Write-Host ("Python:     {0}" -f ($pyCmd.Source -or $pyCmd.Path -or $pyCmd.Name))
+            Write-Host ("Node:       {0}" -f ($nodeCmd.Source -or $nodeCmd.Path -or $nodeCmd.Name))
+            Write-Host ("NPM:        {0}" -f ($npmCmd.Source -or $npmCmd.Path -or $npmCmd.Name))
         } |
         Out-Null
 
@@ -2155,14 +2283,21 @@ try {
                 Invoke-TestsuiteStep `
                     -Name "Prettier: Projekt formatieren" `
                     -Action {
-                        # Prettier mit der Dateiliste aufrufen
-                        Invoke-Npx `
-                            -Arguments (
-                                @("prettier") +
-                                $PrettierFiles +
-                                @("--write", "--ignore-unknown", "--log-level", "warn")
-                            ) |
-                            Out-Null
+                        # Prettier in Batches aufrufen, um lange Befehlszeilen zu vermeiden
+                        Invoke-FileBatch `
+                            -Files $PrettierFiles `
+                            -BatchSize 100 `
+                            -Action {
+                                param($Batch)
+
+                                Invoke-Npx `
+                                    -Arguments (
+                                        @("prettier") +
+                                        (@($Batch | ForEach-Object { $_.FullName })) +
+                                        @("--write", "--ignore-unknown", "--log-level", "warn")
+                                    ) |
+                                    Out-Null
+                            }
                     } |
                     Out-Null
             }
@@ -2170,13 +2305,20 @@ try {
             Invoke-TestsuiteStep `
                 -Name "Prettier: Formatierung prüfen" `
                 -Action {
-                    Invoke-Npx `
-                        -Arguments (
-                            @("prettier") +
-                            $PrettierFiles +
-                            @("--check", "--ignore-unknown", "--log-level", "warn")
-                        ) |
-                        Out-Null
+                    Invoke-FileBatch `
+                        -Files $PrettierFiles `
+                        -BatchSize 100 `
+                        -Action {
+                            param($Batch)
+
+                            Invoke-Npx `
+                                -Arguments (
+                                    @("prettier") +
+                                    (@($Batch | ForEach-Object { $_.FullName })) +
+                                    @("--check", "--ignore-unknown", "--log-level", "warn")
+                                ) |
+                                Out-Null
+                        }
                 } |
                 Out-Null
         }

@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is designed as a highly configurable platform whose business behavior can evolve at runtime without requiring application redeployment.
 
@@ -33,7 +33,7 @@ Without a clear separation, applications often accumulate hundreds of environmen
 
 ---
 
-# Problem
+## Problem
 
 Many applications eventually use environment variables for nearly everything:
 
@@ -94,7 +94,7 @@ Different environments often drift because `.env` files are edited manually.
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied separates configuration into two distinct categories:
 
@@ -107,14 +107,14 @@ Runtime configuration is loaded after the application has initialized and is sto
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > **Bootstrap configuration starts the platform.  
 > Runtime configuration defines platform behavior.**
 
 ---
 
-# Bootstrap Configuration
+## Bootstrap Configuration
 
 Bootstrap configuration represents the minimum information required for the application to start safely.
 
@@ -134,7 +134,7 @@ These values are infrastructure-related and generally require an application res
 
 ---
 
-# Runtime Configuration
+## Runtime Configuration
 
 Runtime configuration represents business behavior.
 
@@ -155,7 +155,7 @@ These values are stored in the database and may be modified through administrati
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Application Start
@@ -201,11 +201,12 @@ Initialize Registries
         ▼
 
 Application Ready
+
 ```
 
 ---
 
-# Startup Sequence
+## Startup Sequence
 
 The startup process follows a deterministic order.
 
@@ -251,13 +252,14 @@ Build Configuration Cache
 ↓
 
 Start HTTP Server
+
 ```
 
 Each step depends only on previously initialized infrastructure.
 
 ---
 
-# Responsibilities
+## Responsibilities
 
 ## Bootstrap Layer
 
@@ -290,7 +292,7 @@ Responsible for:
 
 ---
 
-# Why Not Store Everything in the Database?
+## Why Not Store Everything in the Database?
 
 The database cannot be used until it has been connected.
 
@@ -307,7 +309,7 @@ These belong to bootstrap configuration.
 
 ---
 
-# Why Not Store Everything in `.env`?
+## Why Not Store Everything in `.env`?
 
 Business configuration changes frequently.
 
@@ -320,7 +322,7 @@ Restarting the application for every small configuration change would:
 
 ---
 
-# Runtime Reloading
+## Runtime Reloading
 
 Runtime-editable configuration may be reloaded without restarting the application.
 
@@ -348,13 +350,14 @@ Reload
 ↓
 
 Application Uses New Configuration
+
 ```
 
 Infrastructure settings remain unchanged until the next application restart.
 
 ---
 
-# Configuration Validation
+## Configuration Validation
 
 Both configuration layers are validated independently.
 
@@ -389,7 +392,7 @@ Invalid configuration is rejected before activation.
 
 ---
 
-# Deployment Profiles
+## Deployment Profiles
 
 Bootstrap configuration selects the deployment profile.
 
@@ -436,7 +439,7 @@ Business configuration cannot weaken these minimum security requirements.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Bootstrap configuration contains sensitive information.
 
@@ -453,7 +456,7 @@ Conversely, runtime configuration must never contain infrastructure secrets.
 
 ---
 
-# Failure Handling
+## Failure Handling
 
 Bootstrap failures are fatal.
 
@@ -472,7 +475,7 @@ Invalid business configuration should not prevent unrelated services from operat
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -525,7 +528,7 @@ Developers must understand the distinction between both configuration layers.
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Everything in `.env`
 
@@ -583,7 +586,7 @@ Rejected as the primary configuration mechanism.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -602,7 +605,7 @@ Mitigations include:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -617,7 +620,7 @@ The implementation should provide:
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0001-Schema-Driven-UI]]
 - [[ADR-0003-Registry-Based-Extension]]
@@ -626,7 +629,7 @@ The implementation should provide:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -650,7 +653,7 @@ The implementation should provide:
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied separates **bootstrap configuration** from **runtime configuration**.
 

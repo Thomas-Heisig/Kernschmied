@@ -1381,11 +1381,16 @@ def register_cors_middleware(
             environment=runtime_config.environment.value,
         )
 
+    # Ensure local development origins are permitted in development scenarios
+    allowed_origins_set = set(runtime_config.cors_origins)
+    for dev_origin in DEVELOPMENT_CORS_ORIGINS:
+        allowed_origins_set.add(dev_origin)
+
+    allowed_origins = list(allowed_origins_set)
+
     application.add_middleware(
         CORSMiddleware,
-        allow_origins=list(
-            runtime_config.cors_origins,
-        ),
+        allow_origins=allowed_origins,
         allow_credentials=True,
         allow_methods=list(
             CORS_ALLOWED_METHODS,
@@ -1403,9 +1408,7 @@ def register_cors_middleware(
         "CORS middleware registered",
         runtime_event="cors-middleware-registered",
         environment=runtime_config.environment.value,
-        allowed_origins=list(
-            runtime_config.cors_origins,
-        ),
+        allowed_origins=allowed_origins,
         allowed_methods=list(
             CORS_ALLOWED_METHODS,
         ),
@@ -1461,9 +1464,9 @@ def register_routes(
         }
 
     @application.get(
-    "/debug/identity",
-    include_in_schema=False,
-)
+        "/debug/identity",
+        include_in_schema=False,
+    )
     async def debug_identity(
         request: Request,
     ) -> dict[str, object]:
@@ -1483,9 +1486,7 @@ def register_routes(
             ),
             "user": repr(user),
             "principal_type": (
-                type(principal).__name__
-                if principal is not None
-                else None
+                type(principal).__name__ if principal is not None else None
             ),
         }
 
@@ -1637,6 +1638,13 @@ def create_application() -> FastAPI:
     # - werden API-Endpunkte weiterhin authentifiziert.
     # --------------------------------------------------------
 
+    # Ensure CORS is registered as the outermost middleware so that
+    # preflight and CORS headers are handled before other middleware.
+    register_cors_middleware(
+        application,
+        runtime_config=runtime_config,
+    )
+
     register_authentication_middleware(
         application,
         runtime_config=runtime_config,
@@ -1644,11 +1652,6 @@ def create_application() -> FastAPI:
 
     register_http_middleware(
         application,
-    )
-
-    register_cors_middleware(
-        application,
-        runtime_config=runtime_config,
     )
 
     register_routes(

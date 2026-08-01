@@ -33,14 +33,31 @@ function renderBlock(block: Block, index: number): ReactNode {
           ? "mb-3 mt-9 text-2xl font-semibold tracking-tight text-text dark:text-white"
           : "mb-2 mt-7 text-lg font-semibold text-text dark:text-white";
 
-    if (block.level === 1) return <h1 key={key} className={className}>{renderInline(block.text)}</h1>;
-    if (block.level === 2) return <h2 key={key} className={className}>{renderInline(block.text)}</h2>;
-    return <h3 key={key} className={className}>{renderInline(block.text)}</h3>;
+    if (block.level === 1)
+      return (
+        <h1 key={key} className={className}>
+          {renderInline(block.text)}
+        </h1>
+      );
+    if (block.level === 2)
+      return (
+        <h2 key={key} className={className}>
+          {renderInline(block.text)}
+        </h2>
+      );
+    return (
+      <h3 key={key} className={className}>
+        {renderInline(block.text)}
+      </h3>
+    );
   }
 
   if (block.type === "paragraph") {
     return (
-      <p key={key} className="my-4 leading-7 text-text-soft dark:text-slate-300">
+      <p
+        key={key}
+        className="my-4 leading-7 text-text-soft dark:text-slate-300"
+      >
         {renderInline(block.text)}
       </p>
     );
@@ -48,7 +65,10 @@ function renderBlock(block: Block, index: number): ReactNode {
 
   if (block.type === "code") {
     return (
-      <div key={key} className="my-6 overflow-hidden rounded-xl border border-border bg-slate-950 shadow-sm dark:border-white/10">
+      <div
+        key={key}
+        className="my-6 overflow-hidden rounded-xl border border-border bg-slate-950 shadow-sm dark:border-white/10"
+      >
         {block.language ? (
           <div className="border-b border-white/10 px-4 py-2 font-mono text-[11px] uppercase tracking-wider text-slate-400">
             {block.language}
@@ -80,7 +100,10 @@ function renderBlock(block: Block, index: number): ReactNode {
 
   if (block.type === "quote") {
     return (
-      <blockquote key={key} className="my-6 rounded-r-xl border-l-4 border-primary bg-primary/5 px-5 py-4 leading-7 text-text-soft dark:bg-primary/10 dark:text-slate-300">
+      <blockquote
+        key={key}
+        className="my-6 rounded-r-xl border-l-4 border-primary bg-primary/5 px-5 py-4 leading-7 text-text-soft dark:bg-primary/10 dark:text-slate-300"
+      >
         {renderInline(block.text)}
       </blockquote>
     );
@@ -95,23 +118,39 @@ function renderInline(text: string): ReactNode[] {
   return parts.map((part, index) => {
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
-        <code key={index} className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-[0.9em] text-primary dark:bg-slate-800">
+        <code
+          key={index}
+          className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-[0.9em] text-primary dark:bg-slate-800"
+        >
           {part.slice(1, -1)}
         </code>
       );
     }
 
     if (part.startsWith("**") && part.endsWith("**")) {
-      return <strong key={index} className="font-semibold text-text dark:text-white">{part.slice(2, -2)}</strong>;
+      return (
+        <strong key={index} className="font-semibold text-text dark:text-white">
+          {part.slice(2, -2)}
+        </strong>
+      );
     }
 
     const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
     if (linkMatch) {
       const href = linkMatch[2];
-      const safeHref = href.startsWith("http://") || href.startsWith("https://") ? href : undefined;
+      const safeHref =
+        href.startsWith("http://") || href.startsWith("https://")
+          ? href
+          : undefined;
 
       return safeHref ? (
-        <a key={index} href={safeHref} target="_blank" rel="noreferrer" className="font-medium text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary">
+        <a
+          key={index}
+          href={safeHref}
+          target="_blank"
+          rel="noreferrer"
+          className="font-medium text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary"
+        >
           {linkMatch[1]}
         </a>
       ) : (
@@ -151,7 +190,11 @@ function parseMarkdown(content: string): Block[] {
 
     const headingMatch = /^(#{1,3})\s+(.+)$/.exec(line);
     if (headingMatch) {
-      blocks.push({ type: "heading", level: headingMatch[1].length, text: headingMatch[2].trim() });
+      blocks.push({
+        type: "heading",
+        level: headingMatch[1].length,
+        text: headingMatch[2].trim(),
+      });
       index += 1;
       continue;
     }
@@ -188,7 +231,11 @@ function parseMarkdown(content: string): Block[] {
 
     const paragraphLines = [line.trim()];
     index += 1;
-    while (index < lines.length && lines[index].trim() && !isBlockStart(lines[index])) {
+    while (
+      index < lines.length &&
+      lines[index].trim() &&
+      !isBlockStart(lines[index])
+    ) {
       paragraphLines.push(lines[index].trim());
       index += 1;
     }

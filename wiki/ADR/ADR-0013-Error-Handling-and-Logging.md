@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied consists of multiple independently evolving subsystems:
 
@@ -38,7 +38,7 @@ Without a unified error architecture every subsystem would expose different erro
 
 ---
 
-# Problem
+## Problem
 
 Traditional applications often return inconsistent errors.
 
@@ -55,7 +55,7 @@ These inconsistencies increase development effort and complicate monitoring.
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied adopts a **structured error architecture**.
 
@@ -67,7 +67,7 @@ Logging is centralized and correlated using request identifiers.
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > Every failure should be observable.
 >
@@ -77,7 +77,7 @@ Logging is centralized and correlated using request identifiers.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Request
@@ -111,11 +111,12 @@ Structured Error Response
         ▼
 
 Client
+
 ```
 
 ---
 
-# Design Goals
+## Design Goals
 
 The error architecture should provide:
 
@@ -129,7 +130,7 @@ The error architecture should provide:
 
 ---
 
-# Error Categories
+## Error Categories
 
 Errors are grouped into architectural categories.
 
@@ -148,7 +149,7 @@ Typical categories include:
 
 ---
 
-# Structured Error Response
+## Structured Error Response
 
 Every API endpoint returns the same structure.
 
@@ -165,7 +166,7 @@ Example:
 
 ---
 
-# Error Fields
+## Error Fields
 
 Every structured error contains:
 
@@ -178,7 +179,7 @@ Every structured error contains:
 
 ---
 
-# Error Codes
+## Error Codes
 
 Error codes remain stable across releases.
 
@@ -198,13 +199,14 @@ permission_denied
 resource_not_found
 
 internal_error
+
 ```
 
 Clients should rely on error codes rather than localized messages.
 
 ---
 
-# HTTP Status Codes
+## HTTP Status Codes
 
 Errors use standard HTTP status codes.
 
@@ -222,7 +224,7 @@ Errors use standard HTTP status codes.
 
 ---
 
-# Exception Hierarchy
+## Exception Hierarchy
 
 Application exceptions derive from a common base type.
 
@@ -248,13 +250,14 @@ ApplicationError
 ├── DatabaseError
 
 └── InternalError
+
 ```
 
 Specialized services may define additional subclasses while preserving the common response contract.
 
 ---
 
-# Validation Errors
+## Validation Errors
 
 Validation occurs before business logic executes.
 
@@ -270,7 +273,7 @@ Validation errors return structured details describing invalid fields.
 
 ---
 
-# Provider Errors
+## Provider Errors
 
 Model providers may fail because of:
 
@@ -284,7 +287,7 @@ Provider-specific exceptions are translated into platform-wide error codes.
 
 ---
 
-# Tool Errors
+## Tool Errors
 
 Tools may fail because of:
 
@@ -298,7 +301,7 @@ Tool-specific implementation details are not exposed to clients unless explicitl
 
 ---
 
-# Database Errors
+## Database Errors
 
 Database exceptions are converted into application errors.
 
@@ -308,7 +311,7 @@ Sensitive information remains inside server logs.
 
 ---
 
-# Streaming Errors
+## Streaming Errors
 
 Server-Sent Events use dedicated error events.
 
@@ -322,13 +325,14 @@ data:
     "code":"provider_timeout",
     "message":"Generation timed out."
 }
+
 ```
 
 Streaming clients should terminate gracefully after receiving terminal error events.
 
 ---
 
-# Request IDs
+## Request IDs
 
 Every incoming request receives a unique request identifier.
 
@@ -350,13 +354,14 @@ Error Response
 ↓
 
 Support
+
 ```
 
 The request identifier allows administrators to correlate logs, monitoring events and user reports.
 
 ---
 
-# Logging Architecture
+## Logging Architecture
 
 Logging follows a layered approach.
 
@@ -378,13 +383,14 @@ Storage
 ↓
 
 Monitoring
+
 ```
 
 Each layer adds context without changing log semantics.
 
 ---
 
-# Log Levels
+## Log Levels
 
 The platform uses consistent log levels.
 
@@ -400,7 +406,7 @@ Log levels should be used consistently across all modules.
 
 ---
 
-# Structured Logging
+## Structured Logging
 
 Logs should contain structured fields whenever possible.
 
@@ -418,7 +424,7 @@ Structured logging simplifies automated analysis.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Audit logging is distinct from operational logging.
 
@@ -434,7 +440,7 @@ Audit records are immutable.
 
 ---
 
-# Frontend Error Handling
+## Frontend Error Handling
 
 The frontend categorizes failures into:
 
@@ -449,7 +455,7 @@ The user interface presents meaningful messages while preserving technical detai
 
 ---
 
-# Error Presentation
+## Error Presentation
 
 User-facing messages should be:
 
@@ -462,7 +468,7 @@ Internal exception details should not be displayed to end users.
 
 ---
 
-# Retry Strategy
+## Retry Strategy
 
 Only transient failures should be retried.
 
@@ -476,7 +482,7 @@ Validation errors and authorization failures must never be retried automatically
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Error handling must never expose:
 
@@ -490,7 +496,7 @@ Unexpected exceptions are logged internally but sanitized before returning to cl
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Logging should remain efficient.
 
@@ -505,7 +511,7 @@ Diagnostic quality should not significantly reduce application throughput.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 The logging architecture enables:
 
@@ -520,7 +526,7 @@ Operations teams can investigate failures using request identifiers without repr
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -539,7 +545,7 @@ Operations teams can investigate failures using request identifiers without repr
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Returning Raw Exceptions
 
@@ -565,7 +571,7 @@ Rejected because enterprise deployments require centralized monitoring.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -584,7 +590,7 @@ Mitigation includes:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -602,7 +608,7 @@ All components should participate in the same logging and error-handling archite
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0004-Security-Profiles]]
 - [[ADR-0005-Versioned-Contracts]]
@@ -612,7 +618,7 @@ All components should participate in the same logging and error-handling archite
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -649,7 +655,7 @@ All components should participate in the same logging and error-handling archite
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **centralized error handling and structured logging architecture** in which every failure is translated into a consistent application-wide error contract.
 

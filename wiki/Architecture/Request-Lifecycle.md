@@ -16,7 +16,7 @@ The Request Lifecycle ensures that every request is:
 
 ---
 
-# Goals
+## Goals
 
 The Request Lifecycle is designed to provide:
 
@@ -31,7 +31,7 @@ The Request Lifecycle is designed to provide:
 
 ---
 
-# High-Level Overview
+## High-Level Overview
 
 Every incoming request passes through the same major processing stages.
 
@@ -81,13 +81,14 @@ Response
 ↓
 
 Client
+
 ```
 
 Each stage has a clearly defined responsibility.
 
 ---
 
-# Request Categories
+## Request Categories
 
 The lifecycle applies to all request types, including:
 
@@ -103,7 +104,7 @@ Although internal execution differs, the overall architecture remains consistent
 
 ---
 
-# HTTP Layer
+## HTTP Layer
 
 Every request begins with an HTTP request to the FastAPI application.
 
@@ -124,11 +125,12 @@ HTTPS
 ↓
 
 FastAPI
+
 ```
 
 ---
 
-# Middleware Processing
+## Middleware Processing
 
 Before a request reaches an API endpoint, it passes through middleware.
 
@@ -146,7 +148,7 @@ Middleware remains independent of business logic.
 
 ---
 
-# Request Identification
+## Request Identification
 
 Every request receives a unique identifier.
 
@@ -158,6 +160,7 @@ request_id
 ↓
 
 2ab8b53d
+
 ```
 
 The identifier is included in:
@@ -170,7 +173,7 @@ This enables end-to-end traceability.
 
 ---
 
-# Authentication
+## Authentication
 
 Authentication verifies the identity of the caller.
 
@@ -187,7 +190,7 @@ Unauthenticated requests are rejected before business logic executes.
 
 ---
 
-# Authorization
+## Authorization
 
 After authentication, authorization determines whether the request is permitted.
 
@@ -202,7 +205,7 @@ Authorization is always enforced server-side.
 
 ---
 
-# Dependency Injection
+## Dependency Injection
 
 FastAPI resolves required dependencies before entering the endpoint.
 
@@ -218,7 +221,7 @@ Services never construct these dependencies manually.
 
 ---
 
-# API Endpoint
+## API Endpoint
 
 API endpoints provide the public interface of the platform.
 
@@ -233,7 +236,7 @@ Endpoints contain minimal business logic.
 
 ---
 
-# Request Validation
+## Request Validation
 
 Incoming data is validated using Pydantic models.
 
@@ -249,7 +252,7 @@ Invalid requests return structured validation errors.
 
 ---
 
-# Application Services
+## Application Services
 
 After validation, the endpoint delegates processing to an application service.
 
@@ -259,6 +262,7 @@ API
 ↓
 
 Chat Service
+
 ```
 
 or
@@ -269,13 +273,14 @@ API
 ↓
 
 Configuration Service
+
 ```
 
 Services coordinate the remaining processing pipeline.
 
 ---
 
-# Configuration Resolution
+## Configuration Resolution
 
 Many services require runtime configuration.
 
@@ -303,13 +308,14 @@ Request
 ↓
 
 Resolved Configuration
+
 ```
 
 Configuration resolution is deterministic.
 
 ---
 
-# Hierarchy Resolution
+## Hierarchy Resolution
 
 Requests associated with hierarchy nodes trigger hierarchy resolution.
 
@@ -324,7 +330,7 @@ This step is skipped for requests that do not use hierarchy data.
 
 ---
 
-# Prompt Resolution
+## Prompt Resolution
 
 Chat requests additionally invoke the Prompt Resolver.
 
@@ -342,13 +348,14 @@ Merge
 ↓
 
 Final Prompt
+
 ```
 
 The resulting prompt is provider-independent.
 
 ---
 
-# Registry Lookup
+## Registry Lookup
 
 Application services use registries to locate runtime components.
 
@@ -364,6 +371,7 @@ Model Registry
 ↓
 
 Provider
+
 ```
 
 ```text
@@ -376,13 +384,14 @@ Tool Registry
 ↓
 
 Tool
+
 ```
 
 Services never access manifests directly.
 
 ---
 
-# Repository Access
+## Repository Access
 
 Persistence is performed exclusively through repositories.
 
@@ -396,13 +405,14 @@ Repository
 ↓
 
 Database
+
 ```
 
 Repositories encapsulate all database operations.
 
 ---
 
-# Provider Invocation
+## Provider Invocation
 
 Chat requests eventually invoke a model provider.
 
@@ -420,13 +430,14 @@ Model
 ↓
 
 Response
+
 ```
 
 The provider abstraction hides implementation-specific details.
 
 ---
 
-# Tool Execution
+## Tool Execution
 
 If tools are enabled, the request may invoke one or more tools.
 
@@ -454,13 +465,14 @@ Tool Result
 ↓
 
 Model
+
 ```
 
 Only authorized tools may execute.
 
 ---
 
-# Response Construction
+## Response Construction
 
 After business logic completes, the service returns a structured result.
 
@@ -478,11 +490,12 @@ API Response
 ↓
 
 JSON
+
 ```
 
 ---
 
-# Streaming Requests
+## Streaming Requests
 
 Streaming requests use Server-Sent Events instead of a single JSON response.
 
@@ -506,13 +519,14 @@ SSE Events
 ↓
 
 Client
+
 ```
 
 Streaming remains active until completion or error.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Errors are translated into structured responses.
 
@@ -531,7 +545,7 @@ The request identifier allows correlation with server logs.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Sensitive operations generate audit events.
 
@@ -547,7 +561,7 @@ Audit logging occurs independently of normal application logging.
 
 ---
 
-# Response Delivery
+## Response Delivery
 
 The completed response is returned to the client.
 
@@ -561,7 +575,7 @@ The response always follows the documented public contract.
 
 ---
 
-# Lifecycle Diagram
+## Lifecycle Diagram
 
 ```text
 Client
@@ -617,13 +631,14 @@ Response
 ↓
 
 Client
+
 ```
 
 This sequence is representative of a typical chat request.
 
 ---
 
-# Caching
+## Caching
 
 Several stages may use caching.
 
@@ -638,7 +653,7 @@ Caches are invalidated using revision numbers.
 
 ---
 
-# Failure Handling
+## Failure Handling
 
 Failures terminate processing immediately.
 
@@ -652,13 +667,14 @@ Structured Error
 ↓
 
 Client
+
 ```
 
 Subsequent stages are not executed.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Every request is processed within strict security boundaries.
 
@@ -675,7 +691,7 @@ The frontend never bypasses these checks.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The lifecycle is optimized for:
 
@@ -690,7 +706,7 @@ These optimizations keep request latency low while preserving deterministic beha
 
 ---
 
-# Relationship to Other Architecture
+## Relationship to Other Architecture
 
 The Request Lifecycle integrates nearly every architectural subsystem.
 
@@ -728,13 +744,14 @@ Providers
 ↓
 
 HTTP Response
+
 ```
 
 It serves as the operational backbone of the platform.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -778,7 +795,7 @@ It serves as the operational backbone of the platform.
 
 ---
 
-# Summary
+## Summary
 
 The Request Lifecycle defines the complete processing pipeline for every request handled by the Kernschmied platform.
 

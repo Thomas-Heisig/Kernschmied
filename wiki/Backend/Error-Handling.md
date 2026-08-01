@@ -8,7 +8,7 @@ Kernschmied intentionally separates **internal exceptions** from **public error 
 
 ---
 
-# Goals
+## Goals
 
 The Error Handling architecture is designed to provide:
 
@@ -24,7 +24,7 @@ The Error Handling architecture is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Fail Fast
 
@@ -54,6 +54,7 @@ Business Logic
 ↓
 
 Persistence
+
 ```
 
 Invalid requests should never reach deeper application layers.
@@ -78,6 +79,7 @@ Structured Error Response
 ↓
 
 Client
+
 ```
 
 Clients never receive stack traces or implementation details.
@@ -103,7 +105,7 @@ Clients should depend on the `code` field rather than parsing human-readable mes
 
 ---
 
-# Error Categories
+## Error Categories
 
 Errors generally fall into several categories.
 
@@ -123,7 +125,7 @@ Each category maps to appropriate HTTP status codes and structured error codes.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Application Component
@@ -143,13 +145,14 @@ Structured Response
 ↓
 
 Client
+
 ```
 
 All unhandled exceptions eventually pass through the global exception handler.
 
 ---
 
-# Validation Errors
+## Validation Errors
 
 Validation occurs at system boundaries.
 
@@ -165,7 +168,7 @@ Validation errors are reported before business logic executes.
 
 ---
 
-# Authentication Errors
+## Authentication Errors
 
 Authentication errors occur when user identity cannot be established.
 
@@ -180,7 +183,7 @@ Authentication failures do not expose security-sensitive details.
 
 ---
 
-# Authorization Errors
+## Authorization Errors
 
 Authorization errors occur when an authenticated user lacks permission to perform an action.
 
@@ -194,7 +197,7 @@ Authorization is enforced entirely on the backend.
 
 ---
 
-# Configuration Errors
+## Configuration Errors
 
 Configuration failures include:
 
@@ -207,7 +210,7 @@ Configuration errors prevent invalid runtime behavior.
 
 ---
 
-# Registry Errors
+## Registry Errors
 
 Registry-related failures include:
 
@@ -220,7 +223,7 @@ Registries validate metadata before runtime use.
 
 ---
 
-# Provider Errors
+## Provider Errors
 
 Provider failures originate from AI model backends.
 
@@ -236,7 +239,7 @@ Provider-specific details remain internal.
 
 ---
 
-# Tool Execution Errors
+## Tool Execution Errors
 
 Tool execution may fail due to:
 
@@ -250,7 +253,7 @@ Tool failures are reported without exposing implementation internals.
 
 ---
 
-# Database Errors
+## Database Errors
 
 Database failures include:
 
@@ -263,7 +266,7 @@ Repositories translate persistence errors into application-level exceptions.
 
 ---
 
-# Network Errors
+## Network Errors
 
 Communication with external systems may fail.
 
@@ -279,7 +282,7 @@ Network errors are handled independently of provider logic.
 
 ---
 
-# Internal Errors
+## Internal Errors
 
 Unexpected failures are classified as internal errors.
 
@@ -294,7 +297,7 @@ Internal errors are logged in detail but exposed only through generic public res
 
 ---
 
-# Exception Hierarchy
+## Exception Hierarchy
 
 Application-specific exceptions should follow a clear hierarchy.
 
@@ -311,13 +314,14 @@ ApplicationError
 ├── ToolError
 ├── DatabaseError
 └── InternalError
+
 ```
 
 A consistent hierarchy simplifies centralized exception handling.
 
 ---
 
-# Global Exception Handler
+## Global Exception Handler
 
 The global exception handler converts exceptions into public responses.
 
@@ -333,7 +337,7 @@ This guarantees consistent client behavior.
 
 ---
 
-# Structured Error Response
+## Structured Error Response
 
 Every error response follows the same structure.
 
@@ -348,7 +352,7 @@ Additional fields may be introduced through versioned contracts.
 
 ---
 
-# HTTP Status Codes
+## HTTP Status Codes
 
 Typical mappings include:
 
@@ -367,7 +371,7 @@ The response body provides more detailed information than the status code alone.
 
 ---
 
-# Error Codes
+## Error Codes
 
 Error codes remain stable across releases.
 
@@ -387,7 +391,7 @@ Clients should build logic around error codes rather than localized messages.
 
 ---
 
-# Request Correlation
+## Request Correlation
 
 Every request receives a unique identifier.
 
@@ -405,13 +409,14 @@ Logging
 ↓
 
 Error Response
+
 ```
 
 The request identifier simplifies diagnostics across distributed logs.
 
 ---
 
-# Logging
+## Logging
 
 Errors are logged using structured logging.
 
@@ -429,7 +434,7 @@ Logging and public error responses intentionally expose different levels of deta
 
 ---
 
-# Error Propagation
+## Error Propagation
 
 Exceptions should propagate upward until they reach an appropriate handling layer.
 
@@ -447,13 +452,14 @@ API Layer
 ↓
 
 Exception Handler
+
 ```
 
 Lower layers should not generate HTTP responses directly.
 
 ---
 
-# Retry Strategy
+## Retry Strategy
 
 Some failures are transient.
 
@@ -468,7 +474,7 @@ Retries should be controlled explicitly rather than applied indiscriminately.
 
 ---
 
-# Streaming Errors
+## Streaming Errors
 
 Errors occurring during Server-Sent Events are transmitted as structured SSE error events.
 
@@ -488,13 +494,14 @@ error
 ↓
 
 complete
+
 ```
 
 Clients should terminate stream processing after receiving a terminal error event.
 
 ---
 
-# Security
+## Security
 
 Error handling must never reveal:
 
@@ -509,7 +516,7 @@ Sensitive information remains confined to server logs.
 
 ---
 
-# Testing
+## Testing
 
 Error handling should be verified through automated tests.
 
@@ -528,7 +535,7 @@ Consistent error behavior is part of the public API contract.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture supports future enhancements including:
 
@@ -543,7 +550,7 @@ These capabilities can be added while preserving existing error contracts.
 
 ---
 
-# Relationship to Other Backend Components
+## Relationship to Other Backend Components
 
 Error handling spans every backend layer.
 
@@ -569,13 +576,14 @@ Exception Handler
 ↓
 
 Structured Response
+
 ```
 
 It provides a unified mechanism for reporting failures throughout the system.
 
 ---
 
-# Relationship to Architecture
+## Relationship to Architecture
 
 Error Handling is closely related to:
 
@@ -587,7 +595,7 @@ Error Handling is closely related to:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -619,7 +627,7 @@ Error Handling is closely related to:
 
 ---
 
-# Summary
+## Summary
 
 The Error Handling architecture provides a consistent and secure mechanism for detecting, classifying, logging, and exposing failures throughout the Kernschmied backend.
 

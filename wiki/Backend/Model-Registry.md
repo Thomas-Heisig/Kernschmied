@@ -8,7 +8,7 @@ This architecture allows new models and providers to be added through manifests 
 
 ---
 
-# Goals
+## Goals
 
 The Model Registry is designed to provide:
 
@@ -23,7 +23,7 @@ The Model Registry is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Provider Independence
 
@@ -45,6 +45,7 @@ Provider Backend
 ↓
 
 AI Model
+
 ```
 
 This abstraction keeps business logic independent of provider implementations.
@@ -71,6 +72,7 @@ qwen2.5-coder:7b
 ↓
 
 Ollama
+
 ```
 
 Clients never depend on provider-specific model names.
@@ -113,13 +115,14 @@ Registry
 ↓
 
 Available Models
+
 ```
 
 This allows models to be added without modifying application code.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 Model Manifest
@@ -139,13 +142,14 @@ Provider Backend
 ↓
 
 Model Execution
+
 ```
 
 Each layer has a clearly defined responsibility.
 
 ---
 
-# Registry Responsibilities
+## Registry Responsibilities
 
 The Model Registry is responsible for:
 
@@ -161,7 +165,7 @@ It does **not** execute inference itself.
 
 ---
 
-# Model Discovery
+## Model Discovery
 
 Models are discovered during application bootstrap.
 
@@ -181,13 +185,14 @@ Registry Population
 ↓
 
 Application Ready
+
 ```
 
 Only valid models become available.
 
 ---
 
-# Model Manifest
+## Model Manifest
 
 Every model is described by a manifest.
 
@@ -205,7 +210,7 @@ Manifests are versioned and validated before registration.
 
 ---
 
-# Registry Initialization
+## Registry Initialization
 
 During bootstrap the registry:
 
@@ -219,7 +224,7 @@ Initialization must complete successfully before requests are processed.
 
 ---
 
-# Registry Entries
+## Registry Entries
 
 Each registry entry represents a logical model.
 
@@ -238,7 +243,7 @@ The internal structure may evolve independently of the public API.
 
 ---
 
-# Capability Management
+## Capability Management
 
 Capabilities describe what a model can do.
 
@@ -256,7 +261,7 @@ Capabilities allow services to select compatible models without inspecting provi
 
 ---
 
-# Model Resolution
+## Model Resolution
 
 Application services request models by identifier.
 
@@ -274,13 +279,14 @@ Provider
 ↓
 
 Resolved Backend
+
 ```
 
 Unknown identifiers produce structured errors.
 
 ---
 
-# Default Models
+## Default Models
 
 The registry may define default models for different purposes.
 
@@ -296,7 +302,7 @@ Defaults are controlled through runtime configuration rather than source code.
 
 ---
 
-# Provider Association
+## Provider Association
 
 Each registered model references exactly one provider.
 
@@ -316,13 +322,14 @@ Provider Registry
 ↓
 
 Backend Instance
+
 ```
 
 The provider registry resolves the implementation.
 
 ---
 
-# Runtime Availability
+## Runtime Availability
 
 Models may become unavailable during runtime.
 
@@ -337,7 +344,7 @@ Availability status is exposed separately from registration metadata.
 
 ---
 
-# Validation
+## Validation
 
 Every manifest is validated before registration.
 
@@ -354,7 +361,7 @@ Invalid manifests are rejected during bootstrap.
 
 ---
 
-# Duplicate Detection
+## Duplicate Detection
 
 Logical model identifiers must be unique.
 
@@ -364,13 +371,14 @@ Invalid example:
 assistant-default
 
 assistant-default
+
 ```
 
 Duplicate registrations prevent successful startup.
 
 ---
 
-# Revision Tracking
+## Revision Tracking
 
 The registry maintains a revision number.
 
@@ -384,13 +392,14 @@ Registry Updated
 ↓
 
 Revision 16
+
 ```
 
 Clients can use revision information to invalidate cached metadata.
 
 ---
 
-# Registry API
+## Registry API
 
 The backend exposes registry information through stable REST endpoints.
 
@@ -405,7 +414,7 @@ Execution remains separate from discovery.
 
 ---
 
-# Interaction with Chat
+## Interaction with Chat
 
 The Chat Service relies on the registry for model selection.
 
@@ -423,13 +432,14 @@ Provider
 ↓
 
 Inference
+
 ```
 
 The Chat Service never instantiates provider implementations directly.
 
 ---
 
-# Interaction with Configuration
+## Interaction with Configuration
 
 Runtime configuration determines:
 
@@ -442,7 +452,7 @@ Configuration and registry remain separate but closely integrated.
 
 ---
 
-# Interaction with Bootstrap
+## Interaction with Bootstrap
 
 During startup:
 
@@ -460,13 +470,14 @@ Model Registry
 ↓
 
 Application Ready
+
 ```
 
 Registry initialization is part of the deterministic bootstrap process.
 
 ---
 
-# Interaction with Providers
+## Interaction with Providers
 
 The registry stores metadata.
 
@@ -482,13 +493,14 @@ Provider Backend
 ↓
 
 AI Response
+
 ```
 
 This separation allows providers to evolve independently.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Typical registry errors include:
 
@@ -502,7 +514,7 @@ Errors are returned using the standard backend error contract.
 
 ---
 
-# Security
+## Security
 
 The registry enforces several safety guarantees.
 
@@ -517,7 +529,7 @@ Only validated metadata becomes visible to application services.
 
 ---
 
-# Performance
+## Performance
 
 The registry is optimized for:
 
@@ -531,7 +543,7 @@ Lookup operations should remain inexpensive even with large model catalogs.
 
 ---
 
-# Testing
+## Testing
 
 The Model Registry should be verified through automated tests.
 
@@ -549,7 +561,7 @@ Testing ensures deterministic registry behavior.
 
 ---
 
-# Future Extensions
+## Future Extensions
 
 The architecture supports future capabilities including:
 
@@ -565,7 +577,7 @@ These enhancements can be introduced without changing existing service interface
 
 ---
 
-# Relationship to Other Backend Components
+## Relationship to Other Backend Components
 
 The Model Registry coordinates model discovery across the backend.
 
@@ -587,13 +599,14 @@ Chat Service
 ↓
 
 AI Providers
+
 ```
 
 It acts as the authoritative source of model metadata.
 
 ---
 
-# Relationship to Architecture
+## Relationship to Architecture
 
 The Model Registry integrates closely with:
 
@@ -605,7 +618,7 @@ The Model Registry integrates closely with:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -636,7 +649,7 @@ The Model Registry integrates closely with:
 
 ---
 
-# Summary
+## Summary
 
 The Model Registry provides the authoritative catalog of AI models available to the Kernschmied backend by separating provider-specific implementations from stable, provider-independent model metadata.
 

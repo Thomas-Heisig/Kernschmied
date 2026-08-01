@@ -8,7 +8,7 @@ This allows the platform to evolve without forcing simultaneous upgrades of ever
 
 ---
 
-# Goals
+## Goals
 
 The versioning strategy is designed to provide:
 
@@ -22,7 +22,7 @@ The versioning strategy is designed to provide:
 
 ---
 
-# What is a Contract?
+## What is a Contract?
 
 A contract defines the agreed structure and behavior between two independent components.
 
@@ -41,7 +41,7 @@ The implementation may change internally as long as the public contract remains 
 
 ---
 
-# Architectural Principles
+## Architectural Principles
 
 The versioning strategy follows several core principles.
 
@@ -79,6 +79,7 @@ Version 2
 Manifest Schema
 
 Version 4
+
 ```
 
 Updating one contract does not require updating unrelated contracts.
@@ -100,7 +101,7 @@ Removing existing fields is avoided.
 
 ---
 
-# Versioned Contracts
+## Versioned Contracts
 
 The following contracts are versioned independently.
 
@@ -118,7 +119,7 @@ The following contracts are versioned independently.
 
 ---
 
-# Version Discovery
+## Version Discovery
 
 Clients discover supported versions during bootstrap.
 
@@ -140,7 +141,7 @@ The frontend never hardcodes expected versions.
 
 ---
 
-# API Versioning
+## API Versioning
 
 REST APIs are versioned through the URL.
 
@@ -152,6 +153,7 @@ Example:
 /api/v1/chat/stream
 
 /api/v1/models
+
 ```
 
 Future versions remain side-by-side.
@@ -160,13 +162,14 @@ Example:
 
 ```text
 /api/v2/chat/stream
+
 ```
 
 Older clients continue using the previous version.
 
 ---
 
-# Bootstrap Version
+## Bootstrap Version
 
 The Bootstrap contract evolves independently.
 
@@ -182,7 +185,7 @@ Clients use Bootstrap to determine compatibility.
 
 ---
 
-# Chat API Version
+## Chat API Version
 
 The Chat API version controls:
 
@@ -196,7 +199,7 @@ Streaming and request versions evolve together.
 
 ---
 
-# SSE Versioning
+## SSE Versioning
 
 The streaming protocol has its own contract version.
 
@@ -210,7 +213,7 @@ Existing event types remain unchanged.
 
 ---
 
-# UI Schema Version
+## UI Schema Version
 
 UI schemas are versioned independently of the REST API.
 
@@ -226,7 +229,7 @@ Example:
 
 ---
 
-# Manifest Versioning
+## Manifest Versioning
 
 Both model and tool manifests include schema versions.
 
@@ -242,7 +245,7 @@ Manifest loaders validate the schema version before loading.
 
 ---
 
-# Configuration Schema Versioning
+## Configuration Schema Versioning
 
 Configuration entries are validated against versioned schemas.
 
@@ -255,12 +258,13 @@ Each schema defines:
 
 ---
 
-# Semantic Versioning
+## Semantic Versioning
 
 Application releases follow Semantic Versioning.
 
 ```text
 MAJOR.MINOR.PATCH
+
 ```
 
 Example:
@@ -269,6 +273,7 @@ Example:
 0.1.0
 0.2.0
 1.0.0
+
 ```
 
 Meaning:
@@ -283,7 +288,7 @@ Application versioning is independent of API contract versions.
 
 ---
 
-# Compatible Changes
+## Compatible Changes
 
 The following changes are considered backward compatible.
 
@@ -298,7 +303,7 @@ Existing clients continue functioning.
 
 ---
 
-# Breaking Changes
+## Breaking Changes
 
 Examples of breaking changes include:
 
@@ -313,7 +318,7 @@ Breaking changes require a new contract version.
 
 ---
 
-# Optional Fields
+## Optional Fields
 
 Optional fields are the preferred mechanism for extending contracts.
 
@@ -340,7 +345,7 @@ Version 1 clients simply ignore the new field.
 
 ---
 
-# Unknown Fields
+## Unknown Fields
 
 Clients should ignore unknown fields whenever possible.
 
@@ -348,7 +353,7 @@ This allows servers to evolve without breaking older clients.
 
 ---
 
-# Unknown Event Types
+## Unknown Event Types
 
 Streaming clients should safely ignore unsupported event types.
 
@@ -364,13 +369,14 @@ Ignored
 ↓
 
 Continue Streaming
+
 ```
 
 The stream should remain usable.
 
 ---
 
-# Version Negotiation
+## Version Negotiation
 
 Currently, the backend publishes supported versions.
 
@@ -392,11 +398,12 @@ Server
 ↓
 
 Selected Version
+
 ```
 
 ---
 
-# Deprecation Strategy
+## Deprecation Strategy
 
 Deprecated features remain available for a defined transition period.
 
@@ -416,13 +423,14 @@ Deprecated
 ↓
 
 Removed
+
 ```
 
 Deprecation should always be documented.
 
 ---
 
-# Migration Strategy
+## Migration Strategy
 
 When introducing a new version:
 
@@ -434,7 +442,7 @@ When introducing a new version:
 
 ---
 
-# Validation
+## Validation
 
 Every contract is validated before use.
 
@@ -450,7 +458,7 @@ Invalid contracts are rejected.
 
 ---
 
-# Versioning and Bootstrap
+## Versioning and Bootstrap
 
 Bootstrap exposes all active contract versions.
 
@@ -458,7 +466,7 @@ Clients rely on this information to determine compatibility before loading addit
 
 ---
 
-# Versioning and Registries
+## Versioning and Registries
 
 Registries validate manifest versions during discovery.
 
@@ -468,7 +476,7 @@ Unsupported manifests remain unloaded.
 
 ---
 
-# Versioning and Configuration
+## Versioning and Configuration
 
 Configuration schemas evolve independently.
 
@@ -476,7 +484,7 @@ Older configuration may be migrated during application startup or administrative
 
 ---
 
-# Versioning and Extensions
+## Versioning and Extensions
 
 Plugins and future extensions should define their own versioned contracts.
 
@@ -484,7 +492,7 @@ This ensures that independently developed modules can evolve without affecting t
 
 ---
 
-# Best Practices
+## Best Practices
 
 Recommended guidelines:
 
@@ -497,7 +505,7 @@ Recommended guidelines:
 
 ---
 
-# Future Evolution
+## Future Evolution
 
 Potential future enhancements include:
 
@@ -512,7 +520,7 @@ The current architecture already supports these extensions.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -540,7 +548,7 @@ The current architecture already supports these extensions.
 
 ---
 
-# Summary
+## Summary
 
 Contract Versioning ensures that Kernschmied can evolve without disrupting existing clients or integrations.
 

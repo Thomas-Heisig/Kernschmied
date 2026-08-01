@@ -10,7 +10,7 @@ The Manifest System forms one of the fundamental building blocks of Kernschmied'
 
 ---
 
-# Goals
+## Goals
 
 The Manifest System is designed to provide:
 
@@ -25,7 +25,7 @@ The Manifest System is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 The Manifest System follows several core architectural principles.
 
@@ -55,6 +55,7 @@ Registry
 ↓
 
 Runtime
+
 ```
 
 ---
@@ -91,7 +92,7 @@ Schema evolution remains independent from application releases.
 
 ---
 
-# Manifest Overview
+## Manifest Overview
 
 ```text
                  Manifest
@@ -107,13 +108,14 @@ Schema evolution remains independent from application releases.
       │                               │
 
 Validation                   Registry
+
 ```
 
 The manifest serves as the bridge between implementation and runtime.
 
 ---
 
-# Supported Manifest Types
+## Supported Manifest Types
 
 Current manifest types include:
 
@@ -131,7 +133,7 @@ Future versions may introduce:
 
 ---
 
-# Manifest Lifecycle
+## Manifest Lifecycle
 
 Every manifest follows the same lifecycle.
 
@@ -157,13 +159,14 @@ Runtime Usage
 ↓
 
 Reload (optional)
+
 ```
 
 This lifecycle is deterministic.
 
 ---
 
-# Discovery
+## Discovery
 
 The application scans predefined locations during startup.
 
@@ -173,6 +176,7 @@ Example:
 /models
 
 /tools
+
 ```
 
 Only expected directories are searched.
@@ -181,7 +185,7 @@ Arbitrary filesystem traversal is intentionally avoided.
 
 ---
 
-# Loading
+## Loading
 
 Each discovered manifest is read as structured JSON.
 
@@ -195,13 +199,14 @@ JSON Parser
 ↓
 
 Object Model
+
 ```
 
 Malformed files are rejected immediately.
 
 ---
 
-# Validation
+## Validation
 
 Every manifest is validated before registration.
 
@@ -218,7 +223,7 @@ Invalid manifests never become active.
 
 ---
 
-# Registration
+## Registration
 
 Validated manifests are passed to the appropriate registry.
 
@@ -234,13 +239,14 @@ Model Registry
 ↓
 
 Available Model
+
 ```
 
 The registry owns runtime visibility.
 
 ---
 
-# Runtime Usage
+## Runtime Usage
 
 Application services query registries rather than manifests directly.
 
@@ -254,13 +260,14 @@ Model Registry
 ↓
 
 Resolved Model
+
 ```
 
 Manifests remain immutable metadata.
 
 ---
 
-# Model Manifest
+## Model Manifest
 
 Model manifests describe available AI models.
 
@@ -285,7 +292,7 @@ Example structure:
 
 ---
 
-# Tool Manifest
+## Tool Manifest
 
 Tool manifests describe callable tools.
 
@@ -309,7 +316,7 @@ Example:
 
 ---
 
-# Manifest Schema
+## Manifest Schema
 
 Every manifest type has a dedicated schema.
 
@@ -329,13 +336,14 @@ Validation
 ↓
 
 Registry
+
 ```
 
 Schemas evolve independently.
 
 ---
 
-# Required Fields
+## Required Fields
 
 Although manifest types differ, common fields include:
 
@@ -348,7 +356,7 @@ Additional fields depend on the manifest category.
 
 ---
 
-# Unique Identifiers
+## Unique Identifiers
 
 Each manifest identifier must be unique within its registry.
 
@@ -360,13 +368,14 @@ calculator
 weather
 
 filesystem
+
 ```
 
 Duplicate identifiers are rejected during registration.
 
 ---
 
-# Versioning
+## Versioning
 
 Manifest schemas evolve independently from application releases.
 
@@ -382,13 +391,14 @@ Application
 Manifest Schema
 
 Version 2
+
 ```
 
 This allows gradual evolution.
 
 ---
 
-# Backward Compatibility
+## Backward Compatibility
 
 New schema versions should remain backward compatible whenever possible.
 
@@ -402,7 +412,7 @@ Breaking changes require a new schema version.
 
 ---
 
-# Manifest Discovery Rules
+## Manifest Discovery Rules
 
 Discovery follows strict rules.
 
@@ -420,7 +430,7 @@ Not allowed:
 
 ---
 
-# Security
+## Security
 
 Manifests are treated as untrusted input.
 
@@ -435,7 +445,7 @@ A valid manifest does **not** automatically imply a trusted implementation.
 
 ---
 
-# Relationship to Registries
+## Relationship to Registries
 
 Registries consume manifests.
 
@@ -453,13 +463,14 @@ Lookup
 ↓
 
 Runtime
+
 ```
 
 The registry is responsible for runtime management.
 
 ---
 
-# Relationship to Providers
+## Relationship to Providers
 
 Model manifests reference providers.
 
@@ -479,13 +490,14 @@ Provider Registry
 ↓
 
 Backend
+
 ```
 
 The manifest never instantiates providers directly.
 
 ---
 
-# Relationship to Configuration
+## Relationship to Configuration
 
 Configuration may enable or disable components described by manifests.
 
@@ -503,13 +515,14 @@ Configuration
 ↓
 
 Runtime Availability
+
 ```
 
 A valid manifest may still be disabled through configuration.
 
 ---
 
-# Relationship to Bootstrap
+## Relationship to Bootstrap
 
 Bootstrap exposes registry revisions.
 
@@ -522,7 +535,7 @@ without downloading every manifest individually.
 
 ---
 
-# Manifest Reloading
+## Manifest Reloading
 
 Future versions may support runtime reloads.
 
@@ -546,13 +559,14 @@ Revision++
 ↓
 
 Clients Reload
+
 ```
 
 The architecture already supports this behavior.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Manifest loading errors are isolated.
 
@@ -570,13 +584,14 @@ Skip Manifest
 ↓
 
 Continue Startup
+
 ```
 
 One invalid manifest should not prevent unrelated components from loading.
 
 ---
 
-# Performance
+## Performance
 
 Manifest loading occurs primarily during startup.
 
@@ -591,7 +606,7 @@ Runtime services never repeatedly parse manifests.
 
 ---
 
-# Best Practices
+## Best Practices
 
 Recommended guidelines:
 
@@ -606,7 +621,7 @@ Recommended guidelines:
 
 ---
 
-# Future Manifest Types
+## Future Manifest Types
 
 The architecture allows additional manifest categories.
 
@@ -624,7 +639,7 @@ No architectural redesign is required.
 
 ---
 
-# Manifest Directory Structure
+## Manifest Directory Structure
 
 Typical layout:
 
@@ -646,13 +661,14 @@ backend/
 │   └── weather/
 │       ├── tool.json
 │       └── tool.py
+
 ```
 
 This organization keeps metadata and implementation together while preserving separation of concerns.
 
 ---
 
-# Relationship to Other Architecture
+## Relationship to Other Architecture
 
 The Manifest System forms the entry point for several architectural subsystems.
 
@@ -678,6 +694,7 @@ Runtime
 ↓
 
 Application Services
+
 ```
 
 It therefore connects:
@@ -689,7 +706,7 @@ It therefore connects:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -717,7 +734,7 @@ It therefore connects:
 
 ---
 
-# Summary
+## Summary
 
 The Manifest System provides a declarative, versioned, and secure mechanism for describing extensible platform components without embedding implementation details into runtime configuration.
 

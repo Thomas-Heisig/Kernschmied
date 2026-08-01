@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is designed as a generic AI platform rather than a single-purpose chat application.
 
@@ -38,7 +38,7 @@ It is responsible for:
 
 ---
 
-# Problem
+## Problem
 
 Traditional AI applications frequently duplicate configuration at every level.
 
@@ -60,7 +60,7 @@ The platform requires a deterministic inheritance mechanism.
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied adopts a **generic hierarchical configuration model**.
 
@@ -72,7 +72,7 @@ The hierarchy itself contains no business-specific logic.
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > Configuration flows downward through the hierarchy.
 >
@@ -80,7 +80,7 @@ The hierarchy itself contains no business-specific logic.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
 System
@@ -108,13 +108,14 @@ Folder
         ▼
 
 Chat
+
 ```
 
 Each level may define additional configuration.
 
 ---
 
-# Goals
+## Goals
 
 The hierarchy architecture should provide:
 
@@ -129,7 +130,7 @@ The hierarchy architecture should provide:
 
 ---
 
-# Generic Nodes
+## Generic Nodes
 
 Hierarchy nodes are generic.
 
@@ -148,7 +149,7 @@ Additional node types may be introduced without modifying the hierarchy engine.
 
 ---
 
-# Node Structure
+## Node Structure
 
 Every node contains common metadata.
 
@@ -167,7 +168,7 @@ Business-specific data belongs outside the hierarchy itself.
 
 ---
 
-# Hierarchy Service
+## Hierarchy Service
 
 The **Hierarchy Service** manages the tree structure.
 
@@ -184,7 +185,7 @@ Business services never traverse the hierarchy directly.
 
 ---
 
-# Hierarchy Traversal
+## Hierarchy Traversal
 
 Typical traversal:
 
@@ -206,13 +207,14 @@ Organization
 ↓
 
 System
+
 ```
 
 The resolver collects configuration beginning at the root.
 
 ---
 
-# Configuration Inheritance
+## Configuration Inheritance
 
 Every node may contribute configuration.
 
@@ -240,13 +242,14 @@ Chat
 ↓
 
 Temperature Override
+
 ```
 
 The resulting configuration combines all applicable values.
 
 ---
 
-# Prompt Inheritance
+## Prompt Inheritance
 
 Prompt inheritance follows the same hierarchical model.
 
@@ -266,13 +269,14 @@ Project Prompt
 ↓
 
 Chat Prompt
+
 ```
 
 The effective prompt is produced by the Configuration Resolver.
 
 ---
 
-# Prompt Composition
+## Prompt Composition
 
 Prompt inheritance is deterministic.
 
@@ -296,13 +300,14 @@ Chat Instructions
 ↓
 
 Current User Message
+
 ```
 
 The resulting prompt is assembled before model execution.
 
 ---
 
-# Tool Inheritance
+## Tool Inheritance
 
 Nodes may enable or disable tools.
 
@@ -326,13 +331,14 @@ Web Search
 Chat
 
 Image Generation
+
 ```
 
 The effective tool set is resolved automatically.
 
 ---
 
-# Model Inheritance
+## Model Inheritance
 
 Nodes may define default models.
 
@@ -354,13 +360,14 @@ Coding Model
 Chat
 
 Reasoning Model
+
 ```
 
 Lower levels override inherited defaults where appropriate.
 
 ---
 
-# Configuration Resolution
+## Configuration Resolution
 
 The effective configuration is calculated by combining:
 
@@ -373,7 +380,7 @@ The resulting configuration is immutable during request processing.
 
 ---
 
-# Merge Strategies
+## Merge Strategies
 
 Hierarchy inheritance supports multiple merge strategies.
 
@@ -399,7 +406,7 @@ These strategies are defined by the Configuration Management architecture.
 
 ---
 
-# Effective Configuration
+## Effective Configuration
 
 Business services receive only the effective configuration.
 
@@ -423,13 +430,14 @@ Validation
 ↓
 
 Effective Configuration
+
 ```
 
 The service never knows where a value originated.
 
 ---
 
-# Effective Prompt
+## Effective Prompt
 
 Prompt generation follows the same principle.
 
@@ -451,13 +459,14 @@ Template Processing
 ↓
 
 Effective Prompt
+
 ```
 
 Models receive only the final prompt.
 
 ---
 
-# Hierarchy Navigation
+## Hierarchy Navigation
 
 The hierarchy supports navigation operations such as:
 
@@ -472,7 +481,7 @@ Traversal remains independent from business logic.
 
 ---
 
-# Dynamic Node Types
+## Dynamic Node Types
 
 Node types are configuration-driven.
 
@@ -490,13 +499,14 @@ knowledge_base
 assistant
 
 repository
+
 ```
 
 Unknown node types are displayed generically by the frontend.
 
 ---
 
-# Frontend Integration
+## Frontend Integration
 
 The frontend renders hierarchy nodes using the Generic Tree component.
 
@@ -511,7 +521,7 @@ No node-specific React components are required.
 
 ---
 
-# Prompt Templates
+## Prompt Templates
 
 Prompt inheritance may reference reusable templates.
 
@@ -531,13 +541,14 @@ Chat Prompt
 ↓
 
 Request Prompt
+
 ```
 
 Templates remain versioned configuration rather than hardcoded strings.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Hierarchy boundaries influence authorization.
 
@@ -553,7 +564,7 @@ Hierarchy traversal never bypasses authorization checks.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Hierarchy resolution is optimized through:
 
@@ -566,7 +577,7 @@ Traversal should remain inexpensive even for deep trees.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 The hierarchy architecture enables:
 
@@ -581,7 +592,7 @@ Administrators modify shared behavior at higher hierarchy levels.
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -600,7 +611,7 @@ Administrators modify shared behavior at higher hierarchy levels.
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Flat Configuration
 
@@ -630,7 +641,7 @@ Rejected because deep hierarchies would degrade performance.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -650,7 +661,7 @@ Mitigation includes:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -668,7 +679,7 @@ Business services should never manually traverse hierarchy relationships.
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0001-Schema-Driven-UI]]
 - [[ADR-0002-Bootstrap]]
@@ -678,7 +689,7 @@ Business services should never manually traverse hierarchy relationships.
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -714,7 +725,7 @@ Business services should never manually traverse hierarchy relationships.
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **generic hierarchy architecture** in which every node may contribute configuration, prompts, tools, models, permissions, and metadata through deterministic inheritance.
 

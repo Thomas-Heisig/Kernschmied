@@ -10,7 +10,7 @@ The UI Schema API is a cornerstone of the platform's schema-driven architecture.
 
 ---
 
-# Goals
+## Goals
 
 The UI Schema API is designed to provide:
 
@@ -25,7 +25,7 @@ The UI Schema API is designed to provide:
 
 ---
 
-# Endpoint
+## Endpoint
 
 ## List UI Schemas
 
@@ -55,7 +55,7 @@ GET /api/v1/ui/schema/revisions
 
 ---
 
-# Architecture
+## Architecture
 
 ```text
 REST API
@@ -83,6 +83,7 @@ Database / Configuration
         ▼
 
 Frontend Schema Renderer
+
 ```
 
 The backend defines **what** should be rendered.
@@ -91,7 +92,7 @@ The frontend decides **how** known schema elements are rendered.
 
 ---
 
-# Why a Schema-Driven UI?
+## Why a Schema-Driven UI?
 
 Traditional applications tightly couple backend models to frontend components.
 
@@ -107,6 +108,7 @@ ProjectPage
 ↓
 
 ProjectEditor
+
 ```
 
 This approach requires frontend development whenever new business objects are introduced.
@@ -127,13 +129,14 @@ Schema Renderer
 ↓
 
 Generic Components
+
 ```
 
 The frontend becomes data-driven rather than business-object-driven.
 
 ---
 
-# Example Response
+## Example Response
 
 ```json
 [
@@ -161,7 +164,7 @@ The exact schema format is versioned independently.
 
 ---
 
-# Schema Structure
+## Schema Structure
 
 A UI schema typically contains:
 
@@ -177,7 +180,7 @@ Future versions may introduce additional properties.
 
 ---
 
-# Schema Identifier
+## Schema Identifier
 
 Each schema has a stable identifier.
 
@@ -195,7 +198,7 @@ The frontend resolves it through the Schema Renderer.
 
 ---
 
-# Layout
+## Layout
 
 Schemas describe the logical layout.
 
@@ -214,7 +217,7 @@ The frontend controls the visual implementation.
 
 ---
 
-# Fields
+## Fields
 
 Fields describe editable or read-only values.
 
@@ -232,7 +235,7 @@ Fields never directly reference React components.
 
 ---
 
-# Components
+## Components
 
 The `component` field references a generic frontend component.
 
@@ -255,7 +258,7 @@ Unknown component types are displayed using an unsupported component view.
 
 ---
 
-# Component Registry
+## Component Registry
 
 The frontend maintains a fixed registry.
 
@@ -273,6 +276,7 @@ Known Component
 ↓
 
 Render
+
 ```
 
 The backend cannot introduce arbitrary executable frontend code.
@@ -281,7 +285,7 @@ This guarantees predictable rendering and security.
 
 ---
 
-# Actions
+## Actions
 
 Schemas may define available user actions.
 
@@ -298,7 +302,7 @@ Actions are resolved through the frontend Action Registry.
 
 ---
 
-# Action Registry
+## Action Registry
 
 Like components, actions are fixed frontend implementations.
 
@@ -318,7 +322,7 @@ The backend cannot inject executable JavaScript.
 
 ---
 
-# Validation
+## Validation
 
 Schemas may include validation rules.
 
@@ -339,7 +343,7 @@ Backend validation is always authoritative.
 
 ---
 
-# Forms
+## Forms
 
 Schemas drive dynamic forms.
 
@@ -363,13 +367,14 @@ User Input
 ↓
 
 REST API
+
 ```
 
 No form is hardcoded for a specific business object.
 
 ---
 
-# Read-Only Fields
+## Read-Only Fields
 
 Schemas may define read-only values.
 
@@ -388,7 +393,7 @@ The backend still validates incoming requests.
 
 ---
 
-# Conditional Visibility
+## Conditional Visibility
 
 Future schema versions may support conditional rendering.
 
@@ -398,6 +403,7 @@ Examples:
 Show field when
 
 status == "advanced"
+
 ```
 
 The schema remains declarative.
@@ -406,7 +412,7 @@ Business rules continue to reside in the backend.
 
 ---
 
-# Schema Versioning
+## Schema Versioning
 
 Each schema contract is versioned independently.
 
@@ -422,7 +428,7 @@ Version information is also exposed through the Bootstrap API.
 
 ---
 
-# Unknown Schemas
+## Unknown Schemas
 
 The frontend must never fail because of an unknown schema.
 
@@ -440,13 +446,14 @@ Unsupported Schema Component
 ↓
 
 Inform User
+
 ```
 
 This preserves forward compatibility.
 
 ---
 
-# Unknown Components
+## Unknown Components
 
 If a schema references an unknown component:
 
@@ -460,13 +467,14 @@ Unsupported Component
 ↓
 
 Continue Rendering
+
 ```
 
 The remainder of the page continues to function normally.
 
 ---
 
-# Unknown Actions
+## Unknown Actions
 
 Unknown actions are handled similarly.
 
@@ -478,7 +486,7 @@ The frontend:
 
 ---
 
-# Authentication
+## Authentication
 
 Reading UI schemas depends on the deployment profile.
 
@@ -488,7 +496,7 @@ Administrative schema management requires elevated permissions.
 
 ---
 
-# Authorization
+## Authorization
 
 Typical permissions include:
 
@@ -499,7 +507,7 @@ The backend determines which schemas are visible.
 
 ---
 
-# Error Responses
+## Error Responses
 
 Errors follow the standard platform contract.
 
@@ -518,7 +526,7 @@ Example:
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The UI Schema API is optimized through:
 
@@ -532,7 +540,7 @@ Schemas change infrequently and are ideal cache candidates.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 UI schemas never contain:
 
@@ -548,7 +556,7 @@ Every user action is still validated by the backend.
 
 ---
 
-# Frontend Integration
+## Frontend Integration
 
 Typical startup sequence:
 
@@ -574,13 +582,14 @@ Action Registry
 ↓
 
 Application Ready
+
 ```
 
 Subsequent hierarchy navigation reuses cached schemas whenever possible.
 
 ---
 
-# Relationship to the Hierarchy API
+## Relationship to the Hierarchy API
 
 Hierarchy nodes reference UI schemas.
 
@@ -598,6 +607,7 @@ UI Schema API
 ↓
 
 Schema Renderer
+
 ```
 
 The hierarchy defines **what** is selected.
@@ -606,7 +616,7 @@ The UI schema defines **how** it is presented.
 
 ---
 
-# Related APIs
+## Related APIs
 
 ```http
 GET /api/v1/bootstrap
@@ -620,7 +630,7 @@ POST /api/v1/chat/stream
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 - [[Architecture]]
 - [[Bootstrap]]
@@ -635,7 +645,7 @@ POST /api/v1/chat/stream
 
 ---
 
-# Summary
+## Summary
 
 The UI Schema API provides the declarative foundation for Kernschmied's schema-driven frontend.
 

@@ -8,7 +8,7 @@
 
 ---
 
-# Context
+## Context
 
 Kernschmied is designed as a configurable platform rather than a statically configured application.
 
@@ -36,7 +36,7 @@ These approaches work for infrastructure settings but become increasingly diffic
 
 ---
 
-# Problem
+## Problem
 
 Environment variables are immutable during runtime.
 
@@ -58,7 +58,7 @@ without compromising security.
 
 ---
 
-# Decision
+## Decision
 
 Kernschmied adopts a **database-driven configuration architecture**.
 
@@ -77,7 +77,7 @@ Configuration is:
 
 ---
 
-# Architectural Principle
+## Architectural Principle
 
 > Infrastructure belongs in `.env`.
 >
@@ -85,7 +85,7 @@ Configuration is:
 
 ---
 
-# Configuration Categories
+## High-Level Architecture
 
 Configuration is divided into two independent categories.
 
@@ -127,7 +127,7 @@ Runtime configuration is stored in the database.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture (2)
 
 ```text
 .env
@@ -159,11 +159,12 @@ Effective Configuration
         ▼
 
 Business Services
+
 ```
 
 ---
 
-# Goals
+## Goals
 
 The configuration architecture should provide:
 
@@ -178,7 +179,7 @@ The configuration architecture should provide:
 
 ---
 
-# Configuration Service
+## Configuration Service
 
 The **Configuration Service** manages configuration persistence.
 
@@ -195,7 +196,7 @@ Business services never access configuration tables directly.
 
 ---
 
-# Configuration Resolver
+## Configuration Resolver
 
 The **Configuration Resolver** calculates the effective configuration for a specific execution context.
 
@@ -203,7 +204,7 @@ The resolver merges configuration from multiple scopes into a single immutable c
 
 ---
 
-# Configuration Scopes
+## Configuration Scopes
 
 Configuration exists at multiple hierarchical scopes.
 
@@ -220,7 +221,7 @@ Supported scopes include:
 
 ---
 
-# Scope Hierarchy
+## Scope Hierarchy
 
 Configuration is resolved from the least specific scope to the most specific.
 
@@ -246,13 +247,14 @@ USER
 ↓
 
 REQUEST
+
 ```
 
 Every subsequent scope may override or extend previous values according to its merge strategy.
 
 ---
 
-# Effective Configuration
+## Effective Configuration
 
 Business services receive only the **effective configuration**.
 
@@ -272,13 +274,14 @@ Validation
 ↓
 
 Effective Configuration
+
 ```
 
 Services never need to know where a configuration value originated.
 
 ---
 
-# Merge Strategies
+## Merge Strategies
 
 Different configuration values require different merge behavior.
 
@@ -310,6 +313,7 @@ temperature = 0.2
 Effective
 
 temperature = 0.2
+
 ```
 
 ---
@@ -339,6 +343,7 @@ Effective
 
 calculator
 web_search
+
 ```
 
 ---
@@ -378,11 +383,12 @@ Effective
     "max_tokens": 4096
   }
 }
+
 ```
 
 ---
 
-# Validation
+## Validation
 
 Every configuration entry is validated before being stored.
 
@@ -399,7 +405,7 @@ Invalid configuration is rejected immediately.
 
 ---
 
-# Versioning
+## Versioning
 
 Each configuration change increments a global revision number.
 
@@ -415,13 +421,14 @@ Configuration Updated
 ↓
 
 Revision 43
+
 ```
 
 The revision is exposed through the Bootstrap endpoint.
 
 ---
 
-# Cache Invalidation
+## Cache Invalidation
 
 Configuration is cached to reduce database access.
 
@@ -441,13 +448,14 @@ Caches Invalidated
 ↓
 
 Reload on Next Access
+
 ```
 
 Workers detect configuration changes without requiring a restart.
 
 ---
 
-# Runtime Editable Configuration
+## Runtime Editable Configuration
 
 Some configuration values may be modified while the application is running.
 
@@ -470,7 +478,7 @@ Each configuration entry declares whether it is runtime editable.
 
 ---
 
-# Audit Logging
+## Audit Logging
 
 Every configuration modification is recorded.
 
@@ -488,7 +496,7 @@ Audit entries are immutable.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Configuration changes may significantly affect platform behavior.
 
@@ -502,7 +510,7 @@ Therefore:
 
 ---
 
-# Secrets
+## Secrets
 
 Sensitive values should not be stored directly inside general runtime configuration.
 
@@ -516,7 +524,7 @@ Infrastructure secrets belong in secure secret storage or environment variables.
 
 ---
 
-# Configuration API
+## Configuration API
 
 Administrative endpoints expose configuration management.
 
@@ -532,7 +540,7 @@ Clients interact exclusively through the API.
 
 ---
 
-# Configuration Resolution Example
+## Configuration Resolution Example
 
 ```text
 SYSTEM
@@ -560,13 +568,14 @@ REQUEST
 ↓
 
 Effective Configuration
+
 ```
 
 Every request receives a deterministic result.
 
 ---
 
-# Failure Handling
+## Failure Handling
 
 Configuration failures are handled gracefully.
 
@@ -581,7 +590,7 @@ Errors are returned using structured error responses.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 Performance is achieved through:
 
@@ -594,7 +603,7 @@ Configuration resolution should remain inexpensive.
 
 ---
 
-# Operational Impact
+## Operational Impact
 
 The configuration architecture enables:
 
@@ -609,7 +618,7 @@ Operations teams can modify business behavior without redeploying the applicatio
 
 ---
 
-# Consequences
+## Consequences
 
 ## Positive
 
@@ -629,7 +638,7 @@ Operations teams can modify business behavior without redeploying the applicatio
 
 ---
 
-# Alternatives Considered
+## Alternatives Considered
 
 ## Environment Variables Only
 
@@ -655,7 +664,7 @@ Rejected because it leads to inconsistent behavior and duplicated logic.
 
 ---
 
-# Risks
+## Risks
 
 Potential risks include:
 
@@ -675,7 +684,7 @@ Mitigation strategies include:
 
 ---
 
-# Implementation Notes
+## Implementation Notes
 
 The implementation should provide:
 
@@ -693,7 +702,7 @@ Business services should always consume immutable effective configuration rather
 
 ---
 
-# Related Decisions
+## Related Decisions
 
 - [[ADR-0002-Bootstrap]]
 - [[ADR-0004-Security-Profiles]]
@@ -703,7 +712,7 @@ Business services should always consume immutable effective configuration rather
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Architecture
 
@@ -732,7 +741,7 @@ Business services should always consume immutable effective configuration rather
 
 ---
 
-# Decision Summary
+## Decision Summary
 
 Kernschmied adopts a **database-driven configuration architecture** that separates immutable infrastructure configuration from mutable runtime configuration.
 

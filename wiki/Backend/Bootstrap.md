@@ -8,7 +8,7 @@ The bootstrap process is intentionally deterministic. Given the same configurati
 
 ---
 
-# Goals
+## Goals
 
 The bootstrap process is designed to provide:
 
@@ -24,7 +24,7 @@ The bootstrap process is designed to provide:
 
 ---
 
-# Design Principles
+## Design Principles
 
 ## Fail Fast
 
@@ -67,6 +67,7 @@ Services
 ↓
 
 Application Ready
+
 ```
 
 No startup step depends on undefined execution order.
@@ -88,7 +89,7 @@ Business services never initialize infrastructure themselves.
 
 ---
 
-# Bootstrap Responsibilities
+## Bootstrap Responsibilities
 
 The bootstrap process is responsible for:
 
@@ -104,7 +105,7 @@ The bootstrap process is responsible for:
 
 ---
 
-# Startup Sequence
+## Startup Sequence
 
 A typical backend startup follows this sequence.
 
@@ -146,13 +147,14 @@ FastAPI Application
 ↓
 
 Ready
+
 ```
 
 Each step completes successfully before the next begins.
 
 ---
 
-# Environment Initialization
+## Environment Initialization
 
 The first stage reads bootstrap configuration.
 
@@ -168,7 +170,7 @@ Business configuration is not stored in the environment.
 
 ---
 
-# Logging Initialization
+## Logging Initialization
 
 Logging is configured before other services.
 
@@ -183,7 +185,7 @@ Early logging simplifies troubleshooting during startup.
 
 ---
 
-# Database Initialization
+## Database Initialization
 
 The backend initializes the configured database.
 
@@ -198,7 +200,7 @@ The application cannot continue if the database is unavailable.
 
 ---
 
-# Migration Validation
+## Migration Validation
 
 Database schema compatibility should be verified during startup.
 
@@ -212,7 +214,7 @@ Production systems should avoid starting with incompatible database schemas.
 
 ---
 
-# Configuration Initialization
+## Configuration Initialization
 
 The Configuration Service is initialized next.
 
@@ -227,7 +229,7 @@ Configuration becomes available to all remaining services.
 
 ---
 
-# Registry Initialization
+## Registry Initialization
 
 Registries are initialized after configuration.
 
@@ -245,7 +247,7 @@ Each registry:
 
 ---
 
-# Manifest Discovery
+## Manifest Discovery
 
 The bootstrap process discovers supported manifests.
 
@@ -255,13 +257,14 @@ Examples include:
 model.json
 
 tool.json
+
 ```
 
 Only predefined directories are scanned.
 
 ---
 
-# Manifest Validation
+## Manifest Validation
 
 Every discovered manifest is validated before registration.
 
@@ -276,7 +279,7 @@ Invalid manifests remain inactive.
 
 ---
 
-# Provider Initialization
+## Provider Initialization
 
 Provider factories prepare AI provider implementations.
 
@@ -291,7 +294,7 @@ Providers are registered rather than directly coupled to application services.
 
 ---
 
-# Dependency Injection
+## Dependency Injection
 
 Shared infrastructure is registered with FastAPI's dependency injection system.
 
@@ -307,7 +310,7 @@ Application services receive dependencies through injection.
 
 ---
 
-# Service Initialization
+## Service Initialization
 
 Application services are constructed after infrastructure becomes available.
 
@@ -323,7 +326,7 @@ Services remain lightweight because infrastructure has already been prepared.
 
 ---
 
-# FastAPI Application
+## FastAPI Application
 
 Once initialization completes, the FastAPI application becomes ready to accept requests.
 
@@ -337,13 +340,14 @@ Application Ready
 ↓
 
 Incoming Requests
+
 ```
 
 No additional startup work should occur during the first request.
 
 ---
 
-# Bootstrap Metadata
+## Bootstrap Metadata
 
 The backend exposes startup information through the Bootstrap API.
 
@@ -362,7 +366,7 @@ This metadata enables deterministic frontend startup.
 
 ---
 
-# Capability Discovery
+## Capability Discovery
 
 Capabilities advertise available platform features.
 
@@ -379,7 +383,7 @@ Clients use capabilities instead of hardcoded assumptions.
 
 ---
 
-# Revision Tracking
+## Revision Tracking
 
 Several runtime components maintain independent revisions.
 
@@ -393,7 +397,7 @@ Clients compare revisions to determine when cached information should be refresh
 
 ---
 
-# Bootstrap Endpoint
+## Bootstrap Endpoint
 
 The frontend retrieves startup metadata using the Bootstrap endpoint.
 
@@ -411,13 +415,14 @@ Backend
 ↓
 
 Bootstrap Response
+
 ```
 
 This endpoint is typically the first API request performed by the frontend.
 
 ---
 
-# Error Handling
+## Error Handling
 
 Bootstrap failures are handled according to their severity.
 
@@ -445,7 +450,7 @@ Startup terminates immediately.
 
 ---
 
-# Startup Logging
+## Startup Logging
 
 Typical startup log entries include:
 
@@ -462,7 +467,7 @@ These logs simplify operational diagnostics.
 
 ---
 
-# Performance Considerations
+## Performance Considerations
 
 The bootstrap process is optimized for:
 
@@ -475,7 +480,7 @@ Expensive operations should not occur during request processing.
 
 ---
 
-# Security Considerations
+## Security Considerations
 
 Bootstrap enforces several security guarantees.
 
@@ -491,7 +496,7 @@ Security-sensitive failures prevent the application from starting.
 
 ---
 
-# Runtime Updates
+## Runtime Updates
 
 Bootstrap itself executes only during application startup.
 
@@ -499,7 +504,7 @@ However, runtime-editable configuration, registry refreshes, and revision update
 
 ---
 
-# Relationship to Other Backend Components
+## Relationship to Other Backend Components
 
 Bootstrap prepares all major backend subsystems.
 
@@ -525,13 +530,14 @@ Services
 ↓
 
 HTTP API
+
 ```
 
 Every request processed by the backend depends on successful bootstrap.
 
 ---
 
-# Relationship to Architecture
+## Relationship to Architecture
 
 Bootstrap serves as the entry point into the overall architecture.
 
@@ -545,7 +551,7 @@ It directly supports:
 
 ---
 
-# Related Documentation
+## Related Documentation
 
 ## Backend
 
@@ -576,7 +582,7 @@ It directly supports:
 
 ---
 
-# Summary
+## Summary
 
 The backend bootstrap process establishes the complete runtime foundation of the Kernschmied platform by initializing infrastructure, validating configuration and manifests, preparing registries, configuring dependency injection, and exposing startup metadata through a stable Bootstrap API.
 
