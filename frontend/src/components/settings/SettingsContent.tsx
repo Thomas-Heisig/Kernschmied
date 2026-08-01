@@ -558,6 +558,7 @@ function SettingsForm({
   totalEntryCount,
   onChange,
   valuesByFullKey,
+  entriesByFullKey,
 }: {
   entries: [string, ConfigValue][];
   disabled: boolean;
@@ -565,6 +566,7 @@ function SettingsForm({
   totalEntryCount: number;
   onChange: (path: string[], value: ConfigValue) => void;
   valuesByFullKey?: Record<string, ConfigValue> | null;
+  entriesByFullKey?: Record<string, any> | null;
 }) {
   if (totalEntryCount === 0) {
     return (
@@ -608,6 +610,7 @@ function SettingsSingleSection({
   searchQuery,
   onChange,
   valuesByFullKey,
+  entriesByFullKey,
 }: {
   sectionKey: string;
   value: ConfigValue | undefined;
@@ -615,6 +618,7 @@ function SettingsSingleSection({
   searchQuery: string;
   onChange: (path: string[], value: ConfigValue) => void;
   valuesByFullKey?: Record<string, ConfigValue> | null;
+  entriesByFullKey?: Record<string, any> | null;
 }) {
   if (value === undefined || value === null) {
     return (
@@ -642,6 +646,7 @@ function SettingsSingleSection({
       searchQuery={searchQuery}
       onChange={onChange}
       valuesByFullKey={valuesByFullKey}
+      entriesByFullKey={entriesByFullKey}
     />
   );
 }
@@ -655,8 +660,10 @@ function SettingsSection({
   depth = 0,
   onChange,
   valuesByFullKey,
+  entriesByFullKey,
 }: SettingsSectionProps & {
   valuesByFullKey?: Record<string, ConfigValue> | null;
+  entriesByFullKey?: Record<string, any> | null;
 }) {
   const currentPath = [...path, sectionKey];
 
@@ -677,9 +684,25 @@ function SettingsSection({
     );
   }
 
-  if (!isConfigRecord(value)) {
+    if (!isConfigRecord(value)) {
     if (searchQuery && !matchesSearchQuery(sectionKey, value, searchQuery)) {
       return null;
+    }
+
+    const fullKey = currentPath.join(".");
+
+    const entry = entriesByFullKey ? entriesByFullKey[fullKey] : undefined;
+
+    if (entry) {
+      return (
+        <SettingsField
+          entry={entry}
+          path={currentPath}
+          disabled={disabled}
+          valuesByFullKey={valuesByFullKey}
+          onChange={onChange}
+        />
+      );
     }
 
     const metadata = inferFieldMetadata({
