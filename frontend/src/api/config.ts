@@ -141,7 +141,7 @@ function normalizeConfigSnapshot(payload: unknown): SystemConfigSnapshot {
     });
   }
 
-  const response = payload as ConfigListResponse;
+    const response = payload as unknown as ConfigListResponse;
 
   if (!Array.isArray(response.groups)) {
     throw new ConfigApiError({
