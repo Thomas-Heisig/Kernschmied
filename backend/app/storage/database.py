@@ -10,7 +10,11 @@ from sqlalchemy.ext.asyncio import (
 )
 
 from app.core.settings import settings
-from app.storage.models.base import Base
+from app.database.base import Base
+
+# Ensure all ORM model modules are imported so their Table objects
+# are registered on Base.metadata before calling create_all().
+import app.database.models  # noqa: F401
 
 
 class DatabaseManager:
