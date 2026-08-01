@@ -18,6 +18,8 @@ from typing import (
     Literal,
     TypeAlias,
     TypeGuard,
+    TypedDict,
+    Any,
     cast,
 )
 from uuid import UUID
@@ -49,6 +51,14 @@ from app.schemas.settings_catalog import (
     SettingsSource,
 )
 from app.services.settings_catalog import build_settings_catalog
+from app.schemas.configuration import (
+    ConfigDynamicOptionsResponse,
+    ConfigEntryResponse,
+    ConfigGroupResponse,
+    ConfigListResponse,
+    ConfigOptionResponse,
+    ConfigUIResponse,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +69,7 @@ router = APIRouter()
 # Öffentlicher Config-Vertrag
 # ============================================================
 
-CONFIG_API_SCHEMA_VERSION = "1.2"
+CONFIG_API_SCHEMA_VERSION = "2.0"
 
 CONFIG_NAME_PATTERN = re.compile(
     r"^[a-z][a-z0-9_-]{0,63}$",
@@ -228,36 +238,8 @@ class ConfigUpdateRequest(BaseModel):
         return normalized or None
 
 
-class ConfigEntryResponse(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-
-    group: str
-    key: str
-    value: ConfigValue
-
-    editable: bool = True
-    sensitive: bool = False
-    requires_confirmation: bool = False
-
-    control: str | None = None
-
-
-class ConfigListResponse(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-
-    schema_version: str = CONFIG_API_SCHEMA_VERSION
-
-    revision: int = Field(
-        ge=0,
-    )
-
-    items: list[ConfigEntryResponse]
-
-    request_id: str | None = None
+# Using canonical models from app.schemas.configuration for the public API.
+# `ConfigEntryResponse` and `ConfigListResponse` are imported from there.
 
 
 class ConfigUpdateResponse(BaseModel):
@@ -1890,65 +1872,166 @@ async def read_config_entries(
 # ============================================================
 
 
-def build_config_items(
-    entries: ConfigEntries,
-) -> list[ConfigEntryResponse]:
-    items: list[ConfigEntryResponse] = []
+def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
+    """
+    Erzeugt gruppierte Config-Antworten basierend auf dem Settings-Katalog
+    und den aktuell gespeicherten Werten. Fehlende Katalogeinträge werden
+    als minimale Einträge mit den gespeicherten Werten dargestellt.
+    """
 
-    field_map = get_settings_field_map()
+    catalog = build_settings_catalog()
 
-    for (
-        identifier,
-        value,
-    ) in entries.items():
-        (
-            group,
-            key,
-        ) = identifier
+    # helper typed dict for builders
+    class _GroupBuilder(TypedDict):
+        id: str
+        label: str
+        description: str | None
+        order: int
+        entries: list[ConfigEntryResponse]
 
-        sensitive = is_sensitive_key(
-            group,
-            key,
+    # map of group id -> builder
+    groups: dict[str, _GroupBuilder] = {}
+
+    # prepare groups from catalog
+    for g in catalog.groups:
+        groups[g.id] = {
+            "id": g.id,
+            "label": g.title,
+            "description": g.description,
+            "order": g.order,
+            "entries": [],
+        }
+
+        for section in g.sections:
+            for field in section.fields:
+                cfg_group = (field.config_group or g.id or "").strip().lower()
+                cfg_key = (field.config_key or "").strip().lower()
+
+                if not cfg_group or not cfg_key:
+                    continue
+
+                value = entries.get((cfg_group, cfg_key))
+
+                # build UI
+                options: list[ConfigOptionResponse] = []
+                for opt in field.options:
+                    options.append(
+                        ConfigOptionResponse(
+                            value=opt.value,
+                            label=opt.label,
+                            description=None,
+                            disabled=False,
+                        )
+                    )
+
+                dynamic_options = None
+                if field.endpoint:
+                    dynamic_options = ConfigDynamicOptionsResponse(
+                        source="server",
+                        endpoint=field.endpoint,
+                    )
+
+                ui = ConfigUIResponse(
+                    component=None,
+                    category=g.id,
+                    section=section.id,
+                    order=field.order,
+                    placeholder=None,
+                    help_text=field.description,
+                    unit=None,
+                    advanced=False,
+                    hidden=False,
+                    readonly=not field.editable,
+                    options=options,
+                    dynamic_options=dynamic_options,
+                )
+
+                entry = ConfigEntryResponse(
+                    group=cfg_group,
+                    key=cfg_key,
+                    full_key=f"{cfg_group}.{cfg_key}",
+                    display_name=field.title,
+                    description=field.description or "",
+                    value=(value if not is_sensitive_key(cfg_group, cfg_key) else None),
+                    default_value=None,
+                    schema_version=CONFIG_API_SCHEMA_VERSION,
+                    value_type=None,
+                    value_schema={},
+                    editable=field.editable,
+                    sensitive=field.sensitive,
+                    secret_configured=False,
+                    requires_restart=field.restart_required,
+                    runtime_editable=field.editable,
+                    nullable=True,
+                    visibility="visible",
+                    allowed_scopes=[],
+                    current_scope="application",
+                    ui=ui,
+                    deprecated=False,
+                )
+
+                groups[cfg_group]["entries"].append(entry)
+
+    # include stored entries not present in the catalog
+    for (group, key), value in entries.items():
+        if group in groups and any(e.key == key for e in groups[group]["entries"]):
+            continue
+
+        sensitive = is_sensitive_key(group, key)
+
+        ui = ConfigUIResponse()
+
+        entry = ConfigEntryResponse(
+            group=group,
+            key=key,
+            full_key=f"{group}.{key}",
+            display_name=key,
+            description="",
+            value=(None if sensitive else value),
+            default_value=None,
+            schema_version=CONFIG_API_SCHEMA_VERSION,
+            value_type=None,
+            value_schema={},
+            editable=False,
+            sensitive=sensitive,
+            secret_configured=False,
+            requires_restart=False,
+            runtime_editable=False,
+            nullable=True,
+            visibility="visible",
+            allowed_scopes=[],
+            current_scope="application",
+            ui=ui,
+            deprecated=False,
         )
 
-        reserved = is_reserved_group(
-            group,
+        if group not in groups:
+            groups[group] = {
+                "id": group,
+                "label": group,
+                "description": None,
+                "order": 1000,
+                "entries": [entry],
+            }
+        else:
+            groups[group]["entries"].append(entry)
+
+    # convert to ConfigGroupResponse list
+    result: list[ConfigGroupResponse] = []
+    for g in groups.values():
+        result.append(
+            ConfigGroupResponse(
+                id=g["id"],
+                label=g["label"],
+                description=g["description"],
+                order=g["order"],
+                entries=g["entries"],
+            )
         )
 
-        descriptor = field_map.get(
-            identifier,
-        )
+    result.sort(key=lambda grp: (grp.order, grp.id.casefold()))
 
-        catalog_editable = (
-            descriptor is not None
-            and descriptor.editable
-            and (descriptor.source is SettingsSource.CONFIG)
-        )
-
-        items.append(
-            ConfigEntryResponse(
-                group=group,
-                key=key,
-                value=(None if sensitive else value),
-                editable=(catalog_editable and not reserved and not sensitive),
-                sensitive=sensitive,
-                requires_confirmation=(
-                    descriptor.requires_confirmation
-                    if descriptor is not None
-                    else False
-                ),
-                control=(descriptor.control.value if descriptor is not None else None),
-            ),
-        )
-
-    items.sort(
-        key=lambda entry: (
-            entry.group.casefold(),
-            entry.key.casefold(),
-        ),
-    )
-
-    return items
+    return result
 
 
 # ============================================================
@@ -2174,13 +2257,17 @@ async def list_config(
 
     return ConfigListResponse(
         revision=revision,
-        items=build_config_items(
-            entries,
-        ),
-        request_id=get_request_id(
-            request,
-        ),
+        groups=build_config_groups(entries),
+        request_id=get_request_id(request),
     )
+
+
+class ConfigChangeItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    group: str
+    key: str
+    value: ConfigValue
 
 
 class BulkConfigUpdateRequest(BaseModel):
@@ -2192,6 +2279,11 @@ class BulkConfigUpdateRequest(BaseModel):
     values: Mapping[str, Mapping[str, ConfigValue]] = Field(
         default_factory=dict,
         description="Gruppierte Konfigurationswerte als Objekt { group: { key: value } }",
+    )
+
+    changes: list[ConfigChangeItem] = Field(
+        default_factory=list,
+        description="Alternative sequentielle Änderungsbeschreibung [{group,key,value}, ...]",
     )
 
     expected_revision: int | None = Field(
@@ -2220,13 +2312,17 @@ async def bulk_update_config(
 
     service = get_config_service(request)
 
-    # Flatten grouped values into mapping of (group,key) -> value
+    # Flatten into mapping of (group,key) -> value. Support either `values` or `changes`.
     updates: dict[tuple[str, str], object] = {}
 
-    for raw_group, raw_group_value in payload.values.items():
-        # Payload is already validated to Mapping[str, Mapping[str, ConfigValue]]
-        for raw_key, raw_value in raw_group_value.items():
-            updates[(raw_group.strip().lower(), raw_key.strip().lower())] = raw_value
+    if getattr(payload, "changes", None):
+        for change in payload.changes:
+            updates[(change.group.strip().lower(), change.key.strip().lower())] = change.value
+    else:
+        for raw_group, raw_group_value in payload.values.items():
+            # Payload is already validated to Mapping[str, Mapping[str, ConfigValue]]
+            for raw_key, raw_value in raw_group_value.items():
+                updates[(raw_group.strip().lower(), raw_key.strip().lower())] = raw_value
 
     try:
         # Dispatch to service.set_many (supports validation and atomic commit)
