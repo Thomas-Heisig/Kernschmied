@@ -50,6 +50,7 @@ from app.schemas.settings_catalog import (
     SettingsSource,
 )
 from app.services.settings_catalog import build_settings_catalog
+from app.config.definitions import get_config_definition
 from app.schemas.configuration import (
     ConfigDynamicOptionsResponse,
     ConfigEntryResponse,
@@ -1915,63 +1916,121 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
 
                 value = entries.get((cfg_group, cfg_key))
 
-                # build UI
-                options: list[ConfigOptionResponse] = []
-                for opt in field.options:
-                    options.append(
-                        ConfigOptionResponse(
-                            value=opt.value,
-                            label=opt.label,
-                            description=None,
-                            disabled=False,
+                # Prefer authoritative ConfigDefinition metadata when available
+                definition = None
+                try:
+                    definition = get_config_definition(cfg_group, cfg_key)
+                except KeyError:
+                    definition = None
+
+                if definition is not None:
+                    # build options from definition UI
+                    options = [
+                        ConfigOptionResponse(value=o.value, label=o.label, description=(o.description if hasattr(o, "description") else None), disabled=False)
+                        for o in getattr(definition.ui, "options", ())
+                    ]
+
+                    dyn = None
+                    if getattr(definition.ui, "dynamic_options", None) is not None:
+                        d = definition.ui.dynamic_options
+                        dyn = ConfigDynamicOptionsResponse(source=(d.source.value if hasattr(d, "source") else "server"), endpoint=d.endpoint)
+
+                    ui = ConfigUIResponse(
+                        component=(definition.ui.component.value if getattr(definition.ui, "component", None) is not None else None),
+                        category=definition.ui.category or g.id,
+                        section=definition.ui.section or section.id,
+                        order=definition.ui.order,
+                        placeholder=definition.ui.placeholder,
+                        help_text=definition.ui.help_text or field.description,
+                        unit=definition.ui.unit,
+                        advanced=definition.ui.advanced,
+                        hidden=definition.ui.hidden,
+                        readonly=definition.ui.readonly,
+                        options=options,
+                        dynamic_options=dyn,
+                    )
+
+                    entry = ConfigEntryResponse(
+                        group=cfg_group,
+                        key=cfg_key,
+                        full_key=f"{cfg_group}.{cfg_key}",
+                        display_name=definition.display_name,
+                        description=definition.description or "",
+                        value=(value if not is_sensitive_key(cfg_group, cfg_key) else None),
+                        default_value=definition.default_value,
+                        schema_version=definition.schema_version or CONFIG_API_SCHEMA_VERSION,
+                        value_type=(definition.value_type.name if getattr(definition, "value_type", None) is not None else None),
+                        value_schema=(definition.value_schema or {}),
+                        editable=definition.runtime_editable,
+                        sensitive=definition.is_secret,
+                        secret_configured=False,
+                        requires_restart=definition.requires_restart,
+                        runtime_editable=definition.runtime_editable,
+                        nullable=definition.nullable,
+                        visibility=(definition.visibility.value if getattr(definition, "visibility", None) is not None else ""),
+                        allowed_scopes=[s.value for s in definition.allowed_scopes],
+                        current_scope="application",
+                        ui=ui,
+                        deprecated=definition.deprecated,
+                    )
+                else:
+                    # build UI from catalog fallback
+                    options: list[ConfigOptionResponse] = []
+                    for opt in field.options:
+                        options.append(
+                            ConfigOptionResponse(
+                                value=opt.value,
+                                label=opt.label,
+                                description=None,
+                                disabled=False,
+                            )
                         )
+
+                    dynamic_options = None
+                    if field.endpoint:
+                        dynamic_options = ConfigDynamicOptionsResponse(
+                            source="server",
+                            endpoint=field.endpoint,
+                        )
+
+                    ui = ConfigUIResponse(
+                        component=None,
+                        category=g.id,
+                        section=section.id,
+                        order=field.order,
+                        placeholder=None,
+                        help_text=field.description,
+                        unit=None,
+                        advanced=False,
+                        hidden=False,
+                        readonly=not field.editable,
+                        options=options,
+                        dynamic_options=dynamic_options,
                     )
 
-                dynamic_options = None
-                if field.endpoint:
-                    dynamic_options = ConfigDynamicOptionsResponse(
-                        source="server",
-                        endpoint=field.endpoint,
+                    entry = ConfigEntryResponse(
+                        group=cfg_group,
+                        key=cfg_key,
+                        full_key=f"{cfg_group}.{cfg_key}",
+                        display_name=field.title,
+                        description=field.description or "",
+                        value=(value if not is_sensitive_key(cfg_group, cfg_key) else None),
+                        default_value=None,
+                        schema_version=CONFIG_API_SCHEMA_VERSION,
+                        value_type=None,
+                        value_schema={},
+                        editable=field.editable,
+                        sensitive=field.sensitive,
+                        secret_configured=False,
+                        requires_restart=field.restart_required,
+                        runtime_editable=field.editable,
+                        nullable=True,
+                        visibility="visible",
+                        allowed_scopes=[],
+                        current_scope="application",
+                        ui=ui,
+                        deprecated=False,
                     )
-
-                ui = ConfigUIResponse(
-                    component=None,
-                    category=g.id,
-                    section=section.id,
-                    order=field.order,
-                    placeholder=None,
-                    help_text=field.description,
-                    unit=None,
-                    advanced=False,
-                    hidden=False,
-                    readonly=not field.editable,
-                    options=options,
-                    dynamic_options=dynamic_options,
-                )
-
-                entry = ConfigEntryResponse(
-                    group=cfg_group,
-                    key=cfg_key,
-                    full_key=f"{cfg_group}.{cfg_key}",
-                    display_name=field.title,
-                    description=field.description or "",
-                    value=(value if not is_sensitive_key(cfg_group, cfg_key) else None),
-                    default_value=None,
-                    schema_version=CONFIG_API_SCHEMA_VERSION,
-                    value_type=None,
-                    value_schema={},
-                    editable=field.editable,
-                    sensitive=field.sensitive,
-                    secret_configured=False,
-                    requires_restart=field.restart_required,
-                    runtime_editable=field.editable,
-                    nullable=True,
-                    visibility="visible",
-                    allowed_scopes=[],
-                    current_scope="application",
-                    ui=ui,
-                    deprecated=False,
-                )
 
                 # Ensure the group exists (normalized key used)
                 if cfg_group not in groups:
