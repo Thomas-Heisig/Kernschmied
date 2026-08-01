@@ -1,6 +1,14 @@
 // F:\Kernschmied\frontend\src\components\layout\AppHeader.tsx
 
-import { BookOpen, CircleUserRound, Moon, Settings, ShieldCheck, Sun } from 'lucide-react';
+import {
+  BookOpen,
+  CircleUserRound,
+  Moon,
+  Settings,
+  ShieldCheck,
+  Sun,
+  CalendarDays,
+} from 'lucide-react';
 
 type AppTheme = 'light' | 'dark';
 
@@ -13,6 +21,7 @@ interface AppHeaderProps {
   onToggleTheme: () => void;
   onOpenSettings: () => void;
   onOpenDocumentation: () => void;
+  onOpenCalendar?: () => void;
 }
 
 export function AppHeader({
@@ -24,6 +33,7 @@ export function AppHeader({
   onToggleTheme,
   onOpenSettings,
   onOpenDocumentation,
+  onOpenCalendar,
 }: AppHeaderProps) {
   const userInitials = createInitials(userName);
   const normalizedEnvironment = environment.trim().toLowerCase();
@@ -124,6 +134,16 @@ export function AppHeader({
             title="Dokumentation und Benutzerhandbuch öffnen"
           >
             <BookOpen size={18} aria-hidden="true" />
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenCalendar}
+            className={actionButtonClassName}
+            aria-label="Kalender verwalten"
+            title="Kalenderverwaltung öffnen"
+          >
+            <CalendarDays size={18} aria-hidden="true" />
           </button>
 
           <button

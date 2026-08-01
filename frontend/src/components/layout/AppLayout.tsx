@@ -15,6 +15,7 @@ interface AppLayoutProps {
   onToggleTheme: () => void;
   onOpenSettings: () => void;
   onOpenDocumentation: () => void;
+  onOpenCalendar?: () => void;
 }
 
 export function AppLayout({
@@ -29,6 +30,7 @@ export function AppLayout({
   onToggleTheme,
   onOpenSettings,
   onOpenDocumentation,
+  onOpenCalendar,
 }: AppLayoutProps) {
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-surface-muted text-text dark:bg-slate-950 dark:text-white">
@@ -41,6 +43,7 @@ export function AppLayout({
         onToggleTheme={onToggleTheme}
         onOpenSettings={onOpenSettings}
         onOpenDocumentation={onOpenDocumentation}
+        onOpenCalendar={onOpenCalendar}
       />
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {hierarchySidebar}

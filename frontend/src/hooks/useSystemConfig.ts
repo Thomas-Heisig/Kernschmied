@@ -234,7 +234,8 @@ export function useSystemConfig(): UseSystemConfigResult {
     // Determine autosave preference from config values. Default to true.
     const valuesRec = values as unknown as Record<string, unknown>;
     const ui = (valuesRec.ui as Record<string, unknown> | undefined) ?? undefined;
-    const autosavePref = ui && typeof ui.autosave_enabled !== 'undefined' ? Boolean(ui.autosave_enabled) : true;
+    const autosavePref =
+      ui && typeof ui.autosave_enabled !== 'undefined' ? Boolean(ui.autosave_enabled) : true;
 
     if (!autosavePref) {
       // If disabled, clear any pending timer and do nothing.

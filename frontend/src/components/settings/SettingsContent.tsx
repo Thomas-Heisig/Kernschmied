@@ -63,7 +63,7 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
     reload,
     save,
     reset,
-  } = config as UseSystemConfigReturn & { groups?: any };
+  } = config;
 
   const [jsonDraft, setJsonDraft] = useState('');
 
@@ -122,7 +122,8 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
       const out: Record<string, ConfigValue> = {};
 
       for (const [full, entryObj] of Object.entries(entriesByFullKey)) {
-        out[full] = (entryObj as any).value;
+        const entry = entryObj as unknown as ConfigEntryResponse;
+        out[full] = entry.value;
       }
 
       return out;
@@ -130,13 +131,15 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
 
     const out: Record<string, ConfigValue> = {};
 
-    function walk(prefix: string[], node: any) {
-      if (node === null || typeof node !== 'object') {
+    function walk(prefix: string[], node: unknown) {
+      if (node === null || typeof node !== 'object' || Array.isArray(node)) {
         out[prefix.join('.')] = node as ConfigValue;
         return;
       }
 
-      for (const [k, v] of Object.entries(node)) {
+      const record = node as Record<string, unknown>;
+
+      for (const [k, v] of Object.entries(record)) {
         walk([...prefix, k], v);
       }
     }
@@ -345,9 +348,17 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
               <input
                 type="checkbox"
                 checked={
-                  (values as any)?.ui?.autosave_enabled === undefined
+                  (
+                    (values as unknown as Record<string, unknown>)?.ui as
+                      Record<string, unknown> | undefined
+                  )?.autosave_enabled === undefined
                     ? true
-                    : Boolean((values as any).ui.autosave_enabled)
+                    : Boolean(
+                        (
+                          (values as unknown as Record<string, unknown>)?.ui as
+                            Record<string, unknown> | undefined
+                        )?.autosave_enabled,
+                      )
                 }
                 onChange={(e) => {
                   setValues(

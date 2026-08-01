@@ -231,7 +231,7 @@ Damit ist der einfache lokale Chat als MVP-Funktion grundsätzlich hergestellt.
 
 ## Phase 1 – Technische Grundlage
 
-**Status: weitgehend abgeschlossen**
+### Status: weitgehend abgeschlossen
 
 Diese Phase schafft den stabilen Anwendungskern.
 
@@ -271,7 +271,7 @@ Diese Phase gilt als vollständig abgeschlossen, wenn alle Kernendpunkte version
 
 ## Phase 2 – Vertragskonsolidierung
 
-**Status: in Bearbeitung**
+### Status: in Bearbeitung
 
 Diese Phase vereinheitlicht die öffentlichen Verträge zwischen Backend und Frontend.
 
@@ -349,7 +349,7 @@ Alle API-Fehler sollen dieses Format verwenden:
 
 ## Phase 3 – Administration
 
-**Status: in Bearbeitung**
+### Status: in Bearbeitung
 
 Administratoren sollen Kernschmied vollständig über die Anwendung verwalten können, ohne Fachwerte manuell in Dateien einzutragen.
 
@@ -508,7 +508,7 @@ Geplant:
 
 ## Phase 4 – Schema-gesteuerte Oberfläche
 
-**Status: begonnen**
+### Status: begonnen
 
 Das Frontend soll keine fachlich fest verdrahteten Ansichten für jeden neuen Knotentyp benötigen.
 
@@ -583,7 +583,7 @@ Es darf nicht:
 
 ## Phase 5 – Produktiver Chat und KI-Plattform
 
-**Status: teilweise umgesetzt**
+### Status: teilweise umgesetzt
 
 Der einfache Chat funktioniert. Die nächste Stufe macht ihn zu einer vollständigen produktiven Arbeitsoberfläche.
 
@@ -691,7 +691,7 @@ Spätere Funktionen:
 
 ## Phase 6 – Dokumentation und Benutzerhandbuch
 
-**Status: begonnen**
+### Status: begonnen
 
 Die Dokumentation wird Bestandteil der Anwendung.
 
@@ -752,7 +752,7 @@ Vorgesehene Inhalte:
 
 ## Phase 7 – Intranetbetrieb
 
-**Status: geplant**
+### Status: geplant
 
 Nach Stabilisierung des lokalen MVP folgt ein kontrollierter Intranetbetrieb.
 
@@ -790,7 +790,7 @@ Die UI zeigt verfügbare Aktionen an, aber die endgültige Entscheidung bleibt i
 
 ## Phase 8 – Internetbetrieb
 
-**Status: langfristig geplant**
+### Status: langfristig geplant
 
 Der Internetbetrieb erfordert ein deutlich strengeres Sicherheitsprofil.
 
@@ -828,7 +828,7 @@ Beispiele:
 
 ## Phase 9 – Persistenz und Zusammenarbeit
 
-**Status: später**
+### Status: später
 
 Nach einem stabilen Einzelbenutzer- und Intranetbetrieb folgen kollaborative Funktionen.
 
@@ -869,7 +869,7 @@ Neue fachliche Ebenen sollen weiterhin ohne neue hart codierte React-Komponente 
 
 ## Phase 10 – Retrieval und Dokumentintelligenz
 
-**Status: nicht Teil des aktuellen MVP**
+### Status: nicht Teil des aktuellen MVP
 
 Geplante spätere Funktionen:
 
@@ -893,7 +893,7 @@ Die Retrieval-Schicht soll dieselben Sicherheits- und Hierarchiegrenzen verwende
 
 ## Phase 11 – Multimodale und sprachbasierte Funktionen
 
-**Status: langfristig**
+### Status: langfristig
 
 Mögliche Funktionen:
 
@@ -915,7 +915,7 @@ Lokale Modelle und externe Dienste sollen über denselben stabilen Modellvertrag
 
 ## Phase 12 – Workflows und Automatisierung
 
-**Status: langfristig**
+### Status: langfristig
 
 Erst nach stabilen Modell-, Tool-, Berechtigungs- und Auditverträgen werden komplexere Automatisierungen ergänzt.
 
@@ -950,7 +950,7 @@ Jede relevante Aktion bleibt:
 
 ## Phase 13 – Plugin- und Erweiterungssystem
 
-**Status: Grundlagen vorhanden, Ausbau später**
+### Status: Grundlagen vorhanden, Ausbau später
 
 Modelle und Tools verwenden bereits Manifest- und Registry-Grundlagen.
 
@@ -985,7 +985,7 @@ Ein Marktplatz oder Remote-Plugin-System wird erst geprüft, wenn Signierung, Be
 
 ## Phase 14 – Enterprise und Skalierung
 
-**Status: langfristig**
+### Status: langfristig
 
 ## Datenbank
 

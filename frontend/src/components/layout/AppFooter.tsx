@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import type { BootstrapResponse } from '../../types/bootstrap';
 import FooterCalendar from '../calendar/FooterCalendar';
-import { createEvent } from '../../api/fetchCalendarClient';
+import { createEvent, listCalendars } from '../../api/fetchCalendarClient';
 import type { components } from '../../api/openapi-types';
 import { CalendarDays, Database, FolderTree, Plug, Server, Wifi } from 'lucide-react';
 
@@ -97,8 +97,31 @@ export function AppFooter({
   }, []);
 
   useEffect(() => {
-    // calendar listing is now handled by FooterCalendar component
-    return undefined;
+    let mounted = true;
+
+    async function ensureUserCalendarDefault() {
+      if (!showDatePicker) return;
+      try {
+        const all = await listCalendars();
+        if (!mounted) return;
+        // prefer bootstrap.user.id if available
+        const userId = (bootstrap as any)?.user?.id;
+        if (userId) {
+          const own = (all || []).find(
+            (c) => c.owner_id === userId || (c.owner_id ?? '') === userId,
+          );
+          if (own) setTargetCalendarId(own.id);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    ensureUserCalendarDefault();
+
+    return () => {
+      mounted = false;
+    };
   }, [showDatePicker]);
 
   function openDetail(title: string, data: any) {

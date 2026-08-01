@@ -7,6 +7,8 @@ import { ToastProvider, useToast } from '../components/ui/ToastProvider';
 import HierarchyActionModal from '../components/ui/HierarchyActionModal';
 import { SettingsDialog } from '../components/settings';
 import { DocumentationDialog } from '../components/documentation';
+import React from 'react';
+const CalendarPanel = React.lazy(() => import('../components/calendar/CalendarPanel'));
 import {
   selectExpandedNodeIds,
   selectHierarchyRoot,
@@ -28,6 +30,7 @@ export function AppShell() {
 function AppShellContent() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDocumentationOpen, setIsDocumentationOpen] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const {
     state,
@@ -62,6 +65,10 @@ function AppShellContent() {
 
   const handleOpenDocumentation = useCallback((): void => {
     setIsDocumentationOpen(true);
+  }, []);
+
+  const handleOpenCalendar = useCallback((): void => {
+    setIsCalendarOpen(true);
   }, []);
 
   const handleCloseDocumentation = useCallback((): void => {
@@ -249,6 +256,7 @@ function AppShellContent() {
         onOpenSettings={handleOpenSettings}
         onCloseSettings={handleCloseSettings}
         onOpenDocumentation={handleOpenDocumentation}
+        onOpenCalendar={handleOpenCalendar}
         onCloseDocumentation={handleCloseDocumentation}
       />
 
@@ -321,6 +329,17 @@ function AppShellContent() {
 
       <SettingsDialog isOpen={isSettingsOpen} onClose={handleCloseSettings} />
       <DocumentationDialog isOpen={isDocumentationOpen} onClose={handleCloseDocumentation} />
+      {isCalendarOpen && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setIsCalendarOpen(false)} />
+          <div className="relative z-50 w-[90%] max-w-4xl rounded bg-white p-4 dark:bg-slate-900">
+            {/* Lazy load panel to keep bundle small */}
+            <React.Suspense fallback={<div>Loading...</div>}>
+              <CalendarPanel onClose={() => setIsCalendarOpen(false)} />
+            </React.Suspense>
+          </div>
+        </div>
+      )}
     </>
   );
 }

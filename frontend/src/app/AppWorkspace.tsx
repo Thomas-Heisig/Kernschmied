@@ -28,6 +28,7 @@ interface AppWorkspaceProps {
   onCloseSettings: () => void;
   onOpenDocumentation: () => void;
   onCloseDocumentation: () => void;
+  onOpenCalendar?: () => void;
   onCreateHierarchyNode?: (parentId: string) => Promise<void>;
   onMoveHierarchyNode?: (
     id: string,
@@ -60,6 +61,7 @@ export function AppWorkspace({
   onCloseSettings,
   onOpenDocumentation,
   onCloseDocumentation,
+  onOpenCalendar,
   onCreateHierarchyNode,
   onMoveHierarchyNode,
   onUpdateHierarchyNode,
@@ -79,6 +81,7 @@ export function AppWorkspace({
         onToggleTheme={onToggleTheme}
         onOpenSettings={onOpenSettings}
         onOpenDocumentation={onOpenDocumentation}
+        onOpenCalendar={onOpenCalendar}
         hierarchySidebar={
           <AppHierarchySidebar
             root={root}

@@ -184,12 +184,14 @@ function normalizeConfigSnapshot(payload: unknown): LoadedConfig {
       response: response as ConfigListResponse,
       values,
       entriesByFullKey,
-      revision: typeof rawRevision === 'number' && Number.isInteger(rawRevision) ? rawRevision : null,
+      revision:
+        typeof rawRevision === 'number' && Number.isInteger(rawRevision) ? rawRevision : null,
     };
   }
 
   // Fallback: payload may be a minimal snapshot { values, revision }
-  const valuesObj = (payloadRecord.values ?? payloadRecord.items) as Record<string, unknown> | undefined;
+  const valuesObj = (payloadRecord.values ?? payloadRecord.items) as
+    Record<string, unknown> | undefined;
 
   const values: ConfigObject = {};
   const entriesByFullKey: Record<string, ConfigEntryResponse> = {};
