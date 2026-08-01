@@ -5,9 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ConfigApiError,
   loadSystemConfig,
+  loadFullSystemConfig,
   updateSystemConfig,
 } from "../api/config";
-import type { ConfigObject, ConfigValue } from "../contracts/config";
+import type { ConfigObject, ConfigValue, ConfigEntryResponse } from "../contracts/config";
 
 export type UseSystemConfigReturn = ReturnType<typeof useSystemConfig>;
 
@@ -19,6 +20,7 @@ interface SystemConfigError {
 
 interface UseSystemConfigResult {
   values: ConfigObject;
+  entriesByFullKey?: Record<string, ConfigEntryResponse> | null;
   revision: number | null;
   isLoading: boolean;
   isSaving: boolean;
@@ -46,6 +48,7 @@ interface ConfigSnapshotLike {
 
 export function useSystemConfig(): UseSystemConfigResult {
   const [persistedValues, setPersistedValues] = useState<ConfigObject>({});
+  const [persistedEntriesByFullKey, setPersistedEntriesByFullKey] = useState<Record<string, ConfigEntryResponse> | null>(null);
 
   const [values, setValuesState] = useState<ConfigObject>({});
 
@@ -78,17 +81,15 @@ export function useSystemConfig(): UseSystemConfigResult {
     setError(null);
 
     try {
-      const rawSnapshot = await loadSystemConfig(controller.signal);
+      const loaded = await loadFullSystemConfig(controller.signal);
 
-      const snapshot = rawSnapshot as ConfigSnapshotLike;
+      setPersistedValues(loaded.values);
 
-      const loadedValues = normalizeSnapshotValues(snapshot);
+      setPersistedEntriesByFullKey(loaded.entriesByFullKey ?? null);
 
-      setPersistedValues(loadedValues);
+      setValuesState(loaded.values);
 
-      setValuesState(loadedValues);
-
-      setRevision(normalizeRevision(snapshot.revision));
+      setRevision(normalizeRevision(loaded.revision));
     } catch (caughtError: unknown) {
       if (
         caughtError instanceof DOMException &&
@@ -131,29 +132,19 @@ export function useSystemConfig(): UseSystemConfigResult {
         controller.signal,
       );
 
-      const snapshot = rawSnapshot as ConfigSnapshotLike;
+      // The API may return a full LoadedConfig (with entriesByFullKey) or a minimal snapshot.
+      const asAny = rawSnapshot as any;
 
-      /*
-       * Manche Update-Endpunkte liefern nur Revision und Status.
-       * In diesem Fall wird nach erfolgreichem Speichern erneut
-       * vom Backend geladen.
-       */
-      const hasReturnedValues =
-        snapshot.values !== undefined || snapshot.items !== undefined;
-
-      if (!hasReturnedValues) {
-        await reload();
-
+      if (asAny && asAny.values !== undefined) {
+        setPersistedValues(asAny.values as ConfigObject);
+        setValuesState(asAny.values as ConfigObject);
+        setPersistedEntriesByFullKey(asAny.entriesByFullKey ?? null);
+        setRevision(normalizeRevision(asAny.revision));
         return true;
       }
 
-      const savedValues = normalizeSnapshotValues(snapshot);
-
-      setPersistedValues(savedValues);
-
-      setValuesState(savedValues);
-
-      setRevision(normalizeRevision(snapshot.revision));
+      // No values returned; reload from server.
+      await reload();
 
       return true;
     } catch (caughtError: unknown) {
