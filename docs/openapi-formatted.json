@@ -8,7 +8,9 @@
   "paths": {
     "/api/v1/health": {
       "get": {
-        "tags": ["System / Health"],
+        "tags": [
+          "System / Health"
+        ],
         "summary": "Health Check",
         "operationId": "health_api_v1_health_get",
         "responses": {
@@ -27,7 +29,9 @@
     },
     "/api/v1/settings/catalog": {
       "get": {
-        "tags": ["Administration / Settings"],
+        "tags": [
+          "Administration / Settings"
+        ],
         "summary": "Settings-Katalog laden",
         "description": "Liefert die versionierte Navigations- und Metadatenstruktur der Kernschmied-Einstellungen. Der Katalog enthält keine Secrets und ersetzt keine serverseitige Autorisierung.",
         "operationId": "get_settings_catalog_api_v1_settings_catalog_get",
@@ -47,7 +51,9 @@
     },
     "/api/v1/bootstrap": {
       "get": {
-        "tags": ["System / Bootstrap"],
+        "tags": [
+          "System / Bootstrap"
+        ],
         "summary": "Frontend-Bootstrap laden",
         "description": "Liefert die initialen, nicht sensiblen Laufzeitinformationen für das schema-gesteuerte Frontend. Der Bootstrap ersetzt keine serverseitige Autorisierung.",
         "operationId": "bootstrap_api_v1_bootstrap_get",
@@ -67,7 +73,9 @@
     },
     "/api/v1/ui/schema": {
       "get": {
-        "tags": ["UI / Schema"],
+        "tags": [
+          "UI / Schema"
+        ],
         "summary": "UI-Schema laden",
         "description": "Liefert den versionierten, schema-gesteuerten UI-Vertrag. Das Frontend darf ausschließlich bekannte Komponenten- und Aktionstypen aus seinen festen Registries ausführen.",
         "operationId": "ui_schema_api_v1_ui_schema_get",
@@ -117,7 +125,9 @@
     },
     "/api/v1/calendar/selection": {
       "post": {
-        "tags": ["Calendar"],
+        "tags": [
+          "Calendar"
+        ],
         "summary": "Select Date",
         "description": "Persist a selected calendar date. Integration point for frontend calendar.",
         "operationId": "select_date_api_v1_calendar_selection_post",
@@ -155,11 +165,13 @@
         }
       }
     },
-    "/api/v1/calendars/calendars": {
+    "/api/v1/calendars/": {
       "get": {
-        "tags": ["Calendar / CRUD"],
+        "tags": [
+          "Calendar / CRUD"
+        ],
         "summary": "List Calendars",
-        "operationId": "list_calendars_api_v1_calendars_calendars_get",
+        "operationId": "list_calendars_api_v1_calendars__get",
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -170,7 +182,7 @@
                     "$ref": "#/components/schemas/CalendarOut"
                   },
                   "type": "array",
-                  "title": "Response List Calendars Api V1 Calendars Calendars Get"
+                  "title": "Response List Calendars Api V1 Calendars  Get"
                 }
               }
             }
@@ -178,9 +190,11 @@
         }
       },
       "post": {
-        "tags": ["Calendar / CRUD"],
+        "tags": [
+          "Calendar / CRUD"
+        ],
         "summary": "Create Calendar",
-        "operationId": "create_calendar_api_v1_calendars_calendars_post",
+        "operationId": "create_calendar_api_v1_calendars__post",
         "requestBody": {
           "content": {
             "application/json": {
@@ -215,11 +229,13 @@
         }
       }
     },
-    "/api/v1/calendars/calendars/{calendar_id}": {
+    "/api/v1/calendars/{calendar_id}": {
       "get": {
-        "tags": ["Calendar / CRUD"],
+        "tags": [
+          "Calendar / CRUD"
+        ],
         "summary": "Get Calendar",
-        "operationId": "get_calendar_api_v1_calendars_calendars__calendar_id__get",
+        "operationId": "get_calendar_api_v1_calendars__calendar_id__get",
         "parameters": [
           {
             "name": "calendar_id",
@@ -255,9 +271,11 @@
         }
       },
       "patch": {
-        "tags": ["Calendar / CRUD"],
+        "tags": [
+          "Calendar / CRUD"
+        ],
         "summary": "Patch Calendar",
-        "operationId": "patch_calendar_api_v1_calendars_calendars__calendar_id__patch",
+        "operationId": "patch_calendar_api_v1_calendars__calendar_id__patch",
         "parameters": [
           {
             "name": "calendar_id",
@@ -303,9 +321,11 @@
         }
       },
       "delete": {
-        "tags": ["Calendar / CRUD"],
+        "tags": [
+          "Calendar / CRUD"
+        ],
         "summary": "Delete Calendar",
-        "operationId": "delete_calendar_api_v1_calendars_calendars__calendar_id__delete",
+        "operationId": "delete_calendar_api_v1_calendars__calendar_id__delete",
         "parameters": [
           {
             "name": "calendar_id",
@@ -334,11 +354,13 @@
         }
       }
     },
-    "/api/v1/calendars/calendars/{calendar_id}/events": {
+    "/api/v1/calendars/{calendar_id}/events": {
       "get": {
-        "tags": ["Calendar / CRUD"],
+        "tags": [
+          "Calendar / CRUD"
+        ],
         "summary": "List Events",
-        "operationId": "list_events_api_v1_calendars_calendars__calendar_id__events_get",
+        "operationId": "list_events_api_v1_calendars__calendar_id__events_get",
         "parameters": [
           {
             "name": "calendar_id",
@@ -394,7 +416,7 @@
                   "items": {
                     "$ref": "#/components/schemas/EventOut"
                   },
-                  "title": "Response List Events Api V1 Calendars Calendars  Calendar Id  Events Get"
+                  "title": "Response List Events Api V1 Calendars  Calendar Id  Events Get"
                 }
               }
             }
@@ -412,9 +434,11 @@
         }
       },
       "post": {
-        "tags": ["Calendar / CRUD"],
+        "tags": [
+          "Calendar / CRUD"
+        ],
         "summary": "Create Event",
-        "operationId": "create_event_api_v1_calendars_calendars__calendar_id__events_post",
+        "operationId": "create_event_api_v1_calendars__calendar_id__events_post",
         "parameters": [
           {
             "name": "calendar_id",
@@ -460,11 +484,13 @@
         }
       }
     },
-    "/api/v1/calendars/calendars/{calendar_id}/events/{event_id}": {
+    "/api/v1/calendars/{calendar_id}/events/{event_id}": {
       "get": {
-        "tags": ["Calendar / CRUD"],
+        "tags": [
+          "Calendar / CRUD"
+        ],
         "summary": "Get Event",
-        "operationId": "get_event_api_v1_calendars_calendars__calendar_id__events__event_id__get",
+        "operationId": "get_event_api_v1_calendars__calendar_id__events__event_id__get",
         "parameters": [
           {
             "name": "calendar_id",
@@ -509,9 +535,11 @@
         }
       },
       "patch": {
-        "tags": ["Calendar / CRUD"],
+        "tags": [
+          "Calendar / CRUD"
+        ],
         "summary": "Patch Event",
-        "operationId": "patch_event_api_v1_calendars_calendars__calendar_id__events__event_id__patch",
+        "operationId": "patch_event_api_v1_calendars__calendar_id__events__event_id__patch",
         "parameters": [
           {
             "name": "calendar_id",
@@ -566,9 +594,11 @@
         }
       },
       "delete": {
-        "tags": ["Calendar / CRUD"],
+        "tags": [
+          "Calendar / CRUD"
+        ],
         "summary": "Delete Event",
-        "operationId": "delete_event_api_v1_calendars_calendars__calendar_id__events__event_id__delete",
+        "operationId": "delete_event_api_v1_calendars__calendar_id__events__event_id__delete",
         "parameters": [
           {
             "name": "calendar_id",
@@ -608,7 +638,9 @@
     },
     "/api/v1/hierarchy": {
       "get": {
-        "tags": ["Hierarchy"],
+        "tags": [
+          "Hierarchy"
+        ],
         "summary": "Hierarchie laden",
         "description": "Liefert die generische Projekt-/Mandanten-/Objekthierarchie für das schema-gesteuerte Frontend.",
         "operationId": "hierarchy_api_v1_hierarchy_get",
@@ -676,7 +708,9 @@
         }
       },
       "post": {
-        "tags": ["Hierarchy"],
+        "tags": [
+          "Hierarchy"
+        ],
         "summary": "Hierarchieknoten erstellen",
         "operationId": "create_hierarchy_node_api_v1_hierarchy_post",
         "requestBody": {
@@ -715,7 +749,9 @@
     },
     "/api/v1/hierarchy/{node_id}": {
       "patch": {
-        "tags": ["Hierarchy"],
+        "tags": [
+          "Hierarchy"
+        ],
         "summary": "Hierarchieknoten aktualisieren",
         "operationId": "update_hierarchy_node_api_v1_hierarchy__node_id__patch",
         "parameters": [
@@ -763,7 +799,9 @@
         }
       },
       "delete": {
-        "tags": ["Hierarchy"],
+        "tags": [
+          "Hierarchy"
+        ],
         "summary": "Hierarchieknoten löschen",
         "operationId": "delete_hierarchy_node_api_v1_hierarchy__node_id__delete",
         "parameters": [
@@ -796,7 +834,9 @@
     },
     "/api/v1/hierarchy/{node_id}/move": {
       "post": {
-        "tags": ["Hierarchy"],
+        "tags": [
+          "Hierarchy"
+        ],
         "summary": "Hierarchieknoten verschieben",
         "operationId": "move_hierarchy_node_api_v1_hierarchy__node_id__move_post",
         "parameters": [
@@ -844,9 +884,45 @@
         }
       }
     },
+    "/api/v1/hierarchy/reorder": {
+      "post": {
+        "tags": [
+          "Hierarchy"
+        ],
+        "summary": "Mehrere Knoten atomar neu anordnen",
+        "operationId": "reorder_hierarchy_nodes_api_v1_hierarchy_reorder_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/_ReorderPayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/documentation": {
       "get": {
-        "tags": ["Documentation"],
+        "tags": [
+          "Documentation"
+        ],
         "summary": "Dokumentationsübersicht laden",
         "operationId": "list_documentation_api_v1_documentation_get",
         "responses": {
@@ -865,7 +941,9 @@
     },
     "/api/v1/documentation/pages/{page_id}": {
       "get": {
-        "tags": ["Documentation"],
+        "tags": [
+          "Documentation"
+        ],
         "summary": "Dokumentationsseite laden",
         "operationId": "get_documentation_page_api_v1_documentation_pages__page_id__get",
         "parameters": [
@@ -905,7 +983,9 @@
     },
     "/api/v1/models/providers": {
       "get": {
-        "tags": ["Registry / Models"],
+        "tags": [
+          "Registry / Models"
+        ],
         "summary": "Verfügbare Modellprovider auflisten",
         "description": "Liefert die Provider der registrierten Modelle. Es werden keine Zugangsdaten oder internen Providerdetails ausgegeben.",
         "operationId": "providers_api_v1_models_providers_get",
@@ -947,7 +1027,9 @@
     },
     "/api/v1/models": {
       "get": {
-        "tags": ["Registry / Models"],
+        "tags": [
+          "Registry / Models"
+        ],
         "summary": "Verfügbare Modelle auflisten",
         "description": "Liefert die serverseitig registrierten und für das Frontend sichtbaren Modelle. Die Sichtbarkeit ersetzt keine Autorisierung bei einer späteren Modellauswahl.",
         "operationId": "models_api_v1_models_get",
@@ -1040,7 +1122,9 @@
     },
     "/api/v1/tools": {
       "get": {
-        "tags": ["Registry / Tools"],
+        "tags": [
+          "Registry / Tools"
+        ],
         "summary": "Verfügbare Tools auflisten",
         "description": "Liefert die registrierten und für das Frontend sichtbaren Tools. Die Listung eines Tools stellt keine Ausführungsfreigabe dar.",
         "operationId": "tools_api_v1_tools_get",
@@ -1144,7 +1228,9 @@
     },
     "/api/v1/chat/stream": {
       "post": {
-        "tags": ["Chat"],
+        "tags": [
+          "Chat"
+        ],
         "summary": "Chat-Antwort streamen",
         "description": "Erzeugt eine Chat-Antwort als versionierten Server-Sent-Events-Datenstrom.",
         "operationId": "stream_chat_api_v1_chat_stream_post",
@@ -1186,7 +1272,9 @@
     },
     "/api/v1/config": {
       "get": {
-        "tags": ["Administration / Configuration"],
+        "tags": [
+          "Administration / Configuration"
+        ],
         "summary": "Konfiguration auflisten",
         "description": "Liefert die sichtbare Fachkonfiguration und die aktuelle Revision. Sensible Werte werden nicht ausgegeben.",
         "operationId": "list_config_api_v1_config_get",
@@ -1204,7 +1292,9 @@
         }
       },
       "put": {
-        "tags": ["Administration / Configuration"],
+        "tags": [
+          "Administration / Configuration"
+        ],
         "summary": "Mehrere Konfigurationswerte ändern (Bulk)",
         "description": "Nimmt ein gruppiertes `values`-Objekt entgegen und speichert alle enthaltenen Werte in einer Transaktion.",
         "operationId": "bulk_update_config_api_v1_config_put",
@@ -1246,7 +1336,9 @@
     },
     "/api/v1/config/{group}/{key}": {
       "put": {
-        "tags": ["Administration / Configuration"],
+        "tags": [
+          "Administration / Configuration"
+        ],
         "summary": "Konfigurationswert ändern",
         "description": "Ändert einen registrierten, runtime-editierbaren Konfigurationswert. Die Änderung wird anhand des Settings-Katalogs validiert, versioniert und protokolliert.",
         "operationId": "update_config_api_v1_config__group___key__put",
@@ -1305,7 +1397,9 @@
     },
     "/": {
       "get": {
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "summary": "Anwendungsstatus",
         "operationId": "root__get",
         "responses": {
@@ -1339,7 +1433,11 @@
           },
           "environment": {
             "type": "string",
-            "enum": ["development", "intranet", "internet"],
+            "enum": [
+              "development",
+              "intranet",
+              "internet"
+            ],
             "title": "Environment"
           },
           "api_prefix": {
@@ -1349,7 +1447,12 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["name", "version", "environment", "api_prefix"],
+        "required": [
+          "name",
+          "version",
+          "environment",
+          "api_prefix"
+        ],
         "title": "BootstrapApplication",
         "description": "Grundinformationen über die laufende Anwendung."
       },
@@ -1537,7 +1640,11 @@
           },
           "environment": {
             "type": "string",
-            "enum": ["development", "intranet", "internet"],
+            "enum": [
+              "development",
+              "intranet",
+              "internet"
+            ],
             "title": "Environment"
           },
           "user": {
@@ -1682,7 +1789,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "name"],
+        "required": [
+          "id",
+          "name"
+        ],
         "title": "BootstrapUser",
         "description": "Minimale, frontendfähige Darstellung des aktuellen Benutzers.\n\nEs werden keine Session-Tokens, Passwortdaten oder internen\nAuthentifizierungsinformationen ausgegeben."
       },
@@ -1798,7 +1908,9 @@
           }
         },
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "title": "CalendarCreate"
       },
       "CalendarOut": {
@@ -1856,7 +1968,12 @@
           }
         },
         "type": "object",
-        "required": ["name", "id", "created_at", "updated_at"],
+        "required": [
+          "name",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
         "title": "CalendarOut"
       },
       "CalendarSelectionIn": {
@@ -1879,7 +1996,9 @@
           }
         },
         "type": "object",
-        "required": ["selected"],
+        "required": [
+          "selected"
+        ],
         "title": "CalendarSelectionIn"
       },
       "CalendarSelectionOut": {
@@ -1911,7 +2030,11 @@
           }
         },
         "type": "object",
-        "required": ["id", "selected", "created_at"],
+        "required": [
+          "id",
+          "selected",
+          "created_at"
+        ],
         "title": "CalendarSelectionOut"
       },
       "CalendarUpdate": {
@@ -2029,7 +2152,9 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "title": "ChatRequest",
         "description": "Öffentlicher, versionierter Chat-Request.\n\nZusätzliche Felder werden bewusst abgelehnt. Neue öffentliche Felder\nmüssen explizit und versioniert ergänzt werden."
       },
@@ -2049,7 +2174,11 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["group", "key", "value"],
+        "required": [
+          "group",
+          "key",
+          "value"
+        ],
         "title": "ConfigChangeItem"
       },
       "ConfigDynamicOptionsResponse": {
@@ -2123,7 +2252,9 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["source"],
+        "required": [
+          "source"
+        ],
         "title": "ConfigDynamicOptionsResponse"
       },
       "ConfigEntryResponse": {
@@ -2315,7 +2446,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "label"],
+        "required": [
+          "id",
+          "label"
+        ],
         "title": "ConfigGroupResponse"
       },
       "ConfigListResponse": {
@@ -2352,7 +2486,9 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["revision"],
+        "required": [
+          "revision"
+        ],
         "title": "ConfigListResponse"
       },
       "ConfigOptionResponse": {
@@ -2397,7 +2533,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["value", "label"],
+        "required": [
+          "value",
+          "label"
+        ],
         "title": "ConfigOptionResponse"
       },
       "ConfigPermissionsResponse": {
@@ -2424,7 +2563,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["read", "write"],
+        "required": [
+          "read",
+          "write"
+        ],
         "title": "ConfigPermissionsResponse"
       },
       "ConfigUIResponse": {
@@ -2571,7 +2713,9 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["value"],
+        "required": [
+          "value"
+        ],
         "title": "ConfigUpdateRequest",
         "description": "Änderung eines einzelnen Konfigurationswertes.\n\n`expected_revision` schützt vor dem unbeabsichtigten Überschreiben\neiner zwischenzeitlich geänderten Konfiguration."
       },
@@ -2610,7 +2754,11 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["group", "key", "revision"],
+        "required": [
+          "group",
+          "key",
+          "revision"
+        ],
         "title": "ConfigUpdateResponse"
       },
       "DocumentationIndexResponse": {
@@ -2675,7 +2823,13 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "title", "section_id", "section_title", "content"],
+        "required": [
+          "id",
+          "title",
+          "section_id",
+          "section_title",
+          "content"
+        ],
         "title": "DocumentationPageResponse"
       },
       "DocumentationPageSummary": {
@@ -2696,7 +2850,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "title"],
+        "required": [
+          "id",
+          "title"
+        ],
         "title": "DocumentationPageSummary"
       },
       "DocumentationSection": {
@@ -2719,7 +2876,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "title"],
+        "required": [
+          "id",
+          "title"
+        ],
         "title": "DocumentationSection"
       },
       "EventCreate": {
@@ -2763,7 +2923,11 @@
           }
         },
         "type": "object",
-        "required": ["title", "start", "end"],
+        "required": [
+          "title",
+          "start",
+          "end"
+        ],
         "title": "EventCreate"
       },
       "EventOut": {
@@ -3074,7 +3238,11 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "type", "name"],
+        "required": [
+          "id",
+          "type",
+          "name"
+        ],
         "title": "HierarchyNode"
       },
       "HierarchyNodeCreate": {
@@ -3137,7 +3305,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["type", "name"],
+        "required": [
+          "type",
+          "name"
+        ],
         "title": "HierarchyNodeCreate"
       },
       "HierarchyNodeUpdate": {
@@ -3243,7 +3414,9 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["root"],
+        "required": [
+          "root"
+        ],
         "title": "HierarchyTreeResponse",
         "description": "API-Vertrag für die Hierarchie – kompatibel mit Frontend-HierarchyTree."
       },
@@ -3372,7 +3545,11 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "name", "provider"],
+        "required": [
+          "id",
+          "name",
+          "provider"
+        ],
         "title": "ModelEntry",
         "description": "Öffentlicher, frontendfähiger Modelleintrag.\n\nInterne Dateipfade, Zugangsdaten und Provider-Secrets werden nicht\nan das Frontend weitergegeben."
       },
@@ -3447,7 +3624,9 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "ModelListResponse"
       },
       "ProviderEntry": {
@@ -3486,7 +3665,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "name"],
+        "required": [
+          "id",
+          "name"
+        ],
         "title": "ProviderEntry"
       },
       "ProviderListResponse": {
@@ -3529,18 +3711,28 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["up", "down", "unknown"],
+            "enum": [
+              "up",
+              "down",
+              "unknown"
+            ],
             "title": "Status"
           }
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "ServiceStatus"
       },
       "SettingsAvailability": {
         "type": "string",
-        "enum": ["available", "prepared", "planned"],
+        "enum": [
+          "available",
+          "prepared",
+          "planned"
+        ],
         "title": "SettingsAvailability"
       },
       "SettingsCatalogResponse": {
@@ -3572,7 +3764,9 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["groups"],
+        "required": [
+          "groups"
+        ],
         "title": "SettingsCatalogResponse"
       },
       "SettingsControl": {
@@ -3720,7 +3914,11 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "title", "source"],
+        "required": [
+          "id",
+          "title",
+          "source"
+        ],
         "title": "SettingsFieldDescriptor"
       },
       "SettingsGroupDescriptor": {
@@ -3760,7 +3958,13 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "title", "description", "icon", "order"],
+        "required": [
+          "id",
+          "title",
+          "description",
+          "icon",
+          "order"
+        ],
         "title": "SettingsGroupDescriptor"
       },
       "SettingsOption": {
@@ -3776,7 +3980,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["value", "label"],
+        "required": [
+          "value",
+          "label"
+        ],
         "title": "SettingsOption"
       },
       "SettingsSectionDescriptor": {
@@ -3820,12 +4027,20 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "title"],
+        "required": [
+          "id",
+          "title"
+        ],
         "title": "SettingsSectionDescriptor"
       },
       "SettingsSource": {
         "type": "string",
-        "enum": ["config", "resource", "runtime", "local_preference"],
+        "enum": [
+          "config",
+          "resource",
+          "runtime",
+          "local_preference"
+        ],
         "title": "SettingsSource"
       },
       "ToolCapabilities": {
@@ -3964,7 +4179,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "name"],
+        "required": [
+          "id",
+          "name"
+        ],
         "title": "ToolEntry",
         "description": "Öffentlicher, frontendfähiger Tool-Eintrag.\n\nInterne Python-Pfade, Importnamen, Zugangsdaten und ausführbare\nImplementierungsdetails werden nicht ausgegeben."
       },
@@ -4052,7 +4270,9 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "ToolListResponse"
       },
       "UISchemaDocument": {
@@ -4141,7 +4361,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["ui_schema_version", "schema"],
+        "required": [
+          "ui_schema_version",
+          "schema"
+        ],
         "title": "UISchemaResponse",
         "description": "Transportvertrag des API-Endpunkts.\n\n`ui_schema` wird im öffentlichen JSON-Vertrag weiterhin als\n`schema` serialisiert."
       },
@@ -4171,7 +4394,11 @@
           }
         },
         "type": "object",
-        "required": ["loc", "msg", "type"],
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "title": "ValidationError"
       },
       "_MovePayload": {
@@ -4192,6 +4419,54 @@
         "additionalProperties": false,
         "type": "object",
         "title": "_MovePayload"
+      },
+      "_ReorderItem": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "new_parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Parent Id"
+          },
+          "new_position": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "New Position"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "new_position"
+        ],
+        "title": "_ReorderItem"
+      },
+      "_ReorderPayload": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/_ReorderItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items"
+        ],
+        "title": "_ReorderPayload"
       }
     }
   }

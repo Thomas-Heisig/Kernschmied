@@ -220,6 +220,7 @@ function TreeNode(props: any) {
         }
 
         onNodeDrop(source, node.id, dropInfo);
+      } catch {}
     },
     [node.id, onNodeDrop],
   );
