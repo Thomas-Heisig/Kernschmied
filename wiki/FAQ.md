@@ -425,9 +425,10 @@ GitHub Issues:
 
 ## Where can I discuss ideas?
 
-GitHub Discussions (if enabled):
+GitHub Discussions (if enabled) — or open an Issue instead:
 
-<https://github.com/Thomas-Heisig/Kernschmied/discussions>
+- Discussions: <https://github.com/Thomas-Heisig/Kernschmied/discussions> _(may be disabled)_
+- Issues: <https://github.com/Thomas-Heisig/Kernschmied/issues>
 
 ---
 
