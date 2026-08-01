@@ -668,11 +668,10 @@ function SettingsSection({
   const currentPath = [...path, sectionKey];
 
   const label = formatSettingLabel(sectionKey);
+  const fullKey = currentPath.join(".");
 
   if (depth > MAX_RENDER_DEPTH) {
-    const fullKey = currentPath.join(".");
-
-    const entry: ConfigEntryResponse = {
+    const inferredEntry: ConfigEntryResponse = {
       group: sectionKey,
       key: sectionKey,
       full_key: fullKey,
@@ -708,7 +707,7 @@ function SettingsSection({
       },
     };
 
-    return <SettingsField entry={entry} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
+    return <SettingsField entry={inferredEntry} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
   }
 
     if (!isConfigRecord(value)) {
@@ -716,14 +715,12 @@ function SettingsSection({
       return null;
     }
 
-    const fullKey = currentPath.join(".");
+    const existingEntry = entriesByFullKey ? entriesByFullKey[fullKey] : undefined;
 
-    const entry = entriesByFullKey ? entriesByFullKey[fullKey] : undefined;
-
-    if (entry) {
+    if (existingEntry) {
       return (
         <SettingsField
-          entry={entry}
+          entry={existingEntry}
           path={currentPath}
           disabled={disabled}
           valuesByFullKey={valuesByFullKey}
@@ -737,9 +734,7 @@ function SettingsSection({
       path: currentPath,
       value,
     });
-    const fullKey = currentPath.join(".");
-
-    const entry: ConfigEntryResponse = {
+    const inferredEntry: ConfigEntryResponse = {
       group: sectionKey,
       key: sectionKey,
       full_key: fullKey,
@@ -775,7 +770,7 @@ function SettingsSection({
       },
     };
 
-    return <SettingsField entry={entry} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
+    return <SettingsField entry={inferredEntry} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
   }
 
   const visibleEntries = Object.entries(value)
