@@ -827,52 +827,81 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
 
         {
           (() => {
-            const fullKey = `${configGroup}.${configKey}`;
+            const cfgGroup = (field as any).config_group ?? configGroup;
+            const cfgKey = (field as any).config_key ?? configKey;
+            const fullKey = `${cfgGroup}.${cfgKey}`;
+
+            function mapControl(c: string): any {
+              switch (c) {
+                case "textarea":
+                  return "textarea";
+                case "number":
+                  return "number";
+                case "boolean":
+                  return "checkbox";
+                case "multiselect":
+                  return "multi_select";
+                case "readonly":
+                  return "text";
+                case "select":
+                default:
+                  return "select";
+              }
+            }
 
             const entry: ConfigEntryResponse = {
-              group: configGroup,
-              key: configKey,
+              group: cfgGroup,
+              key: cfgKey,
               full_key: fullKey,
               display_name: field.title,
               description: field.description ?? "",
               value: currentValue === undefined ? null : currentValue,
-              default_value: field.default ?? null,
+              default_value: null,
               schema_version: "2.0",
               value_type: undefined,
               value_schema: undefined,
               editable: Boolean(field.editable),
               sensitive: Boolean(field.sensitive),
               secret_configured: false,
-              requires_restart: Boolean(field.restart_required),
+              requires_restart: Boolean((field as any).restart_required ?? field.restart_required),
               runtime_editable: true,
-              nullable: !Boolean(field.required),
-              visibility: field.visibility ?? "",
+              nullable: true,
+              visibility: "",
               allowed_scopes: [],
               current_scope: "",
               ui: {
-                component: (field.control as any) ?? undefined,
-                category: field.group ?? undefined,
-                section: field.section ?? undefined,
+                component: mapControl(field.control),
+                category: field.config_group ?? undefined,
+                section: undefined,
                 order: field.order ?? undefined,
-                placeholder: field.placeholder ?? null,
-                help_text: field.help_text ?? null,
-                unit: field.unit ?? null,
-                advanced: field.advanced ?? false,
-                hidden: field.hidden ?? false,
+                placeholder: null,
+                help_text: null,
+                unit: null,
+                advanced: false,
+                hidden: false,
                 readonly: !field.editable,
                 options: (field.options ?? []).map((o) => ({
                   value: o.value,
                   label: o.label,
-                  description: o.description,
                 })),
-                dynamic_options: (field.dynamic_options as any) ?? null,
+                dynamic_options: field.endpoint
+                  ? {
+                      source: "api",
+                      endpoint: field.endpoint,
+                      value_field: "value",
+                      label_field: "label",
+                      filters: {},
+                      depends_on: null,
+                      dependency_parameter: null,
+                    }
+                  : null,
               },
             };
 
             return (
               <SettingsField
                 entry={entry}
-                path={[configGroup, configKey]}
+                path={[cfgGroup, cfgKey]}
                 disabled={config.isSaving}
                 valuesByFullKey={valuesByFullKey}
                 onChange={handleFieldChange}
