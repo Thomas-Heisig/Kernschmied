@@ -54,6 +54,19 @@ export function AppFooter({
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [autoRefresh, setAutoRefresh] = useState(false);
+  const autoRefreshIntervalMs = 30000; // 30s
+  const [saveSelectionsEnabled, setSaveSelectionsEnabled] = useState<boolean>(() => {
+    try {
+      const v = localStorage.getItem('calendar.saveSelection');
+      return v === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [modelsCount, setModelsCount] = useState<number | null>(null);
+  const [toolsCount, setToolsCount] = useState<number | null>(null);
 
   // bootstrap/health loader (unchanged)
 
@@ -75,6 +88,27 @@ export function AppFooter({
         setOnline(true);
         setLastChecked(new Date());
         setRequestId((data as any)?.request_id ?? res.headers.get('X-Request-Id'));
+        // fetch counts for models/tools if endpoints provided
+        try {
+          const m = await fetch('/api/v1/models', { cache: 'no-store' });
+          if (m.ok) {
+            const md = await m.json();
+            // if API returns array or object with items
+            if (Array.isArray(md)) setModelsCount(md.length);
+            else if (typeof md === 'object' && md?.items) setModelsCount(md.items.length ?? null);
+            else if (typeof md === 'object' && md?.length) setModelsCount(md.length ?? null);
+          }
+        } catch {}
+
+        try {
+          const t = await fetch('/api/v1/tools', { cache: 'no-store' });
+          if (t.ok) {
+            const td = await t.json();
+            if (Array.isArray(td)) setToolsCount(td.length);
+            else if (typeof td === 'object' && td?.items) setToolsCount(td.items.length ?? null);
+            else if (typeof td === 'object' && td?.length) setToolsCount(td.length ?? null);
+          }
+        } catch {}
       } catch (err: any) {
         // Fallback: try health endpoint to at least determine online state
         try {
@@ -102,6 +136,42 @@ export function AppFooter({
       mounted = false;
     };
   }, []);
+
+  // Auto-refresh when enabled
+  useEffect(() => {
+    if (!autoRefresh) return;
+    let cancelled = false;
+    const tick = async () => {
+      try {
+        const res = await fetch('/api/v1/bootstrap', { cache: 'no-store' });
+        if (!res.ok) {
+          setOnline(false);
+          setError(`${res.status} ${res.statusText}`);
+          return;
+        }
+        const data = await res.json();
+        if (cancelled) return;
+        setBootstrap(data);
+        setOnline(true);
+        setError(null);
+        setLastChecked(new Date());
+        setRequestId((data as any)?.request_id ?? res.headers.get('X-Request-Id'));
+      } catch (e: any) {
+        if (cancelled) return;
+        setOnline(false);
+        setError(String(e));
+      }
+    };
+
+    const id = window.setInterval(tick, autoRefreshIntervalMs);
+    // do an immediate tick
+    tick();
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(id);
+    };
+  }, [autoRefresh]);
 
   useEffect(() => {
     let mounted = true;
@@ -204,6 +274,23 @@ export function AppFooter({
           >
             ⓘ Systeminfo
           </button>
+
+          {/* opt-in toggle for saving calendar selections */}
+          <div className="ml-3 flex items-center gap-2 text-xs">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={saveSelectionsEnabled}
+                onChange={(e) => {
+                  setSaveSelectionsEnabled(e.target.checked);
+                  try {
+                    localStorage.setItem('calendar.saveSelection', e.target.checked ? 'true' : 'false');
+                  } catch {}
+                }}
+              />
+              <span>Speichern</span>
+            </label>
+          </div>
         </div>
       </div>
 
@@ -335,7 +422,7 @@ export function AppFooter({
                   <div className="mt-3 text-xs">
                     <div className="mb-2 text-xs text-text-muted">Request ID: {requestId ?? '—'} · Letzte Prüfung: {lastChecked ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(lastChecked) : '—'}</div>
                     <div className="rounded border p-3 max-h-64 overflow-auto bg-gray-50 dark:bg-slate-900">
-                      <pre className="whitespace-pre-wrap">{JSON.stringify(bootstrap ?? { online, error, versions: bootstrap?.versions }, null, 2)}</pre>
+                      <pre className="whitespace-pre-wrap">{JSON.stringify(bootstrap ?? { online, error, versions: (bootstrap as BootstrapResponse | null)?.versions }, null, 2)}</pre>
                     </div>
                   </div>
                 </div>
@@ -455,8 +542,10 @@ function DatePicker({
     setSelectedDay(day);
     setSelectedDate(chosen);
     onSelect(chosen);
-    // send to backend (prepared endpoint). ignore errors silently.
-    sendSelectedDate(chosen).catch(() => {});
+    // send to backend (prepared endpoint) only if user enabled saving
+    if (saveSelectionsEnabled) {
+      sendSelectedDate(chosen).catch(() => {});
+    }
   }
 
   // keyboard navigation
@@ -532,20 +621,44 @@ function DatePicker({
         ))}
       </div>
 
-      <div className="mt-2 flex items-center gap-2">
+          <div className="flex items-center gap-2">
         <input
           className="flex-1 rounded border px-2 py-1"
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
         />
-        <button
-          className="rounded bg-sky-600 px-3 py-1 text-white"
-          onClick={() => {
-            // if no specific day chosen, pick today
-            const d = selectedDay ?? initialDate.getDate();
-            pick(d);
-          }}
+            <button
+              className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-50 dark:bg-slate-700"
+              onClick={() => setAutoRefresh((v) => !v)}
+              title="Automatisch aktualisieren (30s)"
+            >
+              {autoRefresh ? 'Auto‑Refresh: Ein' : 'Auto‑Refresh: Aus'}
+            </button>
+
+            {/* Konfiguration Badge (visible on md+) */}
+            <button
+              className="hidden md:inline-flex ml-2 items-center gap-2 text-xs px-2 py-0.5 rounded bg-gray-50 dark:bg-slate-700"
+              onClick={() => setSystemTab('versions')}
+              title={`Konfiguration Revision ${bootstrap?.config_revision ?? configRevision}`}
+            >
+              ⚙ Konf: {bootstrap?.config_revision ?? configRevision}
+            </button>
+
+            {/* Modelle/Werkzeuge indicators (compact) */}
+            <div className="hidden md:flex items-center gap-2 ml-2 text-xs">
+              <div className="flex items-center gap-1">
+                <span className={bootstrap?.revisions?.model_registry ? 'text-emerald-600' : 'text-gray-400'}>🤖</span>
+                <span>{bootstrap?.revisions?.model_registry ? 'Modelle bereit' : 'Modelle'}</span>
+              </div>
+              <div className="flex items-center gap-1 ml-3">
+                <span className={bootstrap?.revisions?.tool_registry ? 'text-emerald-600' : 'text-gray-400'}>🧰</span>
+                <span>{bootstrap?.revisions?.tool_registry ? 'Werkzeuge bereit' : 'Werkzeuge'}</span>
+              </div>
+            </div>
+
+            {/* Feedback link */}
+            <a className="hidden md:inline-block ml-3 text-xs text-sky-600 hover:underline" href="https://github.com/Thomas-Heisig/Kernschmied/issues/new" target="_blank" rel="noreferrer">Feedback</a>
         >
           OK
         </button>

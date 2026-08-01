@@ -32,6 +32,24 @@ export interface BootstrapResponse {
   application: BootstrapApplication;
   environment: string;
   versions: BootstrapVersions;
+  /** convenience: current user info (may be present at top-level) */
+  user?: {
+    id: string;
+    name?: string;
+    roles?: string[];
+    permissions?: string[];
+    authenticated?: boolean;
+  };
+  /** capability/feature maps (may be present at top-level) */
+  capabilities?: { [key: string]: unknown };
+  features?: { [key: string]: unknown };
+  /** convenience top-level schema fields used by UI */
+  ui_schema?: string;
+  bootstrap_schema?: string;
+  /** top-level authenticated flag for quick checks */
+  authenticated?: boolean;
+  /** optional request id returned by backend */
+  request_id?: string | null;
   endpoints?: BootstrapEndpoints;
   revisions?: BootstrapRevisions;
   config_revision?: number;

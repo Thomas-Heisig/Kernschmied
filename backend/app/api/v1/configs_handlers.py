@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import Request, Response, status
+from typing import cast
 
 from .configs import (
     router,
@@ -54,7 +55,18 @@ async def list_config(request: Request, response: Response) -> ConfigListRespons
     response.headers["X-Config-Revision"] = str(revision)
     response.headers["X-Config-Schema-Version"] = "2.0"
 
-    return ConfigListResponse(revision=revision, groups=build_config_groups(entries), request_id=get_request_id(request))
+    # Cast entries to the annotated ConfigEntries type for static checkers
+    from .configs import ConfigEntries
+
+    typed_entries: ConfigEntries = {  # type: ignore[arg-type]
+        (g, k): v for (g, k), v in entries.items()
+    }
+
+    return ConfigListResponse(
+        revision=revision,
+        groups=build_config_groups(typed_entries),
+        request_id=get_request_id(request),
+    )
 
 
 
@@ -75,12 +87,14 @@ async def bulk_update_config(payload: BulkConfigUpdateRequest, request: Request,
     changes_list: list[ConfigChangeItem] = payload.changes
     if changes_list:
         for change in changes_list:
-            updates[(change.group.strip().lower(), change.key.strip().lower())] = change.value
+            g = cast(str, change.group)
+            k = cast(str, change.key)
+            updates[(g.strip().lower(), k.strip().lower())] = change.value
     else:
         for raw_group, raw_group_value in payload.values.items():
-            normalized_group = raw_group.strip().lower()
+            normalized_group = cast(str, raw_group).strip().lower()
             for raw_key, raw_value in raw_group_value.items():
-                updates[(normalized_group, raw_key.strip().lower())] = raw_value
+                updates[(normalized_group, cast(str, raw_key).strip().lower())] = raw_value
 
     try:
         await service.set_many(updates, expected_revision=payload.expected_revision)
