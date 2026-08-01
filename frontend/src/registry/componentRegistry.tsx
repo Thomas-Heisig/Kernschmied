@@ -9,7 +9,7 @@ import UnsupportedSchemaComponent from "../components/schema/UnsupportedSchemaCo
  */
 export type ComponentRenderer = (
   def: UIComponentDefinition,
-  children: React.ReactNode,
+  children: any,
   props?: { [key: string]: unknown },
 ) => React.ReactNode;
 
@@ -19,7 +19,7 @@ const registry: Record<string, ComponentRenderer> = {
   ),
 
   paragraph: (def, children) => (
-    <p className="text-sm text-slate-700 dark:text-slate-300">{def.props?.text ?? children}</p>
+    <p className="text-sm text-slate-700 dark:text-slate-300">{String((def.props as any)?.text ?? children)}</p>
   ),
 
   text: (def, children) => <span>{def.props?.text ?? children}</span>,
@@ -29,7 +29,7 @@ const registry: Record<string, ComponentRenderer> = {
   ),
 
   badge: (def) => (
-    <span className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-xs font-medium">{def.props?.text ?? def.title}</span>
+    <span className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-xs font-medium">{String((def.props as any)?.text ?? def.title)}</span>
   ),
 
   button: (def, children, { onClick } = {}) => (
@@ -38,14 +38,20 @@ const registry: Record<string, ComponentRenderer> = {
       onClick={onClick as any}
       className="inline-flex items-center gap-2 rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
     >
-      {def.props?.icon ? <DynamicIcon name={String(def.props.icon)} size={16} /> : null}
+      {(def.props as any)?.icon ? <DynamicIcon name={String((def.props as any).icon)} size={16} /> : null}
       {def.title ?? children}
     </button>
   ),
 
   stack: (def, children) => <div className="flex flex-col gap-2">{children}</div>,
 
-  grid: (def, children) => <div className="grid gap-3" style={{ gridTemplateColumns: def.props?.columns ?? undefined }}>{children}</div>,
+  grid: (def, children) => {
+    const cols = (def.props as any)?.columns;
+    const gridTemplateColumns = typeof cols === "string" || typeof cols === "number" ? cols : undefined;
+    return (
+      <div className="grid gap-3" style={{ gridTemplateColumns }}>{children}</div>
+    );
+  },
 
   section: (def, children) => (
     <section className="rounded-md border border-slate-200 p-4">{children}</section>
@@ -91,32 +97,37 @@ const registry: Record<string, ComponentRenderer> = {
     </label>
   ),
 
-  select: (def, children) => (
-    <select className="w-full rounded border px-2 py-1" defaultValue={def.props?.value as any}>
-      {(def.props?.options as any[] | undefined) ?? []}
-      {Array.isArray(def.props?.options)
-        ? def.props?.options.map((opt: any, i: number) => (
-            <option key={i} value={opt.value ?? opt}>{opt.label ?? opt}</option>
-          ))
-        : null}
-    </select>
-  ),
+  select: (def, children) => {
+    const value = (def.props as any)?.value as any;
+    const options = Array.isArray((def.props as any)?.options) ? ((def.props as any).options as any[]) : [];
+    return (
+      <select className="w-full rounded border px-2 py-1" defaultValue={value}>
+        {options.map((opt: any, i: number) => (
+          <option key={i} value={opt.value ?? opt}>{String(opt.label ?? opt)}</option>
+        ))}
+      </select>
+    );
+  },
 
-  multi_select: (def) => (
-    <select multiple className="w-full rounded border px-2 py-1">
-      {Array.isArray(def.props?.options)
-        ? def.props?.options.map((opt: any, i: number) => (
-            <option key={i} value={opt.value ?? opt}>{opt.label ?? opt}</option>
-          ))
-        : null}
-    </select>
-  ),
+  multi_select: (def) => {
+    const options = Array.isArray((def.props as any)?.options) ? ((def.props as any).options as any[]) : [];
+    return (
+      <select multiple className="w-full rounded border px-2 py-1">
+        {options.map((opt: any, i: number) => (
+          <option key={i} value={opt.value ?? opt}>{String(opt.label ?? opt)}</option>
+        ))}
+      </select>
+    );
+  },
 
-  tags: (def) => (
-    <div className="flex flex-wrap gap-1">{(def.props?.items ?? []).map((t: any, i: number) => <span key={i} className="rounded bg-slate-100 px-2 py-0.5 text-xs">{t}</span>)}</div>
-  ),
+  tags: (def) => {
+    const items = Array.isArray((def.props as any)?.items) ? ((def.props as any).items as any[]) : [];
+    return (
+      <div className="flex flex-wrap gap-1">{items.map((t: any, i: number) => <span key={i} className="rounded bg-slate-100 px-2 py-0.5 text-xs">{String(t)}</span>)}</div>
+    );
+  },
 
-  json: (def) => <pre className="rounded bg-slate-50 p-2 text-xs">{JSON.stringify(def.props?.value ?? {}, null, 2)}</pre>,
+  json: (def) => <pre className="rounded bg-slate-50 p-2 text-xs">{JSON.stringify((def.props as any)?.value ?? {}, null, 2)}</pre>,
 };
 
 export function getComponentRenderer(type: string): ComponentRenderer | null {
