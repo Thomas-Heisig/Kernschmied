@@ -1,8 +1,8 @@
 // F:\Kernschmied\frontend\src\components\settings\SettingsCatalogView.tsx
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
 import {
   AlertTriangle,
@@ -16,44 +16,44 @@ import {
   ShieldAlert,
   Wrench,
   X,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { fetchSettingsCatalog } from "../../api/settingsCatalog";
-import type { ConfigObject, ConfigValue, ConfigEntryResponse } from "../../contracts/config";
+import { fetchSettingsCatalog } from '../../api/settingsCatalog';
+import type { ConfigObject, ConfigValue, ConfigEntryResponse } from '../../contracts/config';
 import type {
   SettingsAvailability,
   SettingsCatalogResponse,
   SettingsFieldDescriptor,
   SettingsGroupDescriptor,
   SettingsSectionDescriptor,
-} from "../../contracts/settings";
-import type { UseSystemConfigReturn } from "../../hooks/useSystemConfig";
-import { SettingsField } from "./SettingsField";
+} from '../../contracts/settings';
+import type { UseSystemConfigReturn } from '../../hooks/useSystemConfig';
+import { SettingsField } from './SettingsField';
 
-const DEFAULT_GROUP_ID = "identity";
+const DEFAULT_GROUP_ID = 'identity';
 
 const badgeLabel: Record<SettingsAvailability, string> = {
-  available: "Erreichbar",
-  prepared: "Vorbereitet",
-  planned: "Geplant",
+  available: 'Erreichbar',
+  prepared: 'Vorbereitet',
+  planned: 'Geplant',
 };
 
 const sourceLabel: Record<string, string> = {
-  config: "Konfiguration",
-  resource: "Verwaltete Ressource",
-  runtime: "Laufzeitstatus",
-  local_preference: "Lokale Benutzerpräferenz",
+  config: 'Konfiguration',
+  resource: 'Verwaltete Ressource',
+  runtime: 'Laufzeitstatus',
+  local_preference: 'Lokale Benutzerpräferenz',
 };
 
 const controlLabel: Record<string, string> = {
-  text: "Textfeld",
-  textarea: "Mehrzeiliger Text",
-  number: "Zahlenfeld",
-  boolean: "Schalter",
-  select: "Auswahl",
-  multiselect: "Mehrfachauswahl",
-  readonly: "Nur Anzeige",
-  link: "Ressourcenansicht",
+  text: 'Textfeld',
+  textarea: 'Mehrzeiliger Text',
+  number: 'Zahlenfeld',
+  boolean: 'Schalter',
+  select: 'Auswahl',
+  multiselect: 'Mehrfachauswahl',
+  readonly: 'Nur Anzeige',
+  link: 'Ressourcenansicht',
 };
 
 interface SettingsCatalogViewProps {
@@ -89,7 +89,7 @@ interface FieldCardProps {
 // ============================================================
 
 interface EditableConfigFieldDescriptor extends SettingsFieldDescriptor {
-  source: "config";
+  source: 'config';
   editable: true;
   config_group: string;
   config_key: string;
@@ -99,11 +99,11 @@ function isEditableConfigField(
   field: SettingsFieldDescriptor,
 ): field is EditableConfigFieldDescriptor {
   return (
-    field.source === "config" &&
+    field.source === 'config' &&
     field.editable === true &&
-    typeof field.config_group === "string" &&
+    typeof field.config_group === 'string' &&
     field.config_group.trim().length > 0 &&
-    typeof field.config_key === "string" &&
+    typeof field.config_key === 'string' &&
     field.config_key.trim().length > 0
   );
 }
@@ -115,10 +115,9 @@ function isEditableConfigField(
 export function SettingsCatalogView({ config }: SettingsCatalogViewProps) {
   const [catalog, setCatalog] = useState<SettingsCatalogResponse | null>(null);
 
-  const [selectedGroupId, setSelectedGroupId] =
-    useState<string>(DEFAULT_GROUP_ID);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(DEFAULT_GROUP_ID);
 
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState('');
 
   const [error, setError] = useState<string | null>(null);
 
@@ -126,8 +125,8 @@ export function SettingsCatalogView({ config }: SettingsCatalogViewProps) {
     const out: Record<string, ConfigValue> = {};
 
     function walk(prefix: string[], node: any) {
-      if (node === null || typeof node !== "object") {
-        out[prefix.join(".")] = node as ConfigValue;
+      if (node === null || typeof node !== 'object') {
+        out[prefix.join('.')] = node as ConfigValue;
         return;
       }
 
@@ -145,45 +144,40 @@ export function SettingsCatalogView({ config }: SettingsCatalogViewProps) {
 
   const [reloadRevision, setReloadRevision] = useState(0);
 
-  const loadCatalog = useCallback(
-    async (signal: AbortSignal): Promise<void> => {
-      setIsLoading(true);
-      setError(null);
+  const loadCatalog = useCallback(async (signal: AbortSignal): Promise<void> => {
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        const response = await fetchSettingsCatalog(signal);
+    try {
+      const response = await fetchSettingsCatalog(signal);
 
-        setCatalog(response);
+      setCatalog(response);
 
-        setSelectedGroupId((current) => {
-          const currentExists = response.groups.some(
-            (group) => group.id === current,
-          );
+      setSelectedGroupId((current) => {
+        const currentExists = response.groups.some((group) => group.id === current);
 
-          if (currentExists) {
-            return current;
-          }
-
-          return response.groups[0]?.id ?? DEFAULT_GROUP_ID;
-        });
-      } catch (reason: unknown) {
-        if (reason instanceof DOMException && reason.name === "AbortError") {
-          return;
+        if (currentExists) {
+          return current;
         }
 
-        setError(
-          reason instanceof Error
-            ? reason.message
-            : "Der Settings-Katalog konnte nicht geladen werden.",
-        );
-      } finally {
-        if (!signal.aborted) {
-          setIsLoading(false);
-        }
+        return response.groups[0]?.id ?? DEFAULT_GROUP_ID;
+      });
+    } catch (reason: unknown) {
+      if (reason instanceof DOMException && reason.name === 'AbortError') {
+        return;
       }
-    },
-    [],
-  );
+
+      setError(
+        reason instanceof Error
+          ? reason.message
+          : 'Der Settings-Katalog konnte nicht geladen werden.',
+      );
+    } finally {
+      if (!signal.aborted) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -207,9 +201,7 @@ export function SettingsCatalogView({ config }: SettingsCatalogViewProps) {
       return;
     }
 
-    const selectedGroupExists = filteredGroups.some(
-      ({ group }) => group.id === selectedGroupId,
-    );
+    const selectedGroupExists = filteredGroups.some(({ group }) => group.id === selectedGroupId);
 
     if (selectedGroupExists) {
       return;
@@ -223,19 +215,14 @@ export function SettingsCatalogView({ config }: SettingsCatalogViewProps) {
   }, [filteredGroups, selectedGroupId]);
 
   const selectedFilteredGroup =
-    filteredGroups.find(({ group }) => group.id === selectedGroupId) ??
-    filteredGroups[0];
+    filteredGroups.find(({ group }) => group.id === selectedGroupId) ?? filteredGroups[0];
 
-  const totalFieldCount = useMemo(
-    () => countCatalogFields(catalog?.groups ?? []),
-    [catalog],
-  );
+  const totalFieldCount = useMemo(() => countCatalogFields(catalog?.groups ?? []), [catalog]);
 
   const filteredFieldCount = useMemo(
     () =>
       filteredGroups.reduce<number>(
-        (total, filteredGroup) =>
-          total + countSectionFields(filteredGroup.sections),
+        (total, filteredGroup) => total + countSectionFields(filteredGroup.sections),
         0,
       ),
     [filteredGroups],
@@ -277,11 +264,11 @@ export function SettingsCatalogView({ config }: SettingsCatalogViewProps) {
       <div className="min-h-0 flex-1">
         <main
           className={[
-            "min-w-0 overflow-y-auto rounded-2xl border",
-            "border-slate-200 bg-slate-50 p-5",
-            "dark:border-white/10 dark:bg-slate-950/40",
-            "md:p-6",
-          ].join(" ")}
+            'min-w-0 overflow-y-auto rounded-2xl border',
+            'border-slate-200 bg-slate-50 p-5',
+            'dark:border-white/10 dark:bg-slate-950/40',
+            'md:p-6',
+          ].join(' ')}
         >
           {selectedFilteredGroup ? (
             <GroupPanel
@@ -303,45 +290,29 @@ export function SettingsCatalogView({ config }: SettingsCatalogViewProps) {
 // Hilfskomponenten
 // ============================================================
 
-function CatalogWarning({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry: () => void;
-}) {
+function CatalogWarning({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div
       className={[
-        "flex flex-col gap-3 rounded-xl border border-amber-200",
-        "bg-amber-50 p-4 text-amber-900",
-        "dark:border-amber-500/20 dark:bg-amber-500/10",
-        "dark:text-amber-200 sm:flex-row sm:items-center",
-        "sm:justify-between",
-      ].join(" ")}
+        'flex flex-col gap-3 rounded-xl border border-amber-200',
+        'bg-amber-50 p-4 text-amber-900',
+        'dark:border-amber-500/20 dark:bg-amber-500/10',
+        'dark:text-amber-200 sm:flex-row sm:items-center',
+        'sm:justify-between',
+      ].join(' ')}
       role="alert"
     >
       <div className="flex min-w-0 items-start gap-3">
-        <AlertTriangle
-          size={18}
-          className="mt-0.5 shrink-0"
-          aria-hidden="true"
-        />
+        <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
 
         <div className="min-w-0">
-          <p className="font-medium">
-            Der Katalog konnte nicht aktualisiert werden.
-          </p>
+          <p className="font-medium">Der Katalog konnte nicht aktualisiert werden.</p>
 
           <p className="mt-1 text-sm opacity-85">{message}</p>
         </div>
       </div>
 
-      <button
-        type="button"
-        className={secondaryButtonClassName}
-        onClick={onRetry}
-      >
+      <button type="button" className={secondaryButtonClassName} onClick={onRetry}>
         <RefreshCw size={15} aria-hidden="true" />
         Erneut laden
       </button>
@@ -375,19 +346,19 @@ function CatalogHeader({
   return (
     <header
       className={[
-        "rounded-2xl border border-slate-200 bg-white p-5",
-        "shadow-sm dark:border-white/10 dark:bg-slate-900/50",
-      ].join(" ")}
+        'rounded-2xl border border-slate-200 bg-white p-5',
+        'shadow-sm dark:border-white/10 dark:bg-slate-900/50',
+      ].join(' ')}
     >
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
             <span
               className={[
-                "inline-flex h-10 w-10 shrink-0 items-center",
-                "justify-center rounded-xl bg-blue-50 text-blue-700",
-                "dark:bg-blue-500/10 dark:text-blue-300",
-              ].join(" ")}
+                'inline-flex h-10 w-10 shrink-0 items-center',
+                'justify-center rounded-xl bg-blue-50 text-blue-700',
+                'dark:bg-blue-500/10 dark:text-blue-300',
+              ].join(' ')}
               aria-hidden="true"
             >
               <Settings2 size={20} />
@@ -399,8 +370,7 @@ function CatalogHeader({
               </h1>
 
               <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Werte, Ressourcen und Laufzeitmechanismen werden getrennt
-                dargestellt.
+                Werte, Ressourcen und Laufzeitmechanismen werden getrennt dargestellt.
               </p>
             </div>
           </div>
@@ -408,9 +378,7 @@ function CatalogHeader({
           <div className="mt-4 flex flex-wrap gap-2 text-xs">
             <CatalogMetaBadge>Schema {catalog.schema_version}</CatalogMetaBadge>
 
-            <CatalogMetaBadge>
-              {catalog.groups.length} Bereiche
-            </CatalogMetaBadge>
+            <CatalogMetaBadge>{catalog.groups.length} Bereiche</CatalogMetaBadge>
 
             <CatalogMetaBadge>{totalFieldCount} Einträge</CatalogMetaBadge>
 
@@ -422,12 +390,10 @@ function CatalogHeader({
         <div className="mt-4 flex items-center gap-3">
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-3">
-              <label className="text-xs text-slate-500 dark:text-slate-400">
-                Bereich
-              </label>
+              <label className="text-xs text-slate-500 dark:text-slate-400">Bereich</label>
 
               <select
-                value={selectedGroupId ?? ""}
+                value={selectedGroupId ?? ''}
                 onChange={(e) => onSelectGroup(e.target.value)}
                 className="rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-900 dark:bg-slate-950 dark:text-white"
               >
@@ -471,7 +437,7 @@ function CatalogHeader({
             >
               <RefreshCw
                 size={15}
-                className={isLoading ? "animate-spin" : undefined}
+                className={isLoading ? 'animate-spin' : undefined}
                 aria-hidden="true"
               />
               Aktualisieren
@@ -503,10 +469,10 @@ function CatalogSidebar({
   return (
     <aside
       className={[
-        "flex min-h-0 flex-col rounded-2xl border",
-        "border-slate-200 bg-white shadow-sm",
-        "dark:border-white/10 dark:bg-slate-900/50",
-      ].join(" ")}
+        'flex min-h-0 flex-col rounded-2xl border',
+        'border-slate-200 bg-white shadow-sm',
+        'dark:border-white/10 dark:bg-slate-900/50',
+      ].join(' ')}
     >
       <div className="border-b border-slate-200 p-4 dark:border-white/10">
         <label htmlFor="settings-catalog-search" className="sr-only">
@@ -517,9 +483,9 @@ function CatalogSidebar({
           <Search
             size={16}
             className={[
-              "pointer-events-none absolute left-3 top-1/2",
-              "-translate-y-1/2 text-slate-400",
-            ].join(" ")}
+              'pointer-events-none absolute left-3 top-1/2',
+              '-translate-y-1/2 text-slate-400',
+            ].join(' ')}
             aria-hidden="true"
           />
 
@@ -529,14 +495,14 @@ function CatalogSidebar({
             value={query}
             placeholder="Katalog durchsuchen …"
             className={[
-              "block w-full rounded-lg border border-slate-300",
-              "bg-white py-2 pl-9 pr-10 text-sm text-slate-900",
-              "outline-none transition placeholder:text-slate-400",
-              "focus:border-blue-500 focus:ring-2",
-              "focus:ring-blue-500/20",
-              "dark:border-white/10 dark:bg-slate-950/60",
-              "dark:text-white",
-            ].join(" ")}
+              'block w-full rounded-lg border border-slate-300',
+              'bg-white py-2 pl-9 pr-10 text-sm text-slate-900',
+              'outline-none transition placeholder:text-slate-400',
+              'focus:border-blue-500 focus:ring-2',
+              'focus:ring-blue-500/20',
+              'dark:border-white/10 dark:bg-slate-950/60',
+              'dark:text-white',
+            ].join(' ')}
             onChange={(event) => {
               onQueryChange(event.target.value);
             }}
@@ -546,15 +512,15 @@ function CatalogSidebar({
             <button
               type="button"
               className={[
-                "absolute right-1.5 top-1/2 inline-flex h-7 w-7",
-                "-translate-y-1/2 items-center justify-center",
-                "rounded-md text-slate-400 transition",
-                "hover:bg-slate-100 hover:text-slate-700",
-                "dark:hover:bg-white/10 dark:hover:text-white",
-              ].join(" ")}
+                'absolute right-1.5 top-1/2 inline-flex h-7 w-7',
+                '-translate-y-1/2 items-center justify-center',
+                'rounded-md text-slate-400 transition',
+                'hover:bg-slate-100 hover:text-slate-700',
+                'dark:hover:bg-white/10 dark:hover:text-white',
+              ].join(' ')}
               aria-label="Suche löschen"
               onClick={() => {
-                onQueryChange("");
+                onQueryChange('');
               }}
             >
               <X size={15} aria-hidden="true" />
@@ -582,15 +548,13 @@ function CatalogSidebar({
                 key={group.id}
                 type="button"
                 className={catalogNavigationItemClass(isActive)}
-                aria-current={isActive ? "page" : undefined}
+                aria-current={isActive ? 'page' : undefined}
                 onClick={() => {
                   onSelectGroup(group.id);
                 }}
               >
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium">
-                    {group.title}
-                  </span>
+                  <span className="block truncate font-medium">{group.title}</span>
 
                   <span className="mt-1 block text-xs opacity-70">
                     {countSectionFields(sections)} Einträge
@@ -603,11 +567,7 @@ function CatalogSidebar({
           })
         ) : (
           <div className="rounded-xl border border-dashed border-slate-300 p-5 text-center dark:border-white/10">
-            <Search
-              size={20}
-              className="mx-auto text-slate-400"
-              aria-hidden="true"
-            />
+            <Search size={20} className="mx-auto text-slate-400" aria-hidden="true" />
 
             <p className="mt-3 text-sm font-medium text-slate-700 dark:text-slate-300">
               Keine Treffer
@@ -623,21 +583,16 @@ function CatalogSidebar({
   );
 }
 
-function GroupPanel({
-  group,
-  sections,
-  config,
-  valuesByFullKey,
-}: GroupPanelProps) {
+function GroupPanel({ group, sections, config, valuesByFullKey }: GroupPanelProps) {
   const fieldCount = countSectionFields(sections);
 
   return (
     <section className="space-y-7">
       <header
         className={[
-          "rounded-2xl border border-slate-200 bg-white p-5",
-          "shadow-sm dark:border-white/10 dark:bg-slate-900/50",
-        ].join(" ")}
+          'rounded-2xl border border-slate-200 bg-white p-5',
+          'shadow-sm dark:border-white/10 dark:bg-slate-900/50',
+        ].join(' ')}
       >
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0">
@@ -656,10 +611,10 @@ function GroupPanel({
 
           <span
             className={[
-              "shrink-0 rounded-full bg-slate-100 px-3 py-1.5",
-              "text-xs font-medium text-slate-600",
-              "dark:bg-white/10 dark:text-slate-300",
-            ].join(" ")}
+              'shrink-0 rounded-full bg-slate-100 px-3 py-1.5',
+              'text-xs font-medium text-slate-600',
+              'dark:bg-white/10 dark:text-slate-300',
+            ].join(' ')}
           >
             {fieldCount} Einträge
           </span>
@@ -687,9 +642,7 @@ function SectionPanel({ section, config, valuesByFullKey }: SectionPanelProps) {
           </h3>
 
           {section.description ? (
-            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              {section.description}
-            </p>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{section.description}</p>
           ) : null}
         </div>
 
@@ -732,17 +685,9 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
 
   function handleFieldChange(path: string[], value: ConfigValue): void {
     // If the provider was changed, clear the provider-dependent default model
-    if (
-      path.length >= 2 &&
-      path[0] === "models" &&
-      path[1] === "default_provider"
-    ) {
+    if (path.length >= 2 && path[0] === 'models' && path[1] === 'default_provider') {
       const withProvider = updateConfigValue(config.values, path, value);
-      const clearedModel = updateConfigValue(
-        withProvider,
-        ["models", "default_model"],
-        null,
-      );
+      const clearedModel = updateConfigValue(withProvider, ['models', 'default_model'], null);
       config.setValues(clearedModel);
       return;
     }
@@ -754,16 +699,14 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
     return (
       <article
         className={[
-          "flex min-h-full flex-col rounded-xl border",
-          "border-slate-200 bg-white p-4 shadow-sm",
-          "dark:border-white/10 dark:bg-slate-900/60",
-        ].join(" ")}
+          'flex min-h-full flex-col rounded-xl border',
+          'border-slate-200 bg-white p-4 shadow-sm',
+          'dark:border-white/10 dark:bg-slate-900/60',
+        ].join(' ')}
       >
         <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h4 className="font-semibold text-slate-900 dark:text-slate-100">
-              {field.title}
-            </h4>
+            <h4 className="font-semibold text-slate-900 dark:text-slate-100">{field.title}</h4>
 
             {field.description ? (
               <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
@@ -784,40 +727,28 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
 
           <MetadataItem
             term="Darstellung"
-            value={
-              controlLabel[field.control] ?? formatIdentifier(field.control)
-            }
+            value={controlLabel[field.control] ?? formatIdentifier(field.control)}
             icon={<Wrench size={14} />}
           />
 
           {field.config_group ? (
-            <MetadataItem
-              term="Konfigurationsgruppe"
-              value={field.config_group}
-              code
-            />
+            <MetadataItem term="Konfigurationsgruppe" value={field.config_group} code />
           ) : null}
 
           {field.config_key ? (
-            <MetadataItem
-              term="Konfigurationsschlüssel"
-              value={field.config_key}
-              code
-            />
+            <MetadataItem term="Konfigurationsschlüssel" value={field.config_key} code />
           ) : null}
 
           {target ? (
             <div className="sm:col-span-2">
-              <dt className="font-medium text-slate-500 dark:text-slate-400">
-                API-Ziel
-              </dt>
+              <dt className="font-medium text-slate-500 dark:text-slate-400">API-Ziel</dt>
 
               <dd
                 className={[
-                  "mt-1 wrap-break-word rounded-md bg-slate-100",
-                  "px-2 py-1.5 font-mono text-slate-700",
-                  "dark:bg-white/5 dark:text-slate-300",
-                ].join(" ")}
+                  'mt-1 wrap-break-word rounded-md bg-slate-100',
+                  'px-2 py-1.5 font-mono text-slate-700',
+                  'dark:bg-white/5 dark:text-slate-300',
+                ].join(' ')}
               >
                 {target}
               </dd>
@@ -825,112 +756,102 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
           ) : null}
         </dl>
 
-        {
-          (() => {
-            const cfgGroup = (field as any).config_group ?? configGroup;
-            const cfgKey = (field as any).config_key ?? configKey;
-            const fullKey = `${cfgGroup}.${cfgKey}`;
+        {(() => {
+          const cfgGroup = (field as any).config_group ?? configGroup;
+          const cfgKey = (field as any).config_key ?? configKey;
+          const fullKey = `${cfgGroup}.${cfgKey}`;
 
-            function mapControl(c: string): any {
-              switch (c) {
-                case "textarea":
-                  return "textarea";
-                case "number":
-                  return "number";
-                case "boolean":
-                  return "checkbox";
-                case "multiselect":
-                  return "multi_select";
-                case "readonly":
-                  return "text";
-                case "select":
-                default:
-                  return "select";
-              }
+          function mapControl(c: string): any {
+            switch (c) {
+              case 'textarea':
+                return 'textarea';
+              case 'number':
+                return 'number';
+              case 'boolean':
+                return 'checkbox';
+              case 'multiselect':
+                return 'multi_select';
+              case 'readonly':
+                return 'text';
+              case 'select':
+              default:
+                return 'select';
             }
+          }
 
-            const entry: ConfigEntryResponse = {
-              group: cfgGroup,
-              key: cfgKey,
-              full_key: fullKey,
-              display_name: field.title,
-              description: field.description ?? "",
-              value: currentValue === undefined ? null : currentValue,
-              default_value: null,
-              schema_version: "2.0",
-              value_type: undefined,
-              value_schema: undefined,
-              editable: Boolean(field.editable),
-              sensitive: Boolean(field.sensitive),
-              secret_configured: false,
-              requires_restart: Boolean((field as any).restart_required ?? field.restart_required),
-              runtime_editable: true,
-              nullable: true,
-              visibility: "",
-              allowed_scopes: [],
-              current_scope: "",
-              ui: {
-                component: mapControl(field.control),
-                category: field.config_group ?? undefined,
-                section: undefined,
-                order: field.order ?? undefined,
-                placeholder: null,
-                help_text: null,
-                unit: null,
-                advanced: false,
-                hidden: false,
-                readonly: !field.editable,
-                options: (field.options ?? []).map((o) => ({
-                  value: o.value,
-                  label: o.label,
-                })),
-                dynamic_options: field.endpoint
-                  ? {
-                      source: "api",
-                      endpoint: field.endpoint,
-                      value_field: "value",
-                      label_field: "label",
-                      filters: {},
-                      depends_on: null,
-                      dependency_parameter: null,
-                    }
-                  : null,
-              },
-            };
+          const entry: ConfigEntryResponse = {
+            group: cfgGroup,
+            key: cfgKey,
+            full_key: fullKey,
+            display_name: field.title,
+            description: field.description ?? '',
+            value: currentValue === undefined ? null : currentValue,
+            default_value: null,
+            schema_version: '2.0',
+            value_type: undefined,
+            value_schema: undefined,
+            editable: Boolean(field.editable),
+            sensitive: Boolean(field.sensitive),
+            secret_configured: false,
+            requires_restart: Boolean((field as any).restart_required ?? field.restart_required),
+            runtime_editable: true,
+            nullable: true,
+            visibility: '',
+            allowed_scopes: [],
+            current_scope: '',
+            ui: {
+              component: mapControl(field.control),
+              category: field.config_group ?? undefined,
+              section: undefined,
+              order: field.order ?? undefined,
+              placeholder: null,
+              help_text: null,
+              unit: null,
+              advanced: false,
+              hidden: false,
+              readonly: !field.editable,
+              options: (field.options ?? []).map((o) => ({
+                value: o.value,
+                label: o.label,
+              })),
+              dynamic_options: field.endpoint
+                ? {
+                    source: 'api',
+                    endpoint: field.endpoint,
+                    value_field: 'value',
+                    label_field: 'label',
+                    filters: {},
+                    depends_on: null,
+                    dependency_parameter: null,
+                  }
+                : null,
+            },
+          };
 
-            return (
-              <SettingsField
-                entry={entry}
-                path={[cfgGroup, cfgKey]}
-                disabled={config.isSaving}
-                valuesByFullKey={valuesByFullKey}
-                onChange={handleFieldChange}
-              />
-            );
-          })()
-        }
+          return (
+            <SettingsField
+              entry={entry}
+              path={[cfgGroup, cfgKey]}
+              disabled={config.isSaving}
+              valuesByFullKey={valuesByFullKey}
+              onChange={handleFieldChange}
+            />
+          );
+        })()}
 
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
-          <FieldCapabilityBadge variant="success">
-            editierbar
-          </FieldCapabilityBadge>
+          <FieldCapabilityBadge variant="success">editierbar</FieldCapabilityBadge>
 
           {field.requires_confirmation ? (
-            <FieldCapabilityBadge variant="warning">
-              Bestätigung
-            </FieldCapabilityBadge>
+            <FieldCapabilityBadge variant="warning">Bestätigung</FieldCapabilityBadge>
           ) : null}
 
           {field.sensitive ? (
-            <FieldCapabilityBadge variant="danger">
-              sensibel
-            </FieldCapabilityBadge>
+            <FieldCapabilityBadge variant="danger">sensibel</FieldCapabilityBadge>
           ) : null}
 
           {field.restart_required ? (
-            <FieldCapabilityBadge variant="warning">
-              Neustart erforderlich
-            </FieldCapabilityBadge>
+            <FieldCapabilityBadge variant="warning">Neustart erforderlich</FieldCapabilityBadge>
           ) : null}
         </div>
       </article>
@@ -940,23 +861,16 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
   return (
     <article
       className={[
-              permissions: {
-                read: "config:read",
-                write: "config:write",
-                reveal_secret: null,
-              },
-        "flex min-h-full flex-col rounded-xl border border-slate-200",
-        "bg-white p-4 shadow-sm transition",
-        "hover:border-slate-300 hover:shadow-md",
-        "dark:border-white/10 dark:bg-slate-900/60",
-        "dark:hover:border-white/20",
-      ].join(" ")}
+        'flex min-h-full flex-col rounded-xl border border-slate-200',
+        'bg-white p-4 shadow-sm transition',
+        'hover:border-slate-300 hover:shadow-md',
+        'dark:border-white/10 dark:bg-slate-900/60',
+        'dark:hover:border-white/20',
+      ].join(' ')}
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <h4 className="font-semibold text-slate-900 dark:text-slate-100">
-            {field.title}
-          </h4>
+          <h4 className="font-semibold text-slate-900 dark:text-slate-100">{field.title}</h4>
 
           {field.description ? (
             <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
@@ -982,33 +896,23 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
         />
 
         {field.config_group ? (
-          <MetadataItem
-            term="Konfigurationsgruppe"
-            value={field.config_group}
-            code
-          />
+          <MetadataItem term="Konfigurationsgruppe" value={field.config_group} code />
         ) : null}
 
         {field.config_key ? (
-          <MetadataItem
-            term="Konfigurationsschlüssel"
-            value={field.config_key}
-            code
-          />
+          <MetadataItem term="Konfigurationsschlüssel" value={field.config_key} code />
         ) : null}
 
         {target ? (
           <div className="sm:col-span-2">
-            <dt className="font-medium text-slate-500 dark:text-slate-400">
-              API-Ziel
-            </dt>
+            <dt className="font-medium text-slate-500 dark:text-slate-400">API-Ziel</dt>
 
             <dd
               className={[
-                "mt-1 wrap-break-word rounded-md bg-slate-100",
-                "px-2 py-1.5 font-mono text-slate-700",
-                "dark:bg-white/5 dark:text-slate-300",
-              ].join(" ")}
+                'mt-1 wrap-break-word rounded-md bg-slate-100',
+                'px-2 py-1.5 font-mono text-slate-700',
+                'dark:bg-white/5 dark:text-slate-300',
+              ].join(' ')}
             >
               {target}
             </dd>
@@ -1016,19 +920,17 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
         ) : null}
       </dl>
 
-      {field.source === "resource" &&
-      target &&
-      field.availability === "available" ? (
+      {field.source === 'resource' && target && field.availability === 'available' ? (
         <a
           href={target}
           className={[
-            "mt-4 inline-flex items-center justify-center gap-2",
-            "rounded-lg border border-slate-300 bg-white px-3 py-2",
-            "text-sm font-medium text-slate-700 transition",
-            "hover:bg-slate-50",
-            "dark:border-white/10 dark:bg-white/5 dark:text-slate-200",
-            "dark:hover:bg-white/10",
-          ].join(" ")}
+            'mt-4 inline-flex items-center justify-center gap-2',
+            'rounded-lg border border-slate-300 bg-white px-3 py-2',
+            'text-sm font-medium text-slate-700 transition',
+            'hover:bg-slate-50',
+            'dark:border-white/10 dark:bg-white/5 dark:text-slate-200',
+            'dark:hover:bg-white/10',
+          ].join(' ')}
         >
           <ExternalLink size={15} aria-hidden="true" />
           Ressource öffnen
@@ -1037,25 +939,17 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
 
       <div className="mt-auto flex flex-wrap gap-2 pt-4 text-xs">
         {field.editable ? (
-          currentValue === undefined && field.source === "config" ? (
-            <FieldCapabilityBadge variant="warning">
-              Config-Wert fehlt
-            </FieldCapabilityBadge>
+          currentValue === undefined && field.source === 'config' ? (
+            <FieldCapabilityBadge variant="warning">Config-Wert fehlt</FieldCapabilityBadge>
           ) : (
-            <FieldCapabilityBadge variant="success">
-              editierbar
-            </FieldCapabilityBadge>
+            <FieldCapabilityBadge variant="success">editierbar</FieldCapabilityBadge>
           )
         ) : (
-          <FieldCapabilityBadge variant="neutral">
-            schreibgeschützt
-          </FieldCapabilityBadge>
+          <FieldCapabilityBadge variant="neutral">schreibgeschützt</FieldCapabilityBadge>
         )}
 
         {field.requires_confirmation ? (
-          <FieldCapabilityBadge variant="warning">
-            Bestätigung
-          </FieldCapabilityBadge>
+          <FieldCapabilityBadge variant="warning">Bestätigung</FieldCapabilityBadge>
         ) : null}
 
         {field.sensitive ? (
@@ -1063,9 +957,7 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
         ) : null}
 
         {field.restart_required ? (
-          <FieldCapabilityBadge variant="warning">
-            Neustart erforderlich
-          </FieldCapabilityBadge>
+          <FieldCapabilityBadge variant="warning">Neustart erforderlich</FieldCapabilityBadge>
         ) : null}
       </div>
     </article>
@@ -1097,9 +989,9 @@ function MetadataItem({
 
       <dd
         className={[
-          "mt-1 wrap-break-word text-slate-700 dark:text-slate-300",
-          code ? "font-mono" : "",
-        ].join(" ")}
+          'mt-1 wrap-break-word text-slate-700 dark:text-slate-300',
+          code ? 'font-mono' : '',
+        ].join(' ')}
       >
         {value}
       </dd>
@@ -1115,9 +1007,9 @@ function AvailabilityBadge({
   compact?: boolean;
 }) {
   const icon =
-    availability === "available" ? (
+    availability === 'available' ? (
       <CheckCircle2 size={13} aria-hidden="true" />
-    ) : availability === "prepared" ? (
+    ) : availability === 'prepared' ? (
       <Wrench size={13} aria-hidden="true" />
     ) : (
       <Clock3 size={13} aria-hidden="true" />
@@ -1126,11 +1018,11 @@ function AvailabilityBadge({
   return (
     <span
       className={[
-        "inline-flex shrink-0 items-center gap-1 rounded-full",
-        "border px-2 py-1 text-xs font-medium",
+        'inline-flex shrink-0 items-center gap-1 rounded-full',
+        'border px-2 py-1 text-xs font-medium',
         availabilityBadgeClass(availability),
-        compact ? "max-w-27.5" : "",
-      ].join(" ")}
+        compact ? 'max-w-27.5' : '',
+      ].join(' ')}
       title={badgeLabel[availability]}
     >
       {icon}
@@ -1144,22 +1036,20 @@ function FieldCapabilityBadge({
   variant,
   children,
 }: {
-  variant: "neutral" | "success" | "warning" | "danger";
+  variant: 'neutral' | 'success' | 'warning' | 'danger';
   children: string;
 }) {
   const className =
-    variant === "success"
-      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300"
-      : variant === "warning"
-        ? "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"
-        : variant === "danger"
-          ? "bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300"
-          : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300";
+    variant === 'success'
+      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300'
+      : variant === 'warning'
+        ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300'
+        : variant === 'danger'
+          ? 'bg-rose-100 text-rose-800 dark:bg-rose-500/15 dark:text-rose-300'
+          : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300';
 
   return (
-    <span className={["rounded-md px-2 py-1 font-medium", className].join(" ")}>
-      {children}
-    </span>
+    <span className={['rounded-md px-2 py-1 font-medium', className].join(' ')}>{children}</span>
   );
 }
 
@@ -1175,19 +1065,19 @@ function SettingsCatalogLoading() {
   return (
     <div
       className={[
-        "flex min-h-105 items-center justify-center rounded-2xl",
-        "border border-slate-200 bg-white p-8",
-        "dark:border-white/10 dark:bg-slate-900/50",
-      ].join(" ")}
+        'flex min-h-105 items-center justify-center rounded-2xl',
+        'border border-slate-200 bg-white p-8',
+        'dark:border-white/10 dark:bg-slate-900/50',
+      ].join(' ')}
       aria-live="polite"
       aria-busy="true"
     >
       <div className="text-center">
         <span
           className={[
-            "mx-auto block h-8 w-8 animate-spin rounded-full",
-            "border-2 border-slate-300 border-t-blue-600",
-          ].join(" ")}
+            'mx-auto block h-8 w-8 animate-spin rounded-full',
+            'border-2 border-slate-300 border-t-blue-600',
+          ].join(' ')}
           aria-hidden="true"
         />
 
@@ -1203,20 +1093,14 @@ function SettingsCatalogLoading() {
   );
 }
 
-function SettingsCatalogError({
-  message,
-  onRetry,
-}: {
-  message: string;
-  onRetry: () => void;
-}) {
+function SettingsCatalogError({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
     <div
       className={[
-        "rounded-2xl border border-red-200 bg-red-50 p-6",
-        "text-red-900 dark:border-red-500/20",
-        "dark:bg-red-500/10 dark:text-red-200",
-      ].join(" ")}
+        'rounded-2xl border border-red-200 bg-red-50 p-6',
+        'text-red-900 dark:border-red-500/20',
+        'dark:bg-red-500/10 dark:text-red-200',
+      ].join(' ')}
       role="alert"
     >
       <div className="flex items-start gap-3">
@@ -1229,7 +1113,7 @@ function SettingsCatalogError({
 
           <button
             type="button"
-            className={[secondaryButtonClassName, "mt-4"].join(" ")}
+            className={[secondaryButtonClassName, 'mt-4'].join(' ')}
             onClick={onRetry}
           >
             <RefreshCw size={15} aria-hidden="true" />
@@ -1244,11 +1128,7 @@ function SettingsCatalogError({
 function SettingsCatalogEmpty() {
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-white/10 dark:bg-slate-900/40">
-      <Settings2
-        size={24}
-        className="mx-auto text-slate-400"
-        aria-hidden="true"
-      />
+      <Settings2 size={24} className="mx-auto text-slate-400" aria-hidden="true" />
 
       <h2 className="mt-3 font-semibold text-slate-900 dark:text-white">
         Keine Einstellungen gefunden
@@ -1265,11 +1145,7 @@ function SettingsCatalogEmpty() {
 // Hilfsfunktionen
 // ============================================================
 
-function getConfigValue(
-  values: ConfigObject,
-  group: string,
-  key: string,
-): ConfigValue | undefined {
+function getConfigValue(values: ConfigObject, group: string, key: string): ConfigValue | undefined {
   const groupValue = values[group];
 
   if (!isConfigObject(groupValue)) {
@@ -1279,11 +1155,7 @@ function getConfigValue(
   return groupValue[key];
 }
 
-function updateConfigValue(
-  source: ConfigObject,
-  path: string[],
-  value: ConfigValue,
-): ConfigObject {
+function updateConfigValue(source: ConfigObject, path: string[], value: ConfigValue): ConfigObject {
   const [currentKey, ...remainingPath] = path;
 
   if (currentKey === undefined) {
@@ -1299,9 +1171,7 @@ function updateConfigValue(
 
   const currentValue = source[currentKey];
 
-  const nestedSource: ConfigObject = isConfigObject(currentValue)
-    ? currentValue
-    : {};
+  const nestedSource: ConfigObject = isConfigObject(currentValue) ? currentValue : {};
 
   return {
     ...source,
@@ -1310,50 +1180,31 @@ function updateConfigValue(
 }
 
 function isConfigObject(value: ConfigValue | undefined): value is ConfigObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function filterCatalogGroups(
-  groups: SettingsGroupDescriptor[],
-  query: string,
-): FilteredGroup[] {
+function filterCatalogGroups(groups: SettingsGroupDescriptor[], query: string): FilteredGroup[] {
   return groups
     .slice()
     .sort((left, right) => left.order - right.order)
     .flatMap((group) => {
-      const groupMatches = matchesText(
-        query,
-        group.id,
-        group.title,
-        group.description,
-      );
+      const groupMatches = matchesText(query, group.id, group.title, group.description);
 
       const sections = group.sections
         .slice()
         .sort((left, right) => left.order - right.order)
         .flatMap((section) => {
-          const sectionMatches = matchesText(
-            query,
-            section.id,
-            section.title,
-            section.description,
-          );
+          const sectionMatches = matchesText(query, section.id, section.title, section.description);
 
           const orderedFields = section.fields
             .slice()
             .sort((left, right) => left.order - right.order);
 
           const fields = orderedFields.filter(
-            (field) =>
-              groupMatches || sectionMatches || matchesField(field, query),
+            (field) => groupMatches || sectionMatches || matchesField(field, query),
           );
 
-          if (
-            query &&
-            !groupMatches &&
-            !sectionMatches &&
-            fields.length === 0
-          ) {
+          if (query && !groupMatches && !sectionMatches && fields.length === 0) {
             return [];
           }
 
@@ -1378,9 +1229,7 @@ function filterCatalogGroups(
                 .sort((left, right) => left.order - right.order)
                 .map((section) => ({
                   ...section,
-                  fields: section.fields
-                    .slice()
-                    .sort((left, right) => left.order - right.order),
+                  fields: section.fields.slice().sort((left, right) => left.order - right.order),
                 }))
             : sections,
         },
@@ -1403,62 +1252,48 @@ function matchesField(field: SettingsFieldDescriptor, query: string): boolean {
   );
 }
 
-function matchesText(
-  query: string,
-  ...values: Array<string | null | undefined>
-): boolean {
+function matchesText(query: string, ...values: Array<string | null | undefined>): boolean {
   if (!query) {
     return true;
   }
 
   return values.some(
-    (value) =>
-      value !== undefined &&
-      value !== null &&
-      normalizeSearchText(value).includes(query),
+    (value) => value !== undefined && value !== null && normalizeSearchText(value).includes(query),
   );
 }
 
 function normalizeSearchText(value: string): string {
-  return value.replace(/[_-]+/g, " ").toLocaleLowerCase("de").trim();
+  return value.replace(/[_-]+/g, ' ').toLocaleLowerCase('de').trim();
 }
 
 function countCatalogFields(groups: SettingsGroupDescriptor[]): number {
-  return groups.reduce<number>(
-    (total, group) => total + countSectionFields(group.sections),
-    0,
-  );
+  return groups.reduce<number>((total, group) => total + countSectionFields(group.sections), 0);
 }
 
 function countSectionFields(sections: SettingsSectionDescriptor[]): number {
-  return sections.reduce<number>(
-    (total, section) => total + section.fields.length,
-    0,
-  );
+  return sections.reduce<number>((total, section) => total + section.fields.length, 0);
 }
 
 // ============================================================
 // resolveFieldTarget – typstabilere Version
 // ============================================================
 
-function resolveFieldTarget(
-  field: SettingsFieldDescriptor,
-): string | undefined {
-  if (typeof field.endpoint === "string" && field.endpoint.trim().length > 0) {
+function resolveFieldTarget(field: SettingsFieldDescriptor): string | undefined {
+  if (typeof field.endpoint === 'string' && field.endpoint.trim().length > 0) {
     return field.endpoint;
   }
 
   if (
-    typeof field.config_group === "string" &&
+    typeof field.config_group === 'string' &&
     field.config_group.trim().length > 0 &&
-    typeof field.config_key === "string" &&
+    typeof field.config_key === 'string' &&
     field.config_key.trim().length > 0
   ) {
     return [
-      "/api/v1/config",
+      '/api/v1/config',
       encodeURIComponent(field.config_group.trim()),
       encodeURIComponent(field.config_key.trim()),
-    ].join("/");
+    ].join('/');
   }
 
   return undefined;
@@ -1469,62 +1304,56 @@ function resolveFieldTarget(
 // ============================================================
 
 function formatIdentifier(value: string): string {
-  return value
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+  return value.replace(/[_-]+/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function availabilityBadgeClass(availability: SettingsAvailability): string {
   switch (availability) {
-    case "available":
+    case 'available':
       return [
-        "border-emerald-200 bg-emerald-50 text-emerald-700",
-        "dark:border-emerald-500/20 dark:bg-emerald-500/10",
-        "dark:text-emerald-300",
-      ].join(" ");
+        'border-emerald-200 bg-emerald-50 text-emerald-700',
+        'dark:border-emerald-500/20 dark:bg-emerald-500/10',
+        'dark:text-emerald-300',
+      ].join(' ');
 
-    case "prepared":
+    case 'prepared':
       return [
-        "border-amber-200 bg-amber-50 text-amber-700",
-        "dark:border-amber-500/20 dark:bg-amber-500/10",
-        "dark:text-amber-300",
-      ].join(" ");
+        'border-amber-200 bg-amber-50 text-amber-700',
+        'dark:border-amber-500/20 dark:bg-amber-500/10',
+        'dark:text-amber-300',
+      ].join(' ');
 
-    case "planned":
+    case 'planned':
       return [
-        "border-slate-200 bg-slate-100 text-slate-600",
-        "dark:border-white/10 dark:bg-white/5 dark:text-slate-300",
-      ].join(" ");
+        'border-slate-200 bg-slate-100 text-slate-600',
+        'dark:border-white/10 dark:bg-white/5 dark:text-slate-300',
+      ].join(' ');
   }
 }
 
 function catalogNavigationItemClass(isActive: boolean): string {
   return [
-    "flex w-full items-center gap-3 rounded-xl px-3 py-3",
-    "text-left text-sm transition",
-    "focus-visible:outline-none focus-visible:ring-2",
-    "focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-    "dark:focus-visible:ring-offset-slate-900",
+    'flex w-full items-center gap-3 rounded-xl px-3 py-3',
+    'text-left text-sm transition',
+    'focus-visible:outline-none focus-visible:ring-2',
+    'focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+    'dark:focus-visible:ring-offset-slate-900',
     isActive
-      ? [
-          "bg-slate-900 text-white shadow-sm",
-          "dark:bg-slate-100 dark:text-slate-950",
-        ].join(" ")
-      : [
-          "text-slate-700 hover:bg-slate-100",
-          "dark:text-slate-300 dark:hover:bg-white/5",
-        ].join(" "),
-  ].join(" ");
+      ? ['bg-slate-900 text-white shadow-sm', 'dark:bg-slate-100 dark:text-slate-950'].join(' ')
+      : ['text-slate-700 hover:bg-slate-100', 'dark:text-slate-300 dark:hover:bg-white/5'].join(
+          ' ',
+        ),
+  ].join(' ');
 }
 
 const secondaryButtonClassName = [
-  "inline-flex items-center justify-center gap-2 rounded-lg",
-  "border border-slate-300 bg-white px-3.5 py-2",
-  "text-sm font-medium text-slate-700 transition",
-  "hover:bg-slate-50",
-  "focus-visible:outline-none focus-visible:ring-2",
-  "focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-  "disabled:cursor-not-allowed disabled:opacity-50",
-  "dark:border-white/10 dark:bg-white/5 dark:text-slate-200",
-  "dark:hover:bg-white/10 dark:focus-visible:ring-offset-slate-950",
-].join(" ");
+  'inline-flex items-center justify-center gap-2 rounded-lg',
+  'border border-slate-300 bg-white px-3.5 py-2',
+  'text-sm font-medium text-slate-700 transition',
+  'hover:bg-slate-50',
+  'focus-visible:outline-none focus-visible:ring-2',
+  'focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+  'dark:border-white/10 dark:bg-white/5 dark:text-slate-200',
+  'dark:hover:bg-white/10 dark:focus-visible:ring-offset-slate-950',
+].join(' ');

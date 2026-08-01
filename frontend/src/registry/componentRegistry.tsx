@@ -1,7 +1,7 @@
-import React from "react";
-import type { UIComponentDefinition } from "../contracts/schema";
-import { DynamicIcon } from "./iconRegistry";
-import UnsupportedSchemaComponent from "../components/schema/UnsupportedSchemaComponent";
+import React from 'react';
+import type { UIComponentDefinition } from '../contracts/schema';
+import { DynamicIcon } from './iconRegistry';
+import UnsupportedSchemaComponent from '../components/schema/UnsupportedSchemaComponent';
 
 /**
  * Map of known schema component types to renderer functions.
@@ -14,9 +14,7 @@ export type ComponentRenderer = (
 ) => React.ReactNode;
 
 const registry: Record<string, ComponentRenderer> = {
-  heading: (def, children) => (
-    <h2 className="text-lg font-semibold">{def.title ?? children}</h2>
-  ),
+  heading: (def, children) => <h2 className="text-lg font-semibold">{def.title ?? children}</h2>,
 
   paragraph: (def, children) => (
     <p className="text-sm text-slate-700 dark:text-slate-300">
@@ -51,14 +49,12 @@ const registry: Record<string, ComponentRenderer> = {
     </button>
   ),
 
-  stack: (def, children) => (
-    <div className="flex flex-col gap-2">{children}</div>
-  ),
+  stack: (def, children) => <div className="flex flex-col gap-2">{children}</div>,
 
   grid: (def, children) => {
     const cols = (def.props as any)?.columns;
     const gridTemplateColumns =
-      typeof cols === "string" || typeof cols === "number" ? cols : undefined;
+      typeof cols === 'string' || typeof cols === 'number' ? cols : undefined;
     return (
       <div className="grid gap-3" style={{ gridTemplateColumns }}>
         {children}
@@ -67,15 +63,11 @@ const registry: Record<string, ComponentRenderer> = {
   },
 
   section: (def, children) => (
-    <section className="rounded-md border border-slate-200 p-4">
-      {children}
-    </section>
+    <section className="rounded-md border border-slate-200 p-4">{children}</section>
   ),
 
   card: (def, children) => (
-    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-      {children}
-    </div>
+    <div className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm">{children}</div>
   ),
 
   divider: () => <hr className="my-2 border-slate-200" />,

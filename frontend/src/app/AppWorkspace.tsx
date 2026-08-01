@@ -1,42 +1,35 @@
-import type { ComponentProps } from "react";
+import type { ComponentProps } from 'react';
 
-import { DocumentationDialog } from "../components/documentation";
-import {
-  AppContextSidebar,
-  AppHierarchySidebar,
-  AppLayout,
-} from "../components/layout";
-import { SettingsDialog } from "../components/settings";
-import { SelectedNodeWorkspace } from "../components/workspace";
+import { DocumentationDialog } from '../components/documentation';
+import { AppContextSidebar, AppHierarchySidebar, AppLayout } from '../components/layout';
+import { SettingsDialog } from '../components/settings';
+import { SelectedNodeWorkspace } from '../components/workspace';
 
 type HierarchySidebarProps = ComponentProps<typeof AppHierarchySidebar>;
 type ContextSidebarProps = ComponentProps<typeof AppContextSidebar>;
 type LayoutProps = ComponentProps<typeof AppLayout>;
 
 interface AppWorkspaceProps {
-  schema: HierarchySidebarProps["schema"];
-  root: HierarchySidebarProps["root"];
-  selectedNode: ContextSidebarProps["node"];
-  selectedNodeId: HierarchySidebarProps["selectedNodeId"];
-  expandedNodeIds: HierarchySidebarProps["expandedNodeIds"];
-  theme: LayoutProps["theme"];
+  schema: HierarchySidebarProps['schema'];
+  root: HierarchySidebarProps['root'];
+  selectedNode: ContextSidebarProps['node'];
+  selectedNodeId: HierarchySidebarProps['selectedNodeId'];
+  expandedNodeIds: HierarchySidebarProps['expandedNodeIds'];
+  theme: LayoutProps['theme'];
   applicationVersion?: string;
   environment?: string;
   userName?: string;
   isSettingsOpen: boolean;
   isDocumentationOpen: boolean;
-  onSelectNode: HierarchySidebarProps["onSelect"];
-  onExpandedNodeIdsChange: HierarchySidebarProps["onExpandedNodeIdsChange"];
-  onToggleTheme: LayoutProps["onToggleTheme"];
+  onSelectNode: HierarchySidebarProps['onSelect'];
+  onExpandedNodeIdsChange: HierarchySidebarProps['onExpandedNodeIdsChange'];
+  onToggleTheme: LayoutProps['onToggleTheme'];
   onOpenSettings: () => void;
   onCloseSettings: () => void;
   onOpenDocumentation: () => void;
   onCloseDocumentation: () => void;
   onCreateHierarchyNode?: (parentId: string) => Promise<void>;
-  onMoveHierarchyNode?: (
-    id: string,
-    newParentId: string | null,
-  ) => Promise<void>;
+  onMoveHierarchyNode?: (id: string, newParentId: string | null) => Promise<void>;
   onUpdateHierarchyNode?: (id: string, payload: unknown) => Promise<void>;
   onDeleteHierarchyNode?: (id: string) => Promise<void>;
   isHierarchyBusy?: boolean;
@@ -93,8 +86,16 @@ export function AppWorkspace({
             onCreateChat={(id) => {
               void onCreateHierarchyNode?.(id);
             }}
-            onNodeDrop={(sourceId, targetId) => {
-              void onMoveHierarchyNode?.(sourceId, targetId);
+            onNodeDrop={(sourceId, targetId, dropInfo) => {
+              // If dropInfo.position is provided, forward it as the insertion index
+              if (dropInfo && typeof dropInfo.position === 'number') {
+                void onMoveHierarchyNode?.(sourceId, dropInfo.parentId ?? null, dropInfo.position);
+              } else if (dropInfo) {
+                // append as child
+                void onMoveHierarchyNode?.(sourceId, dropInfo.parentId ?? null);
+              } else {
+                void onMoveHierarchyNode?.(sourceId, targetId);
+              }
             }}
             isBusy={isHierarchyBusy}
             onAction={onAction}
@@ -102,19 +103,13 @@ export function AppWorkspace({
           />
         }
         contextSidebar={
-          <AppContextSidebar
-            node={selectedNode}
-            schemaVersion={schema.schema_version}
-          />
+          <AppContextSidebar node={selectedNode} schemaVersion={schema.schema_version} />
         }
       >
         <SelectedNodeWorkspace node={selectedNode} schema={schema} />
       </AppLayout>
       <SettingsDialog isOpen={isSettingsOpen} onClose={onCloseSettings} />
-      <DocumentationDialog
-        isOpen={isDocumentationOpen}
-        onClose={onCloseDocumentation}
-      />
+      <DocumentationDialog isOpen={isDocumentationOpen} onClose={onCloseDocumentation} />
     </>
   );
 }

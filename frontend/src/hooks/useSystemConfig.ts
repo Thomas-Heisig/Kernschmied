@@ -1,14 +1,14 @@
 // F:\Kernschmied\frontend\src\hooks\useSystemConfig.ts
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import {
   ConfigApiError,
   loadSystemConfig,
   loadFullSystemConfig,
   updateSystemConfig,
-} from "../api/config";
-import type { ConfigObject, ConfigValue, ConfigEntryResponse } from "../contracts/config";
+} from '../api/config';
+import type { ConfigObject, ConfigValue, ConfigEntryResponse } from '../contracts/config';
 
 export type UseSystemConfigReturn = ReturnType<typeof useSystemConfig>;
 
@@ -48,7 +48,10 @@ interface ConfigSnapshotLike {
 
 export function useSystemConfig(): UseSystemConfigResult {
   const [persistedValues, setPersistedValues] = useState<ConfigObject>({});
-  const [persistedEntriesByFullKey, setPersistedEntriesByFullKey] = useState<Record<string, ConfigEntryResponse> | null>(null);
+  const [persistedEntriesByFullKey, setPersistedEntriesByFullKey] = useState<Record<
+    string,
+    ConfigEntryResponse
+  > | null>(null);
 
   const [values, setValuesState] = useState<ConfigObject>({});
 
@@ -91,10 +94,7 @@ export function useSystemConfig(): UseSystemConfigResult {
 
       setRevision(normalizeRevision(loaded.revision));
     } catch (caughtError: unknown) {
-      if (
-        caughtError instanceof DOMException &&
-        caughtError.name === "AbortError"
-      ) {
+      if (caughtError instanceof DOMException && caughtError.name === 'AbortError') {
         return;
       }
 
@@ -148,10 +148,7 @@ export function useSystemConfig(): UseSystemConfigResult {
 
       return true;
     } catch (caughtError: unknown) {
-      if (
-        caughtError instanceof DOMException &&
-        caughtError.name === "AbortError"
-      ) {
+      if (caughtError instanceof DOMException && caughtError.name === 'AbortError') {
         return false;
       }
 
@@ -180,9 +177,7 @@ export function useSystemConfig(): UseSystemConfigResult {
     // Determine autosave preference from config values. Default to true.
     const ui = (values as any)?.ui as Record<string, unknown> | undefined;
     const autosavePref =
-      ui && typeof ui.autosave_enabled !== "undefined"
-        ? Boolean(ui.autosave_enabled)
-        : true;
+      ui && typeof ui.autosave_enabled !== 'undefined' ? Boolean(ui.autosave_enabled) : true;
 
     if (!autosavePref) {
       // If disabled, clear any pending timer and do nothing.
@@ -302,9 +297,7 @@ function buildConfigObject(rawEntries: unknown[]): ConfigObject {
 
     const existingGroup = result[group];
 
-    const groupValues: ConfigObject = isConfigObject(existingGroup)
-      ? existingGroup
-      : {};
+    const groupValues: ConfigObject = isConfigObject(existingGroup) ? existingGroup : {};
 
     result[group] = {
       ...groupValues,
@@ -316,21 +309,21 @@ function buildConfigObject(rawEntries: unknown[]): ConfigObject {
 }
 
 function isConfigEntryLike(value: unknown): value is ConfigEntryLike {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false;
   }
 
   const record = value as Record<string, unknown>;
 
   return (
-    typeof record.group === "string" &&
-    typeof record.key === "string" &&
+    typeof record.group === 'string' &&
+    typeof record.key === 'string' &&
     isConfigValue(record.value)
   );
 }
 
 function isConfigObject(value: unknown): value is ConfigObject {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false;
   }
 
@@ -338,15 +331,11 @@ function isConfigObject(value: unknown): value is ConfigObject {
 }
 
 function isConfigValue(value: unknown): value is ConfigValue {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "boolean"
-  ) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
     return true;
   }
 
-  if (typeof value === "number") {
+  if (typeof value === 'number') {
     return Number.isFinite(value);
   }
 
@@ -354,7 +343,7 @@ function isConfigValue(value: unknown): value is ConfigValue {
     return value.every(isConfigValue);
   }
 
-  if (typeof value === "object" && value !== null) {
+  if (typeof value === 'object' && value !== null) {
     return Object.values(value).every(isConfigValue);
   }
 
@@ -370,7 +359,7 @@ function configObjectsEqual(left: ConfigObject, right: ConfigObject): boolean {
 }
 
 function normalizeRevision(value: unknown): number | null {
-  if (typeof value === "number" && Number.isInteger(value) && value >= 0) {
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0) {
     return value;
   }
 
@@ -388,15 +377,13 @@ function normalizeConfigError(error: unknown): SystemConfigError {
 
   if (error instanceof Error) {
     return {
-      code: "unexpected_config_error",
+      code: 'unexpected_config_error',
       message: error.message,
     };
   }
 
   return {
-    code: "unexpected_config_error",
-    message:
-      "Beim Verarbeiten der Konfiguration " +
-      "ist ein unbekannter Fehler aufgetreten.",
+    code: 'unexpected_config_error',
+    message: 'Beim Verarbeiten der Konfiguration ' + 'ist ein unbekannter Fehler aufgetreten.',
   };
 }

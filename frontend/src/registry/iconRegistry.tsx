@@ -1,6 +1,6 @@
 // F:\Kernschmied\frontend\src\registry\iconRegistry.tsx
 
-import type { CSSProperties, ComponentType } from "react";
+import type { CSSProperties, ComponentType } from 'react';
 import {
   Building2,
   Circle,
@@ -18,9 +18,9 @@ import {
   UserCircle,
   Wrench,
   ArrowRight,
-} from "lucide-react";
+} from 'lucide-react';
 
-export const DEFAULT_ICON_NAME = "Circle";
+export const DEFAULT_ICON_NAME = 'Circle';
 
 export const ICON_REGISTRY = {
   ArrowRight,
@@ -99,12 +99,10 @@ function isSafeColor(value: string | undefined): boolean {
 }
 
 export function isKnownIconName(value: unknown): value is KnownIconName {
-  return typeof value === "string" && value in ICON_REGISTRY;
+  return typeof value === 'string' && value in ICON_REGISTRY;
 }
 
-export function getIconComponent(
-  name: string | null | undefined,
-): ComponentType<{
+export function getIconComponent(name: string | null | undefined): ComponentType<{
   size?: number;
   className?: string;
   style?: CSSProperties;
@@ -121,13 +119,7 @@ export function listKnownIcons(): readonly KnownIconName[] {
   return Object.keys(ICON_REGISTRY) as KnownIconName[];
 }
 
-export function DynamicIcon({
-  name,
-  color,
-  size = 18,
-  className,
-  title,
-}: DynamicIconProps) {
+export function DynamicIcon({ name, color, size = 18, className, title }: DynamicIconProps) {
   const Icon = getIconComponent(name);
 
   return (

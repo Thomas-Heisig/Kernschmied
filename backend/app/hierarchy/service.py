@@ -161,6 +161,48 @@ class HierarchyService:
 
         return await self.get_node(node.id, actor=actor)
 
+    async def reorder_nodes(
+        self,
+        moves: list[tuple[str, str | None, int]],
+        *,
+        actor: HierarchyActor,
+    ) -> None:
+        """
+        Atomar mehrere Neuanordnungen anwenden.
+
+        `moves` ist eine Liste von Tupeln `(node_id, new_parent_id, new_position)`.
+        """
+        # Basic validation + permission checks
+        # Load all nodes to move and verify existence
+        for node_id, new_parent_id, _ in moves:
+            node = await self._require_node(node_id)
+            # require permission to move
+            self._permissions.require(actor, MOVE_ACTION, node)
+
+            if new_parent_id == node.id:
+                raise ValueError("Ein Knoten kann nicht sein eigener Elternknoten sein.")
+
+            if new_parent_id is not None:
+                new_parent = await self._require_node(new_parent_id)
+                # require permission to create child under new parent
+                self._permissions.require(actor, CREATE_CHILD_ACTION, new_parent)
+
+                # prevent moving under descendant
+                is_descendant = await self._repository.is_descendant(
+                    node_id=new_parent_id, possible_ancestor_id=node.id
+                )
+                if is_descendant:
+                    raise ValueError(
+                        "Ein Knoten kann nicht unter einen eigenen Nachfahren verschoben werden."
+                    )
+
+        try:
+            await self._repository.reorder_nodes(moves)
+            await self._repository.commit()
+        except Exception:
+            await self._repository.rollback()
+            raise
+
     async def delete_node(
         self,
         node_id: str,

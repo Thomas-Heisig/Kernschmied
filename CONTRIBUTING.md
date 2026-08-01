@@ -75,10 +75,10 @@ Gesamtsystem starten:
 1. Prüfe bestehende Issues und Pull Requests.
 2. Erstelle bei größeren Änderungen zunächst ein Issue.
 3. Beschreibe bei Vertragsänderungen ausdrücklich:
-	- betroffene API- oder Schema-Version,
-	- Migrationsweg,
-	- Rückwärtskompatibilität,
-	- erforderliche Backend- und Frontend-Anpassungen.
+   - betroffene API- oder Schema-Version,
+   - Migrationsweg,
+   - Rückwärtskompatibilität,
+   - erforderliche Backend- und Frontend-Anpassungen.
 4. Vermeide umfangreiche Refactorings zusammen mit fachlichen Änderungen, sofern diese nicht untrennbar verbunden sind.
 
 ## Branches und Commits

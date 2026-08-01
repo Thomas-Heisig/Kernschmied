@@ -1,6 +1,6 @@
 // F:\Kernschmied\frontend\src\components\layout\AppContextSidebar.tsx
 
-import { useState } from "react";
+import { useState } from 'react';
 
 interface ContextNode {
   id: string;
@@ -25,31 +25,29 @@ export function AppContextSidebar({
     setOpen((currentOpen) => !currentOpen);
   }
 
-  const toggleLabel = open
-    ? "Kontextleiste einklappen"
-    : "Kontextleiste ausklappen";
+  const toggleLabel = open ? 'Kontextleiste einklappen' : 'Kontextleiste ausklappen';
 
   return (
     <aside
       className={[
-        "flex h-full min-h-0 shrink-0 flex-col",
-        "border-l border-border",
-        "bg-white/80 shadow-glass backdrop-blur-md",
-        "transition-[width] duration-200 ease-out",
-        "dark:border-white/10 dark:bg-slate-800/80",
-        open ? "w-80" : "w-12",
-      ].join(" ")}
+        'flex h-full min-h-0 shrink-0 flex-col',
+        'border-l border-border',
+        'bg-white/80 shadow-glass backdrop-blur-md',
+        'transition-[width] duration-200 ease-out',
+        'dark:border-white/10 dark:bg-slate-800/80',
+        open ? 'w-80' : 'w-12',
+      ].join(' ')}
       aria-label="Kontextinformationen"
-      data-state={open ? "open" : "collapsed"}
+      data-state={open ? 'open' : 'collapsed'}
     >
       <header
         className={[
-          "flex shrink-0 border-b border-border",
-          "dark:border-white/10",
+          'flex shrink-0 border-b border-border',
+          'dark:border-white/10',
           open
-            ? "min-h-16 items-center justify-between gap-3 px-4 py-3"
-            : "h-12 items-center justify-center px-1",
-        ].join(" ")}
+            ? 'min-h-16 items-center justify-between gap-3 px-4 py-3'
+            : 'h-12 items-center justify-center px-1',
+        ].join(' ')}
       >
         {open ? (
           <div className="min-w-0">
@@ -67,17 +65,17 @@ export function AppContextSidebar({
           type="button"
           onClick={toggleSidebar}
           className={[
-            "inline-flex h-9 w-9 shrink-0",
-            "items-center justify-center rounded-lg",
-            "text-text-muted transition",
-            "hover:bg-surface-hover hover:text-text",
-            "focus-visible:outline-none",
-            "focus-visible:ring-2",
-            "focus-visible:ring-primary",
-            "dark:text-gray-400",
-            "dark:hover:bg-slate-700/70",
-            "dark:hover:text-white",
-          ].join(" ")}
+            'inline-flex h-9 w-9 shrink-0',
+            'items-center justify-center rounded-lg',
+            'text-text-muted transition',
+            'hover:bg-surface-hover hover:text-text',
+            'focus-visible:outline-none',
+            'focus-visible:ring-2',
+            'focus-visible:ring-primary',
+            'dark:text-gray-400',
+            'dark:hover:bg-slate-700/70',
+            'dark:hover:text-white',
+          ].join(' ')}
           aria-label={toggleLabel}
           aria-expanded={open}
           title={toggleLabel}
@@ -88,39 +86,35 @@ export function AppContextSidebar({
 
       {open ? (
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-          {node ? (
-            <ContextContent node={node} schemaVersion={schemaVersion} />
-          ) : (
-            <EmptyContext />
-          )}
+          {node ? <ContextContent node={node} schemaVersion={schemaVersion} /> : <EmptyContext />}
         </div>
       ) : (
         <button
           type="button"
           onClick={toggleSidebar}
           className={[
-            "flex min-h-0 flex-1",
-            "items-center justify-center",
-            "text-text-subtle transition",
-            "hover:bg-surface-hover hover:text-text",
-            "focus-visible:outline-none",
-            "focus-visible:ring-2",
-            "focus-visible:ring-inset",
-            "focus-visible:ring-primary",
-            "dark:text-gray-500",
-            "dark:hover:bg-slate-800",
-            "dark:hover:text-gray-300",
-          ].join(" ")}
+            'flex min-h-0 flex-1',
+            'items-center justify-center',
+            'text-text-subtle transition',
+            'hover:bg-surface-hover hover:text-text',
+            'focus-visible:outline-none',
+            'focus-visible:ring-2',
+            'focus-visible:ring-inset',
+            'focus-visible:ring-primary',
+            'dark:text-gray-500',
+            'dark:hover:bg-slate-800',
+            'dark:hover:text-gray-300',
+          ].join(' ')}
           aria-label="Kontextleiste ausklappen"
           title="Kontextleiste ausklappen"
         >
           <span
             className={[
-              "select-none text-[10px]",
-              "font-semibold tracking-[0.18em]",
-              "uppercase",
-              "[writing-mode:vertical-rl]",
-            ].join(" ")}
+              'select-none text-[10px]',
+              'font-semibold tracking-[0.18em]',
+              'uppercase',
+              '[writing-mode:vertical-rl]',
+            ].join(' ')}
             aria-hidden="true"
           >
             Kontext
@@ -148,14 +142,10 @@ function ContextContent({ node, schemaVersion }: ContextContentProps) {
       </ContextSection>
 
       <ContextSection title="Schema">
-        <ContextValue
-          label="UI-Schema"
-          value={schemaVersion ?? "Nicht verfügbar"}
-          mono
-        />
+        <ContextValue label="UI-Schema" value={schemaVersion ?? 'Nicht verfügbar'} mono />
       </ContextSection>
 
-      {node.type === "chat" ? (
+      {node.type === 'chat' ? (
         <ContextSection title="Chat">
           <ContextValue label="Status" value="Bereit" />
 
@@ -194,16 +184,14 @@ interface ContextValueProps {
 function ContextValue({ label, value, mono = false }: ContextValueProps) {
   return (
     <div className="flex items-start justify-between gap-4 border-b border-border-soft px-3 py-2.5 last:border-b-0 dark:border-white/10">
-      <dt className="shrink-0 text-xs text-text-muted dark:text-gray-500">
-        {label}
-      </dt>
+      <dt className="shrink-0 text-xs text-text-muted dark:text-gray-500">{label}</dt>
 
       <dd
         className={[
-          "min-w-0 break-all text-right text-xs",
-          "text-text-soft dark:text-gray-300",
-          mono ? "font-mono" : "font-medium",
-        ].join(" ")}
+          'min-w-0 break-all text-right text-xs',
+          'text-text-soft dark:text-gray-300',
+          mono ? 'font-mono' : 'font-medium',
+        ].join(' ')}
       >
         {value}
       </dd>
@@ -215,8 +203,7 @@ function EmptyContext() {
   return (
     <div className="p-4">
       <div className="rounded-xl border border-dashed border-border-soft bg-white/50 p-4 text-sm text-text-muted dark:border-white/10 dark:bg-slate-900/30 dark:text-gray-400">
-        Wähle einen Eintrag aus der Hierarchie aus, um weitere Informationen
-        anzuzeigen.
+        Wähle einen Eintrag aus der Hierarchie aus, um weitere Informationen anzuzeigen.
       </div>
     </div>
   );
@@ -240,19 +227,9 @@ function ContextToggleIcon({ open }: ContextToggleIconProps) {
       <path d="M15 4v16" strokeWidth="1.8" />
 
       {open ? (
-        <path
-          d="m10 9 3 3-3 3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.8"
-        />
+        <path d="m10 9 3 3-3 3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
       ) : (
-        <path
-          d="m13 9-3 3 3 3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.8"
-        />
+        <path d="m13 9-3 3 3 3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
       )}
     </svg>
   );

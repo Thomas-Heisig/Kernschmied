@@ -1,6 +1,6 @@
 // F:\Kernschmied\frontend\src\registry\actionRegistry.ts
 
-import { KNOWN_ACTION_KINDS, type KnownActionKind } from "../contracts/schema";
+import { KNOWN_ACTION_KINDS, type KnownActionKind } from '../contracts/schema';
 
 /**
  * Eine Aktion wird nur dann als unterstützt behandelt, wenn sie:
@@ -51,11 +51,7 @@ export interface ActionResult<TResult = unknown> {
   message?: string;
 }
 
-export type ActionHandler<
-  TNode = unknown,
-  TPayload = unknown,
-  TResult = unknown,
-> = (
+export type ActionHandler<TNode = unknown, TPayload = unknown, TResult = unknown> = (
   context: ActionContext<TNode, TPayload>,
 ) => Promise<ActionResult<TResult>> | ActionResult<TResult>;
 
@@ -101,19 +97,13 @@ export interface ActionDefinition {
   handler?: ActionHandler;
 }
 
-export type ActionRegistry = ReadonlyMap<
-  KnownActionKind,
-  Readonly<ActionDefinition>
->;
+export type ActionRegistry = ReadonlyMap<KnownActionKind, Readonly<ActionDefinition>>;
 
 /**
  * Hilfsfunktion für noch nicht implementierte Aktionen.
  * Diese Aktionen werden deaktiviert, damit sie im UI nicht angezeigt werden.
  */
-function unsupportedAction(
-  label: string,
-  icon?: string,
-): Omit<ActionDefinition, "kind"> {
+function unsupportedAction(label: string, icon?: string): Omit<ActionDefinition, 'kind'> {
   return {
     label,
     icon,
@@ -126,77 +116,77 @@ const actionDefinitions = [
   // Bestehende Aktionen (bereits implementiert oder unterstützt)
   // ============================================================
   {
-    kind: "create_child",
-    label: "Unterelement erstellen",
-    icon: "Plus",
+    kind: 'create_child',
+    label: 'Unterelement erstellen',
+    icon: 'Plus',
     enabled: true,
   },
   {
-    kind: "rename",
-    label: "Umbenennen",
-    icon: "Pencil",
+    kind: 'rename',
+    label: 'Umbenennen',
+    icon: 'Pencil',
     enabled: true,
   },
   {
-    kind: "delete",
-    label: "Löschen",
-    icon: "Trash2",
+    kind: 'delete',
+    label: 'Löschen',
+    icon: 'Trash2',
     destructive: true,
     confirmationRequired: true,
     enabled: true,
   },
   {
-    kind: "move",
-    label: "Verschieben",
-    icon: "Move",
+    kind: 'move',
+    label: 'Verschieben',
+    icon: 'Move',
     enabled: true,
   },
   {
-    kind: "open_form",
-    label: "Formular öffnen",
-    icon: "PanelTopOpen",
+    kind: 'open_form',
+    label: 'Formular öffnen',
+    icon: 'PanelTopOpen',
     enabled: true,
   },
   {
-    kind: "navigate",
-    label: "Öffnen",
-    icon: "ArrowRight",
+    kind: 'navigate',
+    label: 'Öffnen',
+    icon: 'ArrowRight',
     enabled: true,
   },
   {
-    kind: "download",
-    label: "Herunterladen",
-    icon: "Download",
+    kind: 'download',
+    label: 'Herunterladen',
+    icon: 'Download',
     enabled: true,
   },
   {
-    kind: "export",
-    label: "Exportieren",
-    icon: "FileOutput",
+    kind: 'export',
+    label: 'Exportieren',
+    icon: 'FileOutput',
     enabled: true,
   },
   {
-    kind: "edit_prompt",
-    label: "Prompt bearbeiten",
-    icon: "FilePenLine",
+    kind: 'edit_prompt',
+    label: 'Prompt bearbeiten',
+    icon: 'FilePenLine',
     enabled: true,
   },
   {
-    kind: "toggle_tools",
-    label: "Werkzeuge umschalten",
-    icon: "Wrench",
+    kind: 'toggle_tools',
+    label: 'Werkzeuge umschalten',
+    icon: 'Wrench',
     enabled: true,
   },
   {
-    kind: "invoke_operation",
-    label: "Aktion ausführen",
-    icon: "Play",
+    kind: 'invoke_operation',
+    label: 'Aktion ausführen',
+    icon: 'Play',
     enabled: true,
   },
   {
-    kind: "create_chat",
-    label: "Neuer Chat",
-    icon: "MessageSquarePlus",
+    kind: 'create_chat',
+    label: 'Neuer Chat',
+    icon: 'MessageSquarePlus',
     enabled: true,
   },
 
@@ -204,73 +194,69 @@ const actionDefinitions = [
   // Noch nicht implementierte Aktionen (deaktiviert)
   // ============================================================
   {
-    kind: "rename_chat",
-    ...unsupportedAction("Chat umbenennen", "Pencil"),
+    kind: 'rename_chat',
+    ...unsupportedAction('Chat umbenennen', 'Pencil'),
   },
   {
-    kind: "delete_chat",
-    ...unsupportedAction("Chat löschen", "Trash2"),
+    kind: 'delete_chat',
+    ...unsupportedAction('Chat löschen', 'Trash2'),
   },
   {
-    kind: "archive_chat",
-    ...unsupportedAction("Chat archivieren", "Archive"),
+    kind: 'archive_chat',
+    ...unsupportedAction('Chat archivieren', 'Archive'),
   },
   {
-    kind: "export_chat",
-    ...unsupportedAction("Chat exportieren", "FileOutput"),
+    kind: 'export_chat',
+    ...unsupportedAction('Chat exportieren', 'FileOutput'),
   },
   {
-    kind: "create_workspace",
-    ...unsupportedAction("Workspace erstellen", "Plus"),
+    kind: 'create_workspace',
+    ...unsupportedAction('Workspace erstellen', 'Plus'),
   },
   {
-    kind: "rename_workspace",
-    ...unsupportedAction("Workspace umbenennen", "Pencil"),
+    kind: 'rename_workspace',
+    ...unsupportedAction('Workspace umbenennen', 'Pencil'),
   },
   {
-    kind: "delete_workspace",
-    ...unsupportedAction("Workspace löschen", "Trash2"),
+    kind: 'delete_workspace',
+    ...unsupportedAction('Workspace löschen', 'Trash2'),
   },
   {
-    kind: "create_project",
-    ...unsupportedAction("Projekt erstellen", "Plus"),
+    kind: 'create_project',
+    ...unsupportedAction('Projekt erstellen', 'Plus'),
   },
   {
-    kind: "rename_project",
-    ...unsupportedAction("Projekt umbenennen", "Pencil"),
+    kind: 'rename_project',
+    ...unsupportedAction('Projekt umbenennen', 'Pencil'),
   },
   {
-    kind: "delete_project",
-    ...unsupportedAction("Projekt löschen", "Trash2"),
+    kind: 'delete_project',
+    ...unsupportedAction('Projekt löschen', 'Trash2'),
   },
   {
-    kind: "refresh",
-    ...unsupportedAction("Aktualisieren", "RefreshCw"),
+    kind: 'refresh',
+    ...unsupportedAction('Aktualisieren', 'RefreshCw'),
   },
   {
-    kind: "settings",
-    ...unsupportedAction("Einstellungen", "Settings"),
+    kind: 'settings',
+    ...unsupportedAction('Einstellungen', 'Settings'),
   },
   {
-    kind: "help",
-    ...unsupportedAction("Hilfe", "HelpCircle"),
+    kind: 'help',
+    ...unsupportedAction('Hilfe', 'HelpCircle'),
   },
   {
-    kind: "logout",
-    ...unsupportedAction("Abmelden", "LogOut"),
+    kind: 'logout',
+    ...unsupportedAction('Abmelden', 'LogOut'),
   },
 ] satisfies readonly ActionDefinition[];
 
-function createActionRegistry(
-  definitions: readonly ActionDefinition[],
-): ActionRegistry {
+function createActionRegistry(definitions: readonly ActionDefinition[]): ActionRegistry {
   const registry = new Map<KnownActionKind, Readonly<ActionDefinition>>();
 
   for (const definition of definitions) {
     if (registry.has(definition.kind)) {
-      throw new Error(
-        `Die Aktion "${definition.kind}" wurde mehrfach registriert.`,
-      );
+      throw new Error(`Die Aktion "${definition.kind}" wurde mehrfach registriert.`);
     }
 
     registry.set(
@@ -289,21 +275,16 @@ function createActionRegistry(
 function assertRegistryCompleteness(
   registry: ReadonlyMap<KnownActionKind, Readonly<ActionDefinition>>,
 ): void {
-  const missingActions = KNOWN_ACTION_KINDS.filter(
-    (kind) => !registry.has(kind),
-  );
+  const missingActions = KNOWN_ACTION_KINDS.filter((kind) => !registry.has(kind));
 
   if (missingActions.length > 0) {
     throw new Error(
-      `Für folgende bekannte Aktionen fehlt ein Registry-Eintrag: ${missingActions.join(
-        ", ",
-      )}`,
+      `Für folgende bekannte Aktionen fehlt ein Registry-Eintrag: ${missingActions.join(', ')}`,
     );
   }
 }
 
-export const actionRegistry: ActionRegistry =
-  createActionRegistry(actionDefinitions);
+export const actionRegistry: ActionRegistry = createActionRegistry(actionDefinitions);
 
 /**
  * Prüft ausschließlich, ob ein Wert Bestandteil des stabilen
@@ -313,17 +294,13 @@ export const actionRegistry: ActionRegistry =
  * der aktuelle Benutzer die Aktion ausführen darf.
  */
 export function isKnownActionKind(value: unknown): value is KnownActionKind {
-  return (
-    typeof value === "string" && actionRegistry.has(value as KnownActionKind)
-  );
+  return typeof value === 'string' && actionRegistry.has(value as KnownActionKind);
 }
 
 /**
  * Gibt die Registry-Definition einer bekannten Aktion zurück.
  */
-export function getActionDefinition(
-  kind: string,
-): Readonly<ActionDefinition> | undefined {
+export function getActionDefinition(kind: string): Readonly<ActionDefinition> | undefined {
   if (!isKnownActionKind(kind)) {
     return undefined;
   }
@@ -348,7 +325,7 @@ export function isActionEnabled(kind: string): kind is KnownActionKind {
 export function hasActionHandler(kind: string): kind is KnownActionKind {
   const definition = getActionDefinition(kind);
 
-  return typeof definition?.handler === "function";
+  return typeof definition?.handler === 'function';
 }
 
 /**
@@ -360,9 +337,7 @@ export function hasActionHandler(kind: string): kind is KnownActionKind {
  *
  * Unbekannte Backend-Aktionen werden sicher verworfen.
  */
-export function filterSupportedActionKinds(
-  values: readonly string[],
-): KnownActionKind[] {
+export function filterSupportedActionKinds(values: readonly string[]): KnownActionKind[] {
   return values.filter(isActionEnabled);
 }
 
@@ -378,16 +353,13 @@ export async function executeRegisteredAction<
   TNode = unknown,
   TPayload = unknown,
   TResult = unknown,
->(
-  kind: string,
-  context: ActionContext<TNode, TPayload>,
-): Promise<ActionResult<TResult>> {
+>(kind: string, context: ActionContext<TNode, TPayload>): Promise<ActionResult<TResult>> {
   const definition = getActionDefinition(kind);
 
   if (!definition) {
     return {
       success: false,
-      code: "unsupported_action",
+      code: 'unsupported_action',
       message: `Die Aktion "${kind}" wird vom Frontend nicht unterstützt.`,
     };
   }
@@ -395,7 +367,7 @@ export async function executeRegisteredAction<
   if (definition.enabled === false) {
     return {
       success: false,
-      code: "action_disabled",
+      code: 'action_disabled',
       message: `Die Aktion "${kind}" ist derzeit deaktiviert.`,
     };
   }
@@ -403,7 +375,7 @@ export async function executeRegisteredAction<
   if (!definition.handler) {
     return {
       success: false,
-      code: "action_handler_missing",
+      code: 'action_handler_missing',
       message: `Für die Aktion "${kind}" ist kein Frontend-Handler registriert.`,
     };
   }
@@ -411,8 +383,8 @@ export async function executeRegisteredAction<
   if (context.signal?.aborted) {
     return {
       success: false,
-      code: "action_aborted",
-      message: "Die Aktion wurde abgebrochen.",
+      code: 'action_aborted',
+      message: 'Die Aktion wurde abgebrochen.',
     };
   }
 
@@ -421,11 +393,9 @@ export async function executeRegisteredAction<
   } catch (error) {
     return {
       success: false,
-      code: "action_execution_failed",
+      code: 'action_execution_failed',
       message:
-        error instanceof Error
-          ? error.message
-          : "Die Aktion konnte nicht ausgeführt werden.",
+        error instanceof Error ? error.message : 'Die Aktion konnte nicht ausgeführt werden.',
     };
   }
 }

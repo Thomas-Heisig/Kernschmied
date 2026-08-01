@@ -4,17 +4,14 @@ import {
   type PropsWithChildren,
   type ReactElement,
   type ReactNode,
-} from "react";
+} from 'react';
 
-import { ThemeProvider } from "../theme";
-import { AppStoreProvider } from "../store";
+import { ThemeProvider } from '../theme';
+import { AppStoreProvider } from '../store';
 
 type ApplicationProvider = ComponentType<any>;
 
-const APPLICATION_PROVIDERS: readonly ApplicationProvider[] = [
-  AppStoreProvider,
-  ThemeProvider,
-];
+const APPLICATION_PROVIDERS: readonly ApplicationProvider[] = [AppStoreProvider, ThemeProvider];
 
 function composeProviders(
   providers: readonly ApplicationProvider[],

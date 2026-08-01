@@ -1,14 +1,11 @@
-import React from "react";
+import React from 'react';
 
 export interface UnsupportedProps {
   type?: string;
   definition?: any;
 }
 
-export default function UnsupportedSchemaComponent({
-  type,
-  definition,
-}: UnsupportedProps) {
+export default function UnsupportedSchemaComponent({ type, definition }: UnsupportedProps) {
   return (
     <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-800">
       <strong>Nicht unterstützt:</strong> {type}

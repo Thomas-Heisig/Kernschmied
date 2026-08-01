@@ -1,13 +1,6 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-type ToastKind = "info" | "success" | "error";
+type ToastKind = 'info' | 'success' | 'error';
 
 interface ToastItem {
   id: string;
@@ -23,7 +16,7 @@ const ToastContext = createContext<ToastContextValue | null>(null);
 
 export function useToast() {
   const ctx = useContext(ToastContext);
-  if (!ctx) throw new Error("useToast must be used within ToastProvider");
+  if (!ctx) throw new Error('useToast must be used within ToastProvider');
   return ctx;
 }
 
@@ -48,17 +41,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             className={[
-              "max-w-sm rounded-md px-3 py-2 text-sm shadow-lg",
-              t.kind === "success"
-                ? "bg-green-50 text-green-800 border border-green-100"
-                : "",
-              t.kind === "error"
-                ? "bg-red-50 text-red-800 border border-red-100"
-                : "",
-              t.kind === "info"
-                ? "bg-white text-text border border-border"
-                : "",
-            ].join(" ")}
+              'max-w-sm rounded-md px-3 py-2 text-sm shadow-lg',
+              t.kind === 'success' ? 'bg-green-50 text-green-800 border border-green-100' : '',
+              t.kind === 'error' ? 'bg-red-50 text-red-800 border border-red-100' : '',
+              t.kind === 'info' ? 'bg-white text-text border border-border' : '',
+            ].join(' ')}
             role="status"
           >
             {t.message}

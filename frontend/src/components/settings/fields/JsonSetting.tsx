@@ -1,14 +1,12 @@
-import React, { useState } from "react";
-import type { ConfigValue, ConfigEntryResponse } from "../../../contracts/config";
-import { SettingsInputContainer, inputClassName } from "../SettingsFieldShared";
+import React, { useState } from 'react';
+import type { ConfigValue, ConfigEntryResponse } from '../../../contracts/config';
+import { SettingsInputContainer, inputClassName } from '../SettingsFieldShared';
 
-type ComplexParseResult =
-  | { ok: true; value: ConfigValue }
-  | { ok: false; error: string };
+type ComplexParseResult = { ok: true; value: ConfigValue } | { ok: false; error: string };
 
 function parseComplexValue(value: string): ComplexParseResult {
-  if (value.trim() === "") {
-    return { ok: false, error: "Der JSON-Wert darf nicht leer sein." };
+  if (value.trim() === '') {
+    return { ok: false, error: 'Der JSON-Wert darf nicht leer sein.' };
   }
 
   try {
@@ -17,16 +15,23 @@ function parseComplexValue(value: string): ComplexParseResult {
     // minimal validation: allow object/array/primitive
     return { ok: true, value: parsed as ConfigValue };
   } catch {
-    return { ok: false, error: "Der Wert enthält kein gültiges JSON." };
+    return { ok: false, error: 'Der Wert enthält kein gültiges JSON.' };
   }
 }
 
 function formatComplexValue(value: ConfigValue): string {
-  if (typeof value !== "object" || value === null) return "";
+  if (typeof value !== 'object' || value === null) return '';
   return JSON.stringify(value, null, 2);
 }
 
-export default function JsonSetting({ entry, path, value, disabled = false, readOnly = false, onChange }: {
+export default function JsonSetting({
+  entry,
+  path,
+  value,
+  disabled = false,
+  readOnly = false,
+  onChange,
+}: {
   entry: ConfigEntryResponse;
   path: string[];
   value: ConfigValue;
@@ -37,7 +42,7 @@ export default function JsonSetting({ entry, path, value, disabled = false, read
   const [complexDraft, setComplexDraft] = useState(formatComplexValue(value));
   const [validationError, setValidationError] = useState<string | null>(null);
 
-  const fieldId = ["setting", entry.full_key].join("-").replace(/[^a-zA-Z0-9_-]/g, "-");
+  const fieldId = ['setting', entry.full_key].join('-').replace(/[^a-zA-Z0-9_-]/g, '-');
 
   return (
     <SettingsInputContainer
@@ -57,7 +62,7 @@ export default function JsonSetting({ entry, path, value, disabled = false, read
         spellCheck={false}
         aria-invalid={validationError !== null}
         aria-describedby={validationError ? `${fieldId}-error` : undefined}
-        className={[inputClassName, "resize-y font-mono text-xs leading-5"].join(" ")}
+        className={[inputClassName, 'resize-y font-mono text-xs leading-5'].join(' ')}
         onChange={(event) => {
           const next = event.target.value;
           setComplexDraft(next);
@@ -85,13 +90,13 @@ export default function JsonSetting({ entry, path, value, disabled = false, read
           type="button"
           disabled={disabled || readOnly}
           className={[
-            "rounded-md border border-slate-300 px-2.5 py-1",
-            "text-xs font-medium text-slate-600 transition",
-            "hover:bg-slate-50",
-            "disabled:cursor-not-allowed disabled:opacity-50",
-            "dark:border-white/10 dark:text-slate-300",
-            "dark:hover:bg-white/5",
-          ].join(" ")}
+            'rounded-md border border-slate-300 px-2.5 py-1',
+            'text-xs font-medium text-slate-600 transition',
+            'hover:bg-slate-50',
+            'disabled:cursor-not-allowed disabled:opacity-50',
+            'dark:border-white/10 dark:text-slate-300',
+            'dark:hover:bg-white/5',
+          ].join(' ')}
           onClick={() => {
             const parsed = parseComplexValue(complexDraft);
             if (!parsed.ok) {

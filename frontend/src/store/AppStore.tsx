@@ -8,12 +8,12 @@ import {
   useReducer,
   type Dispatch,
   type PropsWithChildren,
-} from "react";
+} from 'react';
 
-import type { HierarchyNode, HierarchyTree } from "../contracts/hierarchy";
-import type { UISchema } from "../contracts/schema";
+import type { HierarchyNode, HierarchyTree } from '../contracts/hierarchy';
+import type { UISchema } from '../contracts/schema';
 
-export type AppStoreStatus = "idle" | "loading" | "ready" | "error";
+export type AppStoreStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface AppStoreError {
   code: string;
@@ -67,65 +67,65 @@ export interface AppStoreState {
 
 export type AppStoreAction =
   | {
-      type: "app/load_started";
+      type: 'app/load_started';
     }
   | {
-      type: "app/load_succeeded";
+      type: 'app/load_succeeded';
       payload: {
         schema: UISchema;
         hierarchyTree: HierarchyTree;
       };
     }
   | {
-      type: "app/load_failed";
+      type: 'app/load_failed';
       payload: AppStoreError;
     }
   | {
-      type: "app/error_cleared";
+      type: 'app/error_cleared';
     }
   | {
-      type: "schema/replaced";
+      type: 'schema/replaced';
       payload: UISchema;
     }
   | {
-      type: "hierarchy/replaced";
+      type: 'hierarchy/replaced';
       payload: HierarchyTree;
     }
   | {
-      type: "hierarchy/node_selected";
+      type: 'hierarchy/node_selected';
       payload: {
         nodeId: string | null;
       };
     }
   | {
-      type: "hierarchy/node_expansion_toggled";
+      type: 'hierarchy/node_expansion_toggled';
       payload: {
         nodeId: string;
       };
     }
   | {
-      type: "hierarchy/expanded_nodes_replaced";
+      type: 'hierarchy/expanded_nodes_replaced';
       payload: {
         nodeIds: ReadonlySet<string>;
       };
     }
   | {
-      type: "hierarchy/all_nodes_collapsed";
+      type: 'hierarchy/all_nodes_collapsed';
     }
   | {
-      type: "ui/navigation_visibility_changed";
+      type: 'ui/navigation_visibility_changed';
       payload: {
         open: boolean;
       };
     }
   | {
-      type: "ui/details_panel_visibility_changed";
+      type: 'ui/details_panel_visibility_changed';
       payload: {
         open: boolean;
       };
     }
   | {
-      type: "app/reset";
+      type: 'app/reset';
     };
 
 export interface AppStoreCommands {
@@ -163,7 +163,7 @@ const INITIAL_STATE: AppStoreState = {
   hierarchyTree: null,
   selectedNodeId: null,
   expandedNodeIds: new Set<string>(),
-  status: "idle",
+  status: 'idle',
   error: null,
   isNavigationOpen: true,
   isDetailsPanelOpen: true,
@@ -179,61 +179,54 @@ export function AppStoreProvider({
   children,
   initialState,
 }: PropsWithChildren<AppStoreProviderProps>) {
-  const [state, dispatch] = useReducer(
-    appStoreReducer,
-    initialState,
-    createInitialState,
-  );
+  const [state, dispatch] = useReducer(appStoreReducer, initialState, createInitialState);
 
   const beginLoading = useCallback(() => {
     dispatch({
-      type: "app/load_started",
+      type: 'app/load_started',
     });
   }, []);
 
-  const setLoadedData = useCallback(
-    (schema: UISchema, hierarchyTree: HierarchyTree) => {
-      dispatch({
-        type: "app/load_succeeded",
-        payload: {
-          schema,
-          hierarchyTree,
-        },
-      });
-    },
-    [],
-  );
+  const setLoadedData = useCallback((schema: UISchema, hierarchyTree: HierarchyTree) => {
+    dispatch({
+      type: 'app/load_succeeded',
+      payload: {
+        schema,
+        hierarchyTree,
+      },
+    });
+  }, []);
 
   const setError = useCallback((error: AppStoreError) => {
     dispatch({
-      type: "app/load_failed",
+      type: 'app/load_failed',
       payload: error,
     });
   }, []);
 
   const clearError = useCallback(() => {
     dispatch({
-      type: "app/error_cleared",
+      type: 'app/error_cleared',
     });
   }, []);
 
   const replaceSchema = useCallback((schema: UISchema) => {
     dispatch({
-      type: "schema/replaced",
+      type: 'schema/replaced',
       payload: schema,
     });
   }, []);
 
   const replaceHierarchy = useCallback((hierarchyTree: HierarchyTree) => {
     dispatch({
-      type: "hierarchy/replaced",
+      type: 'hierarchy/replaced',
       payload: hierarchyTree,
     });
   }, []);
 
   const selectNode = useCallback((nodeId: string | null) => {
     dispatch({
-      type: "hierarchy/node_selected",
+      type: 'hierarchy/node_selected',
       payload: {
         nodeId,
       },
@@ -242,7 +235,7 @@ export function AppStoreProvider({
 
   const selectHierarchyNode = useCallback((node: HierarchyNode | null) => {
     dispatch({
-      type: "hierarchy/node_selected",
+      type: 'hierarchy/node_selected',
       payload: {
         nodeId: node?.id ?? null,
       },
@@ -251,7 +244,7 @@ export function AppStoreProvider({
 
   const toggleNodeExpanded = useCallback((nodeId: string) => {
     dispatch({
-      type: "hierarchy/node_expansion_toggled",
+      type: 'hierarchy/node_expansion_toggled',
       payload: {
         nodeId,
       },
@@ -260,7 +253,7 @@ export function AppStoreProvider({
 
   const replaceExpandedNodeIds = useCallback((nodeIds: ReadonlySet<string>) => {
     dispatch({
-      type: "hierarchy/expanded_nodes_replaced",
+      type: 'hierarchy/expanded_nodes_replaced',
       payload: {
         nodeIds,
       },
@@ -269,13 +262,13 @@ export function AppStoreProvider({
 
   const collapseAllNodes = useCallback(() => {
     dispatch({
-      type: "hierarchy/all_nodes_collapsed",
+      type: 'hierarchy/all_nodes_collapsed',
     });
   }, []);
 
   const setNavigationOpen = useCallback((open: boolean) => {
     dispatch({
-      type: "ui/navigation_visibility_changed",
+      type: 'ui/navigation_visibility_changed',
       payload: {
         open,
       },
@@ -284,7 +277,7 @@ export function AppStoreProvider({
 
   const setDetailsPanelOpen = useCallback((open: boolean) => {
     dispatch({
-      type: "ui/details_panel_visibility_changed",
+      type: 'ui/details_panel_visibility_changed',
       payload: {
         open,
       },
@@ -293,7 +286,7 @@ export function AppStoreProvider({
 
   const reset = useCallback(() => {
     dispatch({
-      type: "app/reset",
+      type: 'app/reset',
     });
   }, []);
 
@@ -341,20 +334,14 @@ export function AppStoreProvider({
     [commands, state],
   );
 
-  return (
-    <AppStoreContext.Provider value={value}>
-      {children}
-    </AppStoreContext.Provider>
-  );
+  return <AppStoreContext.Provider value={value}>{children}</AppStoreContext.Provider>;
 }
 
 export function useAppStore(): AppStoreValue {
   const store = useContext(AppStoreContext);
 
   if (!store) {
-    throw new Error(
-      "useAppStore muss innerhalb eines AppStoreProvider verwendet werden.",
-    );
+    throw new Error('useAppStore muss innerhalb eines AppStoreProvider verwendet werden.');
   }
 
   return store;
@@ -368,19 +355,16 @@ export function useAppStoreCommands(): AppStoreCommands {
   return useAppStore().commands;
 }
 
-export function appStoreReducer(
-  state: AppStoreState,
-  action: AppStoreAction,
-): AppStoreState {
+export function appStoreReducer(state: AppStoreState, action: AppStoreAction): AppStoreState {
   switch (action.type) {
-    case "app/load_started":
+    case 'app/load_started':
       return {
         ...state,
-        status: "loading",
+        status: 'loading',
         error: null,
       };
 
-    case "app/load_succeeded": {
+    case 'app/load_succeeded': {
       const { schema, hierarchyTree } = action.payload;
       const rootNodeId = hierarchyTree.root.id;
 
@@ -388,60 +372,51 @@ export function appStoreReducer(
         ...state,
         schema,
         hierarchyTree,
-        selectedNodeId: resolveSelectedNodeId(
-          hierarchyTree,
-          state.selectedNodeId,
-        ),
+        selectedNodeId: resolveSelectedNodeId(hierarchyTree, state.selectedNodeId),
         expandedNodeIds:
           state.expandedNodeIds.size > 0
             ? removeUnknownExpandedNodeIds(hierarchyTree, state.expandedNodeIds)
             : new Set([rootNodeId]),
-        status: "ready",
+        status: 'ready',
         error: null,
       };
     }
 
-    case "app/load_failed":
+    case 'app/load_failed':
       return {
         ...state,
-        status: "error",
+        status: 'error',
         error: action.payload,
       };
 
-    case "app/error_cleared":
+    case 'app/error_cleared':
       return {
         ...state,
         error: null,
-        status: state.schema && state.hierarchyTree ? "ready" : "idle",
+        status: state.schema && state.hierarchyTree ? 'ready' : 'idle',
       };
 
-    case "schema/replaced":
+    case 'schema/replaced':
       return {
         ...state,
         schema: action.payload,
       };
 
-    case "hierarchy/replaced":
+    case 'hierarchy/replaced':
       return {
         ...state,
         hierarchyTree: action.payload,
-        selectedNodeId: resolveSelectedNodeId(
-          action.payload,
-          state.selectedNodeId,
-        ),
-        expandedNodeIds: removeUnknownExpandedNodeIds(
-          action.payload,
-          state.expandedNodeIds,
-        ),
+        selectedNodeId: resolveSelectedNodeId(action.payload, state.selectedNodeId),
+        expandedNodeIds: removeUnknownExpandedNodeIds(action.payload, state.expandedNodeIds),
       };
 
-    case "hierarchy/node_selected":
+    case 'hierarchy/node_selected':
       return {
         ...state,
         selectedNodeId: action.payload.nodeId,
       };
 
-    case "hierarchy/node_expansion_toggled": {
+    case 'hierarchy/node_expansion_toggled': {
       const nextExpandedNodeIds = new Set(state.expandedNodeIds);
 
       if (nextExpandedNodeIds.has(action.payload.nodeId)) {
@@ -456,31 +431,31 @@ export function appStoreReducer(
       };
     }
 
-    case "hierarchy/expanded_nodes_replaced":
+    case 'hierarchy/expanded_nodes_replaced':
       return {
         ...state,
         expandedNodeIds: new Set(action.payload.nodeIds),
       };
 
-    case "hierarchy/all_nodes_collapsed":
+    case 'hierarchy/all_nodes_collapsed':
       return {
         ...state,
         expandedNodeIds: new Set<string>(),
       };
 
-    case "ui/navigation_visibility_changed":
+    case 'ui/navigation_visibility_changed':
       return {
         ...state,
         isNavigationOpen: action.payload.open,
       };
 
-    case "ui/details_panel_visibility_changed":
+    case 'ui/details_panel_visibility_changed':
       return {
         ...state,
         isDetailsPanelOpen: action.payload.open,
       };
 
-    case "app/reset":
+    case 'app/reset':
       return createInitialState();
 
     default:
@@ -488,15 +463,11 @@ export function appStoreReducer(
   }
 }
 
-function createInitialState(
-  initialState?: Partial<AppStoreState>,
-): AppStoreState {
+function createInitialState(initialState?: Partial<AppStoreState>): AppStoreState {
   return {
     ...INITIAL_STATE,
     ...initialState,
-    expandedNodeIds: new Set(
-      initialState?.expandedNodeIds ?? INITIAL_STATE.expandedNodeIds,
-    ),
+    expandedNodeIds: new Set(initialState?.expandedNodeIds ?? INITIAL_STATE.expandedNodeIds),
   };
 }
 
@@ -517,9 +488,7 @@ function removeUnknownExpandedNodeIds(
 ): ReadonlySet<string> {
   const existingNodeIds = collectNodeIds(hierarchyTree.root);
 
-  return new Set(
-    [...expandedNodeIds].filter((nodeId) => existingNodeIds.has(nodeId)),
-  );
+  return new Set([...expandedNodeIds].filter((nodeId) => existingNodeIds.has(nodeId)));
 }
 
 function collectNodeIds(root: HierarchyNode): Set<string> {
@@ -578,19 +547,13 @@ export function selectSelectedNode(state: AppStoreState): HierarchyNode | null {
   return findNodeById(hierarchyTree.root, selectedNodeId);
 }
 
-export function selectNodeById(
-  state: AppStoreState,
-  nodeId: string,
-): HierarchyNode | null {
+export function selectNodeById(state: AppStoreState, nodeId: string): HierarchyNode | null {
   const { hierarchyTree } = state;
   if (!hierarchyTree) return null;
   return findNodeById(hierarchyTree.root, nodeId);
 }
 
-function findNodeById(
-  root: HierarchyNode,
-  nodeId: string,
-): HierarchyNode | null {
+function findNodeById(root: HierarchyNode, nodeId: string): HierarchyNode | null {
   if (root.id === nodeId) return root;
   for (const child of root.children) {
     const found = findNodeById(child, nodeId);

@@ -1,24 +1,21 @@
 // F:\Kernschmied\frontend\src\components\settings\SettingsDialog.tsx
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from 'react';
 
-import type {
-  KeyboardEvent as ReactKeyboardEvent,
-  MouseEvent as ReactMouseEvent,
-} from "react";
+import type { KeyboardEvent as ReactKeyboardEvent, MouseEvent as ReactMouseEvent } from 'react';
 
-import { Menu, Settings, X } from "lucide-react";
+import { Menu, Settings, X } from 'lucide-react';
 
-import { useSystemConfig } from "../../hooks/useSystemConfig";
-import { SettingsContent } from "./SettingsContent";
-import { SettingsSidebar } from "./SettingsSidebar";
+import { useSystemConfig } from '../../hooks/useSystemConfig';
+import { SettingsContent } from './SettingsContent';
+import { SettingsSidebar } from './SettingsSidebar';
 
 interface SettingsDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const SETTINGS_CATALOG_KEY = "settings-catalog";
+const SETTINGS_CATALOG_KEY = 'settings-catalog';
 
 export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
   const dialogId = useId();
@@ -33,9 +30,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
 
   const config = useSystemConfig();
 
-  const [activeKey, setActiveKey] = useState<string | null>(
-    SETTINGS_CATALOG_KEY,
-  );
+  const [activeKey, setActiveKey] = useState<string | null>(SETTINGS_CATALOG_KEY);
 
   const [showJson, setShowJson] = useState(false);
 
@@ -61,20 +56,18 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
     }
 
     previouslyFocusedElementRef.current =
-      document.activeElement instanceof HTMLElement
-        ? document.activeElement
-        : null;
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
     const previousOverflow = document.body.style.overflow;
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
 
     const focusTimeout = window.setTimeout(() => {
       closeButtonRef.current?.focus();
     }, 0);
 
     function handleDocumentKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         event.preventDefault();
 
         if (showCloseConfirmation) {
@@ -91,19 +84,19 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
         return;
       }
 
-      if (event.key === "Tab") {
+      if (event.key === 'Tab') {
         trapFocus(event, dialogRef.current);
       }
     }
 
-    window.addEventListener("keydown", handleDocumentKeyDown);
+    window.addEventListener('keydown', handleDocumentKeyDown);
 
     return () => {
       window.clearTimeout(focusTimeout);
 
       document.body.style.overflow = previousOverflow;
 
-      window.removeEventListener("keydown", handleDocumentKeyDown);
+      window.removeEventListener('keydown', handleDocumentKeyDown);
 
       previouslyFocusedElementRef.current?.focus();
     };
@@ -133,9 +126,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
     closeButtonRef.current?.focus();
   }
 
-  function handleBackdropMouseDown(
-    event: ReactMouseEvent<HTMLDivElement>,
-  ): void {
+  function handleBackdropMouseDown(event: ReactMouseEvent<HTMLDivElement>): void {
     if (event.target !== event.currentTarget) {
       return;
     }
@@ -144,7 +135,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
   }
 
   function handleDialogKeyDown(event: ReactKeyboardEvent<HTMLElement>): void {
-    if (event.key === "Escape") {
+    if (event.key === 'Escape') {
       event.stopPropagation();
     }
   }
@@ -169,22 +160,22 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
   return (
     <div
       className={[
-        "fixed inset-0 z-50 flex items-center justify-center",
-        "bg-slate-950/55 p-0 backdrop-blur-sm",
-        "sm:p-4 lg:p-8",
-      ].join(" ")}
+        'fixed inset-0 z-50 flex items-center justify-center',
+        'bg-slate-950/55 p-0 backdrop-blur-sm',
+        'sm:p-4 lg:p-8',
+      ].join(' ')}
       role="presentation"
       onMouseDown={handleBackdropMouseDown}
     >
       <section
         ref={dialogRef}
         className={[
-          "relative flex min-h-0 w-full flex-col overflow-hidden",
-          "border border-slate-200 bg-white shadow-2xl",
-          "dark:border-white/10 dark:bg-slate-950",
-          "h-dvh rounded-none",
-          "sm:h-[min(92vh,960px)] sm:max-w-7xl sm:rounded-2xl",
-        ].join(" ")}
+          'relative flex min-h-0 w-full flex-col overflow-hidden',
+          'border border-slate-200 bg-white shadow-2xl',
+          'dark:border-white/10 dark:bg-slate-950',
+          'h-dvh rounded-none',
+          'sm:h-[min(92vh,960px)] sm:max-w-7xl sm:rounded-2xl',
+        ].join(' ')}
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
@@ -196,25 +187,25 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
       >
         <header
           className={[
-            "flex min-h-16 shrink-0 items-center justify-between gap-4",
-            "border-b border-slate-200 bg-white px-4",
-            "dark:border-white/10 dark:bg-slate-950",
-            "sm:px-5",
-          ].join(" ")}
+            'flex min-h-16 shrink-0 items-center justify-between gap-4',
+            'border-b border-slate-200 bg-white px-4',
+            'dark:border-white/10 dark:bg-slate-950',
+            'sm:px-5',
+          ].join(' ')}
         >
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
               className={[
-                "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                "text-slate-600 transition-colors",
-                "hover:bg-slate-100 hover:text-slate-950",
-                "focus-visible:outline-none focus-visible:ring-2",
-                "focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-                "dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white",
-                "dark:focus-visible:ring-offset-slate-950",
-                "md:hidden",
-              ].join(" ")}
+                'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                'text-slate-600 transition-colors',
+                'hover:bg-slate-100 hover:text-slate-950',
+                'focus-visible:outline-none focus-visible:ring-2',
+                'focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+                'dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white',
+                'dark:focus-visible:ring-offset-slate-950',
+                'md:hidden',
+              ].join(' ')}
               aria-label="Einstellungsnavigation öffnen"
               aria-expanded={isSidebarOpen}
               aria-controls={`${dialogId}-sidebar`}
@@ -227,11 +218,11 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
 
             <span
               className={[
-                "hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                "bg-blue-50 text-blue-700",
-                "dark:bg-blue-500/10 dark:text-blue-300",
-                "sm:inline-flex",
-              ].join(" ")}
+                'hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                'bg-blue-50 text-blue-700',
+                'dark:bg-blue-500/10 dark:text-blue-300',
+                'sm:inline-flex',
+              ].join(' ')}
               aria-hidden="true"
             >
               <Settings size={19} />
@@ -245,10 +236,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
                 Systemeinstellungen
               </h1>
 
-              <p
-                id={descriptionId}
-                className="truncate text-xs text-slate-500 dark:text-slate-400"
-              >
+              <p id={descriptionId} className="truncate text-xs text-slate-500 dark:text-slate-400">
                 {currentTitle}
               </p>
             </div>
@@ -258,11 +246,11 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
             {config.isDirty ? (
               <span
                 className={[
-                  "hidden rounded-full bg-amber-100 px-2.5 py-1",
-                  "text-xs font-medium text-amber-800",
-                  "dark:bg-amber-500/15 dark:text-amber-300",
-                  "sm:inline-flex",
-                ].join(" ")}
+                  'hidden rounded-full bg-amber-100 px-2.5 py-1',
+                  'text-xs font-medium text-amber-800',
+                  'dark:bg-amber-500/15 dark:text-amber-300',
+                  'sm:inline-flex',
+                ].join(' ')}
               >
                 Nicht gespeichert
               </span>
@@ -272,14 +260,14 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
               ref={closeButtonRef}
               type="button"
               className={[
-                "inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg",
-                "text-slate-600 transition-colors",
-                "hover:bg-slate-100 hover:text-slate-950",
-                "focus-visible:outline-none focus-visible:ring-2",
-                "focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-                "dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white",
-                "dark:focus-visible:ring-offset-slate-950",
-              ].join(" ")}
+                'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
+                'text-slate-600 transition-colors',
+                'hover:bg-slate-100 hover:text-slate-950',
+                'focus-visible:outline-none focus-visible:ring-2',
+                'focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+                'dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white',
+                'dark:focus-visible:ring-offset-slate-950',
+              ].join(' ')}
               aria-label="Einstellungen schließen"
               title="Schließen"
               onClick={requestClose}
@@ -304,11 +292,11 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
           <aside
             id={`${dialogId}-sidebar`}
             className={[
-              "absolute inset-y-0 left-0 z-30",
-              "transform transition-transform duration-200",
-              "md:static md:z-auto md:translate-x-0",
-              isSidebarOpen ? "translate-x-0" : "-translate-x-full",
-            ].join(" ")}
+              'absolute inset-y-0 left-0 z-30',
+              'transform transition-transform duration-200',
+              'md:static md:z-auto md:translate-x-0',
+              isSidebarOpen ? 'translate-x-0' : '-translate-x-full',
+            ].join(' ')}
           >
             <SettingsSidebar
               values={config.values}
@@ -321,16 +309,12 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
 
           <main
             className={[
-              "min-w-0 flex-1 overflow-y-auto",
-              "bg-slate-50/60",
-              "dark:bg-slate-950/30",
-            ].join(" ")}
+              'min-w-0 flex-1 overflow-y-auto',
+              'bg-slate-50/60',
+              'dark:bg-slate-950/30',
+            ].join(' ')}
           >
-            <SettingsContent
-              activeKey={activeKey}
-              showJson={showJson}
-              config={config}
-            />
+            <SettingsContent activeKey={activeKey} showJson={showJson} config={config} />
           </main>
         </div>
 
@@ -364,9 +348,9 @@ function CloseConfirmation({
   return (
     <div
       className={[
-        "absolute inset-0 z-50 flex items-center justify-center",
-        "bg-slate-950/50 p-4 backdrop-blur-sm",
-      ].join(" ")}
+        'absolute inset-0 z-50 flex items-center justify-center',
+        'bg-slate-950/50 p-4 backdrop-blur-sm',
+      ].join(' ')}
       role="alertdialog"
       aria-modal="true"
       aria-labelledby="settings-close-confirmation-title"
@@ -374,10 +358,10 @@ function CloseConfirmation({
     >
       <div
         className={[
-          "w-full max-w-md rounded-2xl border border-slate-200",
-          "bg-white p-5 shadow-2xl",
-          "dark:border-white/10 dark:bg-slate-900",
-        ].join(" ")}
+          'w-full max-w-md rounded-2xl border border-slate-200',
+          'bg-white p-5 shadow-2xl',
+          'dark:border-white/10 dark:bg-slate-900',
+        ].join(' ')}
       >
         <h2
           id="settings-close-confirmation-title"
@@ -390,8 +374,7 @@ function CloseConfirmation({
           id="settings-close-confirmation-description"
           className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400"
         >
-          Es gibt nicht gespeicherte Änderungen. Beim Schließen werden diese
-          Änderungen verworfen.
+          Es gibt nicht gespeicherte Änderungen. Beim Schließen werden diese Änderungen verworfen.
         </p>
 
         <div className="mt-5 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
@@ -426,24 +409,22 @@ function getCurrentViewTitle({
   showJson: boolean;
 }): string {
   if (showJson) {
-    return "Direkte Bearbeitung der Konfiguration als JSON";
+    return 'Direkte Bearbeitung der Konfiguration als JSON';
   }
 
   if (activeKey === SETTINGS_CATALOG_KEY) {
-    return "Settings-Katalog und vorbereitete Systemressourcen";
+    return 'Settings-Katalog und vorbereitete Systemressourcen';
   }
 
   if (activeKey === null) {
-    return "Alle verfügbaren Konfigurationswerte";
+    return 'Alle verfügbaren Konfigurationswerte';
   }
 
   return formatTitle(activeKey);
 }
 
 function formatTitle(value: string): string {
-  return value
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+  return value.replace(/[_-]+/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function trapFocus(event: KeyboardEvent, container: HTMLElement | null): void {
@@ -454,18 +435,16 @@ function trapFocus(event: KeyboardEvent, container: HTMLElement | null): void {
   const focusableElements = Array.from(
     container.querySelectorAll<HTMLElement>(
       [
-        "a[href]",
-        "button:not([disabled])",
-        "input:not([disabled])",
-        "select:not([disabled])",
-        "textarea:not([disabled])",
+        'a[href]',
+        'button:not([disabled])',
+        'input:not([disabled])',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
         '[tabindex]:not([tabindex="-1"])',
-      ].join(","),
+      ].join(','),
     ),
   ).filter(
-    (element) =>
-      !element.hasAttribute("hidden") &&
-      element.getAttribute("aria-hidden") !== "true",
+    (element) => !element.hasAttribute('hidden') && element.getAttribute('aria-hidden') !== 'true',
   );
 
   if (focusableElements.length === 0) {
@@ -497,21 +476,21 @@ function trapFocus(event: KeyboardEvent, container: HTMLElement | null): void {
 }
 
 const secondaryButtonClassName = [
-  "rounded-lg border border-slate-300 bg-white px-3.5 py-2",
-  "text-sm font-medium text-slate-700 transition",
-  "hover:bg-slate-50",
-  "focus-visible:outline-none focus-visible:ring-2",
-  "focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-  "dark:border-white/10 dark:bg-white/5 dark:text-slate-200",
-  "dark:hover:bg-white/10 dark:focus-visible:ring-offset-slate-900",
-].join(" ");
+  'rounded-lg border border-slate-300 bg-white px-3.5 py-2',
+  'text-sm font-medium text-slate-700 transition',
+  'hover:bg-slate-50',
+  'focus-visible:outline-none focus-visible:ring-2',
+  'focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+  'dark:border-white/10 dark:bg-white/5 dark:text-slate-200',
+  'dark:hover:bg-white/10 dark:focus-visible:ring-offset-slate-900',
+].join(' ');
 
 const dangerButtonClassName = [
-  "rounded-lg bg-red-600 px-3.5 py-2",
-  "text-sm font-medium text-white transition",
-  "hover:bg-red-700",
-  "focus-visible:outline-none focus-visible:ring-2",
-  "focus-visible:ring-red-500 focus-visible:ring-offset-2",
-  "disabled:cursor-not-allowed disabled:opacity-50",
-  "dark:focus-visible:ring-offset-slate-900",
-].join(" ");
+  'rounded-lg bg-red-600 px-3.5 py-2',
+  'text-sm font-medium text-white transition',
+  'hover:bg-red-700',
+  'focus-visible:outline-none focus-visible:ring-2',
+  'focus-visible:ring-red-500 focus-visible:ring-offset-2',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+  'dark:focus-visible:ring-offset-slate-900',
+].join(' ');

@@ -1,15 +1,7 @@
-export type SettingsAvailability = "available" | "prepared" | "planned";
-export type SettingsSource =
-  "config" | "resource" | "runtime" | "local_preference";
+export type SettingsAvailability = 'available' | 'prepared' | 'planned';
+export type SettingsSource = 'config' | 'resource' | 'runtime' | 'local_preference';
 export type SettingsControl =
-  | "text"
-  | "textarea"
-  | "number"
-  | "boolean"
-  | "select"
-  | "multiselect"
-  | "readonly"
-  | "link";
+  'text' | 'textarea' | 'number' | 'boolean' | 'select' | 'multiselect' | 'readonly' | 'link';
 
 export interface SettingsOption {
   value: string;
@@ -57,7 +49,7 @@ export interface SettingsGroupDescriptor {
 }
 
 export interface SettingsCatalogResponse {
-  schema_version: "1.0";
+  schema_version: '1.0';
   groups: SettingsGroupDescriptor[];
   request_id?: string | null;
 }

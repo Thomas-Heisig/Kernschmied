@@ -1,2 +1,2 @@
-export { AppErrorScreen } from "./AppErrorScreen";
-export { UnsupportedSchema } from "./UnsupportedSchema";
+export { AppErrorScreen } from './AppErrorScreen';
+export { UnsupportedSchema } from './UnsupportedSchema';

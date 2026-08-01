@@ -1,8 +1,8 @@
 // F:\Kernschmied\frontend\src\components\settings\SettingsSidebar.tsx
 
-import { useMemo } from "react";
+import { useMemo } from 'react';
 
-import type { ConfigObject } from "../../contracts/config";
+import type { ConfigObject } from '../../contracts/config';
 
 interface SettingsSidebarProps {
   values: ConfigObject;
@@ -12,7 +12,7 @@ interface SettingsSidebarProps {
   onSelectJson: () => void;
 }
 
-const SETTINGS_CATALOG_KEY = "settings-catalog";
+const SETTINGS_CATALOG_KEY = 'settings-catalog';
 
 export function SettingsSidebar({
   values,
@@ -24,13 +24,9 @@ export function SettingsSidebar({
   const sections = useMemo(
     () =>
       Object.keys(values).sort((left, right) =>
-        formatSidebarLabel(left).localeCompare(
-          formatSidebarLabel(right),
-          "de",
-          {
-            sensitivity: "base",
-          },
-        ),
+        formatSidebarLabel(left).localeCompare(formatSidebarLabel(right), 'de', {
+          sensitivity: 'base',
+        }),
       ),
     [values],
   );
@@ -42,10 +38,10 @@ export function SettingsSidebar({
   return (
     <nav
       className={[
-        "flex w-64 shrink-0 flex-col overflow-y-auto",
-        "border-r border-slate-200 bg-slate-50/80",
-        "dark:border-white/10 dark:bg-slate-950/50",
-      ].join(" ")}
+        'flex w-64 shrink-0 flex-col overflow-y-auto',
+        'border-r border-slate-200 bg-slate-50/80',
+        'dark:border-white/10 dark:bg-slate-950/50',
+      ].join(' ')}
       aria-label="Einstellungskategorien"
     >
       <div className="flex min-h-full flex-col p-3">
@@ -55,7 +51,7 @@ export function SettingsSidebar({
           <button
             type="button"
             className={sidebarItemClass(isCatalogActive)}
-            aria-current={isCatalogActive ? "page" : undefined}
+            aria-current={isCatalogActive ? 'page' : undefined}
             onClick={() => {
               onSelectKey(SETTINGS_CATALOG_KEY);
             }}
@@ -76,7 +72,7 @@ export function SettingsSidebar({
           <button
             type="button"
             className={sidebarItemClass(isAllSettingsActive)}
-            aria-current={isAllSettingsActive ? "page" : undefined}
+            aria-current={isAllSettingsActive ? 'page' : undefined}
             onClick={() => {
               onSelectKey(null);
             }}
@@ -109,7 +105,7 @@ export function SettingsSidebar({
                   key={key}
                   type="button"
                   className={sidebarItemClass(isActive)}
-                  aria-current={isActive ? "page" : undefined}
+                  aria-current={isActive ? 'page' : undefined}
                   title={formatSidebarLabel(key)}
                   onClick={() => {
                     onSelectKey(key);
@@ -119,18 +115,16 @@ export function SettingsSidebar({
                     <SectionIcon />
                   </SidebarIcon>
 
-                  <span className="min-w-0 flex-1 truncate">
-                    {formatSidebarLabel(key)}
-                  </span>
+                  <span className="min-w-0 flex-1 truncate">{formatSidebarLabel(key)}</span>
 
                   <span
                     className={[
-                      "ml-2 shrink-0 rounded-full px-2 py-0.5",
-                      "text-[11px] font-medium",
+                      'ml-2 shrink-0 rounded-full px-2 py-0.5',
+                      'text-[11px] font-medium',
                       isActive
-                        ? "bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200"
-                        : "bg-slate-200/70 text-slate-500 dark:bg-white/5 dark:text-slate-400",
-                    ].join(" ")}
+                        ? 'bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200'
+                        : 'bg-slate-200/70 text-slate-500 dark:bg-white/5 dark:text-slate-400',
+                    ].join(' ')}
                   >
                     {countSectionEntries(values[key])}
                   </span>
@@ -154,7 +148,7 @@ export function SettingsSidebar({
           <button
             type="button"
             className={sidebarItemClass(isJsonActive)}
-            aria-current={isJsonActive ? "page" : undefined}
+            aria-current={isJsonActive ? 'page' : undefined}
             onClick={onSelectJson}
           >
             <SidebarIcon>
@@ -179,10 +173,10 @@ function SidebarSectionLabel({ children }: { children: string }) {
   return (
     <p
       className={[
-        "mb-2 px-3 text-[11px] font-semibold uppercase",
-        "tracking-[0.12em] text-slate-400",
-        "dark:text-slate-500",
-      ].join(" ")}
+        'mb-2 px-3 text-[11px] font-semibold uppercase',
+        'tracking-[0.12em] text-slate-400',
+        'dark:text-slate-500',
+      ].join(' ')}
     >
       {children}
     </p>
@@ -197,10 +191,10 @@ function SidebarIcon({ children }: { children: React.ReactNode }) {
   return (
     <span
       className={[
-        "mr-3 flex h-8 w-8 shrink-0 items-center justify-center",
-        "rounded-md bg-slate-100 text-slate-500",
-        "dark:bg-white/5 dark:text-slate-400",
-      ].join(" ")}
+        'mr-3 flex h-8 w-8 shrink-0 items-center justify-center',
+        'rounded-md bg-slate-100 text-slate-500',
+        'dark:bg-white/5 dark:text-slate-400',
+      ].join(' ')}
       aria-hidden="true"
     >
       {children}
@@ -210,30 +204,30 @@ function SidebarIcon({ children }: { children: React.ReactNode }) {
 
 function sidebarItemClass(isActive: boolean): string {
   return [
-    "group flex w-full items-center rounded-xl px-2.5 py-2.5",
-    "text-left text-sm font-normal transition",
-    "focus-visible:outline-none focus-visible:ring-2",
-    "focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-    "dark:focus-visible:ring-offset-slate-950",
+    'group flex w-full items-center rounded-xl px-2.5 py-2.5',
+    'text-left text-sm font-normal transition',
+    'focus-visible:outline-none focus-visible:ring-2',
+    'focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+    'dark:focus-visible:ring-offset-slate-950',
     isActive
       ? [
-          "bg-white text-slate-950 shadow-sm",
-          "ring-1 ring-slate-200",
-          "dark:bg-slate-800 dark:text-white",
-          "dark:ring-white/10",
-        ].join(" ")
+          'bg-white text-slate-950 shadow-sm',
+          'ring-1 ring-slate-200',
+          'dark:bg-slate-800 dark:text-white',
+          'dark:ring-white/10',
+        ].join(' ')
       : [
-          "text-slate-600",
-          "hover:bg-white/70 hover:text-slate-950",
-          "dark:text-slate-400",
-          "dark:hover:bg-slate-800/70",
-          "dark:hover:text-white",
-        ].join(" "),
-  ].join(" ");
+          'text-slate-600',
+          'hover:bg-white/70 hover:text-slate-950',
+          'dark:text-slate-400',
+          'dark:hover:bg-slate-800/70',
+          'dark:hover:text-white',
+        ].join(' '),
+  ].join(' ');
 }
 
 function countSectionEntries(value: ConfigObject[string] | undefined): number {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return value === undefined ? 0 : 1;
   }
 
@@ -241,9 +235,7 @@ function countSectionEntries(value: ConfigObject[string] | undefined): number {
 }
 
 function formatSidebarLabel(key: string): string {
-  return key
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+  return key.replace(/[_-]+/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function CatalogIcon() {

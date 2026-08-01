@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { HierarchyNode } from "../../contracts/hierarchy";
-import { Modal } from "./Modal";
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { HierarchyNode } from '../../contracts/hierarchy';
+import { Modal } from './Modal';
 
-type ActionKind = "create_chat" | "rename" | "move" | "delete" | "edit_prompt";
+type ActionKind = 'create_chat' | 'rename' | 'move' | 'delete' | 'edit_prompt';
 
 export function HierarchyActionModal({
   isOpen,
@@ -19,7 +19,7 @@ export function HierarchyActionModal({
   onConfirm: (value?: string | null) => void;
   loading?: boolean;
 }) {
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
@@ -29,19 +29,19 @@ export function HierarchyActionModal({
     // and would reset the input while the user types.
     if (!isOpen) return;
 
-    if (kind === "edit_prompt") {
-      const existing = (node as any)?.metadata?.prompt ?? "";
-      setValue(typeof existing === "string" ? existing : "");
+    if (kind === 'edit_prompt') {
+      const existing = (node as any)?.metadata?.prompt ?? '';
+      setValue(typeof existing === 'string' ? existing : '');
       return;
     }
 
-    if (kind === "rename") {
-      setValue(node?.name ?? "");
+    if (kind === 'rename') {
+      setValue(node?.name ?? '');
       return;
     }
 
     // create_chat and move start with empty input
-    setValue("");
+    setValue('');
   }, [isOpen, kind, node?.id]);
 
   useEffect(() => {
@@ -56,35 +56,35 @@ export function HierarchyActionModal({
 
   const title = useMemo(() => {
     switch (kind) {
-      case "create_chat":
-        return `Neuen Chat in ${node?.name ?? "..."} erstellen`;
-      case "rename":
-        return `Umbenennen: ${node?.name ?? "..."}`;
-      case "move":
-        return `Verschieben: ${node?.name ?? "..."}`;
-      case "delete":
-        return `Löschen: ${node?.name ?? "..."}`;
-      case "edit_prompt":
-        return `Prompt bearbeiten: ${node?.name ?? "..."}`;
+      case 'create_chat':
+        return `Neuen Chat in ${node?.name ?? '...'} erstellen`;
+      case 'rename':
+        return `Umbenennen: ${node?.name ?? '...'}`;
+      case 'move':
+        return `Verschieben: ${node?.name ?? '...'}`;
+      case 'delete':
+        return `Löschen: ${node?.name ?? '...'}`;
+      case 'edit_prompt':
+        return `Prompt bearbeiten: ${node?.name ?? '...'}`;
       default:
-        return "Aktion";
+        return 'Aktion';
     }
   }, [kind, node]);
 
   const confirmLabel = useMemo(() => {
     switch (kind) {
-      case "create_chat":
-        return "Erstellen";
-      case "rename":
-        return "Umbenennen";
-      case "move":
-        return "Verschieben";
-      case "delete":
-        return "Löschen";
-      case "edit_prompt":
-        return "Speichern";
+      case 'create_chat':
+        return 'Erstellen';
+      case 'rename':
+        return 'Umbenennen';
+      case 'move':
+        return 'Verschieben';
+      case 'delete':
+        return 'Löschen';
+      case 'edit_prompt':
+        return 'Speichern';
       default:
-        return "OK";
+        return 'OK';
     }
   }, [kind]);
 
@@ -101,18 +101,16 @@ export function HierarchyActionModal({
       confirmLabel={confirmLabel}
       confirmDisabled={loading}
     >
-      {kind === "delete" ? (
+      {kind === 'delete' ? (
         <div className="text-sm">
           Soll <strong>{node?.name}</strong> wirklich gelöscht werden?
         </div>
       ) : null}
 
-      {(kind === "rename" || kind === "create_chat" || kind === "move") && (
+      {(kind === 'rename' || kind === 'create_chat' || kind === 'move') && (
         <div className="mt-2" onMouseDown={(e) => e.stopPropagation()}>
           <label className="block text-sm text-text-muted">
-            {kind === "move"
-              ? "ID des neuen Elternknotens (leer = Root)"
-              : "Name"}
+            {kind === 'move' ? 'ID des neuen Elternknotens (leer = Root)' : 'Name'}
           </label>
           <input
             className="mt-1 w-full rounded border border-border px-2 py-1"
@@ -120,50 +118,37 @@ export function HierarchyActionModal({
             ref={inputRef as any}
             onChange={(e) => {
               // debug: ensure change events fire
-              // eslint-disable-next-line no-console
-              console.debug(
-                "HierarchyActionModal input onChange",
-                e.target.value,
-              );
+
+              console.debug('HierarchyActionModal input onChange', e.target.value);
               setValue(e.target.value);
             }}
             onFocus={() => {
-              // eslint-disable-next-line no-console
-              console.debug("HierarchyActionModal input onFocus");
+              console.debug('HierarchyActionModal input onFocus');
             }}
           />
         </div>
       )}
 
-      {kind === "edit_prompt" && (
+      {kind === 'edit_prompt' && (
         <div className="mt-2" onMouseDown={(e) => e.stopPropagation()}>
-          <label className="block text-sm text-text-muted">
-            System-/Kontext-Prompt
-          </label>
+          <label className="block text-sm text-text-muted">System-/Kontext-Prompt</label>
           <textarea
             className="mt-1 w-full rounded border border-border px-2 py-1"
             rows={6}
             value={value}
             ref={inputRef as any}
             onChange={(e) => {
-              // eslint-disable-next-line no-console
-              console.debug(
-                "HierarchyActionModal textarea onChange",
-                e.target.value,
-              );
+              console.debug('HierarchyActionModal textarea onChange', e.target.value);
               setValue(e.target.value);
             }}
             onFocus={() => {
-              // eslint-disable-next-line no-console
-              console.debug("HierarchyActionModal textarea onFocus");
+              console.debug('HierarchyActionModal textarea onFocus');
             }}
           />
         </div>
       )}
 
-      {loading ? (
-        <div className="mt-3 text-sm text-text-muted">Bitte warten…</div>
-      ) : null}
+      {loading ? <div className="mt-3 text-sm text-text-muted">Bitte warten…</div> : null}
     </Modal>
   );
 }

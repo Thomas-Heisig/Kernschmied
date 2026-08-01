@@ -1,15 +1,8 @@
 // F:\Kernschmied\frontend\src\components\layout\AppHeader.tsx
 
-import {
-  BookOpen,
-  CircleUserRound,
-  Moon,
-  Settings,
-  ShieldCheck,
-  Sun,
-} from "lucide-react";
+import { BookOpen, CircleUserRound, Moon, Settings, ShieldCheck, Sun } from 'lucide-react';
 
-type AppTheme = "light" | "dark";
+type AppTheme = 'light' | 'dark';
 
 interface AppHeaderProps {
   theme: AppTheme;
@@ -25,9 +18,9 @@ interface AppHeaderProps {
 export function AppHeader({
   theme,
   schemaVersion,
-  applicationVersion = "0.1.0",
-  environment = "Development",
-  userName = "Thomas Heisig",
+  applicationVersion = '0.1.0',
+  environment = 'Development',
+  userName = 'Thomas Heisig',
   onToggleTheme,
   onOpenSettings,
   onOpenDocumentation,
@@ -35,21 +28,19 @@ export function AppHeader({
   const userInitials = createInitials(userName);
   const normalizedEnvironment = environment.trim().toLowerCase();
   const environmentLabel =
-    normalizedEnvironment === "development"
-      ? "Entwicklung"
-      : normalizedEnvironment === "intranet"
-        ? "Intranet"
-        : normalizedEnvironment === "internet"
-          ? "Internet"
+    normalizedEnvironment === 'development'
+      ? 'Entwicklung'
+      : normalizedEnvironment === 'intranet'
+        ? 'Intranet'
+        : normalizedEnvironment === 'internet'
+          ? 'Internet'
           : environment;
 
   const themeLabel =
-    theme === "dark"
-      ? "Helles Farbschema aktivieren"
-      : "Dunkles Farbschema aktivieren";
+    theme === 'dark' ? 'Helles Farbschema aktivieren' : 'Dunkles Farbschema aktivieren';
 
   const actionButtonClassName =
-    "inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-soft transition-colors hover:bg-surface-hover hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:ring-offset-slate-950";
+    'inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-soft transition-colors hover:bg-surface-hover hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:ring-offset-slate-950';
 
   return (
     <header className="relative z-30 shrink-0 border-b border-border bg-white/90 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90">
@@ -57,11 +48,7 @@ export function AppHeader({
         <div className="flex min-w-0 items-center gap-3">
           <div className="relative shrink-0">
             <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-border-soft bg-white shadow-sm dark:border-white/10 dark:bg-slate-800">
-              <img
-                src="/favicon.png"
-                alt="Kernschmied"
-                className="h-8 w-8 object-contain"
-              />
+              <img src="/favicon.png" alt="Kernschmied" className="h-8 w-8 object-contain" />
             </div>
             <span
               className="absolute -right-1 -bottom-1 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-950"
@@ -91,10 +78,7 @@ export function AppHeader({
                     •
                   </span>
                   <span className="hidden shrink-0 sm:inline">
-                    UI-Schema{" "}
-                    <code className="font-mono text-primary">
-                      {schemaVersion}
-                    </code>
+                    UI-Schema <code className="font-mono text-primary">{schemaVersion}</code>
                   </span>
                 </>
               ) : null}
@@ -128,9 +112,7 @@ export function AppHeader({
               <p className="max-w-40 truncate text-xs font-medium text-text dark:text-white">
                 {userName}
               </p>
-              <p className="text-[10px] text-text-muted dark:text-gray-500">
-                Angemeldet
-              </p>
+              <p className="text-[10px] text-text-muted dark:text-gray-500">Angemeldet</p>
             </div>
           </div>
 
@@ -160,9 +142,9 @@ export function AppHeader({
             className={actionButtonClassName}
             aria-label={themeLabel}
             title={themeLabel}
-            aria-pressed={theme === "dark"}
+            aria-pressed={theme === 'dark'}
           >
-            {theme === "dark" ? (
+            {theme === 'dark' ? (
               <Sun size={18} aria-hidden="true" />
             ) : (
               <Moon size={18} aria-hidden="true" />
@@ -186,12 +168,10 @@ function createInitials(name: string): string {
   const normalizedName = name.trim();
 
   if (!normalizedName) {
-    return "?";
+    return '?';
   }
 
-  const nameParts = normalizedName
-    .split(/\s+/)
-    .filter((part) => part.length > 0);
+  const nameParts = normalizedName.split(/\s+/).filter((part) => part.length > 0);
 
   if (nameParts.length === 1) {
     return nameParts[0].slice(0, 2).toUpperCase();

@@ -43,6 +43,16 @@ Documentation is considered part of the project and should evolve together with 
 
 ---
 
+## Neuerungen
+
+- Frontend: Interaktiver Kalender im Footer (Auswahl speicherbar, Copy-to-clipboard, Tastaturnavigation).
+- Backend: Neuer API-Endpunkt `POST /api/v1/calendar/selection` zur Speicherung von Kalenderauswahlen (integration point).
+- DB: Tabelle `calendar_selections` vorbereitet (ORM-Modell und SQL-Migration in `backend/migrations/001_create_calendar_selections.sql`).
+
+Wenn du die Kalender-Integration aktivieren möchtest, implementiere die Persistenzlogik auf Serverseite oder nutze das bereitgestellte Modell/Migration.
+
+---
+
 ## License
 
 See the repository's **LICENSE** file for licensing information.

@@ -79,13 +79,13 @@ Für alle Arbeiten gelten folgende Grundsätze:
 - [-] Providerliste aus den registrierten Modellen erzeugen.
 - [-] Provider-Modell-Kombination serverseitig validieren.
 - [-] Atomare Speicherung zusammengehöriger Konfigurationsänderungen.
- - [-] Grundlegender SchemaRenderer implementiert; Typisierung, Feldbindung, Sichtbarkeit, Fehlergrenzen und Action-Kontext noch offen.
+- [-] Grundlegender SchemaRenderer implementiert; Typisierung, Feldbindung, Sichtbarkeit, Fehlergrenzen und Action-Kontext noch offen.
 - [-] Komponenten-Registry vervollständigen.
 - [-] Internes Wiki und Benutzerhandbuch als Popup integrieren.
 - [-] Hierarchieknoten im Frontend bearbeitbar machen.
 - [-] Dokumentation an den tatsächlichen Projektstand anpassen.
- - [-] SettingsField mit dynamischen Optionen (Provider/Model-Abhängigkeiten) in Arbeit.
- - [-] Config-Schema 2.0: Migration und Frontend-Verträge in Arbeit.
+- [-] SettingsField mit dynamischen Optionen (Provider/Model-Abhängigkeiten) in Arbeit.
+- [-] Config-Schema 2.0: Migration und Frontend-Verträge in Arbeit.
 
 ---
 

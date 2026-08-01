@@ -1,4 +1,4 @@
-import { API_BASE_URL } from "./client";
+import { API_BASE_URL } from './client';
 import type {
   ConfigObject,
   StructuredApiError,
@@ -7,7 +7,7 @@ import type {
   ConfigListResponse,
   ConfigGroupResponse,
   ConfigEntryResponse,
-} from "../contracts/config";
+} from '../contracts/config';
 
 interface LoadedConfig {
   response: ConfigListResponse;
@@ -37,7 +37,7 @@ export class ConfigApiError extends Error {
   }) {
     super(message);
 
-    this.name = "ConfigApiError";
+    this.name = 'ConfigApiError';
     this.code = code;
     this.details = details;
     this.requestId = requestId;
@@ -45,15 +45,13 @@ export class ConfigApiError extends Error {
   }
 }
 
-export async function loadSystemConfig(
-  signal?: AbortSignal,
-): Promise<SystemConfigSnapshot> {
+export async function loadSystemConfig(signal?: AbortSignal): Promise<SystemConfigSnapshot> {
   const response = await fetch(`${API_BASE_URL}/config`, {
-    method: "GET",
+    method: 'GET',
     headers: {
-      Accept: "application/json",
+      Accept: 'application/json',
     },
-    credentials: "same-origin",
+    credentials: 'same-origin',
     signal,
   });
 
@@ -70,15 +68,13 @@ export async function loadSystemConfig(
   } as SystemConfigSnapshot;
 }
 
-export async function loadFullSystemConfig(
-  signal?: AbortSignal,
-): Promise<LoadedConfig> {
+export async function loadFullSystemConfig(signal?: AbortSignal): Promise<LoadedConfig> {
   const response = await fetch(`${API_BASE_URL}/config`, {
-    method: "GET",
+    method: 'GET',
     headers: {
-      Accept: "application/json",
+      Accept: 'application/json',
     },
-    credentials: "same-origin",
+    credentials: 'same-origin',
     signal,
   });
 
@@ -98,16 +94,16 @@ export async function updateSystemConfig(
   signal?: AbortSignal,
 ): Promise<SystemConfigSnapshot> {
   const response = await fetch(`${API_BASE_URL}/config`, {
-    method: "PUT",
+    method: 'PUT',
     headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json",
+      Accept: 'application/json',
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       values: request.values,
       expected_revision: request.expected_revision ?? null,
     }),
-    credentials: "same-origin",
+    credentials: 'same-origin',
     signal,
   });
 
@@ -123,9 +119,9 @@ export async function updateSystemConfig(
 }
 
 async function readJsonResponse(response: Response): Promise<unknown> {
-  const contentType = response.headers.get("content-type") ?? "";
+  const contentType = response.headers.get('content-type') ?? '';
 
-  if (!contentType.includes("application/json")) {
+  if (!contentType.includes('application/json')) {
     return null;
   }
 
@@ -135,18 +131,18 @@ async function readJsonResponse(response: Response): Promise<unknown> {
 function normalizeConfigSnapshot(payload: unknown): SystemConfigSnapshot {
   if (!isRecord(payload)) {
     throw new ConfigApiError({
-      code: "invalid_config_response",
-      message: "Die Konfigurationsantwort des Servers ist ungültig.",
+      code: 'invalid_config_response',
+      message: 'Die Konfigurationsantwort des Servers ist ungültig.',
       status: 500,
     });
   }
 
-    const response = payload as unknown as ConfigListResponse;
+  const response = payload as unknown as ConfigListResponse;
 
   if (!Array.isArray(response.groups)) {
     throw new ConfigApiError({
-      code: "invalid_config_response",
-      message: "Die Serverantwort entspricht nicht dem erwarteten ConfigListResponse-Format.",
+      code: 'invalid_config_response',
+      message: 'Die Serverantwort entspricht nicht dem erwarteten ConfigListResponse-Format.',
       status: 500,
     });
   }
@@ -155,43 +151,37 @@ function normalizeConfigSnapshot(payload: unknown): SystemConfigSnapshot {
   const entriesByFullKey: Record<string, ConfigEntryResponse> = {};
 
   for (const group of response.groups as ConfigGroupResponse[]) {
-    const groupId = (group.id || "").toString().trim().toLowerCase();
+    const groupId = (group.id || '').toString().trim().toLowerCase();
     if (!groupId) continue;
     values[groupId] = values[groupId] ?? {};
 
     for (const entry of group.entries as ConfigEntryResponse[]) {
-      const key = (entry.key || "").toString().trim();
+      const key = (entry.key || '').toString().trim();
       if (!key) continue;
       (values[groupId] as Record<string, unknown>)[key] = entry.value;
       entriesByFullKey[`${groupId}.${key}`] = entry;
     }
   }
 
-  const rawRevision = (response.revision ?? response.revision) ?? null;
+  const rawRevision = response.revision ?? response.revision ?? null;
 
   return {
     response: response as ConfigListResponse,
     values,
     entriesByFullKey,
-    revision:
-      typeof rawRevision === "number" && Number.isInteger(rawRevision)
-        ? rawRevision
-        : null,
+    revision: typeof rawRevision === 'number' && Number.isInteger(rawRevision) ? rawRevision : null,
   } as unknown as SystemConfigSnapshot;
 }
 
-async function createConfigApiError(
-  response: Response,
-): Promise<ConfigApiError> {
+async function createConfigApiError(response: Response): Promise<ConfigApiError> {
   const fallbackMessage =
-    `Die Konfiguration konnte nicht verarbeitet werden. ` +
-    `HTTP-Status: ${response.status}.`;
+    `Die Konfiguration konnte nicht verarbeitet werden. ` + `HTTP-Status: ${response.status}.`;
 
   const payload = await readJsonResponse(response);
 
   if (!isRecord(payload)) {
     return new ConfigApiError({
-      code: "config_request_failed",
+      code: 'config_request_failed',
       message: fallbackMessage,
       status: response.status,
     });
@@ -200,21 +190,12 @@ async function createConfigApiError(
   const structuredError = payload as Partial<StructuredApiError>;
 
   return new ConfigApiError({
-    code:
-      typeof structuredError.code === "string"
-        ? structuredError.code
-        : "config_request_failed",
+    code: typeof structuredError.code === 'string' ? structuredError.code : 'config_request_failed',
     message:
-      typeof structuredError.message === "string"
-        ? structuredError.message
-        : fallbackMessage,
-    details: isRecord(structuredError.details)
-      ? structuredError.details
-      : undefined,
+      typeof structuredError.message === 'string' ? structuredError.message : fallbackMessage,
+    details: isRecord(structuredError.details) ? structuredError.details : undefined,
     requestId:
-      typeof structuredError.request_id === "string"
-        ? structuredError.request_id
-        : undefined,
+      typeof structuredError.request_id === 'string' ? structuredError.request_id : undefined,
     status: response.status,
   });
 }
@@ -228,15 +209,11 @@ function isConfigObject(value: unknown): value is ConfigObject {
 }
 
 function isConfigValue(value: unknown): boolean {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "boolean"
-  ) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
     return true;
   }
 
-  if (typeof value === "number") {
+  if (typeof value === 'number') {
     return Number.isFinite(value);
   }
 
@@ -252,5 +229,5 @@ function isConfigValue(value: unknown): boolean {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

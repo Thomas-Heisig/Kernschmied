@@ -1,7 +1,11 @@
-import React from "react";
-import type { ConfigValue, ConfigEntryResponse } from "../../../contracts/config";
-import useConfigOptions from "../../../hooks/useConfigApi";
-import { SettingsInputContainer, serializeOptionValue, inputClassName } from "../SettingsFieldShared";
+import React from 'react';
+import type { ConfigValue, ConfigEntryResponse } from '../../../contracts/config';
+import useConfigOptions from '../../../hooks/useConfigApi';
+import {
+  SettingsInputContainer,
+  serializeOptionValue,
+  inputClassName,
+} from '../SettingsFieldShared';
 
 interface Props {
   entry: ConfigEntryResponse;
@@ -24,9 +28,13 @@ export default function SelectSetting({
   valuesByFullKey = null,
   onChange,
 }: Props) {
-  const fieldId = ["setting", entry.full_key].join("-").replace(/[^a-zA-Z0-9_-]/g, "-");
+  const fieldId = ['setting', entry.full_key].join('-').replace(/[^a-zA-Z0-9_-]/g, '-');
 
-  const { options: fetchedOptions, loading: optionsLoading, error: optionsError } = useConfigOptions(
+  const {
+    options: fetchedOptions,
+    loading: optionsLoading,
+    error: optionsError,
+  } = useConfigOptions(
     // ConfigDynamicOptionsResponse.endpoint is optional in the contract; cast to satisfy the hook's stricter type
     (entry.ui.dynamic_options as any) ?? null,
     valuesByFullKey ?? null,
@@ -34,7 +42,8 @@ export default function SelectSetting({
 
   const effectiveOptions = fetchedOptions ?? entry.ui.options ?? [];
 
-  const dependencyMissing = Boolean(entry.ui.dynamic_options?.depends_on) && fetchedOptions === null;
+  const dependencyMissing =
+    Boolean(entry.ui.dynamic_options?.depends_on) && fetchedOptions === null;
 
   return (
     <SettingsInputContainer
@@ -53,7 +62,9 @@ export default function SelectSetting({
           ) : optionsError ? (
             <p className="text-sm text-amber-700">Fehler: {optionsError}</p>
           ) : dependencyMissing ? (
-            <p className="text-sm text-slate-500">Bitte zuerst die abhängige Einstellung auswählen.</p>
+            <p className="text-sm text-slate-500">
+              Bitte zuerst die abhängige Einstellung auswählen.
+            </p>
           ) : null}
         </div>
       ) : null}
@@ -65,7 +76,9 @@ export default function SelectSetting({
         required={required}
         className={inputClassName}
         onChange={(event) => {
-          const selected = (effectiveOptions ?? []).find((o) => serializeOptionValue(o.value) === event.target.value);
+          const selected = (effectiveOptions ?? []).find(
+            (o) => serializeOptionValue(o.value) === event.target.value,
+          );
 
           if (!selected) return;
 
@@ -75,7 +88,10 @@ export default function SelectSetting({
         {!required ? <option value="">Keine Auswahl</option> : null}
 
         {(effectiveOptions ?? []).map((option) => (
-          <option key={serializeOptionValue(option.value)} value={serializeOptionValue(option.value)}>
+          <option
+            key={serializeOptionValue(option.value)}
+            value={serializeOptionValue(option.value)}
+          >
             {option.label}
           </option>
         ))}

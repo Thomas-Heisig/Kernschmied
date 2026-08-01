@@ -1,7 +1,7 @@
 // F:\Kernschmied\frontend\src\contracts\schema.ts
 
-export const UI_API_SCHEMA_VERSION = "1.0" as const;
-export const UI_SCHEMA_VERSION = "1.0" as const;
+export const UI_API_SCHEMA_VERSION = '1.0' as const;
+export const UI_SCHEMA_VERSION = '1.0' as const;
 export type NodeTypeDefinition = JsonObject;
 
 /**
@@ -16,44 +16,44 @@ export const KNOWN_ACTION_KINDS = [
   // ============================================================
   // Hierarchie- und Knotenaktionen
   // ============================================================
-  "create_child",
-  "rename",
-  "delete",
-  "move",
-  "open_form",
-  "navigate",
-  "download",
-  "export",
-  "edit_prompt",
-  "toggle_tools",
-  "invoke_operation",
+  'create_child',
+  'rename',
+  'delete',
+  'move',
+  'open_form',
+  'navigate',
+  'download',
+  'export',
+  'edit_prompt',
+  'toggle_tools',
+  'invoke_operation',
 
   // ============================================================
   // Chat-bezogene Aktionen
   // ============================================================
-  "create_chat", // Neuen Chat im aktuellen Kontext erstellen
-  "rename_chat", // Chat umbenennen
-  "delete_chat", // Chat löschen
-  "archive_chat", // Chat archivieren
-  "export_chat", // Chat exportieren (z.B. als JSON, PDF)
+  'create_chat', // Neuen Chat im aktuellen Kontext erstellen
+  'rename_chat', // Chat umbenennen
+  'delete_chat', // Chat löschen
+  'archive_chat', // Chat archivieren
+  'export_chat', // Chat exportieren (z.B. als JSON, PDF)
 
   // ============================================================
   // Workspace-/Projekt-bezogene Aktionen
   // ============================================================
-  "create_workspace",
-  "rename_workspace",
-  "delete_workspace",
-  "create_project",
-  "rename_project",
-  "delete_project",
+  'create_workspace',
+  'rename_workspace',
+  'delete_workspace',
+  'create_project',
+  'rename_project',
+  'delete_project',
 
   // ============================================================
   // Allgemeine Aktionen
   // ============================================================
-  "refresh", // Aktuelle Ansicht neu laden
-  "settings", // Einstellungen öffnen
-  "help", // Hilfe anzeigen
-  "logout", // Abmelden (wird über Auth behandelt)
+  'refresh', // Aktuelle Ansicht neu laden
+  'settings', // Einstellungen öffnen
+  'help', // Hilfe anzeigen
+  'logout', // Abmelden (wird über Auth behandelt)
 ] as const;
 
 export type KnownActionKind = (typeof KNOWN_ACTION_KINDS)[number];
@@ -97,7 +97,7 @@ export interface UIComponentDefinition {
   enabled?: boolean;
 }
 
-export type UIActionMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+export type UIActionMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
 export interface UIActionDefinition {
   id: string;
@@ -215,26 +215,22 @@ export type UISchemaResponseParseResult =
 // ============================================================
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function isJsonValue(
   value: unknown,
   seen: WeakSet<object> = new WeakSet(),
 ): value is JsonValue {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "boolean"
-  ) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
     return true;
   }
 
-  if (typeof value === "number") {
+  if (typeof value === 'number') {
     return Number.isFinite(value);
   }
 
-  if (typeof value !== "object") {
+  if (typeof value !== 'object') {
     return false;
   }
 
@@ -252,17 +248,14 @@ export function isJsonValue(
 }
 
 function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 function isNonNegativeInteger(value: unknown): value is number {
-  return typeof value === "number" && Number.isInteger(value) && value >= 0;
+  return typeof value === 'number' && Number.isInteger(value) && value >= 0;
 }
 
-function addIssue(
-  issues: SchemaValidationIssue[],
-  issue: SchemaValidationIssue,
-): void {
+function addIssue(issues: SchemaValidationIssue[], issue: SchemaValidationIssue): void {
   issues.push(issue);
 }
 
@@ -274,7 +267,7 @@ function validateJsonObject(
   if (!isRecord(value)) {
     addIssue(issues, {
       path,
-      code: "expected_object",
+      code: 'expected_object',
       message: `${path} muss ein Objekt sein.`,
       received: value,
     });
@@ -285,7 +278,7 @@ function validateJsonObject(
   if (!isJsonValue(value)) {
     addIssue(issues, {
       path,
-      code: "invalid_json_value",
+      code: 'invalid_json_value',
       message: `${path} enthält einen nicht unterstützten JSON-Wert.`,
       received: value,
     });
@@ -304,7 +297,7 @@ function validateRegistry(
   if (!isRecord(value)) {
     addIssue(issues, {
       path,
-      code: "expected_registry",
+      code: 'expected_registry',
       message: `${path} muss ein Registry-Objekt sein.`,
       received: value,
     });
@@ -320,7 +313,7 @@ function validateRegistry(
 
       addIssue(issues, {
         path,
-        code: "empty_registry_key",
+        code: 'empty_registry_key',
         message: `${path} enthält einen leeren Registry-Schlüssel.`,
       });
 
@@ -332,7 +325,7 @@ function validateRegistry(
 
       addIssue(issues, {
         path: `${path}.${registryKey}`,
-        code: "expected_registry_entry",
+        code: 'expected_registry_entry',
         message: `${path}.${registryKey} muss ein Objekt sein.`,
         received: registryValue,
       });
@@ -345,7 +338,7 @@ function validateRegistry(
 
       addIssue(issues, {
         path: `${path}.${registryKey}`,
-        code: "invalid_json_value",
+        code: 'invalid_json_value',
         message: `${path}.${registryKey} enthält ungültige JSON-Werte.`,
         received: registryValue,
       });
@@ -367,7 +360,7 @@ function validateOptionalBooleanRecord(
   if (!isRecord(value)) {
     addIssue(issues, {
       path,
-      code: "expected_object",
+      code: 'expected_object',
       message: `${path} muss ein Objekt sein.`,
       received: value,
     });
@@ -378,12 +371,12 @@ function validateOptionalBooleanRecord(
   let valid = true;
 
   for (const [key, entry] of Object.entries(value)) {
-    if (typeof entry !== "boolean") {
+    if (typeof entry !== 'boolean') {
       valid = false;
 
       addIssue(issues, {
         path: `${path}.${key}`,
-        code: "expected_boolean",
+        code: 'expected_boolean',
         message: `${path}.${key} muss ein boolescher Wert sein.`,
         received: entry,
       });
@@ -398,9 +391,9 @@ export function validateUISchema(value: unknown): SchemaValidationIssue[] {
 
   if (!isRecord(value)) {
     addIssue(issues, {
-      path: "$",
-      code: "expected_object",
-      message: "Das UI-Schema muss ein Objekt sein.",
+      path: '$',
+      code: 'expected_object',
+      message: 'Das UI-Schema muss ein Objekt sein.',
       received: value,
     });
 
@@ -409,55 +402,54 @@ export function validateUISchema(value: unknown): SchemaValidationIssue[] {
 
   if (!isNonEmptyString(value.schema_name)) {
     addIssue(issues, {
-      path: "$.schema_name",
-      code: "invalid_schema_name",
-      message: "schema_name muss eine nicht leere Zeichenfolge sein.",
+      path: '$.schema_name',
+      code: 'invalid_schema_name',
+      message: 'schema_name muss eine nicht leere Zeichenfolge sein.',
       received: value.schema_name,
     });
   }
 
   if (!isNonEmptyString(value.schema_version)) {
     addIssue(issues, {
-      path: "$.schema_version",
-      code: "invalid_schema_version",
-      message: "schema_version muss eine nicht leere Zeichenfolge sein.",
+      path: '$.schema_version',
+      code: 'invalid_schema_version',
+      message: 'schema_version muss eine nicht leere Zeichenfolge sein.',
       received: value.schema_version,
     });
   }
 
-  validateJsonObject(value.node_types, "$.node_types", issues);
+  validateJsonObject(value.node_types, '$.node_types', issues);
 
-  validateRegistry(value.forms, "$.forms", issues);
+  validateRegistry(value.forms, '$.forms', issues);
 
-  validateRegistry(value.components, "$.components", issues);
+  validateRegistry(value.components, '$.components', issues);
 
-  validateRegistry(value.actions, "$.actions", issues);
+  validateRegistry(value.actions, '$.actions', issues);
 
-  validateJsonObject(value.metadata, "$.metadata", issues);
+  validateJsonObject(value.metadata, '$.metadata', issues);
 
   if (
     value.minimum_client_version !== undefined &&
     !isNonEmptyString(value.minimum_client_version)
   ) {
     addIssue(issues, {
-      path: "$.minimum_client_version",
-      code: "invalid_minimum_client_version",
-      message:
-        "minimum_client_version muss eine nicht leere Zeichenfolge sein.",
+      path: '$.minimum_client_version',
+      code: 'invalid_minimum_client_version',
+      message: 'minimum_client_version muss eine nicht leere Zeichenfolge sein.',
       received: value.minimum_client_version,
     });
   }
 
   if (value.revision !== undefined && !isNonNegativeInteger(value.revision)) {
     addIssue(issues, {
-      path: "$.revision",
-      code: "invalid_revision",
-      message: "revision muss eine nicht negative Ganzzahl sein.",
+      path: '$.revision',
+      code: 'invalid_revision',
+      message: 'revision muss eine nicht negative Ganzzahl sein.',
       received: value.revision,
     });
   }
 
-  validateOptionalBooleanRecord(value.feature_flags, "$.feature_flags", issues);
+  validateOptionalBooleanRecord(value.feature_flags, '$.feature_flags', issues);
 
   return issues;
 }
@@ -484,16 +476,14 @@ export function parseUISchema(value: unknown): UISchemaParseResult {
   };
 }
 
-export function validateUISchemaResponse(
-  value: unknown,
-): SchemaValidationIssue[] {
+export function validateUISchemaResponse(value: unknown): SchemaValidationIssue[] {
   const issues: SchemaValidationIssue[] = [];
 
   if (!isRecord(value)) {
     addIssue(issues, {
-      path: "$",
-      code: "expected_response_object",
-      message: "Die UI-Schema-Antwort muss ein Objekt sein.",
+      path: '$',
+      code: 'expected_response_object',
+      message: 'Die UI-Schema-Antwort muss ein Objekt sein.',
       received: value,
     });
 
@@ -502,27 +492,27 @@ export function validateUISchemaResponse(
 
   if (!isNonEmptyString(value.api_schema_version)) {
     addIssue(issues, {
-      path: "$.api_schema_version",
-      code: "invalid_api_schema_version",
-      message: "api_schema_version muss eine nicht leere Zeichenfolge sein.",
+      path: '$.api_schema_version',
+      code: 'invalid_api_schema_version',
+      message: 'api_schema_version muss eine nicht leere Zeichenfolge sein.',
       received: value.api_schema_version,
     });
   }
 
   if (!isNonEmptyString(value.ui_schema_version)) {
     addIssue(issues, {
-      path: "$.ui_schema_version",
-      code: "invalid_ui_schema_version",
-      message: "ui_schema_version muss eine nicht leere Zeichenfolge sein.",
+      path: '$.ui_schema_version',
+      code: 'invalid_ui_schema_version',
+      message: 'ui_schema_version muss eine nicht leere Zeichenfolge sein.',
       received: value.ui_schema_version,
     });
   }
 
   if (!isNonNegativeInteger(value.config_revision)) {
     addIssue(issues, {
-      path: "$.config_revision",
-      code: "invalid_config_revision",
-      message: "config_revision muss eine nicht negative Ganzzahl sein.",
+      path: '$.config_revision',
+      code: 'invalid_config_revision',
+      message: 'config_revision muss eine nicht negative Ganzzahl sein.',
       received: value.config_revision,
     });
   }
@@ -533,9 +523,9 @@ export function validateUISchemaResponse(
     !isNonEmptyString(value.request_id)
   ) {
     addIssue(issues, {
-      path: "$.request_id",
-      code: "invalid_request_id",
-      message: "request_id muss null oder eine nicht leere Zeichenfolge sein.",
+      path: '$.request_id',
+      code: 'invalid_request_id',
+      message: 'request_id muss null oder eine nicht leere Zeichenfolge sein.',
       received: value.request_id,
     });
   }
@@ -545,7 +535,7 @@ export function validateUISchemaResponse(
   for (const issue of schemaIssues) {
     addIssue(issues, {
       ...issue,
-      path: issue.path === "$" ? "$.schema" : `$.schema${issue.path.slice(1)}`,
+      path: issue.path === '$' ? '$.schema' : `$.schema${issue.path.slice(1)}`,
     });
   }
 
@@ -556,10 +546,9 @@ export function validateUISchemaResponse(
     value.ui_schema_version !== value.schema.schema_version
   ) {
     addIssue(issues, {
-      path: "$.ui_schema_version",
-      code: "schema_version_mismatch",
-      message:
-        "ui_schema_version stimmt nicht mit schema.schema_version überein.",
+      path: '$.ui_schema_version',
+      code: 'schema_version_mismatch',
+      message: 'ui_schema_version stimmt nicht mit schema.schema_version überein.',
       received: {
         ui_schema_version: value.ui_schema_version,
         schema_version: value.schema.schema_version,
@@ -574,9 +563,7 @@ export function isUISchemaResponse(value: unknown): value is UISchemaResponse {
   return validateUISchemaResponse(value).length === 0;
 }
 
-export function parseUISchemaResponse(
-  value: unknown,
-): UISchemaResponseParseResult {
+export function parseUISchemaResponse(value: unknown): UISchemaResponseParseResult {
   const issues = validateUISchemaResponse(value);
 
   if (issues.length > 0) {

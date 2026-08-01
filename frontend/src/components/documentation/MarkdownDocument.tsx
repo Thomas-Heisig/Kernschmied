@@ -1,16 +1,16 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
 interface MarkdownDocumentProps {
   content: string;
 }
 
 type Block =
-  | { type: "heading"; level: number; text: string }
-  | { type: "paragraph"; text: string }
-  | { type: "code"; language: string; text: string }
-  | { type: "list"; ordered: boolean; items: string[] }
-  | { type: "quote"; text: string }
-  | { type: "rule" };
+  | { type: 'heading'; level: number; text: string }
+  | { type: 'paragraph'; text: string }
+  | { type: 'code'; language: string; text: string }
+  | { type: 'list'; ordered: boolean; items: string[] }
+  | { type: 'quote'; text: string }
+  | { type: 'rule' };
 
 export function MarkdownDocument({ content }: MarkdownDocumentProps) {
   const blocks = parseMarkdown(content);
@@ -25,13 +25,13 @@ export function MarkdownDocument({ content }: MarkdownDocumentProps) {
 function renderBlock(block: Block, index: number): ReactNode {
   const key = `${block.type}-${index}`;
 
-  if (block.type === "heading") {
+  if (block.type === 'heading') {
     const className =
       block.level === 1
-        ? "mb-5 mt-1 text-3xl font-semibold tracking-tight text-text dark:text-white"
+        ? 'mb-5 mt-1 text-3xl font-semibold tracking-tight text-text dark:text-white'
         : block.level === 2
-          ? "mb-3 mt-9 text-2xl font-semibold tracking-tight text-text dark:text-white"
-          : "mb-2 mt-7 text-lg font-semibold text-text dark:text-white";
+          ? 'mb-3 mt-9 text-2xl font-semibold tracking-tight text-text dark:text-white'
+          : 'mb-2 mt-7 text-lg font-semibold text-text dark:text-white';
 
     if (block.level === 1)
       return (
@@ -52,18 +52,15 @@ function renderBlock(block: Block, index: number): ReactNode {
     );
   }
 
-  if (block.type === "paragraph") {
+  if (block.type === 'paragraph') {
     return (
-      <p
-        key={key}
-        className="my-4 leading-7 text-text-soft dark:text-slate-300"
-      >
+      <p key={key} className="my-4 leading-7 text-text-soft dark:text-slate-300">
         {renderInline(block.text)}
       </p>
     );
   }
 
-  if (block.type === "code") {
+  if (block.type === 'code') {
     return (
       <div
         key={key}
@@ -81,15 +78,15 @@ function renderBlock(block: Block, index: number): ReactNode {
     );
   }
 
-  if (block.type === "list") {
-    const ListTag = block.ordered ? "ol" : "ul";
+  if (block.type === 'list') {
+    const ListTag = block.ordered ? 'ol' : 'ul';
     return (
       <ListTag
         key={key}
         className={[
-          "my-4 space-y-2 pl-6 leading-7 text-text-soft dark:text-slate-300",
-          block.ordered ? "list-decimal" : "list-disc",
-        ].join(" ")}
+          'my-4 space-y-2 pl-6 leading-7 text-text-soft dark:text-slate-300',
+          block.ordered ? 'list-decimal' : 'list-disc',
+        ].join(' ')}
       >
         {block.items.map((item, itemIndex) => (
           <li key={`${key}-${itemIndex}`}>{renderInline(item)}</li>
@@ -98,7 +95,7 @@ function renderBlock(block: Block, index: number): ReactNode {
     );
   }
 
-  if (block.type === "quote") {
+  if (block.type === 'quote') {
     return (
       <blockquote
         key={key}
@@ -116,7 +113,7 @@ function renderInline(text: string): ReactNode[] {
   const parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g);
 
   return parts.map((part, index) => {
-    if (part.startsWith("`") && part.endsWith("`")) {
+    if (part.startsWith('`') && part.endsWith('`')) {
       return (
         <code
           key={index}
@@ -127,7 +124,7 @@ function renderInline(text: string): ReactNode[] {
       );
     }
 
-    if (part.startsWith("**") && part.endsWith("**")) {
+    if (part.startsWith('**') && part.endsWith('**')) {
       return (
         <strong key={index} className="font-semibold text-text dark:text-white">
           {part.slice(2, -2)}
@@ -138,10 +135,7 @@ function renderInline(text: string): ReactNode[] {
     const linkMatch = /^\[([^\]]+)\]\(([^)]+)\)$/.exec(part);
     if (linkMatch) {
       const href = linkMatch[2];
-      const safeHref =
-        href.startsWith("http://") || href.startsWith("https://")
-          ? href
-          : undefined;
+      const safeHref = href.startsWith('http://') || href.startsWith('https://') ? href : undefined;
 
       return safeHref ? (
         <a
@@ -163,7 +157,7 @@ function renderInline(text: string): ReactNode[] {
 }
 
 function parseMarkdown(content: string): Block[] {
-  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const lines = content.replace(/\r\n/g, '\n').split('\n');
   const blocks: Block[] = [];
   let index = 0;
 
@@ -175,23 +169,23 @@ function parseMarkdown(content: string): Block[] {
       continue;
     }
 
-    if (line.startsWith("```")) {
+    if (line.startsWith('```')) {
       const language = line.slice(3).trim();
       const codeLines: string[] = [];
       index += 1;
-      while (index < lines.length && !lines[index].startsWith("```")) {
+      while (index < lines.length && !lines[index].startsWith('```')) {
         codeLines.push(lines[index]);
         index += 1;
       }
       index += 1;
-      blocks.push({ type: "code", language, text: codeLines.join("\n") });
+      blocks.push({ type: 'code', language, text: codeLines.join('\n') });
       continue;
     }
 
     const headingMatch = /^(#{1,3})\s+(.+)$/.exec(line);
     if (headingMatch) {
       blocks.push({
-        type: "heading",
+        type: 'heading',
         level: headingMatch[1].length,
         text: headingMatch[2].trim(),
       });
@@ -200,18 +194,18 @@ function parseMarkdown(content: string): Block[] {
     }
 
     if (/^\s*([-*_])\1\1+\s*$/.test(line)) {
-      blocks.push({ type: "rule" });
+      blocks.push({ type: 'rule' });
       index += 1;
       continue;
     }
 
-    if (line.startsWith(">")) {
+    if (line.startsWith('>')) {
       const quoteLines: string[] = [];
-      while (index < lines.length && lines[index].startsWith(">")) {
-        quoteLines.push(lines[index].replace(/^>\s?/, ""));
+      while (index < lines.length && lines[index].startsWith('>')) {
+        quoteLines.push(lines[index].replace(/^>\s?/, ''));
         index += 1;
       }
-      blocks.push({ type: "quote", text: quoteLines.join(" ") });
+      blocks.push({ type: 'quote', text: quoteLines.join(' ') });
       continue;
     }
 
@@ -225,21 +219,17 @@ function parseMarkdown(content: string): Block[] {
         items.push(itemMatch[3].trim());
         index += 1;
       }
-      blocks.push({ type: "list", ordered, items });
+      blocks.push({ type: 'list', ordered, items });
       continue;
     }
 
     const paragraphLines = [line.trim()];
     index += 1;
-    while (
-      index < lines.length &&
-      lines[index].trim() &&
-      !isBlockStart(lines[index])
-    ) {
+    while (index < lines.length && lines[index].trim() && !isBlockStart(lines[index])) {
       paragraphLines.push(lines[index].trim());
       index += 1;
     }
-    blocks.push({ type: "paragraph", text: paragraphLines.join(" ") });
+    blocks.push({ type: 'paragraph', text: paragraphLines.join(' ') });
   }
 
   return blocks;
@@ -247,9 +237,9 @@ function parseMarkdown(content: string): Block[] {
 
 function isBlockStart(line: string): boolean {
   return (
-    line.startsWith("```") ||
+    line.startsWith('```') ||
     /^(#{1,3})\s+/.test(line) ||
-    line.startsWith(">") ||
+    line.startsWith('>') ||
     /^\s*(?:[-*+]|\d+\.)\s+/.test(line) ||
     /^\s*([-*_])\1\1+\s*$/.test(line)
   );

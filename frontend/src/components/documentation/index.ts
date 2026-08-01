@@ -1,1 +1,1 @@
-export { DocumentationDialog } from "./DocumentationDialog";
+export { DocumentationDialog } from './DocumentationDialog';

@@ -28,30 +28,24 @@ export interface StructuredApiError {
 }
 
 export type ConfigUIComponent =
-  | "text"
-  | "textarea"
-  | "password"
-  | "number"
-  | "checkbox"
-  | "select"
-  | "multi_select"
-  | "tags"
-  | "json"
-  | "url"
-  | "provider_select"
-  | "model_select"
-  | "tool_select"
-  | "node_select"
-  | "hidden";
+  | 'text'
+  | 'textarea'
+  | 'password'
+  | 'number'
+  | 'checkbox'
+  | 'select'
+  | 'multi_select'
+  | 'tags'
+  | 'json'
+  | 'url'
+  | 'provider_select'
+  | 'model_select'
+  | 'tool_select'
+  | 'node_select'
+  | 'hidden';
 
 export type ConfigValueSource =
-  | "static"
-  | "providers"
-  | "models"
-  | "tools"
-  | "hierarchy_nodes"
-  | "users"
-  | "api";
+  'static' | 'providers' | 'models' | 'tools' | 'hierarchy_nodes' | 'users' | 'api';
 
 export interface ConfigDynamicOptionsResponse {
   source: string;
@@ -148,7 +142,7 @@ export interface ConfigGroupResponse {
 }
 
 export interface ConfigListResponse {
-  schema_version: "2.0";
+  schema_version: '2.0';
   revision: number;
 
   groups: ConfigGroupResponse[];

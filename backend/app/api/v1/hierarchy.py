@@ -404,6 +404,20 @@ class _MovePayload(BaseModel):
     )
 
 
+class _ReorderItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    id: str = Field(...)
+    new_parent_id: str | None = Field(default=None)
+    new_position: int = Field(..., ge=0)
+
+
+class _ReorderPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    items: list[_ReorderItem]
+
+
 @router.post(
     "",
     status_code=status.HTTP_201_CREATED,
@@ -530,6 +544,58 @@ async def move_hierarchy_node(
                 request=request,
                 status_code=status.HTTP_403_FORBIDDEN,
                 code="PERMISSION_DENIED",
+                message=str(exc),
+            )
+
+
+@router.post(
+    "/reorder",
+    response_class=Response,
+    summary="Mehrere Knoten atomar neu anordnen",
+)
+async def reorder_hierarchy_nodes(
+    request: Request,
+    payload: _ReorderPayload,
+) -> Response:
+    actor = build_actor_from_request(request)
+
+    session_factory = getattr(request.app.state, "session_factory", None)
+
+    if session_factory is None:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="HIERARCHY_PERSISTENCE_UNAVAILABLE",
+            message="Die Persistenz für Hierarchie ist nicht verfügbar.",
+        )
+
+    async with session_factory() as session:  # type: ignore[arg-type]
+        repository = HierarchyRepository(session)  # type: ignore[arg-type]
+        service = create_hierarchy_service(repository)
+
+        try:
+            moves = [(it.id, it.new_parent_id, it.new_position) for it in payload.items]
+            await service.reorder_nodes(moves, actor=actor)
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        except LookupError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_404_NOT_FOUND,
+                code="HIERARCHY_NODE_NOT_FOUND",
+                message=str(exc),
+            )
+        except PermissionError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                code="PERMISSION_DENIED",
+                message=str(exc),
+            )
+        except ValueError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                code="HIERARCHY_INVALID_REORDER",
                 message=str(exc),
             )
 

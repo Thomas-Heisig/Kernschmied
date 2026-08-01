@@ -3,17 +3,20 @@
 Datum: 2026-08-01
 
 Kurzfassung
+
 - Die Git-Historie des Repositories wurde bereinigt, um lokale SQLite-DB-Dateien
   (`backend/data/chat.db`, `backend/data/kernschmied.db`) aus der Historie zu entfernen.
 - Diese Bereinigung wurde lokal durchgeführt und per Force-Push nach `origin/master`
   übertragen. Das ist eine destruktive Änderung der Remote-History.
 
 Warum
+
 - Die DB-Dateien gehören nicht ins Repository (sensitiv, lokal) und wurden
   versehentlich historisch aufgenommen. Sie sind jetzt aus der Commit-Historie
   entfernt.
 
 Was du jetzt tun musst (wichtig)
+
 1. Falls du lokale Änderungen oder nicht gepushte Branches hast: sichere sie (z. B. `git format-patch` oder temporäres Backup).
 2. Aktualisiere deinen lokalen Haupt-Branch wie folgt (empfohlen):
 
@@ -38,10 +41,12 @@ git clone https://github.com/Thomas-Heisig/Kernschmied.git
    Dateien, falls vorhanden.
 
 Hinweis
+
 - Diese Operation überschreibt die Remote-History. Wenn du in den letzten Tagen
   an Branches gearbeitet hast, die nicht gepusht wurden, sichere sie vorher.
 - Falls du Unterstützung beim Rebasen oder Wiederherstellen brauchst, antworte
   hier oder erstelle ein Ticket/PR; ich helfe beim sicheren Vorgehen.
 
 Kontakt
+
 - Verantwortlicher: Repository-Owner / Team

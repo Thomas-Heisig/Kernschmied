@@ -15,6 +15,8 @@ from app.api.v1 import (
     tools,
     ui,
 )
+from app.api.v1 import calendar
+from app.api.v1 import calendars
 from app.api.v1.settings_catalog import router as settings_catalog_router
 
 API_VERSION = "v1"
@@ -48,6 +50,20 @@ api_router.include_router(
     prefix="/ui",
     tags=["UI / Schema"],
 )
+
+api_router.include_router(
+    calendar.router,
+    prefix="/calendar",
+    tags=["Calendar"],
+)
+
+api_router.include_router(
+    calendars.router,
+    prefix="/calendars",
+    tags=["Calendar / CRUD"],
+)
+
+# (calendar full-stub removed; using /calendars CRUD router)
 
 api_router.include_router(
     hierarchy.router,

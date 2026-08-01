@@ -13,7 +13,7 @@ export {
   type AppStoreState,
   type AppStoreStatus,
   type AppStoreValue,
-} from "./AppStore";
+} from './AppStore';
 
 export {
   findHierarchyNode,
@@ -29,4 +29,4 @@ export {
   selectSelectedNode,
   selectSelectedNodeId,
   selectSelectedNodeTypeDefinition,
-} from "./selectors";
+} from './selectors';

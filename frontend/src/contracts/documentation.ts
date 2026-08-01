@@ -11,13 +11,13 @@ export interface DocumentationSection {
 }
 
 export interface DocumentationIndexResponse {
-  schema_version: "1.0";
+  schema_version: '1.0';
   default_page_id: string | null;
   sections: DocumentationSection[];
 }
 
 export interface DocumentationPageResponse {
-  schema_version: "1.0";
+  schema_version: '1.0';
   id: string;
   title: string;
   section_id: string;

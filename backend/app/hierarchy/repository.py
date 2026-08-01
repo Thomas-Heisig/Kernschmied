@@ -113,6 +113,59 @@ class HierarchyRepository:
         await self._session.refresh(node)
         return node
 
+    async def reorder_nodes(
+        self,
+        moves: Sequence[tuple[str, str | None, int]],
+    ) -> None:
+        """
+        Atomar mehrere Knoten neu anordnen.
+
+        `moves` ist eine Sequenz von Tupeln `(node_id, new_parent_id, new_position)`.
+        Die Methode berechnet für jede betroffene Elternmenge die neue Reihenfolge
+        und schreibt die `parent_id` und `position` Werte direkt an die Modelle.
+        """
+        # Collect node ids and affected parents
+        node_ids = {m[0] for m in moves}
+        affected_parents = {m[1] for m in moves}
+
+        # Load all involved nodes
+        statement = select(HierarchyNodeModel).where(HierarchyNodeModel.id.in_(list(node_ids)))
+        result = await self._session.scalars(statement)
+        nodes = {n.id: n for n in result.all()}
+
+        # Load current children for affected parents
+        parent_children: dict[str | None, list[HierarchyNodeModel]] = {}
+        for parent in affected_parents:
+            children = await self.list_children(parent)
+            # remove nodes that will be moved away
+            parent_children[parent] = [c for c in children if c.id not in node_ids]
+
+        # Insert moved nodes into target parents at requested positions
+        for node_id, new_parent_id, new_pos in moves:
+            node = nodes.get(node_id)
+            if node is None:
+                raise LookupError(f"Node '{node_id}' not found")
+
+            target_list = parent_children.get(new_parent_id)
+            if target_list is None:
+                # if parent had no children previously and not in dict, initialize
+                children = await self.list_children(new_parent_id)
+                parent_children[new_parent_id] = [c for c in children if c.id not in node_ids]
+                target_list = parent_children[new_parent_id]
+
+            # clamp position
+            insert_at = max(0, min(len(target_list), int(new_pos)))
+            target_list.insert(insert_at, node)
+
+        # Now write back positions and parent_id
+        for parent_id, children in parent_children.items():
+            for idx, child in enumerate(children):
+                child.parent_id = parent_id
+                child.position = idx
+                self._session.add(child)
+
+        await self._session.flush()
+
     async def delete_node(self, node_id: str) -> None:
         await self._session.execute(
             delete(HierarchyNodeModel).where(

@@ -11,6 +11,7 @@ Quick facts for agents and automated workflows:
   the project's documentation.
 
 Agent guidelines:
+
 - Respect the `PROJECT_PROMPT` principles placed in `.github/PROJECT_PROMPT.agent.md`.
 - Make small, testable changes; add tests and docs for behavior changes.
 - Do not attempt destructive operations on remotes without human approval

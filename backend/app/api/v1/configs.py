@@ -1930,22 +1930,41 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                         for o in getattr(definition.ui, "options", ())
                     ]
 
+                    # dynamic options (safe access)
                     dyn = None
-                    if getattr(definition.ui, "dynamic_options", None) is not None:
-                        d = definition.ui.dynamic_options
-                        dyn = ConfigDynamicOptionsResponse(source=(d.source.value if hasattr(d, "source") else "server"), endpoint=d.endpoint)
+                    d = getattr(definition.ui, "dynamic_options", None)
+                    if d is not None:
+                        src = getattr(d, "source", None)
+                        src_val = src.value if (src is not None and hasattr(src, "value")) else "server"
+                        endpoint_val = getattr(d, "endpoint", None)
+                        dyn = ConfigDynamicOptionsResponse(source=src_val, endpoint=endpoint_val)
+
+                    # UI fields (safe access and fallbacks)
+                    comp = getattr(definition.ui, "component", None)
+                    comp_val = comp.value if (comp is not None and hasattr(comp, "value")) else None
+                    category_val = definition.ui.category or g.id
+                    section_val = definition.ui.section or section.id
+                    order_val = getattr(definition.ui, "order", None)
+                    if order_val is None:
+                        order_val = 0
+                    placeholder_val = getattr(definition.ui, "placeholder", None)
+                    help_text_val = definition.ui.help_text or field.description
+                    unit_val = getattr(definition.ui, "unit", None)
+                    advanced_val = bool(getattr(definition.ui, "advanced", False))
+                    hidden_val = bool(getattr(definition.ui, "hidden", False))
+                    readonly_val = bool(getattr(definition.ui, "readonly", False))
 
                     ui = ConfigUIResponse(
-                        component=(definition.ui.component.value if getattr(definition.ui, "component", None) is not None else None),
-                        category=definition.ui.category or g.id,
-                        section=definition.ui.section or section.id,
-                        order=definition.ui.order,
-                        placeholder=definition.ui.placeholder,
-                        help_text=definition.ui.help_text or field.description,
-                        unit=definition.ui.unit,
-                        advanced=definition.ui.advanced,
-                        hidden=definition.ui.hidden,
-                        readonly=definition.ui.readonly,
+                        component=comp_val,
+                        category=category_val,
+                        section=section_val,
+                        order=order_val,
+                        placeholder=placeholder_val,
+                        help_text=help_text_val,
+                        unit=unit_val,
+                        advanced=advanced_val,
+                        hidden=hidden_val,
+                        readonly=readonly_val,
                         options=options,
                         dynamic_options=dyn,
                     )
@@ -1959,7 +1978,8 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                         value=(value if not is_sensitive_key(cfg_group, cfg_key) else None),
                         default_value=definition.default_value,
                         schema_version=definition.schema_version or CONFIG_API_SCHEMA_VERSION,
-                        value_type=(definition.value_type.name if getattr(definition, "value_type", None) is not None else None),
+                        # safe access to optional value_type
+                        value_type=(getattr(definition.value_type, "name", None) if getattr(definition, "value_type", None) is not None else None),
                         value_schema=(definition.value_schema or {}),
                         editable=definition.runtime_editable,
                         sensitive=definition.is_secret,
@@ -1967,14 +1987,20 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                         requires_restart=definition.requires_restart,
                         runtime_editable=definition.runtime_editable,
                         nullable=definition.nullable,
-                        visibility=(definition.visibility.value if getattr(definition, "visibility", None) is not None else ""),
-                        allowed_scopes=[s.value for s in definition.allowed_scopes],
+                        visibility=(getattr(definition.visibility, "value", "") if getattr(definition, "visibility", None) is not None else ""),
+                        allowed_scopes=[(s.value if hasattr(s, "value") else s) for s in getattr(definition, "allowed_scopes", [])],
                         current_scope="application",
                         ui=ui,
-                        permissions=ConfigEntryResponse.ConfigPermissionsResponse(
-                            read=definition.permissions.read,
-                            write=definition.permissions.write,
-                            reveal_secret=getattr(definition.permissions, "reveal_secret", None),
+                        permissions=(
+                            ConfigEntryResponse.ConfigPermissionsResponse(
+                                read=getattr(definition.permissions, "read"),
+                                write=getattr(definition.permissions, "write"),
+                                reveal_secret=getattr(definition.permissions, "reveal_secret", None),
+                            )
+                            if getattr(definition, "permissions", None) is not None
+                            and getattr(definition.permissions, "read", None) is not None
+                            and getattr(definition.permissions, "write", None) is not None
+                            else None
                         ),
                         deprecated=definition.deprecated,
                     )

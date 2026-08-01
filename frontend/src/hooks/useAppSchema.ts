@@ -1,20 +1,16 @@
 // F:\Kernschmied\frontend\src\hooks\useAppSchema.ts
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ApiError, apiGet } from "../api/client";
+import { ApiError, apiGet } from '../api/client';
 
-import {
-  isHierarchyTree,
-  type HierarchyNode,
-  type HierarchyTree,
-} from "../contracts/hierarchy";
+import { isHierarchyTree, type HierarchyNode, type HierarchyTree } from '../contracts/hierarchy';
 
-import { isUISchema, parseUISchema, type UISchema } from "../contracts/schema";
+import { isUISchema, parseUISchema, type UISchema } from '../contracts/schema';
 
-const BOOTSTRAP_ENDPOINT = "/bootstrap";
+const BOOTSTRAP_ENDPOINT = '/bootstrap';
 
-export type AppSchemaLoadStatus = "idle" | "loading" | "success" | "error";
+export type AppSchemaLoadStatus = 'idle' | 'loading' | 'success' | 'error';
 
 export interface AppSchemaError {
   code: string;
@@ -104,13 +100,11 @@ interface AppBootstrap {
 export function useAppSchema(): UseAppSchemaResult {
   const [schema, setSchema] = useState<UISchema | null>(null);
 
-  const [hierarchyTree, setHierarchyTree] = useState<HierarchyTree | null>(
-    null,
-  );
+  const [hierarchyTree, setHierarchyTree] = useState<HierarchyTree | null>(null);
 
   const [error, setError] = useState<AppSchemaError | null>(null);
 
-  const [status, setStatus] = useState<AppSchemaLoadStatus>("idle");
+  const [status, setStatus] = useState<AppSchemaLoadStatus>('idle');
 
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -146,7 +140,7 @@ export function useAppSchema(): UseAppSchemaResult {
     const isInitialLoad = !hasUsableDataRef.current;
 
     if (isInitialLoad) {
-      setStatus("loading");
+      setStatus('loading');
     } else {
       setIsRefreshing(true);
     }
@@ -158,22 +152,18 @@ export function useAppSchema(): UseAppSchemaResult {
         signal: requestController.signal,
       });
 
-      assertRequestIsCurrent(
-        requestController,
-        requestGeneration,
-        requestGenerationRef,
-      );
+      assertRequestIsCurrent(requestController, requestGeneration, requestGenerationRef);
 
       const bootstrap = normalizeBootstrapResponse(rawBootstrapResponse);
 
       const uiSchemaEndpoint = normalizeBootstrapEndpoint(
         bootstrap.endpoints.ui_schema,
-        "endpoints.ui_schema",
+        'endpoints.ui_schema',
       );
 
       const hierarchyEndpoint = normalizeBootstrapEndpoint(
         bootstrap.endpoints.hierarchy,
-        "endpoints.hierarchy",
+        'endpoints.hierarchy',
       );
 
       // Hierarchie-Endpunkt für spätere Teil-Reloads speichern
@@ -189,22 +179,13 @@ export function useAppSchema(): UseAppSchemaResult {
         }),
       ]);
 
-      assertRequestIsCurrent(
-        requestController,
-        requestGeneration,
-        requestGenerationRef,
-      );
+      assertRequestIsCurrent(requestController, requestGeneration, requestGenerationRef);
 
       const normalizedSchema = normalizeUISchemaResponse(rawSchemaResponse);
 
-      const normalizedHierarchy =
-        normalizeHierarchyResponse(rawHierarchyResponse);
+      const normalizedHierarchy = normalizeHierarchyResponse(rawHierarchyResponse);
 
-      assertRequestIsCurrent(
-        requestController,
-        requestGeneration,
-        requestGenerationRef,
-      );
+      assertRequestIsCurrent(requestController, requestGeneration, requestGenerationRef);
 
       setSchema(normalizedSchema);
       setHierarchyTree(normalizedHierarchy);
@@ -212,7 +193,7 @@ export function useAppSchema(): UseAppSchemaResult {
       hasUsableDataRef.current = true;
 
       setError(null);
-      setStatus("success");
+      setStatus('success');
     } catch (caughtError) {
       if (
         requestController.signal.aborted ||
@@ -225,7 +206,7 @@ export function useAppSchema(): UseAppSchemaResult {
       const normalizedError = normalizeAppSchemaError(caughtError);
 
       logDevelopmentError(
-        "Bootstrap, UI-Schema oder Hierarchie konnten nicht geladen werden.",
+        'Bootstrap, UI-Schema oder Hierarchie konnten nicht geladen werden.',
         normalizedError,
       );
 
@@ -236,9 +217,9 @@ export function useAppSchema(): UseAppSchemaResult {
        * Daten nicht unbrauchbar machen.
        */
       if (hasUsableDataRef.current) {
-        setStatus("success");
+        setStatus('success');
       } else {
-        setStatus("error");
+        setStatus('error');
       }
     } finally {
       if (requestGeneration === requestGenerationRef.current) {
@@ -286,21 +267,14 @@ export function useAppSchema(): UseAppSchemaResult {
       });
 
       // Prüfen, ob die Anfrage noch aktuell ist
-      if (
-        abortController.signal.aborted ||
-        requestGeneration !== requestGenerationRef.current
-      ) {
+      if (abortController.signal.aborted || requestGeneration !== requestGenerationRef.current) {
         return;
       }
 
-      const normalizedHierarchy =
-        normalizeHierarchyResponse(rawHierarchyResponse);
+      const normalizedHierarchy = normalizeHierarchyResponse(rawHierarchyResponse);
 
       // Prüfen, ob die Anfrage noch aktuell ist (nach der Verarbeitung)
-      if (
-        abortController.signal.aborted ||
-        requestGeneration !== requestGenerationRef.current
-      ) {
+      if (abortController.signal.aborted || requestGeneration !== requestGenerationRef.current) {
         return;
       }
 
@@ -309,7 +283,7 @@ export function useAppSchema(): UseAppSchemaResult {
       // Fehler zurücksetzen, da erfolgreich geladen
       setError(null);
       // Status bleibt "success", da wir bereits Daten haben
-      setStatus("success");
+      setStatus('success');
     } catch (caughtError) {
       // Abort ignorieren
       if (
@@ -322,10 +296,7 @@ export function useAppSchema(): UseAppSchemaResult {
 
       const normalizedError = normalizeAppSchemaError(caughtError);
 
-      logDevelopmentError(
-        "Hierarchie konnte nicht neu geladen werden.",
-        normalizedError,
-      );
+      logDevelopmentError('Hierarchie konnte nicht neu geladen werden.', normalizedError);
 
       // Fehler setzen, aber Status bleibt "success", da wir bereits Daten haben
       setError(normalizedError);
@@ -358,7 +329,7 @@ export function useAppSchema(): UseAppSchemaResult {
     error,
     errorMessage: error?.message ?? null,
     status,
-    isLoading: status === "loading" && !isReady,
+    isLoading: status === 'loading' && !isReady,
     isRefreshing,
     isReady,
     reload: load,
@@ -371,11 +342,7 @@ export function useAppSchema(): UseAppSchemaResult {
 // ============================================================
 
 function normalizeBootstrapResponse(value: unknown): AppBootstrap {
-  const candidates = getResponseCandidates(value, [
-    "data",
-    "bootstrap",
-    "result",
-  ]);
+  const candidates = getResponseCandidates(value, ['data', 'bootstrap', 'result']);
 
   for (const candidate of candidates) {
     if (isAppBootstrap(candidate)) {
@@ -384,19 +351,14 @@ function normalizeBootstrapResponse(value: unknown): AppBootstrap {
   }
 
   throw createContractError(
-    "invalid_bootstrap_schema",
-    "Das Backend hat einen ungültigen Bootstrap-Vertrag geliefert.",
+    'invalid_bootstrap_schema',
+    'Das Backend hat einen ungültigen Bootstrap-Vertrag geliefert.',
     createContractErrorDetails(value, candidates),
   );
 }
 
 function normalizeUISchemaResponse(value: unknown): UISchema {
-  const candidates = getResponseCandidates(value, [
-    "data",
-    "schema",
-    "ui_schema",
-    "result",
-  ]);
+  const candidates = getResponseCandidates(value, ['data', 'schema', 'ui_schema', 'result']);
 
   const validationAttempts: Array<{
     candidateIndex: number;
@@ -429,7 +391,7 @@ function normalizeUISchemaResponse(value: unknown): UISchema {
     if (isUISchema(candidate)) {
       if (import.meta.env.DEV) {
         console.warn(
-          "Das UI-Schema ist strukturell gültig, erfüllt aber noch nicht alle semantischen Prüfungen.",
+          'Das UI-Schema ist strukturell gültig, erfüllt aber noch nicht alle semantischen Prüfungen.',
           {
             candidate,
             issues: validation.issues,
@@ -442,7 +404,7 @@ function normalizeUISchemaResponse(value: unknown): UISchema {
   }
 
   if (import.meta.env.DEV) {
-    console.error("UI-Schema vollständig abgelehnt.", {
+    console.error('UI-Schema vollständig abgelehnt.', {
       rawResponse: value,
       candidates,
       validationAttempts,
@@ -450,8 +412,8 @@ function normalizeUISchemaResponse(value: unknown): UISchema {
   }
 
   throw createContractError(
-    "invalid_ui_schema",
-    "Das Backend hat ein ungültiges oder nicht unterstütztes UI-Schema geliefert.",
+    'invalid_ui_schema',
+    'Das Backend hat ein ungültiges oder nicht unterstütztes UI-Schema geliefert.',
     {
       received_type: describeValueType(value),
       validation_attempts: validationAttempts,
@@ -461,11 +423,11 @@ function normalizeUISchemaResponse(value: unknown): UISchema {
 
 function normalizeHierarchyResponse(value: unknown): HierarchyTree {
   const candidates = getResponseCandidates(value, [
-    "data",
-    "hierarchy",
-    "hierarchy_tree",
-    "tree",
-    "result",
+    'data',
+    'hierarchy',
+    'hierarchy_tree',
+    'tree',
+    'result',
   ]);
 
   for (const candidate of candidates) {
@@ -475,8 +437,8 @@ function normalizeHierarchyResponse(value: unknown): HierarchyTree {
   }
 
   throw createContractError(
-    "invalid_hierarchy_schema",
-    "Das Backend hat eine ungültige Hierarchie geliefert.",
+    'invalid_hierarchy_schema',
+    'Das Backend hat eine ungültige Hierarchie geliefert.',
     createContractErrorDetails(value, candidates),
   );
 }
@@ -492,7 +454,7 @@ function normalizeBootstrapEndpoint(value: string, fieldName: string): string {
 
   if (normalizedValue.length === 0) {
     throw createContractError(
-      "invalid_bootstrap_endpoint",
+      'invalid_bootstrap_endpoint',
       `Der Bootstrap-Einstiegspunkt "${fieldName}" ist leer.`,
       {
         field: fieldName,
@@ -502,13 +464,13 @@ function normalizeBootstrapEndpoint(value: string, fieldName: string): string {
   }
 
   if (
-    !normalizedValue.startsWith("/") ||
-    normalizedValue.startsWith("//") ||
-    normalizedValue.includes("\\") ||
+    !normalizedValue.startsWith('/') ||
+    normalizedValue.startsWith('//') ||
+    normalizedValue.includes('\\') ||
     hasUrlScheme(normalizedValue)
   ) {
     throw createContractError(
-      "unsafe_bootstrap_endpoint",
+      'unsafe_bootstrap_endpoint',
       `Der Bootstrap-Einstiegspunkt "${fieldName}" ist nicht zulässig.`,
       {
         field: fieldName,
@@ -530,10 +492,7 @@ function hasUrlScheme(value: string): boolean {
  *
  * Es wird nicht rekursiv durch beliebige Antwortstrukturen gesucht.
  */
-function getResponseCandidates(
-  value: unknown,
-  wrapperKeys: readonly string[],
-): unknown[] {
+function getResponseCandidates(value: unknown, wrapperKeys: readonly string[]): unknown[] {
   const candidates: unknown[] = [value];
 
   if (!isRecord(value)) {
@@ -573,22 +532,19 @@ function assertRequestIsCurrent(
     readonly current: number;
   },
 ): void {
-  if (
-    controller.signal.aborted ||
-    requestGeneration !== requestGenerationRef.current
-  ) {
+  if (controller.signal.aborted || requestGeneration !== requestGenerationRef.current) {
     throw createAbortError();
   }
 }
 
 function createAbortError(): Error {
-  if (typeof DOMException !== "undefined") {
-    return new DOMException("Die Anfrage wurde abgebrochen.", "AbortError");
+  if (typeof DOMException !== 'undefined') {
+    return new DOMException('Die Anfrage wurde abgebrochen.', 'AbortError');
   }
 
-  const error = new Error("Die Anfrage wurde abgebrochen.");
+  const error = new Error('Die Anfrage wurde abgebrochen.');
 
-  error.name = "AbortError";
+  error.name = 'AbortError';
 
   return error;
 }
@@ -610,11 +566,7 @@ function createContractErrorDetails(
   };
 }
 
-function createContractError(
-  code: string,
-  message: string,
-  details?: unknown,
-): AppSchemaError {
+function createContractError(code: string, message: string, details?: unknown): AppSchemaError {
   return {
     code,
     message,
@@ -637,16 +589,16 @@ function normalizeAppSchemaError(error: unknown): AppSchemaError {
     };
   }
 
-  if (typeof DOMException !== "undefined" && error instanceof DOMException) {
-    if (error.name === "AbortError") {
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    if (error.name === 'AbortError') {
       return {
-        code: "request_aborted",
-        message: "Die Anfrage wurde abgebrochen.",
+        code: 'request_aborted',
+        message: 'Die Anfrage wurde abgebrochen.',
       };
     }
 
     return {
-      code: "browser_request_failed",
+      code: 'browser_request_failed',
       message: error.message,
       details: {
         name: error.name,
@@ -656,7 +608,7 @@ function normalizeAppSchemaError(error: unknown): AppSchemaError {
 
   if (error instanceof Error) {
     return {
-      code: "app_schema_load_failed",
+      code: 'app_schema_load_failed',
       message: error.message,
       details: {
         name: error.name,
@@ -665,8 +617,8 @@ function normalizeAppSchemaError(error: unknown): AppSchemaError {
   }
 
   return {
-    code: "app_schema_load_failed",
-    message: "Bootstrap, Schema und Hierarchie konnten nicht geladen werden.",
+    code: 'app_schema_load_failed',
+    message: 'Bootstrap, Schema und Hierarchie konnten nicht geladen werden.',
     details: {
       received_type: describeValueType(error),
     },
@@ -683,7 +635,7 @@ function isAppSchemaError(value: unknown): value is AppSchemaError {
     isNonEmptyString(value.message) &&
     (value.requestId === undefined || isNonEmptyString(value.requestId)) &&
     (value.status === undefined ||
-      (typeof value.status === "number" &&
+      (typeof value.status === 'number' &&
         Number.isFinite(value.status) &&
         Number.isInteger(value.status) &&
         value.status >= 100 &&
@@ -693,35 +645,35 @@ function isAppSchemaError(value: unknown): value is AppSchemaError {
 
 function isAbortError(error: unknown): boolean {
   if (
-    typeof DOMException !== "undefined" &&
+    typeof DOMException !== 'undefined' &&
     error instanceof DOMException &&
-    error.name === "AbortError"
+    error.name === 'AbortError'
   ) {
     return true;
   }
 
-  if (error instanceof Error && error.name === "AbortError") {
+  if (error instanceof Error && error.name === 'AbortError') {
     return true;
   }
 
-  return error instanceof ApiError && error.code === "request_aborted";
+  return error instanceof ApiError && error.code === 'request_aborted';
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 function describeValueType(value: unknown): string {
   if (value === null) {
-    return "null";
+    return 'null';
   }
 
   if (Array.isArray(value)) {
-    return "array";
+    return 'array';
   }
 
   return typeof value;

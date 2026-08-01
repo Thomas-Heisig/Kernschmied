@@ -1,22 +1,22 @@
 // F:\Kernschmied\frontend\src\api\client.ts
 
-const SOURCE_FILE = "frontend/src/api/client.ts";
+const SOURCE_FILE = 'frontend/src/api/client.ts';
 
-const DEFAULT_API_BASE_URL = "http://localhost:8000/api/v1";
+const DEFAULT_API_BASE_URL = 'http://localhost:8000/api/v1';
 
 const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
 
 const DEFAULT_STREAM_CONNECT_TIMEOUT_MS = 30_000;
 
-const DEFAULT_STREAM_CONTENT_TYPE = "text/event-stream";
+const DEFAULT_STREAM_CONTENT_TYPE = 'text/event-stream';
 
-const DEFAULT_REQUEST_CREDENTIALS: RequestCredentials = "include";
+const DEFAULT_REQUEST_CREDENTIALS: RequestCredentials = 'include';
 
-const FALLBACK_BROWSER_ORIGIN = "http://localhost";
+const FALLBACK_BROWSER_ORIGIN = 'http://localhost';
 
-const CLIENT_REQUEST_ID_HEADER = "X-Client-Request-ID";
+const CLIENT_REQUEST_ID_HEADER = 'X-Client-Request-ID';
 
-const SERVER_REQUEST_ID_HEADER = "X-Request-ID";
+const SERVER_REQUEST_ID_HEADER = 'X-Request-ID';
 
 const MAX_REQUEST_ID_LENGTH = 128;
 
@@ -28,7 +28,7 @@ type QueryValue = QueryPrimitive | null | undefined | readonly QueryPrimitive[];
 
 export type ApiQueryParams = Record<string, QueryValue>;
 
-export type ApiResponseType = "auto" | "json" | "text" | "blob" | "void";
+export type ApiResponseType = 'auto' | 'json' | 'text' | 'blob' | 'void';
 
 export type ApiErrorResponse = {
   code?: string;
@@ -91,7 +91,7 @@ export type ApiRequestWithBodyOptions<TBody> = ApiRequestOptions & {
 
 export type ApiStreamRequestOptions<TBody = unknown> = Omit<
   ApiRequestWithBodyOptions<TBody>,
-  "responseType"
+  'responseType'
 > & {
   /**
    * Erwarteter MIME-Typ der Streaming-Antwort.
@@ -120,7 +120,7 @@ export type ApiStreamHandle = {
   dispose: () => void;
 };
 
-type DeveloperLogLevel = "debug" | "info" | "warn" | "error";
+type DeveloperLogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 type DeveloperLogContext = Record<string, unknown>;
 
@@ -182,11 +182,11 @@ export class ApiError extends Error {
       cause: params.cause,
     });
 
-    this.name = "ApiError";
+    this.name = 'ApiError';
     this.status = params.status;
     this.statusText = params.statusText;
 
-    this.code = params.code ?? "api_error";
+    this.code = params.code ?? 'api_error';
 
     this.details = params.details;
 
@@ -210,47 +210,38 @@ function logDeveloperStep(
   const entry = {
     timestamp: new Date().toISOString(),
     source: SOURCE_FILE,
-    area: "api-client",
+    area: 'api-client',
     step,
     ...context,
   };
 
   switch (level) {
-    case "error":
-      console.error("[Kernschmied][ApiClient]", entry);
+    case 'error':
+      console.error('[Kernschmied][ApiClient]', entry);
       break;
 
-    case "warn":
-      console.warn("[Kernschmied][ApiClient]", entry);
+    case 'warn':
+      console.warn('[Kernschmied][ApiClient]', entry);
       break;
 
-    case "info":
-      console.info("[Kernschmied][ApiClient]", entry);
+    case 'info':
+      console.info('[Kernschmied][ApiClient]', entry);
       break;
 
     default:
-      console.debug("[Kernschmied][ApiClient]", entry);
+      console.debug('[Kernschmied][ApiClient]', entry);
   }
 }
 
 function createRequestId(): string {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
 
-  return [
-    "request",
-    Date.now().toString(36),
-    Math.random().toString(36).slice(2),
-  ].join("-");
+  return ['request', Date.now().toString(36), Math.random().toString(36).slice(2)].join('-');
 }
 
-function normalizeRequestId(
-  value: string | null | undefined,
-): string | undefined {
+function normalizeRequestId(value: string | null | undefined): string | undefined {
   if (value === null || value === undefined) {
     return undefined;
   }
@@ -272,11 +263,7 @@ function normalizeRequestId(
   return normalized;
 }
 
-function resolveClientRequestId(
-  options: ApiRequestOptions,
-  headers: Headers,
-  url: string,
-): string {
+function resolveClientRequestId(options: ApiRequestOptions, headers: Headers, url: string): string {
   const optionValue = options.clientRequestId;
 
   if (optionValue !== undefined) {
@@ -284,10 +271,10 @@ function resolveClientRequestId(
 
     if (!normalizedOptionValue) {
       throw new ApiError({
-        message: "Die angegebene Client-Request-ID ist ungültig.",
+        message: 'Die angegebene Client-Request-ID ist ungültig.',
         status: 0,
-        statusText: "Invalid request ID",
-        code: "invalid_client_request_id",
+        statusText: 'Invalid request ID',
+        code: 'invalid_client_request_id',
         details: {
           maxLength: MAX_REQUEST_ID_LENGTH,
         },
@@ -309,8 +296,8 @@ function resolveClientRequestId(
       throw new ApiError({
         message: `Der Header ${CLIENT_REQUEST_ID_HEADER} enthält eine ungültige Request-ID.`,
         status: 0,
-        statusText: "Invalid request ID",
-        code: "invalid_client_request_id",
+        statusText: 'Invalid request ID',
+        code: 'invalid_client_request_id',
         details: {
           header: CLIENT_REQUEST_ID_HEADER,
           maxLength: MAX_REQUEST_ID_LENGTH,
@@ -332,13 +319,13 @@ function resolveClientRequestId(
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function getBrowserOrigin(): string {
   if (
-    typeof globalThis.location !== "undefined" &&
-    typeof globalThis.location.origin === "string" &&
+    typeof globalThis.location !== 'undefined' &&
+    typeof globalThis.location.origin === 'string' &&
     globalThis.location.origin.length > 0
   ) {
     return globalThis.location.origin;
@@ -348,13 +335,13 @@ function getBrowserOrigin(): string {
 }
 
 function normalizeUrlPathname(pathname: string): string {
-  const normalized = pathname.replace(/\/{2,}/g, "/");
+  const normalized = pathname.replace(/\/{2,}/g, '/');
 
-  if (normalized === "/") {
-    return "";
+  if (normalized === '/') {
+    return '';
   }
 
-  return normalized.replace(/\/+$/, "");
+  return normalized.replace(/\/+$/, '');
 }
 
 function normalizeBaseUrl(value: string | undefined): string {
@@ -362,16 +349,16 @@ function normalizeBaseUrl(value: string | undefined): string {
 
   const url = new URL(configuredValue, getBrowserOrigin());
 
-  if (url.protocol !== "http:" && url.protocol !== "https:") {
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     throw new Error(`Nicht unterstütztes API-Protokoll: ${url.protocol}`);
   }
 
-  url.pathname = normalizeUrlPathname(url.pathname) || "/";
+  url.pathname = normalizeUrlPathname(url.pathname) || '/';
 
-  url.search = "";
-  url.hash = "";
+  url.search = '';
+  url.hash = '';
 
-  return url.toString().replace(/\/+$/, "");
+  return url.toString().replace(/\/+$/, '');
 }
 
 export const API_BASE_URL = normalizeBaseUrl(import.meta.env.VITE_API_URL);
@@ -382,7 +369,7 @@ const API_BASE_ORIGIN = PARSED_API_BASE_URL.origin;
 
 const API_BASE_PATHNAME = normalizeUrlPathname(PARSED_API_BASE_URL.pathname);
 
-logDeveloperStep("info", "api-client-initialized", {
+logDeveloperStep('info', 'api-client-initialized', {
   apiBaseOrigin: API_BASE_ORIGIN,
   apiBasePathname: API_BASE_PATHNAME,
   defaultCredentials: DEFAULT_REQUEST_CREDENTIALS,
@@ -392,19 +379,15 @@ function normalizeRequestPath(path: string): string {
   const normalized = path.trim();
 
   if (!normalized) {
-    throw new Error("Der API-Pfad darf nicht leer sein.");
+    throw new Error('Der API-Pfad darf nicht leer sein.');
   }
 
-  if (normalized.startsWith("//")) {
-    throw new Error(
-      `Protokollrelative API-URLs sind nicht erlaubt: ${normalized}`,
-    );
+  if (normalized.startsWith('//')) {
+    throw new Error(`Protokollrelative API-URLs sind nicht erlaubt: ${normalized}`);
   }
 
-  if (normalized.includes("\\")) {
-    throw new Error(
-      `API-Pfade dürfen keine Backslashes enthalten: ${normalized}`,
-    );
+  if (normalized.includes('\\')) {
+    throw new Error(`API-Pfade dürfen keine Backslashes enthalten: ${normalized}`);
   }
 
   return normalized;
@@ -414,23 +397,20 @@ function hasExplicitUrlScheme(value: string): boolean {
   return /^[a-z][a-z\d+.-]*:/i.test(value);
 }
 
-function joinUrlPathnames(
-  basePathname: string,
-  requestPathname: string,
-): string {
+function joinUrlPathnames(basePathname: string, requestPathname: string): string {
   const normalizedBase = normalizeUrlPathname(basePathname);
 
   const normalizedRequest = normalizeUrlPathname(requestPathname);
 
   if (!normalizedBase) {
-    return normalizedRequest || "/";
+    return normalizedRequest || '/';
   }
 
   if (!normalizedRequest) {
     return normalizedBase;
   }
 
-  return `${normalizedBase}/${normalizedRequest.replace(/^\/+/, "")}`;
+  return `${normalizedBase}/${normalizedRequest.replace(/^\/+/, '')}`;
 }
 
 /**
@@ -444,19 +424,15 @@ export function resolveApiUrl(path: string): URL {
   if (hasExplicitUrlScheme(normalizedPath)) {
     const absoluteUrl = new URL(normalizedPath);
 
-    if (absoluteUrl.protocol !== "http:" && absoluteUrl.protocol !== "https:") {
-      throw new Error(
-        `Nicht unterstütztes API-Protokoll: ${absoluteUrl.protocol}`,
-      );
+    if (absoluteUrl.protocol !== 'http:' && absoluteUrl.protocol !== 'https:') {
+      throw new Error(`Nicht unterstütztes API-Protokoll: ${absoluteUrl.protocol}`);
     }
 
     if (absoluteUrl.origin !== API_BASE_ORIGIN) {
-      throw new Error(
-        `Externe API-URLs sind nicht erlaubt: ${absoluteUrl.origin}`,
-      );
+      throw new Error(`Externe API-URLs sind nicht erlaubt: ${absoluteUrl.origin}`);
     }
 
-    absoluteUrl.hash = "";
+    absoluteUrl.hash = '';
 
     return absoluteUrl;
   }
@@ -476,11 +452,11 @@ export function resolveApiUrl(path: string): URL {
 
   const resolvedUrl = new URL(API_BASE_ORIGIN);
 
-  resolvedUrl.pathname = resolvedPathname || "/";
+  resolvedUrl.pathname = resolvedPathname || '/';
 
   resolvedUrl.search = parsedPath.search;
 
-  resolvedUrl.hash = "";
+  resolvedUrl.hash = '';
 
   return resolvedUrl;
 }
@@ -527,46 +503,41 @@ function isJsonContentType(contentType: string | null): boolean {
   const normalizedContentType = contentType.toLowerCase();
 
   return (
-    normalizedContentType.includes("application/json") ||
-    normalizedContentType.includes("+json")
+    normalizedContentType.includes('application/json') || normalizedContentType.includes('+json')
   );
 }
 
 function isBodyAllowed(method: string): boolean {
-  return method !== "GET" && method !== "HEAD";
+  return method !== 'GET' && method !== 'HEAD';
 }
 
 function isFormData(value: unknown): value is FormData {
-  return typeof FormData !== "undefined" && value instanceof FormData;
+  return typeof FormData !== 'undefined' && value instanceof FormData;
 }
 
 function isBlob(value: unknown): value is Blob {
-  return typeof Blob !== "undefined" && value instanceof Blob;
+  return typeof Blob !== 'undefined' && value instanceof Blob;
 }
 
 function isUrlSearchParams(value: unknown): value is URLSearchParams {
-  return (
-    typeof URLSearchParams !== "undefined" && value instanceof URLSearchParams
-  );
+  return typeof URLSearchParams !== 'undefined' && value instanceof URLSearchParams;
 }
 
 function isReadableStream(value: unknown): value is ReadableStream {
-  return (
-    typeof ReadableStream !== "undefined" && value instanceof ReadableStream
-  );
+  return typeof ReadableStream !== 'undefined' && value instanceof ReadableStream;
 }
 
 function isArrayBuffer(value: unknown): value is ArrayBuffer {
-  return typeof ArrayBuffer !== "undefined" && value instanceof ArrayBuffer;
+  return typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer;
 }
 
 function isArrayBufferView(value: unknown): value is ArrayBufferView {
-  return typeof ArrayBuffer !== "undefined" && ArrayBuffer.isView(value);
+  return typeof ArrayBuffer !== 'undefined' && ArrayBuffer.isView(value);
 }
 
 function isRequestBody(value: unknown): value is BodyInit {
   return (
-    typeof value === "string" ||
+    typeof value === 'string' ||
     isFormData(value) ||
     isBlob(value) ||
     isUrlSearchParams(value) ||
@@ -576,10 +547,7 @@ function isRequestBody(value: unknown): value is BodyInit {
   );
 }
 
-function serializeRequestBody(
-  body: unknown,
-  headers: Headers,
-): BodyInit | undefined {
+function serializeRequestBody(body: unknown, headers: Headers): BodyInit | undefined {
   if (body === undefined || body === null) {
     return undefined;
   }
@@ -588,20 +556,20 @@ function serializeRequestBody(
     return body;
   }
 
-  if (!headers.has("Content-Type")) {
-    headers.set("Content-Type", "application/json");
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
   }
 
   try {
     return JSON.stringify(body);
   } catch (error) {
     throw new ApiError({
-      message: "Der Request-Body konnte nicht als JSON serialisiert werden.",
+      message: 'Der Request-Body konnte nicht als JSON serialisiert werden.',
       status: 0,
-      statusText: "Invalid request body",
-      code: "request_body_serialization_failed",
+      statusText: 'Invalid request body',
+      code: 'request_body_serialization_failed',
       details: null,
-      url: "",
+      url: '',
       cause: error,
     });
   }
@@ -645,7 +613,7 @@ function createCombinedAbortSignal(params: {
     if (params.externalSignal.aborted) {
       abortFromExternalSignal();
     } else {
-      params.externalSignal.addEventListener("abort", abortFromExternalSignal, {
+      params.externalSignal.addEventListener('abort', abortFromExternalSignal, {
         once: true,
       });
     }
@@ -666,10 +634,7 @@ function createCombinedAbortSignal(params: {
   if (normalizedTimeoutMs !== null) {
     timeoutId = setTimeout(() => {
       abort(
-        new DOMException(
-          `API-Anfrage nach ${normalizedTimeoutMs} ms abgebrochen.`,
-          "TimeoutError",
-        ),
+        new DOMException(`API-Anfrage nach ${normalizedTimeoutMs} ms abgebrochen.`, 'TimeoutError'),
       );
     }, normalizedTimeoutMs);
   }
@@ -690,10 +655,7 @@ function createCombinedAbortSignal(params: {
 
       clearTimeoutResource();
 
-      params.externalSignal?.removeEventListener(
-        "abort",
-        abortFromExternalSignal,
-      );
+      params.externalSignal?.removeEventListener('abort', abortFromExternalSignal);
     },
   };
 }
@@ -703,12 +665,12 @@ function normalizeHttpMethod(method: string): string {
 
   if (!normalized) {
     throw new ApiError({
-      message: "Die HTTP-Methode darf nicht leer sein.",
+      message: 'Die HTTP-Methode darf nicht leer sein.',
       status: 0,
-      statusText: "Invalid request",
-      code: "invalid_http_method",
+      statusText: 'Invalid request',
+      code: 'invalid_http_method',
       details: null,
-      url: "",
+      url: '',
     });
   }
 
@@ -716,12 +678,12 @@ function normalizeHttpMethod(method: string): string {
     throw new ApiError({
       message: `Die HTTP-Methode "${method}" ist ungültig.`,
       status: 0,
-      statusText: "Invalid request",
-      code: "invalid_http_method",
+      statusText: 'Invalid request',
+      code: 'invalid_http_method',
       details: {
         method,
       },
-      url: "",
+      url: '',
     });
   }
 
@@ -738,15 +700,14 @@ function formatValidationErrorEntries(value: unknown): string | undefined {
       return String(entry);
     }
 
-    const location = Array.isArray(entry.loc) ? entry.loc.join(".") : "request";
+    const location = Array.isArray(entry.loc) ? entry.loc.join('.') : 'request';
 
-    const message =
-      typeof entry.msg === "string" ? entry.msg : "Ungültiger Wert";
+    const message = typeof entry.msg === 'string' ? entry.msg : 'Ungültiger Wert';
 
     return `${location}: ${message}`;
   });
 
-  return entries.length > 0 ? entries.join("; ") : undefined;
+  return entries.length > 0 ? entries.join('; ') : undefined;
 }
 
 function formatStructuredDetails(details: unknown): string | undefined {
@@ -757,42 +718,36 @@ function formatStructuredDetails(details: unknown): string | undefined {
   return formatValidationErrorEntries(details.errors);
 }
 
-function normalizeErrorPayload(
-  payload: Record<string, unknown>,
-): ApiErrorResponse {
-  const structuredMessage =
-    typeof payload.message === "string" ? payload.message : undefined;
+function normalizeErrorPayload(payload: Record<string, unknown>): ApiErrorResponse {
+  const structuredMessage = typeof payload.message === 'string' ? payload.message : undefined;
 
   const detailMessage =
-    typeof payload.detail === "string"
+    typeof payload.detail === 'string'
       ? payload.detail
       : formatValidationErrorEntries(payload.detail);
 
   const details =
     payload.details !== undefined
       ? payload.details
-      : payload.detail !== undefined && typeof payload.detail !== "string"
+      : payload.detail !== undefined && typeof payload.detail !== 'string'
         ? payload.detail
         : undefined;
 
   const detailsMessage = formatStructuredDetails(details);
 
   return {
-    code: typeof payload.code === "string" ? payload.code : undefined,
+    code: typeof payload.code === 'string' ? payload.code : undefined,
 
     message: structuredMessage ?? detailMessage ?? detailsMessage,
 
     details,
 
-    request_id:
-      typeof payload.request_id === "string" ? payload.request_id : undefined,
+    request_id: typeof payload.request_id === 'string' ? payload.request_id : undefined,
   };
 }
 
-async function parseErrorResponse(
-  response: Response,
-): Promise<ApiErrorResponse> {
-  const contentType = response.headers.get("content-type");
+async function parseErrorResponse(response: Response): Promise<ApiErrorResponse> {
+  const contentType = response.headers.get('content-type');
 
   if (isJsonContentType(contentType)) {
     const jsonResponse = response.clone();
@@ -804,7 +759,7 @@ async function parseErrorResponse(
         return normalizeErrorPayload(payload);
       }
     } catch (error) {
-      logDeveloperStep("warn", "error-response-json-parse-failed", {
+      logDeveloperStep('warn', 'error-response-json-parse-failed', {
         status: response.status,
         contentType,
         error: error instanceof Error ? error.message : String(error),
@@ -821,7 +776,7 @@ async function parseErrorResponse(
       };
     }
   } catch (error) {
-    logDeveloperStep("warn", "error-response-text-read-failed", {
+    logDeveloperStep('warn', 'error-response-text-read-failed', {
       status: response.status,
       error: error instanceof Error ? error.message : String(error),
     });
@@ -834,59 +789,50 @@ async function parseSuccessResponse<T>(
   response: Response,
   responseType: ApiResponseType,
 ): Promise<T> {
-  if (
-    responseType === "void" ||
-    response.status === 204 ||
-    response.status === 205
-  ) {
+  if (responseType === 'void' || response.status === 204 || response.status === 205) {
     return undefined as T;
   }
 
-  if (responseType === "blob") {
+  if (responseType === 'blob') {
     return (await response.blob()) as T;
   }
 
-  if (responseType === "text") {
+  if (responseType === 'text') {
     return (await response.text()) as T;
   }
 
-  if (responseType === "json") {
+  if (responseType === 'json') {
     try {
       return (await response.json()) as T;
     } catch (error) {
       throw new ApiError({
-        message: "Die API-Antwort enthält kein gültiges JSON.",
+        message: 'Die API-Antwort enthält kein gültiges JSON.',
         status: response.status,
         statusText: response.statusText,
-        code: "invalid_json_response",
+        code: 'invalid_json_response',
         details: null,
-        requestId: normalizeRequestId(
-          response.headers.get(SERVER_REQUEST_ID_HEADER),
-        ),
+        requestId: normalizeRequestId(response.headers.get(SERVER_REQUEST_ID_HEADER)),
         url: response.url,
         cause: error,
       });
     }
   }
 
-  const contentType = response.headers.get("content-type");
+  const contentType = response.headers.get('content-type');
 
   if (isJsonContentType(contentType)) {
     try {
       return (await response.json()) as T;
     } catch (error) {
       throw new ApiError({
-        message:
-          "Die API-Antwort wurde als JSON angekündigt, enthält jedoch kein gültiges JSON.",
+        message: 'Die API-Antwort wurde als JSON angekündigt, enthält jedoch kein gültiges JSON.',
         status: response.status,
         statusText: response.statusText,
-        code: "invalid_json_response",
+        code: 'invalid_json_response',
         details: {
           contentType,
         },
-        requestId: normalizeRequestId(
-          response.headers.get(SERVER_REQUEST_ID_HEADER),
-        ),
+        requestId: normalizeRequestId(response.headers.get(SERVER_REQUEST_ID_HEADER)),
         url: response.url,
         cause: error,
       });
@@ -904,30 +850,28 @@ function getAbortErrorDetails(signal: AbortSignal): {
 } {
   const reason = signal.reason;
 
-  if (reason instanceof DOMException && reason.name === "TimeoutError") {
+  if (reason instanceof DOMException && reason.name === 'TimeoutError') {
     return {
-      code: "request_timeout",
-      message:
-        reason.message || "Die API-Anfrage hat das Zeitlimit überschritten.",
-      statusText: "Request timeout",
+      code: 'request_timeout',
+      message: reason.message || 'Die API-Anfrage hat das Zeitlimit überschritten.',
+      statusText: 'Request timeout',
       reason,
     };
   }
 
-  if (reason instanceof Error && reason.name === "TimeoutError") {
+  if (reason instanceof Error && reason.name === 'TimeoutError') {
     return {
-      code: "request_timeout",
-      message:
-        reason.message || "Die API-Anfrage hat das Zeitlimit überschritten.",
-      statusText: "Request timeout",
+      code: 'request_timeout',
+      message: reason.message || 'Die API-Anfrage hat das Zeitlimit überschritten.',
+      statusText: 'Request timeout',
       reason,
     };
   }
 
   return {
-    code: "request_aborted",
-    message: "Die API-Anfrage wurde abgebrochen.",
-    statusText: "Request aborted",
+    code: 'request_aborted',
+    message: 'Die API-Anfrage wurde abgebrochen.',
+    statusText: 'Request aborted',
     reason,
   };
 }
@@ -937,7 +881,7 @@ function isAbortLikeError(error: unknown, signal: AbortSignal): boolean {
     return true;
   }
 
-  return error instanceof DOMException && error.name === "AbortError";
+  return error instanceof DOMException && error.name === 'AbortError';
 }
 
 function prepareApiRequest<TBody>(
@@ -954,11 +898,10 @@ function prepareApiRequest<TBody>(
     url = buildApiUrl(path, options.query);
   } catch (error) {
     throw new ApiError({
-      message:
-        error instanceof Error ? error.message : "Der API-Pfad ist ungültig.",
+      message: error instanceof Error ? error.message : 'Der API-Pfad ist ungültig.',
       status: 0,
-      statusText: "Invalid API URL",
-      code: "invalid_api_url",
+      statusText: 'Invalid API URL',
+      code: 'invalid_api_url',
       details: {
         path,
       },
@@ -967,16 +910,12 @@ function prepareApiRequest<TBody>(
     });
   }
 
-  if (
-    !isBodyAllowed(normalizedMethod) &&
-    options.body !== undefined &&
-    options.body !== null
-  ) {
+  if (!isBodyAllowed(normalizedMethod) && options.body !== undefined && options.body !== null) {
     throw new ApiError({
       message: `Die HTTP-Methode ${normalizedMethod} darf in diesem Client keinen Request-Body enthalten.`,
       status: 0,
-      statusText: "Invalid request body",
-      code: "body_not_allowed",
+      statusText: 'Invalid request body',
+      code: 'body_not_allowed',
       details: {
         method: normalizedMethod,
       },
@@ -988,8 +927,7 @@ function prepareApiRequest<TBody>(
 
   const clientRequestId = resolveClientRequestId(options, headers, url);
 
-  const timeoutMs =
-    options.timeoutMs === undefined ? defaultTimeoutMs : options.timeoutMs;
+  const timeoutMs = options.timeoutMs === undefined ? defaultTimeoutMs : options.timeoutMs;
 
   const abortResources = createCombinedAbortSignal({
     externalSignal: options.signal,
@@ -1093,11 +1031,10 @@ function normalizeCaughtRequestError(
   }
 
   return new ApiError({
-    message:
-      error instanceof Error ? error.message : "Die API ist nicht erreichbar.",
+    message: error instanceof Error ? error.message : 'Die API ist nicht erreichbar.',
     status: 0,
-    statusText: "Network error",
-    code: "network_error",
+    statusText: 'Network error',
+    code: 'network_error',
     details: null,
     clientRequestId: params.clientRequestId,
     url: params.url,
@@ -1110,23 +1047,15 @@ export async function apiRequest<TResponse, TBody = unknown>(
   path: string,
   options: ApiRequestWithBodyOptions<TBody> = {},
 ): Promise<TResponse> {
-  const prepared = prepareApiRequest(
-    method,
-    path,
-    options,
-    DEFAULT_REQUEST_TIMEOUT_MS,
-  );
+  const prepared = prepareApiRequest(method, path, options, DEFAULT_REQUEST_TIMEOUT_MS);
 
   const startedAt = performance.now();
 
-  logDeveloperStep("info", "request-started", {
+  logDeveloperStep('info', 'request-started', {
     method: prepared.method,
     url: getSafeLogUrl(prepared.url),
     clientRequestId: prepared.clientRequestId,
-    timeoutMs:
-      options.timeoutMs === undefined
-        ? DEFAULT_REQUEST_TIMEOUT_MS
-        : options.timeoutMs,
+    timeoutMs: options.timeoutMs === undefined ? DEFAULT_REQUEST_TIMEOUT_MS : options.timeoutMs,
     hasBody: prepared.body !== undefined,
     credentials: prepared.credentials,
   });
@@ -1140,25 +1069,19 @@ export async function apiRequest<TResponse, TBody = unknown>(
       body: prepared.body,
     });
 
-    const requestId = normalizeRequestId(
-      response.headers.get(SERVER_REQUEST_ID_HEADER),
-    );
+    const requestId = normalizeRequestId(response.headers.get(SERVER_REQUEST_ID_HEADER));
 
-    logDeveloperStep(
-      response.ok ? "info" : "warn",
-      "response-headers-received",
-      {
-        method: prepared.method,
-        url: getSafeLogUrl(prepared.url),
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        contentType: response.headers.get("content-type"),
-        requestId,
-        clientRequestId: prepared.clientRequestId,
-        durationMs: Math.round(performance.now() - startedAt),
-      },
-    );
+    logDeveloperStep(response.ok ? 'info' : 'warn', 'response-headers-received', {
+      method: prepared.method,
+      url: getSafeLogUrl(prepared.url),
+      status: response.status,
+      statusText: response.statusText,
+      ok: response.ok,
+      contentType: response.headers.get('content-type'),
+      requestId,
+      clientRequestId: prepared.clientRequestId,
+      durationMs: Math.round(performance.now() - startedAt),
+    });
 
     if (!response.ok) {
       throw await createHttpError(response, {
@@ -1167,16 +1090,13 @@ export async function apiRequest<TResponse, TBody = unknown>(
       });
     }
 
-    const result = await parseSuccessResponse<TResponse>(
-      response,
-      options.responseType ?? "auto",
-    );
+    const result = await parseSuccessResponse<TResponse>(response, options.responseType ?? 'auto');
 
-    logDeveloperStep("info", "response-parsed", {
+    logDeveloperStep('info', 'response-parsed', {
       method: prepared.method,
       url: getSafeLogUrl(prepared.url),
       status: response.status,
-      responseType: options.responseType ?? "auto",
+      responseType: options.responseType ?? 'auto',
       requestId,
       clientRequestId: prepared.clientRequestId,
       durationMs: Math.round(performance.now() - startedAt),
@@ -1191,8 +1111,8 @@ export async function apiRequest<TResponse, TBody = unknown>(
     });
 
     logDeveloperStep(
-      normalizedError.code === "request_aborted" ? "info" : "error",
-      "request-failed",
+      normalizedError.code === 'request_aborted' ? 'info' : 'error',
+      'request-failed',
       {
         method: prepared.method,
         url: getSafeLogUrl(prepared.url),
@@ -1210,7 +1130,7 @@ export async function apiRequest<TResponse, TBody = unknown>(
   } finally {
     prepared.cleanup();
 
-    logDeveloperStep("debug", "request-cleanup-completed", {
+    logDeveloperStep('debug', 'request-cleanup-completed', {
       method: prepared.method,
       url: getSafeLogUrl(prepared.url),
       clientRequestId: prepared.clientRequestId,
@@ -1230,34 +1150,25 @@ export async function apiStreamRequest<TBody = unknown>(
   path: string,
   options: ApiStreamRequestOptions<TBody> = {},
 ): Promise<ApiStreamHandle> {
-  const prepared = prepareApiRequest(
-    method,
-    path,
-    options,
-    DEFAULT_STREAM_CONNECT_TIMEOUT_MS,
-  );
+  const prepared = prepareApiRequest(method, path, options, DEFAULT_STREAM_CONNECT_TIMEOUT_MS);
 
-  const expectedContentType = (
-    options.expectedContentType ?? DEFAULT_STREAM_CONTENT_TYPE
-  )
+  const expectedContentType = (options.expectedContentType ?? DEFAULT_STREAM_CONTENT_TYPE)
     .trim()
     .toLowerCase();
 
-  if (!prepared.headers.has("Accept")) {
-    prepared.headers.set("Accept", expectedContentType);
+  if (!prepared.headers.has('Accept')) {
+    prepared.headers.set('Accept', expectedContentType);
   }
 
   const startedAt = performance.now();
 
-  logDeveloperStep("info", "stream-request-started", {
+  logDeveloperStep('info', 'stream-request-started', {
     method: prepared.method,
     url: getSafeLogUrl(prepared.url),
     clientRequestId: prepared.clientRequestId,
     expectedContentType,
     connectTimeoutMs:
-      options.timeoutMs === undefined
-        ? DEFAULT_STREAM_CONNECT_TIMEOUT_MS
-        : options.timeoutMs,
+      options.timeoutMs === undefined ? DEFAULT_STREAM_CONNECT_TIMEOUT_MS : options.timeoutMs,
     credentials: prepared.credentials,
   });
 
@@ -1268,7 +1179,7 @@ export async function apiStreamRequest<TBody = unknown>(
       signal: prepared.signal,
       credentials: prepared.credentials,
       body: prepared.body,
-      cache: "no-store",
+      cache: 'no-store',
     });
 
     /*
@@ -1279,26 +1190,20 @@ export async function apiStreamRequest<TBody = unknown>(
      */
     prepared.clearTimeout();
 
-    const requestId = normalizeRequestId(
-      response.headers.get(SERVER_REQUEST_ID_HEADER),
-    );
+    const requestId = normalizeRequestId(response.headers.get(SERVER_REQUEST_ID_HEADER));
 
-    const contentType = response.headers.get("content-type");
+    const contentType = response.headers.get('content-type');
 
-    logDeveloperStep(
-      response.ok ? "info" : "warn",
-      "stream-response-headers-received",
-      {
-        method: prepared.method,
-        url: getSafeLogUrl(prepared.url),
-        status: response.status,
-        statusText: response.statusText,
-        contentType,
-        requestId,
-        clientRequestId: prepared.clientRequestId,
-        durationMs: Math.round(performance.now() - startedAt),
-      },
-    );
+    logDeveloperStep(response.ok ? 'info' : 'warn', 'stream-response-headers-received', {
+      method: prepared.method,
+      url: getSafeLogUrl(prepared.url),
+      status: response.status,
+      statusText: response.statusText,
+      contentType,
+      requestId,
+      clientRequestId: prepared.clientRequestId,
+      durationMs: Math.round(performance.now() - startedAt),
+    });
 
     if (!response.ok) {
       throw await createHttpError(response, {
@@ -1307,15 +1212,12 @@ export async function apiStreamRequest<TBody = unknown>(
       });
     }
 
-    if (
-      !contentType ||
-      !contentType.toLowerCase().includes(expectedContentType)
-    ) {
+    if (!contentType || !contentType.toLowerCase().includes(expectedContentType)) {
       const error = new ApiError({
-        message: `Die API hat einen unerwarteten Antworttyp geliefert. Erwartet: ${expectedContentType}, erhalten: ${contentType ?? "unbekannt"}.`,
+        message: `Die API hat einen unerwarteten Antworttyp geliefert. Erwartet: ${expectedContentType}, erhalten: ${contentType ?? 'unbekannt'}.`,
         status: response.status,
         statusText: response.statusText,
-        code: "unexpected_content_type",
+        code: 'unexpected_content_type',
         details: {
           expectedContentType,
           actualContentType: contentType,
@@ -1336,10 +1238,10 @@ export async function apiStreamRequest<TBody = unknown>(
 
     if (!response.body) {
       throw new ApiError({
-        message: "Die API hat keinen lesbaren Antwortstream geliefert.",
+        message: 'Die API hat keinen lesbaren Antwortstream geliefert.',
         status: response.status,
         statusText: response.statusText,
-        code: "missing_response_stream",
+        code: 'missing_response_stream',
         details: null,
         requestId,
         clientRequestId: prepared.clientRequestId,
@@ -1350,16 +1252,13 @@ export async function apiStreamRequest<TBody = unknown>(
     let disposed = false;
 
     const cancel = (
-      reason: unknown = new DOMException(
-        "Der API-Stream wurde vom Client beendet.",
-        "AbortError",
-      ),
+      reason: unknown = new DOMException('Der API-Stream wurde vom Client beendet.', 'AbortError'),
     ): void => {
       if (prepared.signal.aborted) {
         return;
       }
 
-      logDeveloperStep("info", "stream-request-cancelled", {
+      logDeveloperStep('info', 'stream-request-cancelled', {
         method: prepared.method,
         url: getSafeLogUrl(prepared.url),
         requestId,
@@ -1378,7 +1277,7 @@ export async function apiStreamRequest<TBody = unknown>(
 
       prepared.cleanup();
 
-      logDeveloperStep("debug", "stream-request-disposed", {
+      logDeveloperStep('debug', 'stream-request-disposed', {
         method: prepared.method,
         url: getSafeLogUrl(prepared.url),
         requestId,
@@ -1403,8 +1302,8 @@ export async function apiStreamRequest<TBody = unknown>(
     });
 
     logDeveloperStep(
-      normalizedError.code === "request_aborted" ? "info" : "error",
-      "stream-request-failed",
+      normalizedError.code === 'request_aborted' ? 'info' : 'error',
+      'stream-request-failed',
       {
         method: prepared.method,
         url: getSafeLogUrl(prepared.url),
@@ -1422,11 +1321,8 @@ export async function apiStreamRequest<TBody = unknown>(
   }
 }
 
-export function apiGet<TResponse>(
-  path: string,
-  options?: ApiRequestOptions,
-): Promise<TResponse> {
-  return apiRequest<TResponse>("GET", path, options);
+export function apiGet<TResponse>(path: string, options?: ApiRequestOptions): Promise<TResponse> {
+  return apiRequest<TResponse>('GET', path, options);
 }
 
 export function apiPost<TResponse, TBody = unknown>(
@@ -1434,7 +1330,7 @@ export function apiPost<TResponse, TBody = unknown>(
   body?: TBody,
   options?: ApiRequestOptions,
 ): Promise<TResponse> {
-  return apiRequest<TResponse, TBody>("POST", path, {
+  return apiRequest<TResponse, TBody>('POST', path, {
     ...options,
     body,
   });
@@ -1445,7 +1341,7 @@ export function apiPut<TResponse, TBody = unknown>(
   body?: TBody,
   options?: ApiRequestOptions,
 ): Promise<TResponse> {
-  return apiRequest<TResponse, TBody>("PUT", path, {
+  return apiRequest<TResponse, TBody>('PUT', path, {
     ...options,
     body,
   });
@@ -1456,7 +1352,7 @@ export function apiPatch<TResponse, TBody = unknown>(
   body?: TBody,
   options?: ApiRequestOptions,
 ): Promise<TResponse> {
-  return apiRequest<TResponse, TBody>("PATCH", path, {
+  return apiRequest<TResponse, TBody>('PATCH', path, {
     ...options,
     body,
   });
@@ -1466,15 +1362,15 @@ export function apiDelete<TResponse = void>(
   path: string,
   options?: ApiRequestOptions,
 ): Promise<TResponse> {
-  return apiRequest<TResponse>("DELETE", path, options);
+  return apiRequest<TResponse>('DELETE', path, options);
 }
 
 export function apiPostStream<TBody = unknown>(
   path: string,
   body?: TBody,
-  options?: Omit<ApiStreamRequestOptions<TBody>, "body">,
+  options?: Omit<ApiStreamRequestOptions<TBody>, 'body'>,
 ): Promise<ApiStreamHandle> {
-  return apiStreamRequest("POST", path, {
+  return apiStreamRequest('POST', path, {
     ...options,
     body,
   });

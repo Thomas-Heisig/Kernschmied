@@ -1,23 +1,15 @@
 // F:\Kernschmied\frontend\src\components\settings\SettingsContent.tsx
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from 'react';
 
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import {
-  Check,
-  Clipboard,
-  RefreshCw,
-  RotateCcw,
-  Save,
-  Search,
-  X,
-} from "lucide-react";
+import { Check, Clipboard, RefreshCw, RotateCcw, Save, Search, X } from 'lucide-react';
 
-import type { ConfigObject, ConfigValue, ConfigEntryResponse } from "../../contracts/config";
-import type { UseSystemConfigReturn } from "../../hooks/useSystemConfig";
-import { SettingsCatalogView } from "./SettingsCatalogView";
-import { SettingsField } from "./SettingsField";
+import type { ConfigObject, ConfigValue, ConfigEntryResponse } from '../../contracts/config';
+import type { UseSystemConfigReturn } from '../../hooks/useSystemConfig';
+import { SettingsCatalogView } from './SettingsCatalogView';
+import { SettingsField } from './SettingsField';
 
 interface SettingsContentProps {
   activeKey: string | null;
@@ -53,29 +45,15 @@ interface SettingsSectionProps {
   onChange: (path: string[], value: ConfigValue) => void;
 }
 
-const SETTINGS_CATALOG_KEY = "settings-catalog";
+const SETTINGS_CATALOG_KEY = 'settings-catalog';
 
 const MAX_RENDER_DEPTH = 12;
 
-export function SettingsContent({
-  activeKey,
-  showJson,
-  config,
-}: SettingsContentProps) {
-  const {
-    values,
-    revision,
-    isLoading,
-    isSaving,
-    isDirty,
-    error,
-    setValues,
-    reload,
-    save,
-    reset,
-  } = config;
+export function SettingsContent({ activeKey, showJson, config }: SettingsContentProps) {
+  const { values, revision, isLoading, isSaving, isDirty, error, setValues, reload, save, reset } =
+    config;
 
-  const [jsonDraft, setJsonDraft] = useState("");
+  const [jsonDraft, setJsonDraft] = useState('');
 
   const [jsonError, setJsonError] = useState<string | null>(null);
 
@@ -83,20 +61,16 @@ export function SettingsContent({
 
   const [jsonCopied, setJsonCopied] = useState(false);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const normalizedSearchQuery = searchQuery.trim().toLocaleLowerCase("de");
+  const normalizedSearchQuery = searchQuery.trim().toLocaleLowerCase('de');
 
   const sectionEntries = useMemo(
     () =>
       Object.entries(values).sort((left, right) =>
-        formatSettingLabel(left[0]).localeCompare(
-          formatSettingLabel(right[0]),
-          "de",
-          {
-            sensitivity: "base",
-          },
-        ),
+        formatSettingLabel(left[0]).localeCompare(formatSettingLabel(right[0]), 'de', {
+          sensitivity: 'base',
+        }),
       ),
     [values],
   );
@@ -121,13 +95,11 @@ export function SettingsContent({
   );
 
   const entriesByFullKey = (config as any).entriesByFullKey as
-    | Record<string, any>
-    | null
-    | undefined;
+    Record<string, any> | null | undefined;
 
   const valuesByFullKey = useMemo(() => {
     // Prefer the richer `entriesByFullKey` if provided by the hook.
-    if (entriesByFullKey && typeof entriesByFullKey === "object") {
+    if (entriesByFullKey && typeof entriesByFullKey === 'object') {
       const out: Record<string, ConfigValue> = {};
 
       for (const [full, entryObj] of Object.entries(entriesByFullKey)) {
@@ -140,8 +112,8 @@ export function SettingsContent({
     const out: Record<string, ConfigValue> = {};
 
     function walk(prefix: string[], node: any) {
-      if (node === null || typeof node !== "object") {
-        out[prefix.join(".")] = node as ConfigValue;
+      if (node === null || typeof node !== 'object') {
+        out[prefix.join('.')] = node as ConfigValue;
         return;
       }
 
@@ -172,7 +144,7 @@ export function SettingsContent({
   }, [showJson, values, isJsonDraftDirty]);
 
   useEffect(() => {
-    setSearchQuery("");
+    setSearchQuery('');
   }, [activeKey, showJson]);
 
   useEffect(() => {
@@ -243,9 +215,7 @@ export function SettingsContent({
 
       setJsonCopied(true);
     } catch {
-      setJsonError(
-        "Die JSON-Konfiguration konnte nicht in die Zwischenablage kopiert werden.",
-      );
+      setJsonError('Die JSON-Konfiguration konnte nicht in die Zwischenablage kopiert werden.');
     }
   }
 
@@ -260,17 +230,9 @@ export function SettingsContent({
 
   function handleFieldChange(path: string[], value: ConfigValue): void {
     // If the default provider is changed, also clear the dependent default_model
-    if (
-      path.length >= 2 &&
-      path[0] === "models" &&
-      path[1] === "default_provider"
-    ) {
+    if (path.length >= 2 && path[0] === 'models' && path[1] === 'default_provider') {
       const withProvider = updateConfigValue(values, path, value);
-      const clearedModel = updateConfigValue(
-        withProvider,
-        ["models", "default_model"],
-        null,
-      );
+      const clearedModel = updateConfigValue(withProvider, ['models', 'default_model'], null);
       setValues(clearedModel);
       return;
     }
@@ -293,26 +255,26 @@ export function SettingsContent({
   }
 
   const currentTitle = showJson
-    ? "JSON-Editor"
+    ? 'JSON-Editor'
     : activeKey
       ? formatSectionTitle(activeKey)
-      : "Alle Einstellungen";
+      : 'Alle Einstellungen';
 
   const currentDescription = showJson
-    ? "Direkte Bearbeitung der gesamten Konfiguration als validierbares JSON."
+    ? 'Direkte Bearbeitung der gesamten Konfiguration als validierbares JSON.'
     : activeKey
       ? getSectionDescription(activeKey)
-      : "Validierte fachliche und technische Konfiguration des Kernschmied-Systems.";
+      : 'Validierte fachliche und technische Konfiguration des Kernschmied-Systems.';
 
   return (
     <div className="flex min-h-full flex-col">
       <header
         className={[
-          "sticky top-0 z-10 shrink-0",
-          "border-b border-slate-200 bg-white/95",
-          "px-5 py-4 backdrop-blur",
-          "dark:border-white/10 dark:bg-slate-950/90",
-        ].join(" ")}
+          'sticky top-0 z-10 shrink-0',
+          'border-b border-slate-200 bg-white/95',
+          'px-5 py-4 backdrop-blur',
+          'dark:border-white/10 dark:bg-slate-950/90',
+        ].join(' ')}
       >
         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="min-w-0">
@@ -332,9 +294,7 @@ export function SettingsContent({
               )}
 
               {showJson && isJsonDraftDirty ? (
-                <StatusBadge variant="warning">
-                  JSON noch nicht übernommen
-                </StatusBadge>
+                <StatusBadge variant="warning">JSON noch nicht übernommen</StatusBadge>
               ) : null}
             </div>
 
@@ -372,11 +332,7 @@ export function SettingsContent({
                 }
                 onChange={(e) => {
                   setValues(
-                    updateConfigValue(
-                      values,
-                      ["ui", "autosave_enabled"],
-                      e.target.checked,
-                    ),
+                    updateConfigValue(values, ['ui', 'autosave_enabled'], e.target.checked),
                   );
                 }}
               />
@@ -392,7 +348,7 @@ export function SettingsContent({
               <RefreshCw
                 size={15}
                 aria-hidden="true"
-                className={isLoading ? "animate-spin" : undefined}
+                className={isLoading ? 'animate-spin' : undefined}
               />
 
               <span>Neu laden</span>
@@ -417,7 +373,7 @@ export function SettingsContent({
             >
               <Save size={15} aria-hidden="true" />
 
-              <span>{isSaving ? "Speichern …" : "Speichern"}</span>
+              <span>{isSaving ? 'Speichern …' : 'Speichern'}</span>
             </button>
           </div>
         </div>
@@ -425,12 +381,10 @@ export function SettingsContent({
         {!showJson ? (
           <SettingsSearch
             value={searchQuery}
-            resultCount={
-              normalizedSearchQuery ? visibleSettingCount : undefined
-            }
+            resultCount={normalizedSearchQuery ? visibleSettingCount : undefined}
             onChange={setSearchQuery}
             onClear={() => {
-              setSearchQuery("");
+              setSearchQuery('');
             }}
           />
         ) : null}
@@ -471,7 +425,7 @@ export function SettingsContent({
             totalEntryCount={sectionEntries.length}
             onChange={handleFieldChange}
             valuesByFullKey={valuesByFullKey}
-          entriesByFullKey={entriesByFullKey ?? null}
+            entriesByFullKey={entriesByFullKey ?? null}
           />
         ) : (
           <SettingsSingleSection
@@ -513,13 +467,13 @@ function SettingsSearch({
           placeholder="Einstellungen durchsuchen …"
           aria-label="Einstellungen durchsuchen"
           className={[
-            "block w-full rounded-lg border border-slate-300",
-            "bg-white py-2 pl-9 pr-10 text-sm text-slate-900",
-            "outline-none transition",
-            "placeholder:text-slate-400",
-            "focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-            "dark:border-white/10 dark:bg-slate-900 dark:text-white",
-          ].join(" ")}
+            'block w-full rounded-lg border border-slate-300',
+            'bg-white py-2 pl-9 pr-10 text-sm text-slate-900',
+            'outline-none transition',
+            'placeholder:text-slate-400',
+            'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20',
+            'dark:border-white/10 dark:bg-slate-900 dark:text-white',
+          ].join(' ')}
           onChange={(event) => {
             onChange(event.target.value);
           }}
@@ -529,11 +483,11 @@ function SettingsSearch({
           <button
             type="button"
             className={[
-              "absolute right-1.5 top-1/2 inline-flex h-7 w-7",
-              "-translate-y-1/2 items-center justify-center rounded-md",
-              "text-slate-400 transition hover:bg-slate-100 hover:text-slate-700",
-              "dark:hover:bg-white/10 dark:hover:text-white",
-            ].join(" ")}
+              'absolute right-1.5 top-1/2 inline-flex h-7 w-7',
+              '-translate-y-1/2 items-center justify-center rounded-md',
+              'text-slate-400 transition hover:bg-slate-100 hover:text-slate-700',
+              'dark:hover:bg-white/10 dark:hover:text-white',
+            ].join(' ')}
             aria-label="Suche löschen"
             onClick={onClear}
           >
@@ -668,7 +622,7 @@ function SettingsSection({
   const currentPath = [...path, sectionKey];
 
   const label = formatSettingLabel(sectionKey);
-  const sectionFullKey = currentPath.join(".");
+  const sectionFullKey = currentPath.join('.');
 
   if (depth > MAX_RENDER_DEPTH) {
     const inferredEntryMaxDepth: ConfigEntryResponse = {
@@ -676,10 +630,11 @@ function SettingsSection({
       key: sectionKey,
       full_key: sectionFullKey,
       display_name: label,
-      description: "Die maximale Darstellungstiefe wurde erreicht. Der Wert kann als JSON bearbeitet werden.",
+      description:
+        'Die maximale Darstellungstiefe wurde erreicht. Der Wert kann als JSON bearbeitet werden.',
       value: value,
       default_value: null,
-      schema_version: "2.0",
+      schema_version: '2.0',
       value_type: undefined,
       value_schema: undefined,
       editable: true,
@@ -688,9 +643,9 @@ function SettingsSection({
       requires_restart: false,
       runtime_editable: true,
       nullable: true,
-      visibility: "",
+      visibility: '',
       allowed_scopes: [],
-      current_scope: "",
+      current_scope: '',
       ui: {
         component: undefined,
         category: undefined,
@@ -706,16 +661,24 @@ function SettingsSection({
         dynamic_options: null,
       },
       permissions: {
-        read: "config:read",
-        write: "config:write",
+        read: 'config:read',
+        write: 'config:write',
         reveal_secret: null,
       },
     };
 
-    return <SettingsField entry={inferredEntryMaxDepth} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
+    return (
+      <SettingsField
+        entry={inferredEntryMaxDepth}
+        path={currentPath}
+        disabled={disabled}
+        valuesByFullKey={valuesByFullKey}
+        onChange={onChange}
+      />
+    );
   }
 
-    if (!isConfigRecord(value)) {
+  if (!isConfigRecord(value)) {
     if (searchQuery && !matchesSearchQuery(sectionKey, value, searchQuery)) {
       return null;
     }
@@ -744,10 +707,10 @@ function SettingsSection({
       key: sectionKey,
       full_key: sectionFullKey,
       display_name: label,
-      description: metadata.description ?? "",
+      description: metadata.description ?? '',
       value: value,
       default_value: null,
-      schema_version: "2.0",
+      schema_version: '2.0',
       value_type: undefined,
       value_schema: undefined,
       editable: metadata.readOnly ? false : true,
@@ -756,9 +719,9 @@ function SettingsSection({
       requires_restart: false,
       runtime_editable: true,
       nullable: !(metadata.required ?? false),
-      visibility: "",
+      visibility: '',
       allowed_scopes: [],
-      current_scope: "",
+      current_scope: '',
       ui: {
         component: undefined,
         category: undefined,
@@ -770,31 +733,37 @@ function SettingsSection({
         advanced: false,
         hidden: false,
         readonly: Boolean(metadata.readOnly),
-        options: (metadata.options ?? []).map((o) => ({ value: o.value, label: o.label, description: o.description })),
+        options: (metadata.options ?? []).map((o) => ({
+          value: o.value,
+          label: o.label,
+          description: o.description,
+        })),
         dynamic_options: null,
       },
       permissions: {
-        read: "config:read",
-        write: "config:write",
+        read: 'config:read',
+        write: 'config:write',
         reveal_secret: null,
       },
     };
 
-    return <SettingsField entry={inferredEntryLeaf} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
+    return (
+      <SettingsField
+        entry={inferredEntryLeaf}
+        path={currentPath}
+        disabled={disabled}
+        valuesByFullKey={valuesByFullKey}
+        onChange={onChange}
+      />
+    );
   }
 
   const visibleEntries = Object.entries(value)
-    .filter(([childKey, childValue]) =>
-      matchesSearchQuery(childKey, childValue, searchQuery),
-    )
+    .filter(([childKey, childValue]) => matchesSearchQuery(childKey, childValue, searchQuery))
     .sort((left, right) =>
-      formatSettingLabel(left[0]).localeCompare(
-        formatSettingLabel(right[0]),
-        "de",
-        {
-          sensitivity: "base",
-        },
-      ),
+      formatSettingLabel(left[0]).localeCompare(formatSettingLabel(right[0]), 'de', {
+        sensitivity: 'base',
+      }),
     );
 
   if (
@@ -808,22 +777,20 @@ function SettingsSection({
   return (
     <section
       className={[
-        "overflow-hidden rounded-2xl border border-slate-200",
-        "bg-slate-100/60",
-        "dark:border-white/10 dark:bg-white/3",
-      ].join(" ")}
+        'overflow-hidden rounded-2xl border border-slate-200',
+        'bg-slate-100/60',
+        'dark:border-white/10 dark:bg-white/3',
+      ].join(' ')}
     >
       <header
         className={[
-          "border-b border-slate-200 bg-white px-5 py-4",
-          "dark:border-white/10 dark:bg-slate-900/60",
-        ].join(" ")}
+          'border-b border-slate-200 bg-white px-5 py-4',
+          'dark:border-white/10 dark:bg-slate-900/60',
+        ].join(' ')}
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="font-semibold text-slate-950 dark:text-white">
-              {label}
-            </h2>
+            <h2 className="font-semibold text-slate-950 dark:text-white">{label}</h2>
 
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {getSectionDescription(sectionKey)}
@@ -836,7 +803,7 @@ function SettingsSection({
         </div>
 
         <code className="mt-3 inline-block rounded bg-slate-100 px-2 py-1 text-xs text-slate-500 dark:bg-white/5 dark:text-slate-400">
-          {currentPath.join(".")}
+          {currentPath.join('.')}
         </code>
       </header>
 
@@ -852,7 +819,7 @@ function SettingsSection({
             depth={depth + 1}
             onChange={onChange}
             valuesByFullKey={valuesByFullKey}
-          entriesByFullKey={entriesByFullKey ?? null}
+            entriesByFullKey={entriesByFullKey ?? null}
           />
         ))}
       </div>
@@ -888,18 +855,14 @@ function SettingsJsonEditor({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <h2 className="font-semibold text-slate-950 dark:text-white">
-              JSON-Konfiguration
-            </h2>
+            <h2 className="font-semibold text-slate-950 dark:text-white">JSON-Konfiguration</h2>
 
-            {isDirty ? (
-              <StatusBadge variant="warning">Bearbeitet</StatusBadge>
-            ) : null}
+            {isDirty ? <StatusBadge variant="warning">Bearbeitet</StatusBadge> : null}
           </div>
 
           <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-            Es werden ausschließlich gültige Kernschmied-Konfigurationswerte
-            übernommen. Zusätzliche Felder können vom Backend abgelehnt werden.
+            Es werden ausschließlich gültige Kernschmied-Konfigurationswerte übernommen. Zusätzliche
+            Felder können vom Backend abgelehnt werden.
           </p>
         </div>
 
@@ -916,7 +879,7 @@ function SettingsJsonEditor({
               <Clipboard size={15} aria-hidden="true" />
             )}
 
-            <span>{copied ? "Kopiert" : "Kopieren"}</span>
+            <span>{copied ? 'Kopiert' : 'Kopieren'}</span>
           </button>
 
           <button
@@ -955,28 +918,24 @@ function SettingsJsonEditor({
         spellCheck={false}
         aria-label="JSON-Konfiguration"
         aria-invalid={error !== null}
-        aria-describedby={error ? "settings-json-error" : "settings-json-help"}
+        aria-describedby={error ? 'settings-json-error' : 'settings-json-help'}
         className={[
-          "mt-5 block w-full resize-y rounded-xl border",
-          error ? "border-red-400" : "border-slate-300",
-          "bg-slate-950 p-4 font-mono text-sm leading-6 text-slate-100",
-          "outline-none transition",
-          "focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20",
-          "disabled:cursor-not-allowed disabled:opacity-60",
-          "dark:border-white/10",
-        ].join(" ")}
+          'mt-5 block w-full resize-y rounded-xl border',
+          error ? 'border-red-400' : 'border-slate-300',
+          'bg-slate-950 p-4 font-mono text-sm leading-6 text-slate-100',
+          'outline-none transition',
+          'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20',
+          'disabled:cursor-not-allowed disabled:opacity-60',
+          'dark:border-white/10',
+        ].join(' ')}
         onChange={(event) => {
           onChange(event.target.value);
         }}
       />
 
-      <p
-        id="settings-json-help"
-        className="mt-3 text-xs text-slate-500 dark:text-slate-400"
-      >
-        Änderungen werden erst nach „JSON übernehmen“ in den lokalen
-        Konfigurationsentwurf übernommen. Das Speichern erfolgt anschließend
-        über die Hauptaktion „Speichern“.
+      <p id="settings-json-help" className="mt-3 text-xs text-slate-500 dark:text-slate-400">
+        Änderungen werden erst nach „JSON übernehmen“ in den lokalen Konfigurationsentwurf
+        übernommen. Das Speichern erfolgt anschließend über die Hauptaktion „Speichern“.
       </p>
 
       {error ? (
@@ -1031,11 +990,7 @@ function SettingsErrorMessage({
           </dl>
         </div>
 
-        <button
-          type="button"
-          className={secondaryButtonClassName}
-          onClick={onRetry}
-        >
+        <button type="button" className={secondaryButtonClassName} onClick={onRetry}>
           <RefreshCw size={15} aria-hidden="true" />
           Erneut laden
         </button>
@@ -1073,13 +1028,7 @@ function SettingsLoadingState() {
   );
 }
 
-function SettingsEmptyState({
-  title,
-  description,
-}: {
-  title: string;
-  description: string;
-}) {
+function SettingsEmptyState({ title, description }: { title: string; description: string }) {
   return (
     <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-10 text-center dark:border-white/15 dark:bg-slate-900/40">
       <h3 className="font-semibold text-slate-900 dark:text-white">{title}</h3>
@@ -1095,33 +1044,24 @@ function StatusBadge({
   variant,
   children,
 }: {
-  variant: "neutral" | "success" | "warning";
+  variant: 'neutral' | 'success' | 'warning';
   children: ReactNode;
 }) {
   const variantClassName =
-    variant === "success"
-      ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300"
-      : variant === "warning"
-        ? "bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300"
-        : "bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300";
+    variant === 'success'
+      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-500/15 dark:text-emerald-300'
+      : variant === 'warning'
+        ? 'bg-amber-100 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300'
+        : 'bg-slate-100 text-slate-600 dark:bg-white/10 dark:text-slate-300';
 
   return (
-    <span
-      className={[
-        "rounded-full px-2.5 py-1 text-xs font-medium",
-        variantClassName,
-      ].join(" ")}
-    >
+    <span className={['rounded-full px-2.5 py-1 text-xs font-medium', variantClassName].join(' ')}>
       {children}
     </span>
   );
 }
 
-function updateConfigValue(
-  source: ConfigObject,
-  path: string[],
-  value: ConfigValue,
-): ConfigObject {
+function updateConfigValue(source: ConfigObject, path: string[], value: ConfigValue): ConfigObject {
   const [currentKey, ...remainingPath] = path;
 
   if (currentKey === undefined) {
@@ -1137,9 +1077,7 @@ function updateConfigValue(
 
   const currentValue = source[currentKey];
 
-  const nestedSource: ConfigObject = isConfigRecord(currentValue)
-    ? currentValue
-    : {};
+  const nestedSource: ConfigObject = isConfigRecord(currentValue) ? currentValue : {};
 
   return {
     ...source,
@@ -1148,9 +1086,7 @@ function updateConfigValue(
 }
 
 function formatSettingLabel(value: string): string {
-  return value
-    .replace(/[_-]+/g, " ")
-    .replace(/\b\w/g, (character) => character.toUpperCase());
+  return value.replace(/[_-]+/g, ' ').replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
 function formatSectionTitle(key: string): string {
@@ -1158,32 +1094,28 @@ function formatSectionTitle(key: string): string {
 }
 
 function getSectionDescription(key: string): string {
-  const normalizedKey = key.toLocaleLowerCase("de");
+  const normalizedKey = key.toLocaleLowerCase('de');
 
   const descriptions: Record<string, string> = {
-    identity:
-      "Identität, Grundauftrag und allgemeines Verhalten von Kernschmied.",
-    behavior: "Kommunikationsverhalten, Autonomie und Selbstprüfung.",
-    prompts: "Versionierte System- und Aufgabenprompts sowie deren Vererbung.",
-    models: "Modelle, Auswahlregeln und Generierungsparameter.",
-    providers: "Verbindungen, Timeouts und Laufzeitwerte der Modellprovider.",
-    tools: "Tool-Auswahl, Ausführungsgrenzen und Bestätigungspflichten.",
-    knowledge: "Wissensquellen, Gedächtnis und Kontextauswahl.",
-    context: "Kontextgrenzen, Quellenprioritäten und Relevanzregeln.",
-    workflow: "Planung, Ausführung, Selbstprüfung und Abschluss von Aufgaben.",
-    runtime: "Globale Laufzeitgrenzen und operative Systemwerte.",
-    storage: "Speicherziele, Versionierung und Aufbewahrung.",
-    communication: "Kommunikationskanäle und Interaktionsverhalten.",
-    appearance: "Darstellung, Theme und lokale Oberflächenpräferenzen.",
-    security: "Sicherheitsgrenzen, Autorisierung und Bestätigungspflichten.",
-    diagnostics: "Diagnose-, Qualitäts- und Laufzeitinformationen.",
-    learning: "Lernkandidaten, Bewertung und kontrollierte Optimierung.",
+    identity: 'Identität, Grundauftrag und allgemeines Verhalten von Kernschmied.',
+    behavior: 'Kommunikationsverhalten, Autonomie und Selbstprüfung.',
+    prompts: 'Versionierte System- und Aufgabenprompts sowie deren Vererbung.',
+    models: 'Modelle, Auswahlregeln und Generierungsparameter.',
+    providers: 'Verbindungen, Timeouts und Laufzeitwerte der Modellprovider.',
+    tools: 'Tool-Auswahl, Ausführungsgrenzen und Bestätigungspflichten.',
+    knowledge: 'Wissensquellen, Gedächtnis und Kontextauswahl.',
+    context: 'Kontextgrenzen, Quellenprioritäten und Relevanzregeln.',
+    workflow: 'Planung, Ausführung, Selbstprüfung und Abschluss von Aufgaben.',
+    runtime: 'Globale Laufzeitgrenzen und operative Systemwerte.',
+    storage: 'Speicherziele, Versionierung und Aufbewahrung.',
+    communication: 'Kommunikationskanäle und Interaktionsverhalten.',
+    appearance: 'Darstellung, Theme und lokale Oberflächenpräferenzen.',
+    security: 'Sicherheitsgrenzen, Autorisierung und Bestätigungspflichten.',
+    diagnostics: 'Diagnose-, Qualitäts- und Laufzeitinformationen.',
+    learning: 'Lernkandidaten, Bewertung und kontrollierte Optimierung.',
   };
 
-  return (
-    descriptions[normalizedKey] ??
-    `Konfigurationsbereich „${formatSettingLabel(key)}“.`
-  );
+  return descriptions[normalizedKey] ?? `Konfigurationsbereich „${formatSettingLabel(key)}“.`;
 }
 
 function inferFieldMetadata({
@@ -1195,143 +1127,132 @@ function inferFieldMetadata({
   path: string[];
   value: ConfigValue;
 }): InferredFieldMetadata {
-  const normalizedKey = fieldKey.toLocaleLowerCase("de");
+  const normalizedKey = fieldKey.toLocaleLowerCase('de');
 
-  const normalizedPath = path.join(".").toLocaleLowerCase("de");
+  const normalizedPath = path.join('.').toLocaleLowerCase('de');
 
   const metadata: InferredFieldMetadata = {};
 
   if (
     includesAny(normalizedKey, [
-      "secret",
-      "password",
-      "passwort",
-      "token",
-      "api_key",
-      "apikey",
-      "credential",
+      'secret',
+      'password',
+      'passwort',
+      'token',
+      'api_key',
+      'apikey',
+      'credential',
     ])
   ) {
     metadata.sensitive = true;
 
     metadata.description =
-      "Sensible Werte sollten als Secret-Referenz und nicht als Klartext gespeichert werden.";
+      'Sensible Werte sollten als Secret-Referenz und nicht als Klartext gespeichert werden.';
   }
 
   if (
     includesAny(normalizedKey, [
-      "description",
-      "beschreibung",
-      "prompt",
-      "instruction",
-      "anweisung",
+      'description',
+      'beschreibung',
+      'prompt',
+      'instruction',
+      'anweisung',
     ])
   ) {
-    metadata.description ??=
-      "Mehrzeiliger Textwert für die dynamische Laufzeitkonfiguration.";
+    metadata.description ??= 'Mehrzeiliger Textwert für die dynamische Laufzeitkonfiguration.';
   }
 
-  if (normalizedKey === "timezone" || normalizedKey === "time_zone") {
-    metadata.placeholder = "Europe/Berlin";
+  if (normalizedKey === 'timezone' || normalizedKey === 'time_zone') {
+    metadata.placeholder = 'Europe/Berlin';
 
     metadata.required = true;
   }
 
-  if (normalizedKey === "language" || normalizedKey === "locale") {
+  if (normalizedKey === 'language' || normalizedKey === 'locale') {
     metadata.options = [
       {
-        value: "de",
-        label: "Deutsch",
+        value: 'de',
+        label: 'Deutsch',
       },
       {
-        value: "en",
-        label: "Englisch",
+        value: 'en',
+        label: 'Englisch',
       },
     ];
   }
 
-  if (normalizedKey === "theme") {
+  if (normalizedKey === 'theme') {
     metadata.options = [
       {
-        value: "system",
-        label: "System",
+        value: 'system',
+        label: 'System',
       },
       {
-        value: "light",
-        label: "Hell",
+        value: 'light',
+        label: 'Hell',
       },
       {
-        value: "dark",
-        label: "Dunkel",
+        value: 'dark',
+        label: 'Dunkel',
       },
     ];
   }
 
-  if (normalizedKey === "environment") {
+  if (normalizedKey === 'environment') {
     metadata.options = [
       {
-        value: "development",
-        label: "Development",
+        value: 'development',
+        label: 'Development',
       },
       {
-        value: "intranet",
-        label: "Intranet",
+        value: 'intranet',
+        label: 'Intranet',
       },
       {
-        value: "internet",
-        label: "Internet",
+        value: 'internet',
+        label: 'Internet',
       },
     ];
   }
 
-  if (normalizedKey === "autonomy_level" || normalizedKey === "autonomy") {
+  if (normalizedKey === 'autonomy_level' || normalizedKey === 'autonomy') {
     metadata.options = [
       {
-        value: "advisory",
-        label: "Nur beraten",
+        value: 'advisory',
+        label: 'Nur beraten',
       },
       {
-        value: "draft",
-        label: "Entwürfe erstellen",
+        value: 'draft',
+        label: 'Entwürfe erstellen',
       },
       {
-        value: "prepare",
-        label: "Änderungen vorbereiten",
+        value: 'prepare',
+        label: 'Änderungen vorbereiten',
       },
       {
-        value: "execute_approved",
-        label: "Freigegebene Aktionen ausführen",
+        value: 'execute_approved',
+        label: 'Freigegebene Aktionen ausführen',
       },
     ];
   }
 
-  if (includesAny(normalizedKey, ["temperature", "top_p", "min_p"])) {
+  if (includesAny(normalizedKey, ['temperature', 'top_p', 'min_p'])) {
     metadata.minimum = 0;
 
-    metadata.maximum = normalizedKey === "temperature" ? 2 : 1;
+    metadata.maximum = normalizedKey === 'temperature' ? 2 : 1;
 
     metadata.step = 0.01;
   }
 
-  if (
-    includesAny(normalizedKey, ["timeout", "duration"]) &&
-    typeof value === "number"
-  ) {
+  if (includesAny(normalizedKey, ['timeout', 'duration']) && typeof value === 'number') {
     metadata.minimum = 0;
 
     metadata.step = 1;
   }
 
   if (
-    includesAny(normalizedKey, [
-      "max_",
-      "limit",
-      "count",
-      "retries",
-      "rounds",
-      "steps",
-    ]) &&
-    typeof value === "number"
+    includesAny(normalizedKey, ['max_', 'limit', 'count', 'retries', 'rounds', 'steps']) &&
+    typeof value === 'number'
   ) {
     metadata.minimum ??= 0;
 
@@ -1340,22 +1261,22 @@ function inferFieldMetadata({
 
   if (
     includesAny(normalizedPath, [
-      "revision",
-      "status",
-      "health",
-      "latency",
-      "error_rate",
-      "registry_revision",
+      'revision',
+      'status',
+      'health',
+      'latency',
+      'error_rate',
+      'registry_revision',
     ])
   ) {
     metadata.readOnly = true;
 
     metadata.description ??=
-      "Dieser Wert wird vom Backend ermittelt und ist in dieser Ansicht schreibgeschützt.";
+      'Dieser Wert wird vom Backend ermittelt und ist in dieser Ansicht schreibgeschützt.';
   }
 
-  if (includesAny(normalizedKey, ["endpoint", "base_url", "url", "webhook"])) {
-    metadata.placeholder = "https://example.org";
+  if (includesAny(normalizedKey, ['endpoint', 'base_url', 'url', 'webhook'])) {
+    metadata.placeholder = 'https://example.org';
   }
 
   return metadata;
@@ -1378,12 +1299,12 @@ function matchesSearchQuery(
     return false;
   }
 
-  if (typeof value === "string") {
+  if (typeof value === 'string') {
     return normalizeText(value).includes(searchQuery);
   }
 
-  if (typeof value === "number" || typeof value === "boolean") {
-    return String(value).toLocaleLowerCase("de").includes(searchQuery);
+  if (typeof value === 'number' || typeof value === 'boolean') {
+    return String(value).toLocaleLowerCase('de').includes(searchQuery);
   }
 
   if (value === null) {
@@ -1391,9 +1312,7 @@ function matchesSearchQuery(
   }
 
   if (Array.isArray(value)) {
-    return value.some((item, index) =>
-      matchesSearchQuery(String(index), item, searchQuery),
-    );
+    return value.some((item, index) => matchesSearchQuery(String(index), item, searchQuery));
   }
 
   return Object.entries(value).some(([childKey, childValue]) =>
@@ -1402,21 +1321,19 @@ function matchesSearchQuery(
 }
 
 function normalizeText(value: string): string {
-  return value.replace(/[_-]+/g, " ").toLocaleLowerCase("de");
+  return value.replace(/[_-]+/g, ' ').toLocaleLowerCase('de');
 }
 
-function countConfigValues(
-  value: ConfigValue | ConfigObject | undefined,
-): number {
+function countConfigValues(value: ConfigValue | ConfigObject | undefined): number {
   if (value === undefined) {
     return 0;
   }
 
   if (
     value === null ||
-    typeof value === "string" ||
-    typeof value === "number" ||
-    typeof value === "boolean"
+    typeof value === 'string' ||
+    typeof value === 'number' ||
+    typeof value === 'boolean'
   ) {
     return 1;
   }
@@ -1426,10 +1343,7 @@ function countConfigValues(
       return 1;
     }
 
-    return value.reduce<number>(
-      (count, item) => count + countConfigValues(item),
-      0,
-    );
+    return value.reduce<number>((count, item) => count + countConfigValues(item), 0);
   }
 
   const childValues: ConfigValue[] = Object.values(value);
@@ -1445,7 +1359,7 @@ function countConfigValues(
 }
 
 function isConfigObject(value: unknown): value is ConfigObject {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return false;
   }
 
@@ -1453,19 +1367,15 @@ function isConfigObject(value: unknown): value is ConfigObject {
 }
 
 function isConfigRecord(value: ConfigValue | undefined): value is ConfigObject {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function isConfigValue(value: unknown): value is ConfigValue {
-  if (
-    value === null ||
-    typeof value === "string" ||
-    typeof value === "boolean"
-  ) {
+  if (value === null || typeof value === 'string' || typeof value === 'boolean') {
     return true;
   }
 
-  if (typeof value === "number") {
+  if (typeof value === 'number') {
     return Number.isFinite(value);
   }
 
@@ -1487,10 +1397,10 @@ type ConfigParseResult =
     };
 
 function parseConfigObject(source: string): ConfigParseResult {
-  if (source.trim() === "") {
+  if (source.trim() === '') {
     return {
       ok: false,
-      error: "Die JSON-Konfiguration darf nicht leer sein.",
+      error: 'Die JSON-Konfiguration darf nicht leer sein.',
     };
   }
 
@@ -1501,15 +1411,14 @@ function parseConfigObject(source: string): ConfigParseResult {
   } catch {
     return {
       ok: false,
-      error: "Die JSON-Eingabe ist syntaktisch ungültig.",
+      error: 'Die JSON-Eingabe ist syntaktisch ungültig.',
     };
   }
 
   if (!isConfigObject(parsed)) {
     return {
       ok: false,
-      error:
-        "Die JSON-Eingabe muss ein Objekt mit gültigen Konfigurationswerten sein.",
+      error: 'Die JSON-Eingabe muss ein Objekt mit gültigen Konfigurationswerten sein.',
     };
   }
 
@@ -1524,23 +1433,23 @@ function includesAny(value: string, candidates: string[]): boolean {
 }
 
 const secondaryButtonClassName = [
-  "inline-flex items-center justify-center gap-2 rounded-lg",
-  "border border-slate-300 bg-white px-3.5 py-2",
-  "text-sm font-medium text-slate-700 transition",
-  "hover:bg-slate-50",
-  "focus-visible:outline-none focus-visible:ring-2",
-  "focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-  "disabled:cursor-not-allowed disabled:opacity-50",
-  "dark:border-white/10 dark:bg-white/5 dark:text-slate-200",
-  "dark:hover:bg-white/10 dark:focus-visible:ring-offset-slate-950",
-].join(" ");
+  'inline-flex items-center justify-center gap-2 rounded-lg',
+  'border border-slate-300 bg-white px-3.5 py-2',
+  'text-sm font-medium text-slate-700 transition',
+  'hover:bg-slate-50',
+  'focus-visible:outline-none focus-visible:ring-2',
+  'focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+  'dark:border-white/10 dark:bg-white/5 dark:text-slate-200',
+  'dark:hover:bg-white/10 dark:focus-visible:ring-offset-slate-950',
+].join(' ');
 
 const primaryButtonClassName = [
-  "inline-flex items-center justify-center gap-2 rounded-lg",
-  "bg-blue-600 px-4 py-2 text-sm font-medium text-white",
-  "transition hover:bg-blue-700",
-  "focus-visible:outline-none focus-visible:ring-2",
-  "focus-visible:ring-blue-500 focus-visible:ring-offset-2",
-  "disabled:cursor-not-allowed disabled:opacity-50",
-  "dark:focus-visible:ring-offset-slate-950",
-].join(" ");
+  'inline-flex items-center justify-center gap-2 rounded-lg',
+  'bg-blue-600 px-4 py-2 text-sm font-medium text-white',
+  'transition hover:bg-blue-700',
+  'focus-visible:outline-none focus-visible:ring-2',
+  'focus-visible:ring-blue-500 focus-visible:ring-offset-2',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+  'dark:focus-visible:ring-offset-slate-950',
+].join(' ');

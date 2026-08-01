@@ -6,4 +6,4 @@ export type {
   StructuredApiErrorDetails,
   SystemConfigSnapshot,
   UpdateSystemConfigRequest,
-} from "./config";
+} from './config';

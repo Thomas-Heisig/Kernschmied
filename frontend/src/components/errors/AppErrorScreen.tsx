@@ -6,11 +6,7 @@ interface AppErrorScreenProps {
   onRetry: () => void;
 }
 
-export function AppErrorScreen({
-  message,
-  requestId,
-  onRetry,
-}: AppErrorScreenProps) {
+export function AppErrorScreen({ message, requestId, onRetry }: AppErrorScreenProps) {
   return (
     <main className="flex h-full min-h-0 items-center justify-center overflow-y-auto bg-surface-muted p-6 dark:bg-slate-900/30">
       <section
@@ -31,9 +27,7 @@ export function AppErrorScreen({
               Anwendung konnte nicht geladen werden
             </h1>
 
-            <p className="mt-3 text-sm leading-6 text-text-soft dark:text-gray-300">
-              {message}
-            </p>
+            <p className="mt-3 text-sm leading-6 text-text-soft dark:text-gray-300">{message}</p>
 
             {requestId ? (
               <p className="mt-3 break-all text-xs text-text-muted dark:text-gray-500">
@@ -47,18 +41,18 @@ export function AppErrorScreen({
           <button
             type="button"
             className={[
-              "rounded-xl bg-primary px-4 py-2",
-              "text-sm font-medium text-white",
-              "shadow-glow transition",
-              "hover:bg-primary-hover",
-              "hover:shadow-primary-glow",
-              "focus-visible:outline-none",
-              "focus-visible:ring-2",
-              "focus-visible:ring-primary",
-              "focus-visible:ring-offset-2",
-              "dark:bg-primary/80",
-              "dark:hover:bg-primary",
-            ].join(" ")}
+              'rounded-xl bg-primary px-4 py-2',
+              'text-sm font-medium text-white',
+              'shadow-glow transition',
+              'hover:bg-primary-hover',
+              'hover:shadow-primary-glow',
+              'focus-visible:outline-none',
+              'focus-visible:ring-2',
+              'focus-visible:ring-primary',
+              'focus-visible:ring-offset-2',
+              'dark:bg-primary/80',
+              'dark:hover:bg-primary',
+            ].join(' ')}
             onClick={onRetry}
           >
             Erneut versuchen

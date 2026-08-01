@@ -1,30 +1,24 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { BookOpen, LoaderCircle, Search, X, ChevronDown, ChevronRight } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { BookOpen, LoaderCircle, Search, X, ChevronDown, ChevronRight } from 'lucide-react';
 
-import {
-  loadDocumentationIndex,
-  loadDocumentationPage,
-} from "../../api/documentation";
+import { loadDocumentationIndex, loadDocumentationPage } from '../../api/documentation';
 import type {
   DocumentationIndexResponse,
   DocumentationPageResponse,
-} from "../../contracts/documentation";
-import { MarkdownDocument } from "./MarkdownDocument";
+} from '../../contracts/documentation';
+import { MarkdownDocument } from './MarkdownDocument';
 
 interface DocumentationDialogProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function DocumentationDialog({
-  isOpen,
-  onClose,
-}: DocumentationDialogProps) {
+export function DocumentationDialog({ isOpen, onClose }: DocumentationDialogProps) {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const [index, setIndex] = useState<DocumentationIndexResponse | null>(null);
   const [page, setPage] = useState<DocumentationPageResponse | null>(null);
   const [activePageId, setActivePageId] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState('');
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
   const navRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -35,20 +29,20 @@ export function DocumentationDialog({
     if (!isOpen) return;
 
     const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     closeButtonRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === "Escape") {
+      if (event.key === 'Escape') {
         event.preventDefault();
         onClose();
       }
     };
 
-    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener('keydown', handleKeyDown);
     return () => {
       document.body.style.overflow = previousOverflow;
-      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
 
@@ -69,7 +63,7 @@ export function DocumentationDialog({
           setError(
             reason instanceof Error
               ? reason.message
-              : "Die Dokumentation konnte nicht geladen werden.",
+              : 'Die Dokumentation konnte nicht geladen werden.',
           );
         }
       })
@@ -94,7 +88,7 @@ export function DocumentationDialog({
           setError(
             reason instanceof Error
               ? reason.message
-              : "Die Dokumentationsseite konnte nicht geladen werden.",
+              : 'Die Dokumentationsseite konnte nicht geladen werden.',
           );
         }
       })
@@ -107,16 +101,14 @@ export function DocumentationDialog({
 
   const filteredSections = useMemo(() => {
     if (!index) return [];
-    const query = search.trim().toLocaleLowerCase("de");
+    const query = search.trim().toLocaleLowerCase('de');
     if (!query) return index.sections;
 
     return index.sections
       .map((section) => ({
         ...section,
         pages: section.pages.filter((candidate) =>
-          `${candidate.title} ${candidate.description}`
-            .toLocaleLowerCase("de")
-            .includes(query),
+          `${candidate.title} ${candidate.description}`.toLocaleLowerCase('de').includes(query),
         ),
       }))
       .filter((section) => section.pages.length > 0);
@@ -126,11 +118,11 @@ export function DocumentationDialog({
     // initialize all sections as collapsed by default
     if (!index) return;
     const map: Record<string, boolean> = {};
-    for (const s of index.sections) map[s.id] = s.id === "user-manual";
+    for (const s of index.sections) map[s.id] = s.id === 'user-manual';
 
     // load persisted state
     try {
-      const raw = localStorage.getItem("docs:expandedSections");
+      const raw = localStorage.getItem('docs:expandedSections');
       if (raw) {
         const persisted = JSON.parse(raw) as Record<string, boolean>;
         setExpandedSections((prev) => ({ ...map, ...persisted, ...prev }));
@@ -145,7 +137,7 @@ export function DocumentationDialog({
 
   useEffect(() => {
     try {
-      localStorage.setItem("docs:expandedSections", JSON.stringify(expandedSections));
+      localStorage.setItem('docs:expandedSections', JSON.stringify(expandedSections));
     } catch {
       /* ignore */
     }
@@ -232,31 +224,36 @@ export function DocumentationDialog({
                 const isExpanded = !!expandedSections[section.id];
                 return (
                   <section key={section.id} className="mb-5">
-                      <button
-                        type="button"
-                        aria-expanded={isExpanded}
-                        data-doc-button
-                        onClick={() =>
-                          setExpandedSections((prev) => ({
-                            ...prev,
-                            [section.id]: !prev[section.id],
-                          }))
-                        }
-                        className="flex w-full items-center justify-between px-3 pb-2"
-                      >
-                        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-text-muted dark:text-slate-500">
-                          {section.title}
-                        </h2>
-                        <span className="text-xs text-text-muted">
-                          {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                        </span>
-                      </button>
+                    <button
+                      type="button"
+                      aria-expanded={isExpanded}
+                      data-doc-button
+                      onClick={() =>
+                        setExpandedSections((prev) => ({
+                          ...prev,
+                          [section.id]: !prev[section.id],
+                        }))
+                      }
+                      className="flex w-full items-center justify-between px-3 pb-2"
+                    >
+                      <h2 className="text-[11px] font-semibold uppercase tracking-wider text-text-muted dark:text-slate-500">
+                        {section.title}
+                      </h2>
+                      <span className="text-xs text-text-muted">
+                        {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      </span>
+                    </button>
 
-                      <div ref={navRef} className={isExpanded ? "space-y-1" : "hidden"} onKeyDown={(e) => {
+                    <div
+                      ref={navRef}
+                      className={isExpanded ? 'space-y-1' : 'hidden'}
+                      onKeyDown={(e) => {
                         // keyboard navigation within expanded section
                         const el = navRef.current;
                         if (!el) return;
-                        const buttons = Array.from(el.querySelectorAll<HTMLButtonElement>('button[data-doc-button]'));
+                        const buttons = Array.from(
+                          el.querySelectorAll<HTMLButtonElement>('button[data-doc-button]'),
+                        );
                         if (!buttons.length) return;
 
                         const active = document.activeElement as HTMLElement | null;
@@ -277,29 +274,32 @@ export function DocumentationDialog({
                           e.preventDefault();
                           buttons[buttons.length - 1]?.focus();
                         }
-                      }}>
+                      }}
+                    >
                       {section.pages.map((candidate) => {
                         const isActive = candidate.id === activePageId;
                         return (
                           <button
                             key={candidate.id}
                             type="button"
-                              data-doc-button
-                              onClick={() => setActivePageId(candidate.id)}
+                            data-doc-button
+                            onClick={() => setActivePageId(candidate.id)}
                             className={[
-                              "w-full rounded-lg px-3 py-2.5 text-left transition-colors",
+                              'w-full rounded-lg px-3 py-2.5 text-left transition-colors',
                               isActive
-                                ? "bg-primary text-white shadow-sm"
-                                : "text-text-soft hover:bg-white hover:text-text dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white",
-                            ].join(" ")}
+                                ? 'bg-primary text-white shadow-sm'
+                                : 'text-text-soft hover:bg-white hover:text-text dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white',
+                            ].join(' ')}
                           >
                             <span className="block text-sm font-medium">{candidate.title}</span>
                             {candidate.description ? (
                               <span
                                 className={[
-                                  "mt-0.5 block line-clamp-2 text-xs",
-                                  isActive ? "text-white/75" : "text-text-muted dark:text-slate-500",
-                                ].join(" ")}
+                                  'mt-0.5 block line-clamp-2 text-xs',
+                                  isActive
+                                    ? 'text-white/75'
+                                    : 'text-text-muted dark:text-slate-500',
+                                ].join(' ')}
                               >
                                 {candidate.description}
                               </span>
@@ -338,7 +338,8 @@ export function DocumentationDialog({
               <div className="prose max-w-none p-6 sm:p-8 lg:p-12">
                 <h2>Willkommen zur Dokumentation</h2>
                 <p>
-                  Hier findest du eine Übersicht über alle zentralen Dokumentationen. Klicke auf einen Eintrag, um die Seite zu öffnen.
+                  Hier findest du eine Übersicht über alle zentralen Dokumentationen. Klicke auf
+                  einen Eintrag, um die Seite zu öffnen.
                 </p>
                 {index.sections.map((section) => (
                   <div key={section.id} className="mb-6">

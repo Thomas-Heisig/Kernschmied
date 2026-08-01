@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef } from 'react';
 
 export function Modal({
   isOpen,
@@ -6,7 +6,7 @@ export function Modal({
   children,
   onClose,
   onConfirm,
-  confirmLabel = "OK",
+  confirmLabel = 'OK',
   confirmDisabled = false,
 }: {
   isOpen: boolean;
@@ -22,15 +22,15 @@ export function Modal({
   useEffect(() => {
     if (!isOpen) return;
     const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow = 'hidden';
     ref.current?.focus();
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === 'Escape') onClose();
     };
-    window.addEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
     return () => {
       document.body.style.overflow = prev;
-      window.removeEventListener("keydown", onKey);
+      window.removeEventListener('keydown', onKey);
     };
   }, [isOpen, onClose]);
 
@@ -66,11 +66,7 @@ export function Modal({
         <div className="px-4 py-4">{children}</div>
 
         <footer className="flex gap-2 justify-end border-t border-border px-4 py-3">
-          <button
-            type="button"
-            className="rounded px-3 py-2 text-sm"
-            onClick={onClose}
-          >
+          <button type="button" className="rounded px-3 py-2 text-sm" onClick={onClose}>
             Abbrechen
           </button>
           <button

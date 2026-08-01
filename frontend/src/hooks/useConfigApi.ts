@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
-import type { ConfigValue } from "../contracts/config";
+import type { ConfigValue } from '../contracts/config';
 
 export interface DynamicOptionsSpec {
   endpoint: string;
@@ -20,7 +20,7 @@ function buildOptionsUrl(
 ): string | null {
   if (!spec || !spec.endpoint) return null;
 
-  if (!spec.endpoint.startsWith("/api/")) return null;
+  if (!spec.endpoint.startsWith('/api/')) return null;
 
   let url = spec.endpoint;
 
@@ -32,7 +32,7 @@ function buildOptionsUrl(
 
     const qp = `${encodeURIComponent(spec.dependency_parameter)}=${encodeURIComponent(String(depValue))}`;
 
-    url += url.includes("?") ? `&${qp}` : `?${qp}`;
+    url += url.includes('?') ? `&${qp}` : `?${qp}`;
   }
 
   return url;
@@ -81,9 +81,10 @@ export function useConfigOptions(
         else items = [];
 
         const mapped = items.map((it) => {
-          if (it && typeof it === "object") {
+          if (it && typeof it === 'object') {
             // If the remote endpoint returned full entries, prefer `value` and `label` fields.
-            const value = it.value ?? it.id ?? it.model_id ?? it.provider_id ?? it.name ?? JSON.stringify(it);
+            const value =
+              it.value ?? it.id ?? it.model_id ?? it.provider_id ?? it.name ?? JSON.stringify(it);
             const label = it.label ?? it.name ?? it.display_name ?? String(value);
             return { value, label } as SettingsFieldOption;
           }
@@ -95,7 +96,7 @@ export function useConfigOptions(
       })
       .catch((err) => {
         if (cancelled) return;
-        if (err.name === "AbortError") return;
+        if (err.name === 'AbortError') return;
         setError(String(err.message ?? err));
         setOptions([]);
       })

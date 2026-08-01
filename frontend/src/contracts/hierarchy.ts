@@ -1,6 +1,6 @@
 // F:\Kernschmied\frontend\src\contracts\hierarchy.ts
 
-export const HIERARCHY_SCHEMA_VERSION = "1.0" as const;
+export const HIERARCHY_SCHEMA_VERSION = '1.0' as const;
 
 export type HierarchyNodeId = string;
 export type HierarchyNodeType = string;
@@ -186,12 +186,8 @@ export function isHierarchyTree(value: unknown): value is HierarchyTree {
  * Prüft zusätzlich zu `isHierarchyTree`, ob die erwartete
  * Schemaversion verwendet wird.
  */
-export function isSupportedHierarchyTree(
-  value: unknown,
-): value is HierarchyTree {
-  return (
-    isHierarchyTree(value) && value.schema_version === HIERARCHY_SCHEMA_VERSION
-  );
+export function isSupportedHierarchyTree(value: unknown): value is HierarchyTree {
+  return isHierarchyTree(value) && value.schema_version === HIERARCHY_SCHEMA_VERSION;
 }
 
 /**
@@ -200,11 +196,11 @@ export function isSupportedHierarchyTree(
  * Arrays werden absichtlich ausgeschlossen.
  */
 export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export function isNonEmptyString(value: unknown): value is string {
-  return typeof value === "string" && value.trim().length > 0;
+  return typeof value === 'string' && value.trim().length > 0;
 }
 
 export function isOptionalNullableNonEmptyString(
@@ -213,21 +209,15 @@ export function isOptionalNullableNonEmptyString(
   return value === undefined || value === null || isNonEmptyString(value);
 }
 
-export function isOptionalNullableBoolean(
-  value: unknown,
-): value is boolean | null | undefined {
-  return value === undefined || value === null || typeof value === "boolean";
+export function isOptionalNullableBoolean(value: unknown): value is boolean | null | undefined {
+  return value === undefined || value === null || typeof value === 'boolean';
 }
 
-export function isOptionalNullableInteger(
-  value: unknown,
-): value is number | null | undefined {
+export function isOptionalNullableInteger(value: unknown): value is number | null | undefined {
   return (
     value === undefined ||
     value === null ||
-    (typeof value === "number" &&
-      Number.isFinite(value) &&
-      Number.isInteger(value))
+    (typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value))
   );
 }
 
@@ -237,10 +227,7 @@ export function isOptionalNullableNonNegativeInteger(
   return (
     value === undefined ||
     value === null ||
-    (typeof value === "number" &&
-      Number.isFinite(value) &&
-      Number.isInteger(value) &&
-      value >= 0)
+    (typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value >= 0)
   );
 }
 
@@ -254,10 +241,7 @@ export function isOptionalNullableRecord(
  * Typ für den Anlegenvorgang eines neuen Knotens, wie er vom Frontend an das
  * Backend gesendet wird. ID und Kinder werden serverseitig erzeugt.
  */
-export type HierarchyNodeCreate = Omit<
-  HierarchyNode,
-  "id" | "children" | "revision"
-> & {
+export type HierarchyNodeCreate = Omit<HierarchyNode, 'id' | 'children' | 'revision'> & {
   parent_id?: HierarchyNodeId | null;
 };
 
@@ -268,14 +252,14 @@ export type HierarchyNodeCreate = Omit<
 export type HierarchyNodeUpdate = Partial<
   Pick<
     HierarchyNode,
-    | "name"
-    | "type"
-    | "actions"
-    | "metadata"
-    | "parent_id"
-    | "sort_order"
-    | "selectable"
-    | "disabled"
-    | "status"
+    | 'name'
+    | 'type'
+    | 'actions'
+    | 'metadata'
+    | 'parent_id'
+    | 'sort_order'
+    | 'selectable'
+    | 'disabled'
+    | 'status'
   >
 >;

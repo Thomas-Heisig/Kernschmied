@@ -1,21 +1,21 @@
-import { useCallback, useState } from "react";
-import { useAppStoreCommands } from "../store";
+import { useCallback, useState } from 'react';
+import { useAppStoreCommands } from '../store';
 
-import { AppErrorScreen } from "../components/errors";
-import { AppLoadingScreen } from "../components/status";
-import { ToastProvider, useToast } from "../components/ui/ToastProvider";
-import HierarchyActionModal from "../components/ui/HierarchyActionModal";
-import { SettingsDialog } from "../components/settings";
-import { DocumentationDialog } from "../components/documentation";
+import { AppErrorScreen } from '../components/errors';
+import { AppLoadingScreen } from '../components/status';
+import { ToastProvider, useToast } from '../components/ui/ToastProvider';
+import HierarchyActionModal from '../components/ui/HierarchyActionModal';
+import { SettingsDialog } from '../components/settings';
+import { DocumentationDialog } from '../components/documentation';
 import {
   selectExpandedNodeIds,
   selectHierarchyRoot,
   selectSelectedNode,
   selectSelectedNodeId,
-} from "../store";
-import { useTheme } from "../theme";
-import { AppWorkspace } from "./AppWorkspace";
-import { useAppBootstrap } from "./useAppBootstrap";
+} from '../store';
+import { useTheme } from '../theme';
+import { AppWorkspace } from './AppWorkspace';
+import { useAppBootstrap } from './useAppBootstrap';
 
 export function AppShell() {
   return (
@@ -50,9 +50,7 @@ function AppShellContent() {
   const [modalKind, setModalKind] = useState<string | null>(null);
   const [modalNode, setModalNode] = useState<any | null>(null);
   const [isMutating, setIsMutating] = useState(false);
-  const [recentlyMovedNodeId, setRecentlyMovedNodeId] = useState<string | null>(
-    null,
-  );
+  const [recentlyMovedNodeId, setRecentlyMovedNodeId] = useState<string | null>(null);
 
   const handleOpenSettings = useCallback((): void => {
     setIsSettingsOpen(true);
@@ -70,16 +68,14 @@ function AppShellContent() {
     setIsDocumentationOpen(false);
   }, []);
 
-  if (state.status === "idle" || state.status === "loading") {
+  if (state.status === 'idle' || state.status === 'loading') {
     return <AppLoadingScreen />;
   }
 
-  if (state.status === "error") {
+  if (state.status === 'error') {
     return (
       <AppErrorScreen
-        message={
-          state.error?.message ?? "Die Anwendung konnte nicht geladen werden."
-        }
+        message={state.error?.message ?? 'Die Anwendung konnte nicht geladen werden.'}
         requestId={state.error?.requestId}
         onRetry={reloadApplication}
       />
@@ -116,6 +112,7 @@ function AppShellContent() {
   const handleMoveHierarchyNode = async (
     id: string,
     newParentId: string | null,
+    position?: number | null,
   ) => {
     setIsMutating(true);
 
@@ -123,38 +120,33 @@ function AppShellContent() {
 
     if (!prev) {
       setIsMutating(false);
-      push("error", "Keine Hierarchie geladen.");
+      push('error', 'Keine Hierarchie geladen.');
       return;
     }
 
     // Build optimistic tree
     try {
-      const optimistic = moveNodeInTree(prev, id, newParentId);
+      const optimistic = moveNodeInTree(prev, id, newParentId, position ?? null);
       replaceHierarchy(optimistic);
     } catch (err: unknown) {
       // If optimistic transform fails, abort
       push(
-        "error",
-        err instanceof Error
-          ? err.message
-          : "Fehler beim Anwenden der lokalen Änderung",
+        'error',
+        err instanceof Error ? err.message : 'Fehler beim Anwenden der lokalen Änderung',
       );
       setIsMutating(false);
       return;
     }
 
     try {
-      await moveHierarchyNode?.(id, newParentId);
-      push("success", "Verschoben.");
+      await moveHierarchyNode?.(id, newParentId, position ?? null);
+      push('success', 'Verschoben.');
       setRecentlyMovedNodeId(id);
       window.setTimeout(() => setRecentlyMovedNodeId(null), 900);
     } catch (err: unknown) {
       // revert
       if (prev) replaceHierarchy(prev);
-      push(
-        "error",
-        err instanceof Error ? err.message : "Fehler beim Verschieben",
-      );
+      push('error', err instanceof Error ? err.message : 'Fehler beim Verschieben');
     } finally {
       setIsMutating(false);
     }
@@ -164,6 +156,7 @@ function AppShellContent() {
     hierarchy: any,
     nodeId: string,
     newParentId: string | null,
+    insertPosition: number | null = null,
   ) {
     const clone = JSON.parse(JSON.stringify(hierarchy));
 
@@ -184,26 +177,29 @@ function AppShellContent() {
     }
 
     if (clone.root.id === nodeId) {
-      throw new Error("Root-Knoten kann nicht verschoben werden.");
+      throw new Error('Root-Knoten kann nicht verschoben werden.');
     }
 
     if (!removeNode(clone.root)) {
-      throw new Error("Knoten nicht gefunden.");
+      throw new Error('Knoten nicht gefunden.');
     }
 
-    if (!nodeToMove) throw new Error("Knoten konnte nicht entfernt werden.");
+    if (!nodeToMove) throw new Error('Knoten konnte nicht entfernt werden.');
+
 
     // insert into new parent
     if (newParentId === null) {
       clone.root.children = clone.root.children || [];
-      clone.root.children.push(nodeToMove);
+      if (insertPosition === null) clone.root.children.push(nodeToMove);
+      else clone.root.children.splice(Math.max(0, Math.min(clone.root.children.length, insertPosition)), 0, nodeToMove);
       return clone;
     }
 
     function insertInto(parent: any): boolean {
       if (parent.id === newParentId) {
         parent.children = parent.children || [];
-        parent.children.push(nodeToMove);
+        if (insertPosition === null) parent.children.push(nodeToMove);
+        else parent.children.splice(Math.max(0, Math.min(parent.children.length, insertPosition)), 0, nodeToMove);
         return true;
       }
       if (!parent.children) return false;
@@ -214,7 +210,7 @@ function AppShellContent() {
     }
 
     if (!insertInto(clone.root)) {
-      throw new Error("Ziel-Elternknoten nicht gefunden.");
+      throw new Error('Ziel-Elternknoten nicht gefunden.');
     }
 
     return clone;
@@ -258,40 +254,37 @@ function AppShellContent() {
           setIsMutating(true);
           try {
             switch (modalKind) {
-              case "create_chat": {
-                const name = value ?? "Neuer Chat";
+              case 'create_chat': {
+                const name = value ?? 'Neuer Chat';
                 await createHierarchyNode?.({
-                  type: "chat",
+                  type: 'chat',
                   name,
                   parent_id: modalNode.id ?? null,
                   tool_policy: {},
                   config_overrides: {},
                   metadata: {},
                 });
-                push("success", `Chat '${name}' erstellt.`);
+                push('success', `Chat '${name}' erstellt.`);
                 break;
               }
-              case "rename": {
+              case 'rename': {
                 const newName = value ?? modalNode.name;
                 await updateHierarchyNode?.(modalNode.id, { name: newName });
-                push(
-                  "success",
-                  `'${modalNode.name}' umbenannt in '${newName}'.`,
-                );
+                push('success', `'${modalNode.name}' umbenannt in '${newName}'.`);
                 break;
               }
-              case "delete": {
+              case 'delete': {
                 await deleteHierarchyNode?.(modalNode.id);
-                push("success", `'${modalNode.name}' wurde gelöscht.`);
+                push('success', `'${modalNode.name}' wurde gelöscht.`);
                 break;
               }
-              case "move": {
+              case 'move': {
                 const target = value && value.trim() ? value.trim() : null;
                 await moveHierarchyNode?.(modalNode.id, target);
-                push("success", `'${modalNode.name}' verschoben.`);
+                push('success', `'${modalNode.name}' verschoben.`);
                 break;
               }
-              case "edit_prompt": {
+              case 'edit_prompt': {
                 const promptValue = value ?? null;
                 // store prompt in metadata.prompt
                 const metadata = {
@@ -299,7 +292,7 @@ function AppShellContent() {
                   prompt: promptValue,
                 };
                 await updateHierarchyNode?.(modalNode.id, { metadata });
-                push("success", `Prompt für '${modalNode.name}' gespeichert.`);
+                push('success', `Prompt für '${modalNode.name}' gespeichert.`);
                 break;
               }
               default:
@@ -308,9 +301,8 @@ function AppShellContent() {
 
             setModalOpen(false);
           } catch (err: unknown) {
-            const message =
-              err instanceof Error ? err.message : "Fehler bei der Aktion";
-            push("error", message);
+            const message = err instanceof Error ? err.message : 'Fehler bei der Aktion';
+            push('error', message);
             setModalOpen(false);
           } finally {
             setIsMutating(false);
@@ -319,10 +311,7 @@ function AppShellContent() {
       />
 
       <SettingsDialog isOpen={isSettingsOpen} onClose={handleCloseSettings} />
-      <DocumentationDialog
-        isOpen={isDocumentationOpen}
-        onClose={handleCloseDocumentation}
-      />
+      <DocumentationDialog isOpen={isDocumentationOpen} onClose={handleCloseDocumentation} />
     </>
   );
 }

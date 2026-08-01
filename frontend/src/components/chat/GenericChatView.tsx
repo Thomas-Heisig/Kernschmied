@@ -1,19 +1,19 @@
 // F:\Kernschmied\frontend\src\components\chat\GenericChatView.tsx
 
-import { useEffect, useRef, useState } from "react";
-import { MessageCircle, Send, Square } from "lucide-react";
+import { useEffect, useRef, useState } from 'react';
+import { MessageCircle, Send, Square } from 'lucide-react';
 
-import type { FormEvent, KeyboardEvent } from "react";
+import type { FormEvent, KeyboardEvent } from 'react';
 
-import { ApiError, apiPostStream } from "../../api/client";
+import { ApiError, apiPostStream } from '../../api/client';
 
-import type { ApiStreamHandle } from "../../api/client";
+import type { ApiStreamHandle } from '../../api/client';
 
-const SOURCE_FILE = "frontend/src/components/chat/GenericChatView.tsx";
+const SOURCE_FILE = 'frontend/src/components/chat/GenericChatView.tsx';
 
-const CHAT_STREAM_PATH = "/chat/stream";
+const CHAT_STREAM_PATH = '/chat/stream';
 
-const CHAT_STREAM_SCHEMA_VERSION = "1.0" as const;
+const CHAT_STREAM_SCHEMA_VERSION = '1.0' as const;
 
 const MAX_MESSAGE_LENGTH = 50_000;
 
@@ -38,13 +38,11 @@ type GenericChatViewProps = {
   hierarchyNodeId: string;
 };
 
-type ChatRole = "user" | "assistant" | "system";
+type ChatRole = 'user' | 'assistant' | 'system';
 
-type ChatRequestStatus =
-  "idle" | "connecting" | "streaming" | "completed" | "failed" | "cancelled";
+type ChatRequestStatus = 'idle' | 'connecting' | 'streaming' | 'completed' | 'failed' | 'cancelled';
 
-type ChatMessageStatus =
-  "pending" | "streaming" | "completed" | "failed" | "cancelled";
+type ChatMessageStatus = 'pending' | 'streaming' | 'completed' | 'failed' | 'cancelled';
 
 type ChatMessage = {
   id: string;
@@ -77,16 +75,16 @@ type RawSseEvent = {
 };
 
 type ChatStreamEventType =
-  | "start"
-  | "token"
-  | "message"
-  | "reasoning"
-  | "tool_call"
-  | "tool_result"
-  | "usage"
-  | "complete"
-  | "error"
-  | "heartbeat";
+  | 'start'
+  | 'token'
+  | 'message'
+  | 'reasoning'
+  | 'tool_call'
+  | 'tool_result'
+  | 'usage'
+  | 'complete'
+  | 'error'
+  | 'heartbeat';
 
 type ChatStreamEnvelope = {
   schema_version?: unknown;
@@ -109,23 +107,23 @@ type ParsedChatStreamEvent = {
 };
 
 const KNOWN_STREAM_EVENT_TYPES = new Set<ChatStreamEventType>([
-  "start",
-  "token",
-  "message",
-  "reasoning",
-  "tool_call",
-  "tool_result",
-  "usage",
-  "complete",
-  "error",
-  "heartbeat",
+  'start',
+  'token',
+  'message',
+  'reasoning',
+  'tool_call',
+  'tool_result',
+  'usage',
+  'complete',
+  'error',
+  'heartbeat',
 ]);
 
 /* ============================================================
  * Entwicklerinformationen
  * ============================================================ */
 
-type DeveloperLogLevel = "debug" | "info" | "warn" | "error";
+type DeveloperLogLevel = 'debug' | 'info' | 'warn' | 'error';
 
 type DeveloperLogContext = Record<string, unknown>;
 
@@ -141,26 +139,26 @@ function logDeveloperStep(
   const entry = {
     timestamp: new Date().toISOString(),
     source: SOURCE_FILE,
-    area: "chat-pipeline",
+    area: 'chat-pipeline',
     step,
     ...context,
   };
 
   switch (level) {
-    case "error":
-      console.error("[Kernschmied][ChatPipeline]", entry);
+    case 'error':
+      console.error('[Kernschmied][ChatPipeline]', entry);
       break;
 
-    case "warn":
-      console.warn("[Kernschmied][ChatPipeline]", entry);
+    case 'warn':
+      console.warn('[Kernschmied][ChatPipeline]', entry);
       break;
 
-    case "info":
-      console.info("[Kernschmied][ChatPipeline]", entry);
+    case 'info':
+      console.info('[Kernschmied][ChatPipeline]', entry);
       break;
 
     default:
-      console.debug("[Kernschmied][ChatPipeline]", entry);
+      console.debug('[Kernschmied][ChatPipeline]', entry);
   }
 }
 
@@ -169,26 +167,19 @@ function logDeveloperStep(
  * ============================================================ */
 
 function createMessageId(): string {
-  if (
-    typeof crypto !== "undefined" &&
-    typeof crypto.randomUUID === "function"
-  ) {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
 
-  return [
-    "message",
-    Date.now().toString(36),
-    Math.random().toString(36).slice(2),
-  ].join("-");
+  return ['message', Date.now().toString(36), Math.random().toString(36).slice(2)].join('-');
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function asOptionalString(value: unknown): string | null {
-  if (typeof value !== "string") {
+  if (typeof value !== 'string') {
     return null;
   }
 
@@ -200,9 +191,9 @@ function asOptionalString(value: unknown): string | null {
 function asOptionalSequence(value: unknown): number | null {
   let candidate: number;
 
-  if (typeof value === "number") {
+  if (typeof value === 'number') {
     candidate = value;
-  } else if (typeof value === "string" && value.trim() !== "") {
+  } else if (typeof value === 'string' && value.trim() !== '') {
     candidate = Number(value);
   } else {
     return null;
@@ -216,24 +207,24 @@ function asOptionalSequence(value: unknown): number | null {
 }
 
 function normalizeSseBuffer(value: string): string {
-  return value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+  return value.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
 }
 
 function isAbortError(error: unknown): boolean {
-  return error instanceof DOMException && error.name === "AbortError";
+  return error instanceof DOMException && error.name === 'AbortError';
 }
 
 function validatePrompt(value: string): string {
   const normalized = value.trim();
 
   if (!normalized) {
-    throw new Error("Die Nachricht darf nicht leer sein.");
+    throw new Error('Die Nachricht darf nicht leer sein.');
   }
 
   if (normalized.length > MAX_MESSAGE_LENGTH) {
     throw new Error(
       `Die Nachricht darf höchstens ${MAX_MESSAGE_LENGTH.toLocaleString(
-        "de-DE",
+        'de-DE',
       )} Zeichen enthalten.`,
     );
   }
@@ -243,22 +234,18 @@ function validatePrompt(value: string): string {
 
 function validateChatRequest(request: ChatRequestPayload): void {
   if (!request.hierarchy_node_id.trim()) {
-    throw new Error(
-      "Für die Chat-Anfrage wurde kein gültiger Hierarchieknoten angegeben.",
-    );
+    throw new Error('Für die Chat-Anfrage wurde kein gültiger Hierarchieknoten angegeben.');
   }
 
   if (
     !Array.isArray(request.tool_ids) ||
-    !request.tool_ids.every(
-      (toolId) => typeof toolId === "string" && toolId.trim().length > 0,
-    )
+    !request.tool_ids.every((toolId) => typeof toolId === 'string' && toolId.trim().length > 0)
   ) {
-    throw new Error("Die Tool-IDs der Chat-Anfrage sind ungültig.");
+    throw new Error('Die Tool-IDs der Chat-Anfrage sind ungültig.');
   }
 
   if (!isRecord(request.metadata)) {
-    throw new Error("Die Metadaten der Chat-Anfrage sind ungültig.");
+    throw new Error('Die Metadaten der Chat-Anfrage sind ungültig.');
   }
 }
 
@@ -267,44 +254,44 @@ function validateChatRequest(request: ChatRequestPayload): void {
  * ============================================================ */
 
 function parseSseEvent(chunk: string): RawSseEvent | null {
-  let event = "message";
+  let event = 'message';
 
   let id: string | null = null;
 
   const dataLines: string[] = [];
 
-  for (const line of chunk.split("\n")) {
-    if (!line || line.startsWith(":")) {
+  for (const line of chunk.split('\n')) {
+    if (!line || line.startsWith(':')) {
       continue;
     }
 
-    const separatorIndex = line.indexOf(":");
+    const separatorIndex = line.indexOf(':');
 
     let field: string;
     let fieldValue: string;
 
     if (separatorIndex === -1) {
       field = line;
-      fieldValue = "";
+      fieldValue = '';
     } else {
       field = line.slice(0, separatorIndex);
       fieldValue = line.slice(separatorIndex + 1);
 
-      if (fieldValue.startsWith(" ")) {
+      if (fieldValue.startsWith(' ')) {
         fieldValue = fieldValue.slice(1);
       }
     }
 
     switch (field) {
-      case "event":
-        event = fieldValue || "message";
+      case 'event':
+        event = fieldValue || 'message';
         break;
 
-      case "id":
+      case 'id':
         id = fieldValue || null;
         break;
 
-      case "data":
+      case 'data':
         dataLines.push(fieldValue);
         break;
 
@@ -320,7 +307,7 @@ function parseSseEvent(chunk: string): RawSseEvent | null {
   return {
     event,
     id,
-    data: dataLines.join("\n"),
+    data: dataLines.join('\n'),
   };
 }
 
@@ -330,12 +317,9 @@ function parseChatStreamEvent(rawEvent: RawSseEvent): ParsedChatStreamEvent {
   try {
     parsed = JSON.parse(rawEvent.data) as unknown;
   } catch (error) {
-    throw new Error(
-      `Das SSE-Ereignis "${rawEvent.event}" enthält kein gültiges JSON.`,
-      {
-        cause: error,
-      },
-    );
+    throw new Error(`Das SSE-Ereignis "${rawEvent.event}" enthält kein gültiges JSON.`, {
+      cause: error,
+    });
   }
 
   if (!isRecord(parsed)) {
@@ -352,12 +336,8 @@ function parseChatStreamEvent(rawEvent: RawSseEvent): ParsedChatStreamEvent {
 
   const eventType = envelopeEvent ?? rawEvent.event;
 
-  if (
-    envelopeEvent &&
-    rawEvent.event !== "message" &&
-    rawEvent.event !== envelopeEvent
-  ) {
-    logDeveloperStep("warn", "sse-event-name-mismatch", {
+  if (envelopeEvent && rawEvent.event !== 'message' && rawEvent.event !== envelopeEvent) {
+    logDeveloperStep('warn', 'sse-event-name-mismatch', {
       sseEvent: rawEvent.event,
       envelopeEvent,
     });
@@ -366,8 +346,7 @@ function parseChatStreamEvent(rawEvent: RawSseEvent): ParsedChatStreamEvent {
   return {
     schemaVersion,
     type: eventType,
-    sequence:
-      asOptionalSequence(envelope.sequence) ?? asOptionalSequence(rawEvent.id),
+    sequence: asOptionalSequence(envelope.sequence) ?? asOptionalSequence(rawEvent.id),
     requestId: asOptionalString(envelope.request_id),
     conversationId: asOptionalString(envelope.conversation_id),
     messageId: asOptionalString(envelope.message_id),
@@ -380,60 +359,57 @@ function parseChatStreamEvent(rawEvent: RawSseEvent): ParsedChatStreamEvent {
  * ============================================================ */
 
 function extractContentFromPayload(payload: unknown): string {
-  if (typeof payload === "string") {
+  if (typeof payload === 'string') {
     return payload;
   }
 
   if (!isRecord(payload)) {
-    return "";
+    return '';
   }
 
-  if (typeof payload.content === "string") {
+  if (typeof payload.content === 'string') {
     return payload.content;
   }
 
-  if (typeof payload.text === "string") {
+  if (typeof payload.text === 'string') {
     return payload.text;
   }
 
-  if (typeof payload.token === "string") {
+  if (typeof payload.token === 'string') {
     return payload.token;
   }
 
   if (isRecord(payload.token)) {
-    if (typeof payload.token.content === "string") {
+    if (typeof payload.token.content === 'string') {
       return payload.token.content;
     }
 
-    if (typeof payload.token.text === "string") {
+    if (typeof payload.token.text === 'string') {
       return payload.token.text;
     }
   }
 
-  if (typeof payload.delta === "string") {
+  if (typeof payload.delta === 'string') {
     return payload.delta;
   }
 
-  if (isRecord(payload.delta) && typeof payload.delta.content === "string") {
+  if (isRecord(payload.delta) && typeof payload.delta.content === 'string') {
     return payload.delta.content;
   }
 
-  if (typeof payload.message === "string") {
+  if (typeof payload.message === 'string') {
     return payload.message;
   }
 
-  if (
-    isRecord(payload.message) &&
-    typeof payload.message.content === "string"
-  ) {
+  if (isRecord(payload.message) && typeof payload.message.content === 'string') {
     return payload.message.content;
   }
 
-  return "";
+  return '';
 }
 
 function extractErrorMessage(payload: unknown, fallback: string): string {
-  if (typeof payload === "string") {
+  if (typeof payload === 'string') {
     return payload.trim() || fallback;
   }
 
@@ -441,17 +417,17 @@ function extractErrorMessage(payload: unknown, fallback: string): string {
     return fallback;
   }
 
-  if (typeof payload.message === "string" && payload.message.trim()) {
+  if (typeof payload.message === 'string' && payload.message.trim()) {
     return payload.message;
   }
 
-  if (typeof payload.detail === "string" && payload.detail.trim()) {
+  if (typeof payload.detail === 'string' && payload.detail.trim()) {
     return payload.detail;
   }
 
   if (
     isRecord(payload.error) &&
-    typeof payload.error.message === "string" &&
+    typeof payload.error.message === 'string' &&
     payload.error.message.trim()
   ) {
     return payload.error.message;
@@ -462,9 +438,7 @@ function extractErrorMessage(payload: unknown, fallback: string): string {
 
 function formatRequestError(error: unknown): string {
   if (error instanceof ApiError) {
-    const requestReference = error.requestId
-      ? ` Request-ID: ${error.requestId}.`
-      : "";
+    const requestReference = error.requestId ? ` Request-ID: ${error.requestId}.` : '';
 
     return `${error.message}${requestReference}`;
   }
@@ -473,48 +447,48 @@ function formatRequestError(error: unknown): string {
     return error.message;
   }
 
-  return "Die Nachricht konnte nicht gesendet werden.";
+  return 'Die Nachricht konnte nicht gesendet werden.';
 }
 
 function formatTime(timestamp: number): string {
-  return new Date(timestamp).toLocaleTimeString("de-DE", {
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Date(timestamp).toLocaleTimeString('de-DE', {
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
 function getInitials(role: ChatRole): string {
   switch (role) {
-    case "user":
-      return "DU";
+    case 'user':
+      return 'DU';
 
-    case "assistant":
-      return "KI";
+    case 'assistant':
+      return 'KI';
 
     default:
-      return "SY";
+      return 'SY';
   }
 }
 
 function getAccessibleRequestStatus(status: ChatRequestStatus): string {
   switch (status) {
-    case "connecting":
-      return "Die Verbindung zum Chatserver wird aufgebaut.";
+    case 'connecting':
+      return 'Die Verbindung zum Chatserver wird aufgebaut.';
 
-    case "streaming":
-      return "Die Antwort wird erstellt.";
+    case 'streaming':
+      return 'Die Antwort wird erstellt.';
 
-    case "completed":
-      return "Die Antwort wurde vollständig empfangen.";
+    case 'completed':
+      return 'Die Antwort wurde vollständig empfangen.';
 
-    case "failed":
-      return "Die Chat-Anfrage ist fehlgeschlagen.";
+    case 'failed':
+      return 'Die Chat-Anfrage ist fehlgeschlagen.';
 
-    case "cancelled":
-      return "Die Chat-Anfrage wurde abgebrochen.";
+    case 'cancelled':
+      return 'Die Chat-Anfrage wurde abgebrochen.';
 
     default:
-      return "Der Chat ist bereit.";
+      return 'Der Chat ist bereit.';
   }
 }
 
@@ -522,15 +496,12 @@ function getAccessibleRequestStatus(status: ChatRequestStatus): string {
  * Komponente
  * ============================================================ */
 
-export function GenericChatView({
-  title,
-  hierarchyNodeId,
-}: GenericChatViewProps) {
-  const [input, setInput] = useState("");
+export function GenericChatView({ title, hierarchyNodeId }: GenericChatViewProps) {
+  const [input, setInput] = useState('');
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  const [requestStatus, setRequestStatus] = useState<ChatRequestStatus>("idle");
+  const [requestStatus, setRequestStatus] = useState<ChatRequestStatus>('idle');
 
   const [error, setError] = useState<string | null>(null);
 
@@ -544,27 +515,26 @@ export function GenericChatView({
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  const loading =
-    requestStatus === "connecting" || requestStatus === "streaming";
+  const loading = requestStatus === 'connecting' || requestStatus === 'streaming';
 
   /* ----------------------------------------------------------
    * Lebenszyklus
    * ---------------------------------------------------------- */
 
   useEffect(() => {
-    logDeveloperStep("info", "chat-context-activated", {
+    logDeveloperStep('info', 'chat-context-activated', {
       hierarchyNodeId,
       title,
     });
 
     setMessages([]);
     setConversationId(null);
-    setInput("");
+    setInput('');
     setError(null);
-    setRequestStatus("idle");
+    setRequestStatus('idle');
 
     return () => {
-      logDeveloperStep("info", "chat-context-deactivated", {
+      logDeveloperStep('info', 'chat-context-deactivated', {
         hierarchyNodeId,
         hasAbortController: abortControllerRef.current !== null,
         hasStreamHandle: streamHandleRef.current !== null,
@@ -581,8 +551,8 @@ export function GenericChatView({
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
-      behavior: "smooth",
-      block: "end",
+      behavior: 'smooth',
+      block: 'end',
     });
   }, [messages]);
 
@@ -593,22 +563,16 @@ export function GenericChatView({
       return;
     }
 
-    textarea.style.height = "auto";
+    textarea.style.height = 'auto';
 
-    textarea.style.height = `${Math.min(
-      textarea.scrollHeight,
-      MAX_INPUT_HEIGHT,
-    )}px`;
+    textarea.style.height = `${Math.min(textarea.scrollHeight, MAX_INPUT_HEIGHT)}px`;
   }, [input]);
 
   /* ----------------------------------------------------------
    * Nachrichten-State
    * ---------------------------------------------------------- */
 
-  function updateAssistantMessage(
-    assistantMessageId: string,
-    update: Partial<ChatMessage>,
-  ): void {
+  function updateAssistantMessage(assistantMessageId: string, update: Partial<ChatMessage>): void {
     setMessages((currentMessages) =>
       currentMessages.map((message) =>
         message.id === assistantMessageId
@@ -643,7 +607,7 @@ export function GenericChatView({
         return {
           ...message,
           content: message.content + content,
-          status: "streaming",
+          status: 'streaming',
           requestId: metadata.requestId ?? message.requestId,
           conversationId: metadata.conversationId ?? message.conversationId,
           serverMessageId: metadata.messageId ?? message.serverMessageId,
@@ -671,7 +635,7 @@ export function GenericChatView({
         return {
           ...message,
           content,
-          status: metadata.status ?? "streaming",
+          status: metadata.status ?? 'streaming',
           requestId: metadata.requestId ?? message.requestId,
           conversationId: metadata.conversationId ?? message.conversationId,
           serverMessageId: metadata.messageId ?? message.serverMessageId,
@@ -692,15 +656,14 @@ export function GenericChatView({
     const response = streamHandle.response;
 
     if (!response.body) {
-      throw new Error("Der Server hat keinen lesbaren Datenstrom geliefert.");
+      throw new Error('Der Server hat keinen lesbaren Datenstrom geliefert.');
     }
 
-    const headerRequestId =
-      streamHandle.requestId ?? response.headers.get("x-request-id");
+    const headerRequestId = streamHandle.requestId ?? response.headers.get('x-request-id');
 
-    const contentType = response.headers.get("content-type");
+    const contentType = response.headers.get('content-type');
 
-    logDeveloperStep("info", "sse-stream-opened", {
+    logDeveloperStep('info', 'sse-stream-opened', {
       status: response.status,
       contentType,
       requestId: headerRequestId,
@@ -709,9 +672,9 @@ export function GenericChatView({
 
     const reader = response.body.getReader();
 
-    const decoder = new TextDecoder("utf-8");
+    const decoder = new TextDecoder('utf-8');
 
-    let buffer = "";
+    let buffer = '';
 
     let completeReceived = false;
 
@@ -734,21 +697,19 @@ export function GenericChatView({
 
       if (streamEvent.schemaVersion !== CHAT_STREAM_SCHEMA_VERSION) {
         throw new Error(
-          "Der Server verwendet eine nicht unterstützte Chat-Stream-Version. " +
+          'Der Server verwendet eine nicht unterstützte Chat-Stream-Version. ' +
             `Erwartet: ${CHAT_STREAM_SCHEMA_VERSION}, ` +
-            `erhalten: ${streamEvent.schemaVersion ?? "nicht angegeben"}.`,
+            `erhalten: ${streamEvent.schemaVersion ?? 'nicht angegeben'}.`,
         );
       }
 
       if (streamEvent.sequence !== null) {
         if (lastSequence !== null && streamEvent.sequence < lastSequence) {
-          throw new Error(
-            "Der Chat-Stream enthält eine ungültige Ereignisreihenfolge.",
-          );
+          throw new Error('Der Chat-Stream enthält eine ungültige Ereignisreihenfolge.');
         }
 
         if (lastSequence !== null && streamEvent.sequence === lastSequence) {
-          logDeveloperStep("warn", "duplicate-sse-event-ignored", {
+          logDeveloperStep('warn', 'duplicate-sse-event-ignored', {
             sequence: streamEvent.sequence,
             eventType: streamEvent.type,
           });
@@ -761,7 +722,7 @@ export function GenericChatView({
 
       processedEventCount += 1;
 
-      logDeveloperStep("debug", "sse-event-received", {
+      logDeveloperStep('debug', 'sse-event-received', {
         eventType: streamEvent.type,
         sequence: streamEvent.sequence,
         requestId: streamEvent.requestId ?? headerRequestId,
@@ -770,10 +731,8 @@ export function GenericChatView({
         eventCount: processedEventCount,
       });
 
-      if (
-        !KNOWN_STREAM_EVENT_TYPES.has(streamEvent.type as ChatStreamEventType)
-      ) {
-        logDeveloperStep("warn", "unsupported-sse-event-ignored", {
+      if (!KNOWN_STREAM_EVENT_TYPES.has(streamEvent.type as ChatStreamEventType)) {
+        logDeveloperStep('warn', 'unsupported-sse-event-ignored', {
           eventType: streamEvent.type,
           sequence: streamEvent.sequence,
         });
@@ -786,15 +745,15 @@ export function GenericChatView({
       const requestId = streamEvent.requestId ?? headerRequestId;
 
       switch (eventType) {
-        case "start": {
-          setRequestStatus("streaming");
+        case 'start': {
+          setRequestStatus('streaming');
 
           if (streamEvent.conversationId) {
             setConversationId(streamEvent.conversationId);
           }
 
           updateAssistantMessage(assistantMessageId, {
-            status: "streaming",
+            status: 'streaming',
             requestId: requestId ?? undefined,
             conversationId: streamEvent.conversationId ?? undefined,
             serverMessageId: streamEvent.messageId ?? undefined,
@@ -803,7 +762,7 @@ export function GenericChatView({
           break;
         }
 
-        case "token": {
+        case 'token': {
           const content = extractContentFromPayload(streamEvent.payload);
 
           if (!content) {
@@ -821,7 +780,7 @@ export function GenericChatView({
           break;
         }
 
-        case "message": {
+        case 'message': {
           const content = extractContentFromPayload(streamEvent.payload);
 
           if (!content) {
@@ -834,13 +793,13 @@ export function GenericChatView({
             requestId,
             conversationId: streamEvent.conversationId,
             messageId: streamEvent.messageId,
-            status: "streaming",
+            status: 'streaming',
           });
 
           break;
         }
 
-        case "complete": {
+        case 'complete': {
           completeReceived = true;
 
           const finalContent = extractContentFromPayload(streamEvent.payload);
@@ -852,11 +811,11 @@ export function GenericChatView({
               requestId,
               conversationId: streamEvent.conversationId,
               messageId: streamEvent.messageId,
-              status: "completed",
+              status: 'completed',
             });
           } else {
             updateAssistantMessage(assistantMessageId, {
-              status: "completed",
+              status: 'completed',
               requestId: requestId ?? undefined,
               conversationId: streamEvent.conversationId ?? undefined,
               serverMessageId: streamEvent.messageId ?? undefined,
@@ -867,7 +826,7 @@ export function GenericChatView({
             setConversationId(streamEvent.conversationId);
           }
 
-          logDeveloperStep("info", "generation-completed", {
+          logDeveloperStep('info', 'generation-completed', {
             requestId,
             conversationId: streamEvent.conversationId,
             messageId: streamEvent.messageId,
@@ -878,15 +837,15 @@ export function GenericChatView({
           break;
         }
 
-        case "error": {
+        case 'error': {
           errorReceived = true;
 
           const message = extractErrorMessage(
             streamEvent.payload,
-            "Beim Verarbeiten der Nachricht ist ein Fehler aufgetreten.",
+            'Beim Verarbeiten der Nachricht ist ein Fehler aufgetreten.',
           );
 
-          logDeveloperStep("error", "sse-error-event-received", {
+          logDeveloperStep('error', 'sse-error-event-received', {
             requestId,
             sequence: streamEvent.sequence,
             message,
@@ -895,19 +854,19 @@ export function GenericChatView({
           throw new Error(message);
         }
 
-        case "heartbeat": {
-          logDeveloperStep("debug", "sse-heartbeat-received", {
+        case 'heartbeat': {
+          logDeveloperStep('debug', 'sse-heartbeat-received', {
             sequence: streamEvent.sequence,
           });
 
           break;
         }
 
-        case "reasoning":
-        case "tool_call":
-        case "tool_result":
-        case "usage": {
-          logDeveloperStep("debug", "sse-metadata-event-received", {
+        case 'reasoning':
+        case 'tool_call':
+        case 'tool_result':
+        case 'usage': {
+          logDeveloperStep('debug', 'sse-metadata-event-received', {
             eventType,
             sequence: streamEvent.sequence,
           });
@@ -920,10 +879,7 @@ export function GenericChatView({
     try {
       while (true) {
         if (abortSignal.aborted) {
-          throw new DOMException(
-            "Die Anfrage wurde abgebrochen.",
-            "AbortError",
-          );
+          throw new DOMException('Die Anfrage wurde abgebrochen.', 'AbortError');
         }
 
         const { value, done } = await reader.read();
@@ -939,9 +895,9 @@ export function GenericChatView({
 
         buffer = normalizeSseBuffer(buffer);
 
-        const chunks = buffer.split("\n\n");
+        const chunks = buffer.split('\n\n');
 
-        buffer = chunks.pop() ?? "";
+        buffer = chunks.pop() ?? '';
 
         for (const chunk of chunks) {
           await processChunk(chunk);
@@ -960,7 +916,7 @@ export function GenericChatView({
         // Der Reader kann bei einem Abbruch bereits freigegeben sein.
       }
 
-      logDeveloperStep("info", "sse-stream-closed", {
+      logDeveloperStep('info', 'sse-stream-closed', {
         completeReceived,
         errorReceived,
         processedEventCount,
@@ -971,7 +927,7 @@ export function GenericChatView({
 
     if (!completeReceived && !errorReceived && !abortSignal.aborted) {
       throw new Error(
-        "Die Verbindung wurde beendet, bevor der Server den Chat-Stream ordnungsgemäß abgeschlossen hat.",
+        'Die Verbindung wurde beendet, bevor der Server den Chat-Stream ordnungsgemäß abgeschlossen hat.',
       );
     }
   }
@@ -984,7 +940,7 @@ export function GenericChatView({
     event.preventDefault();
 
     if (loading) {
-      logDeveloperStep("warn", "submit-ignored-request-active");
+      logDeveloperStep('warn', 'submit-ignored-request-active');
       return;
     }
 
@@ -994,13 +950,11 @@ export function GenericChatView({
       prompt = validatePrompt(input);
     } catch (validationError) {
       const message =
-        validationError instanceof Error
-          ? validationError.message
-          : "Die Nachricht ist ungültig.";
+        validationError instanceof Error ? validationError.message : 'Die Nachricht ist ungültig.';
 
       setError(message);
 
-      logDeveloperStep("warn", "input-validation-failed", {
+      logDeveloperStep('warn', 'input-validation-failed', {
         message,
         inputLength: input.length,
       });
@@ -1018,19 +972,19 @@ export function GenericChatView({
 
     const userMessage: ChatMessage = {
       id: userMessageId,
-      role: "user",
+      role: 'user',
       content: prompt,
       timestamp: submittedAt,
-      status: "completed",
+      status: 'completed',
       conversationId: activeConversationId ?? undefined,
     };
 
     const assistantMessage: ChatMessage = {
       id: assistantMessageId,
-      role: "assistant",
-      content: "",
+      role: 'assistant',
+      content: '',
       timestamp: submittedAt,
-      status: "pending",
+      status: 'pending',
       conversationId: activeConversationId ?? undefined,
     };
 
@@ -1041,7 +995,7 @@ export function GenericChatView({
       model_id: null,
       tool_ids: [],
       metadata: {
-        client: "kernschmied-web",
+        client: 'kernschmied-web',
         client_message_id: userMessageId,
         client_assistant_message_id: assistantMessageId,
         submitted_at: new Date(submittedAt).toISOString(),
@@ -1054,18 +1008,18 @@ export function GenericChatView({
       const message =
         validationError instanceof Error
           ? validationError.message
-          : "Die Chat-Anfrage ist ungültig.";
+          : 'Die Chat-Anfrage ist ungültig.';
 
       setError(message);
 
-      logDeveloperStep("warn", "chat-request-validation-failed", {
+      logDeveloperStep('warn', 'chat-request-validation-failed', {
         message,
       });
 
       return;
     }
 
-    logDeveloperStep("info", "submit-started", {
+    logDeveloperStep('info', 'submit-started', {
       userMessageId,
       assistantMessageId,
       hierarchyNodeId,
@@ -1075,15 +1029,11 @@ export function GenericChatView({
       modelId: requestPayload.model_id,
     });
 
-    setMessages((currentMessages) => [
-      ...currentMessages,
-      userMessage,
-      assistantMessage,
-    ]);
+    setMessages((currentMessages) => [...currentMessages, userMessage, assistantMessage]);
 
-    setInput("");
+    setInput('');
     setError(null);
-    setRequestStatus("connecting");
+    setRequestStatus('connecting');
 
     const abortController = new AbortController();
 
@@ -1094,23 +1044,19 @@ export function GenericChatView({
     try {
       streamHandle = await apiPostStream(CHAT_STREAM_PATH, requestPayload, {
         signal: abortController.signal,
-        expectedContentType: "text/event-stream",
+        expectedContentType: 'text/event-stream',
       });
 
       streamHandleRef.current = streamHandle;
 
-      setRequestStatus("streaming");
+      setRequestStatus('streaming');
 
       updateAssistantMessage(assistantMessageId, {
         requestId: streamHandle.requestId,
-        status: "streaming",
+        status: 'streaming',
       });
 
-      await processSseStream(
-        streamHandle,
-        assistantMessageId,
-        abortController.signal,
-      );
+      await processSseStream(streamHandle, assistantMessageId, abortController.signal);
 
       setMessages((currentMessages) =>
         currentMessages.map((message) => {
@@ -1118,24 +1064,24 @@ export function GenericChatView({
             return message;
           }
 
-          if (message.content.trim() === "") {
+          if (message.content.trim() === '') {
             return {
               ...message,
-              content: "Der Server hat keine Antwort geliefert.",
-              status: "completed",
+              content: 'Der Server hat keine Antwort geliefert.',
+              status: 'completed',
             };
           }
 
           return {
             ...message,
-            status: "completed",
+            status: 'completed',
           };
         }),
       );
 
-      setRequestStatus("completed");
+      setRequestStatus('completed');
 
-      logDeveloperStep("info", "submit-completed", {
+      logDeveloperStep('info', 'submit-completed', {
         assistantMessageId,
         requestId: streamHandle.requestId,
         clientRequestId: streamHandle.clientRequestId,
@@ -1144,21 +1090,16 @@ export function GenericChatView({
       const requestWasAborted =
         abortController.signal.aborted ||
         isAbortError(caughtError) ||
-        (caughtError instanceof ApiError &&
-          caughtError.code === "request_aborted");
+        (caughtError instanceof ApiError && caughtError.code === 'request_aborted');
 
       if (requestWasAborted) {
-        setRequestStatus("cancelled");
+        setRequestStatus('cancelled');
 
-        setAssistantContent(
-          assistantMessageId,
-          "Die Antwort wurde abgebrochen.",
-          {
-            status: "cancelled",
-          },
-        );
+        setAssistantContent(assistantMessageId, 'Die Antwort wurde abgebrochen.', {
+          status: 'cancelled',
+        });
 
-        logDeveloperStep("info", "generation-cancelled", {
+        logDeveloperStep('info', 'generation-cancelled', {
           assistantMessageId,
           requestId: streamHandle?.requestId,
           clientRequestId: streamHandle?.clientRequestId,
@@ -1169,23 +1110,20 @@ export function GenericChatView({
 
       const message = formatRequestError(caughtError);
 
-      setRequestStatus("failed");
+      setRequestStatus('failed');
       setError(message);
 
       setAssistantContent(assistantMessageId, `Fehler: ${message}`, {
-        status: "failed",
-        requestId:
-          caughtError instanceof ApiError ? caughtError.requestId : null,
+        status: 'failed',
+        requestId: caughtError instanceof ApiError ? caughtError.requestId : null,
       });
 
-      logDeveloperStep("error", "submit-failed", {
+      logDeveloperStep('error', 'submit-failed', {
         assistantMessageId,
         errorName: caughtError instanceof Error ? caughtError.name : null,
         errorCode: caughtError instanceof ApiError ? caughtError.code : null,
-        requestId:
-          caughtError instanceof ApiError ? caughtError.requestId : null,
-        clientRequestId:
-          caughtError instanceof ApiError ? caughtError.clientRequestId : null,
+        requestId: caughtError instanceof ApiError ? caughtError.requestId : null,
+        clientRequestId: caughtError instanceof ApiError ? caughtError.clientRequestId : null,
         message,
       });
     } finally {
@@ -1199,7 +1137,7 @@ export function GenericChatView({
         abortControllerRef.current = null;
       }
 
-      logDeveloperStep("debug", "submit-cleanup-completed", {
+      logDeveloperStep('debug', 'submit-cleanup-completed', {
         aborted: abortController.signal.aborted,
       });
     }
@@ -1215,11 +1153,11 @@ export function GenericChatView({
     const abortController = abortControllerRef.current;
 
     if (!streamHandle && !abortController) {
-      logDeveloperStep("debug", "stop-ignored-no-active-request");
+      logDeveloperStep('debug', 'stop-ignored-no-active-request');
       return;
     }
 
-    logDeveloperStep("info", "stop-requested-by-user", {
+    logDeveloperStep('info', 'stop-requested-by-user', {
       requestStatus,
       hasStreamHandle: streamHandle !== null,
       hasAbortController: abortController !== null,
@@ -1228,25 +1166,18 @@ export function GenericChatView({
     streamHandle?.cancel();
 
     abortController?.abort(
-      new DOMException(
-        "Die Antwort wurde vom Benutzer abgebrochen.",
-        "AbortError",
-      ),
+      new DOMException('Die Antwort wurde vom Benutzer abgebrochen.', 'AbortError'),
     );
   }
 
   function handleInputKeyDown(event: KeyboardEvent<HTMLTextAreaElement>): void {
-    if (event.key === "Escape" && loading) {
+    if (event.key === 'Escape' && loading) {
       event.preventDefault();
       stopGeneration();
       return;
     }
 
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey &&
-      !event.nativeEvent.isComposing
-    ) {
+    if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault();
 
       if (!loading && input.trim()) {
@@ -1263,14 +1194,12 @@ export function GenericChatView({
     .reverse()
     .find(
       (message) =>
-        message.role === "assistant" &&
-        (message.status === "pending" || message.status === "streaming"),
+        message.role === 'assistant' &&
+        (message.status === 'pending' || message.status === 'streaming'),
     );
 
   const showTypingIndicator =
-    loading &&
-    Boolean(activeAssistantMessage) &&
-    !activeAssistantMessage?.content;
+    loading && Boolean(activeAssistantMessage) && !activeAssistantMessage?.content;
 
   const accessibleStatus = getAccessibleRequestStatus(requestStatus);
 
@@ -1294,34 +1223,27 @@ export function GenericChatView({
             <div className="flex min-h-0 flex-1 items-center justify-center py-10">
               <div className="w-full max-w-md text-center text-text-muted dark:text-gray-400">
                 <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-border-soft bg-white/70 shadow-sm dark:border-white/10 dark:bg-slate-800/60">
-                  <MessageCircle
-                    size={27}
-                    className="opacity-60"
-                    aria-hidden="true"
-                  />
+                  <MessageCircle size={27} className="opacity-60" aria-hidden="true" />
                 </div>
 
                 <p className="text-base font-medium text-text-soft dark:text-gray-300">
                   Noch keine Nachrichten
                 </p>
 
-                <p className="mt-1 text-sm">
-                  Schreibe eine Nachricht, um diesen Chat zu beginnen.
-                </p>
+                <p className="mt-1 text-sm">Schreibe eine Nachricht, um diesen Chat zu beginnen.</p>
               </div>
             </div>
           ) : (
             <div className="w-full space-y-5">
               {messages.map((message) => {
-                const isUser = message.role === "user";
+                const isUser = message.role === 'user';
 
-                const isSystem = message.role === "system";
+                const isSystem = message.role === 'system';
 
                 const isEmptyActiveAssistant =
                   !isUser &&
                   !message.content &&
-                  (message.status === "pending" ||
-                    message.status === "streaming");
+                  (message.status === 'pending' || message.status === 'streaming');
 
                 if (isSystem || isEmptyActiveAssistant) {
                   return null;
@@ -1331,38 +1253,38 @@ export function GenericChatView({
                   <article
                     key={message.id}
                     className={[
-                      "flex w-full",
-                      "animate-fade-in",
-                      "items-start gap-3",
-                      isUser ? "flex-row-reverse" : "flex-row",
-                    ].join(" ")}
+                      'flex w-full',
+                      'animate-fade-in',
+                      'items-start gap-3',
+                      isUser ? 'flex-row-reverse' : 'flex-row',
+                    ].join(' ')}
                     data-message-id={message.id}
                     data-message-status={message.status}
                   >
                     <div
                       className={[
-                        "flex h-9 w-9 shrink-0",
-                        "items-center justify-center",
-                        "rounded-full text-xs",
-                        "font-bold uppercase ring-1",
+                        'flex h-9 w-9 shrink-0',
+                        'items-center justify-center',
+                        'rounded-full text-xs',
+                        'font-bold uppercase ring-1',
                         isUser
                           ? [
-                              "bg-primary-soft",
-                              "text-primary",
-                              "ring-primary/15",
-                              "dark:bg-primary/20",
-                              "dark:text-primary",
-                              "dark:ring-primary/25",
-                            ].join(" ")
+                              'bg-primary-soft',
+                              'text-primary',
+                              'ring-primary/15',
+                              'dark:bg-primary/20',
+                              'dark:text-primary',
+                              'dark:ring-primary/25',
+                            ].join(' ')
                           : [
-                              "bg-secondary-soft",
-                              "text-secondary",
-                              "ring-secondary/15",
-                              "dark:bg-secondary/20",
-                              "dark:text-secondary",
-                              "dark:ring-secondary/25",
-                            ].join(" "),
-                      ].join(" ")}
+                              'bg-secondary-soft',
+                              'text-secondary',
+                              'ring-secondary/15',
+                              'dark:bg-secondary/20',
+                              'dark:text-secondary',
+                              'dark:ring-secondary/25',
+                            ].join(' '),
+                      ].join(' ')}
                       aria-hidden="true"
                     >
                       {getInitials(message.role)}
@@ -1370,49 +1292,45 @@ export function GenericChatView({
 
                     <div
                       className={[
-                        "min-w-0 rounded-2xl",
-                        "px-4 py-3 shadow-sm",
+                        'min-w-0 rounded-2xl',
+                        'px-4 py-3 shadow-sm',
                         isUser
                           ? [
-                              "max-w-[min(85%,52rem)]",
-                              "bg-linear-to-br",
-                              "from-primary",
-                              "to-primary-active",
-                              "text-white",
-                              "dark:from-primary-dark",
-                              "dark:to-primary-active-dark",
-                            ].join(" ")
+                              'max-w-[min(85%,52rem)]',
+                              'bg-linear-to-br',
+                              'from-primary',
+                              'to-primary-active',
+                              'text-white',
+                              'dark:from-primary-dark',
+                              'dark:to-primary-active-dark',
+                            ].join(' ')
                           : [
-                              "w-full max-w-6xl",
-                              "border",
-                              "border-border-soft",
-                              "bg-white/90",
-                              "backdrop-blur-sm",
-                              "dark:border-white/10",
-                              "dark:bg-slate-800/80",
-                            ].join(" "),
-                      ].join(" ")}
+                              'w-full max-w-6xl',
+                              'border',
+                              'border-border-soft',
+                              'bg-white/90',
+                              'backdrop-blur-sm',
+                              'dark:border-white/10',
+                              'dark:bg-slate-800/80',
+                            ].join(' '),
+                      ].join(' ')}
                     >
                       <div className="flex items-center justify-between gap-4">
                         <span
                           className={[
-                            "text-xs font-semibold",
-                            isUser
-                              ? "text-white/80"
-                              : "text-text-muted dark:text-gray-400",
-                          ].join(" ")}
+                            'text-xs font-semibold',
+                            isUser ? 'text-white/80' : 'text-text-muted dark:text-gray-400',
+                          ].join(' ')}
                         >
-                          {isUser ? "Du" : "Assistent"}
+                          {isUser ? 'Du' : 'Assistent'}
                         </span>
 
                         <time
                           dateTime={new Date(message.timestamp).toISOString()}
                           className={[
-                            "shrink-0 text-xs",
-                            isUser
-                              ? "text-white/60"
-                              : "text-text-subtle dark:text-gray-500",
-                          ].join(" ")}
+                            'shrink-0 text-xs',
+                            isUser ? 'text-white/60' : 'text-text-subtle dark:text-gray-500',
+                          ].join(' ')}
                         >
                           {formatTime(message.timestamp)}
                         </time>
@@ -1420,13 +1338,11 @@ export function GenericChatView({
 
                       <p
                         className={[
-                          "mt-1 wrap-break-words",
-                          "whitespace-pre-wrap",
-                          "text-sm leading-6",
-                          isUser
-                            ? "text-white"
-                            : "text-text dark:text-gray-100",
-                        ].join(" ")}
+                          'mt-1 wrap-break-words',
+                          'whitespace-pre-wrap',
+                          'text-sm leading-6',
+                          isUser ? 'text-white' : 'text-text dark:text-gray-100',
+                        ].join(' ')}
                       >
                         {message.content}
                       </p>
@@ -1527,13 +1443,11 @@ export function GenericChatView({
 
           <div className="mt-2 flex items-center justify-between gap-4 text-xs text-text-muted dark:text-gray-500">
             <p className="truncate">
-              Enter sendet · Shift + Enter erzeugt eine neue Zeile · Escape
-              bricht ab
+              Enter sendet · Shift + Enter erzeugt eine neue Zeile · Escape bricht ab
             </p>
 
             <span className="shrink-0 tabular-nums">
-              {input.length.toLocaleString("de-DE")}/
-              {MAX_MESSAGE_LENGTH.toLocaleString("de-DE")}
+              {input.length.toLocaleString('de-DE')}/{MAX_MESSAGE_LENGTH.toLocaleString('de-DE')}
             </span>
           </div>
         </div>

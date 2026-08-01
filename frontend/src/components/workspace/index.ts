@@ -1,3 +1,3 @@
-export { SelectedNodeWorkspace } from "./SelectedNodeWorkspace";
+export { SelectedNodeWorkspace } from './SelectedNodeWorkspace';
 
-export type { SelectedWorkspaceNode } from "./SelectedNodeWorkspace";
+export type { SelectedWorkspaceNode } from './SelectedNodeWorkspace';

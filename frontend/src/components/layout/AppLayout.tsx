@@ -1,13 +1,13 @@
-import type { ReactNode } from "react";
+import type { ReactNode } from 'react';
 
-import { AppFooter } from "./AppFooter";
-import { AppHeader } from "./AppHeader";
+import { AppFooter } from './AppFooter';
+import { AppHeader } from './AppHeader';
 
 interface AppLayoutProps {
   children: ReactNode;
   hierarchySidebar: ReactNode;
   contextSidebar: ReactNode;
-  theme: "light" | "dark";
+  theme: 'light' | 'dark';
   schemaVersion?: string;
   applicationVersion?: string;
   environment?: string;

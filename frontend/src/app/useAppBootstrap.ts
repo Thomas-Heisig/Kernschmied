@@ -1,27 +1,20 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect } from 'react';
 
-import { useAppSchema } from "../hooks/useAppSchema";
-import { useAppStoreCommands, useAppStoreState } from "../store";
+import { useAppSchema } from '../hooks/useAppSchema';
+import { useAppStoreCommands, useAppStoreState } from '../store';
 
 export function useAppBootstrap() {
-  const { schema, hierarchyTree, error, isLoading, reload, reloadHierarchy } =
-    useAppSchema();
+  const { schema, hierarchyTree, error, isLoading, reload, reloadHierarchy } = useAppSchema();
 
   const state = useAppStoreState();
 
-  const {
-    beginLoading,
-    setLoadedData,
-    setError,
-    selectHierarchyNode,
-    replaceExpandedNodeIds,
-  } = useAppStoreCommands();
+  const { beginLoading, setLoadedData, setError, selectHierarchyNode, replaceExpandedNodeIds } =
+    useAppStoreCommands();
 
   // Hierarchie-Mutationen
   const createHierarchyNode = useCallback(
     async (payload: unknown) => {
-      const { createHierarchyNode: apiCreate } =
-        await import("../api/hierarchy");
+      const { createHierarchyNode: apiCreate } = await import('../api/hierarchy');
       await apiCreate(payload as any);
       void reloadHierarchy();
     },
@@ -30,8 +23,7 @@ export function useAppBootstrap() {
 
   const updateHierarchyNode = useCallback(
     async (id: string, payload: unknown) => {
-      const { updateHierarchyNode: apiUpdate } =
-        await import("../api/hierarchy");
+      const { updateHierarchyNode: apiUpdate } = await import('../api/hierarchy');
       await apiUpdate(id, payload as any);
       void reloadHierarchy();
     },
@@ -39,9 +31,15 @@ export function useAppBootstrap() {
   );
 
   const moveHierarchyNode = useCallback(
-    async (id: string, newParentId: string | null) => {
-      const { moveHierarchyNode: apiMove } = await import("../api/hierarchy");
-      await apiMove(id, newParentId);
+    async (id: string, newParentId: string | null, position?: number | null) => {
+      if (position === undefined || position === null) {
+        const { moveHierarchyNode: apiMove } = await import('../api/hierarchy');
+        await apiMove(id, newParentId);
+      } else {
+        const { reorderHierarchy } = await import('../api/hierarchy');
+        await reorderHierarchy([{ id, new_parent_id: newParentId, new_position: position }]);
+      }
+
       void reloadHierarchy();
     },
     [reloadHierarchy],
@@ -49,8 +47,7 @@ export function useAppBootstrap() {
 
   const deleteHierarchyNode = useCallback(
     async (id: string) => {
-      const { deleteHierarchyNode: apiDelete } =
-        await import("../api/hierarchy");
+      const { deleteHierarchyNode: apiDelete } = await import('../api/hierarchy');
       await apiDelete(id);
       void reloadHierarchy();
     },

@@ -1,1 +1,1 @@
-export { GenericChatView } from "./GenericChatView";
+export { GenericChatView } from './GenericChatView';

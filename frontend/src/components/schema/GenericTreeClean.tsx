@@ -7,9 +7,9 @@ import React, {
   useState,
   type KeyboardEvent,
   type ReactNode,
-} from "react";
-import type { HierarchyNode } from "../../contracts/hierarchy";
-import type { UISchema } from "../../contracts/schema";
+} from 'react';
+import type { HierarchyNode } from '../../contracts/hierarchy';
+import type { UISchema } from '../../contracts/schema';
 import {
   getActionDefinition,
   hasActionHandler,
@@ -17,16 +17,16 @@ import {
   executeRegisteredAction,
   listActionDefinitions,
   isActionEnabled,
-} from "../../registry/actionRegistry";
-import { DynamicIcon } from "../../registry/iconRegistry";
+} from '../../registry/actionRegistry';
+import { DynamicIcon } from '../../registry/iconRegistry';
 
-const DEFAULT_NODE_ICON = "Circle";
+const DEFAULT_NODE_ICON = 'Circle';
 const DEFAULT_VISIBLE_ACTION_COUNT = 2;
 const INDENT_SIZE_PX = 16;
 const BASE_INDENT_PX = 8;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 export interface GenericTreeProps {
@@ -41,13 +41,17 @@ export interface GenericTreeProps {
   maxVisibleActions?: number;
   className?: string;
   renderLabel?: (node: HierarchyNode) => ReactNode;
-  onNodeDrop?: (sourceId: string, targetId: string) => void;
+  onNodeDrop?: (
+    sourceId: string,
+    targetId: string,
+    dropInfo?: { parentId: string | null; position: number | null },
+  ) => void;
   isBusy?: boolean;
   recentlyMovedNodeId?: string | null;
 }
 
 function joinClassNames(...values: Array<string | false | null | undefined>) {
-  return values.filter(Boolean).join(" ");
+  return values.filter(Boolean).join(' ');
 }
 
 function getChildren(node: HierarchyNode): readonly HierarchyNode[] {
@@ -57,8 +61,7 @@ function getNodeActions(node: HierarchyNode): readonly string[] {
   return Array.isArray(node.actions) ? node.actions : [];
 }
 function normalizeVisibleActionCount(value: number | undefined): number {
-  if (value === undefined || !Number.isFinite(value))
-    return DEFAULT_VISIBLE_ACTION_COUNT;
+  if (value === undefined || !Number.isFinite(value)) return DEFAULT_VISIBLE_ACTION_COUNT;
   return Math.max(0, Math.floor(value));
 }
 
@@ -78,9 +81,7 @@ function GenericTreeComponent({
   isBusy = false,
   recentlyMovedNodeId = null,
 }: GenericTreeProps) {
-  const [internalExpanded, setInternalExpanded] = useState<Set<string>>(
-    () => new Set([root.id]),
-  );
+  const [internalExpanded, setInternalExpanded] = useState<Set<string>>(() => new Set([root.id]));
   const isControlled = expandedNodeIds !== undefined;
   const expanded = expandedNodeIds ?? internalExpanded;
   const visibleActionCount = useMemo(
@@ -105,7 +106,7 @@ function GenericTreeComponent({
 
   return (
     <div
-      className={joinClassNames("min-w-0", className)}
+      className={joinClassNames('min-w-0', className)}
       role="tree"
       aria-label="Anwendungshierarchie"
     >
@@ -153,12 +154,9 @@ function TreeNode(props: any) {
   const hasChildren = children.length > 0;
   const isExpanded = hasChildren && expandedNodeIds.has(node.id);
   const isSelected = selectedNodeId === node.id;
-  const iconName = typeof nodeDef?.icon === "string" ? nodeDef.icon : undefined;
+  const iconName = typeof nodeDef?.icon === 'string' ? nodeDef.icon : undefined;
 
-  const supported = useMemo(
-    () => filterSupportedActionKinds(getNodeActions(node)),
-    [node],
-  );
+  const supported = useMemo(() => filterSupportedActionKinds(getNodeActions(node)), [node]);
   const effective =
     supported.length > 0
       ? supported
@@ -176,15 +174,15 @@ function TreeNode(props: any) {
       if (!menuRef.current) return;
       if (!menuRef.current.contains(e.target as Node)) setMenuOpen(false);
     }
-    document.addEventListener("mousedown", onDoc);
-    return () => document.removeEventListener("mousedown", onDoc);
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
   }, [menuOpen]);
 
   const handleDragStart = useCallback(
     (e: React.DragEvent) => {
       try {
-        e.dataTransfer.setData("application/x-kernschmied-node", node.id);
-        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData('application/x-kernschmied-node', node.id);
+        e.dataTransfer.effectAllowed = 'move';
       } catch {}
     },
     [node.id],
@@ -192,7 +190,7 @@ function TreeNode(props: any) {
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     try {
-      e.dataTransfer.dropEffect = "move";
+      e.dataTransfer.dropEffect = 'move';
     } catch {}
   }, []);
   const handleDrop = useCallback(
@@ -202,9 +200,26 @@ function TreeNode(props: any) {
         const source =
           e.dataTransfer.getData("application/x-kernschmied-node") ||
           e.dataTransfer.getData("text/plain");
-        if (source && onNodeDrop && source !== node.id)
-          onNodeDrop(source, node.id);
-      } catch {}
+        if (!source || !onNodeDrop || source === node.id) return;
+
+        // Determine drop position: before / inside / after based on pointer
+        const rect = (e.currentTarget as Element).getBoundingClientRect();
+        const y = e.clientY - rect.top;
+        const h = rect.height || 1;
+        const pct = y / h;
+
+        // top 25% -> before, bottom 25% -> after, otherwise inside
+        let dropInfo: { parentId: string | null; position: number | null } | undefined;
+        if (pct < 0.25) {
+          dropInfo = { parentId: node.parent_id ?? null, position: node.sort_order ?? 0 };
+        } else if (pct > 0.75) {
+          dropInfo = { parentId: node.parent_id ?? null, position: (node.sort_order ?? 0) + 1 };
+        } else {
+          // inside -> append as child (position null meaning append)
+          dropInfo = { parentId: node.id, position: null };
+        }
+
+        onNodeDrop(source, node.id, dropInfo);
     },
     [node.id, onNodeDrop],
   );
@@ -222,30 +237,28 @@ function TreeNode(props: any) {
     >
       <div
         className={joinClassNames(
-          "flex items-center gap-2 px-2 py-1 rounded",
-          isSelected ? "bg-primary-soft" : "",
+          'flex items-center gap-2 px-2 py-1 rounded',
+          isSelected ? 'bg-primary-soft' : '',
         )}
         style={{ paddingLeft: BASE_INDENT_PX + depth * INDENT_SIZE_PX }}
       >
         <button
           type="button"
           onClick={() => hasChildren && onToggleExpanded(node.id)}
-          className={joinClassNames(hasChildren ? "" : "opacity-0")}
+          className={joinClassNames(hasChildren ? '' : 'opacity-0')}
         >
-          {hasChildren ? "▶" : null}
+          {hasChildren ? '▶' : null}
         </button>
         <button
           type="button"
           onClick={() => onSelect(node)}
           onKeyDown={(e) => {
-            if ((e as KeyboardEvent).key === "Enter") onSelect(node);
+            if ((e as KeyboardEvent).key === 'Enter') onSelect(node);
           }}
           className="flex-1 text-left"
         >
-          <DynamicIcon name={iconName ?? DEFAULT_NODE_ICON} />{" "}
-          <span className="ml-2 truncate">
-            {renderLabel ? renderLabel(node) : node.name}
-          </span>
+          <DynamicIcon name={iconName ?? DEFAULT_NODE_ICON} />{' '}
+          <span className="ml-2 truncate">{renderLabel ? renderLabel(node) : node.name}</span>
         </button>
 
         <div className="relative ml-2" ref={menuRef}>
@@ -257,17 +270,15 @@ function TreeNode(props: any) {
             }}
             className="p-1 rounded"
           >
-            {" "}
-            <DynamicIcon name="MoreHorizontal" size={16} />{" "}
+            {' '}
+            <DynamicIcon name="MoreHorizontal" size={16} />{' '}
           </button>
           {menuOpen ? (
             <div className="absolute right-0 mt-2 w-56 bg-white shadow z-10 border border-border dark:bg-slate-900">
               <div className="p-1">
                 {/* Primary (non-destructive) actions */}
                 {effective
-                  .filter(
-                    (a) => !(getActionDefinition(a)?.destructive ?? false),
-                  )
+                  .filter((a) => !(getActionDefinition(a)?.destructive ?? false))
                   .map((action: string) => {
                     const def = getActionDefinition(action)!;
                     const disabled = !hasActionHandler(action) && !onAction;
@@ -288,13 +299,11 @@ function TreeNode(props: any) {
                           }
                         }}
                         className={joinClassNames(
-                          "w-full text-left px-3 py-2 flex items-center gap-2",
-                          disabled ? "opacity-50" : "hover:bg-surface-hover",
+                          'w-full text-left px-3 py-2 flex items-center gap-2',
+                          disabled ? 'opacity-50' : 'hover:bg-surface-hover',
                         )}
                       >
-                        {def.icon ? (
-                          <DynamicIcon name={def.icon} size={14} />
-                        ) : null}
+                        {def.icon ? <DynamicIcon name={def.icon} size={14} /> : null}
                         <span className="ml-1">{def.label}</span>
                       </button>
                     );
@@ -327,16 +336,12 @@ function TreeNode(props: any) {
                           }
                         }}
                         className={joinClassNames(
-                          "w-full text-left px-3 py-2 flex items-center gap-2",
-                          disabled
-                            ? "opacity-50 text-slate-400"
-                            : "hover:bg-surface-hover",
+                          'w-full text-left px-3 py-2 flex items-center gap-2',
+                          disabled ? 'opacity-50 text-slate-400' : 'hover:bg-surface-hover',
                         )}
-                        style={{ color: disabled ? undefined : "#dc2626" }}
+                        style={{ color: disabled ? undefined : '#dc2626' }}
                       >
-                        {def.icon ? (
-                          <DynamicIcon name={def.icon} size={14} />
-                        ) : null}
+                        {def.icon ? <DynamicIcon name={def.icon} size={14} /> : null}
                         <span className="ml-1">{def.label}</span>
                       </button>
                     );

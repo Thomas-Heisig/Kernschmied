@@ -1,23 +1,23 @@
 // F:\Kernschmied\frontend\src\components\layout\AppHierarchySidebar.tsx
 
-import { useState } from "react";
+import { useState } from 'react';
 
-import type { ComponentProps } from "react";
+import type { ComponentProps } from 'react';
 
-import { GenericTree } from "../schema/GenericTreeClean";
+import { GenericTree } from '../schema/GenericTreeClean';
 
 type GenericTreeProps = ComponentProps<typeof GenericTree>;
 
 interface AppHierarchySidebarProps {
-  root: GenericTreeProps["root"];
-  schema: GenericTreeProps["schema"];
-  selectedNodeId: GenericTreeProps["selectedNodeId"];
-  expandedNodeIds: GenericTreeProps["expandedNodeIds"];
-  onSelect: GenericTreeProps["onSelect"];
-  onExpandedNodeIdsChange: GenericTreeProps["onExpandedNodeIdsChange"];
-  onAction?: GenericTreeProps["onAction"];
-  onCreateChat?: GenericTreeProps["onCreateChat"];
-  onNodeDrop?: GenericTreeProps["onNodeDrop"];
+  root: GenericTreeProps['root'];
+  schema: GenericTreeProps['schema'];
+  selectedNodeId: GenericTreeProps['selectedNodeId'];
+  expandedNodeIds: GenericTreeProps['expandedNodeIds'];
+  onSelect: GenericTreeProps['onSelect'];
+  onExpandedNodeIdsChange: GenericTreeProps['onExpandedNodeIdsChange'];
+  onAction?: GenericTreeProps['onAction'];
+  onCreateChat?: GenericTreeProps['onCreateChat'];
+  onNodeDrop?: GenericTreeProps['onNodeDrop'];
   isBusy?: boolean;
   recentlyMovedNodeId?: string | null;
 
@@ -44,29 +44,29 @@ export function AppHierarchySidebar({
     setOpen((currentOpen) => !currentOpen);
   }
 
-  const toggleLabel = open ? "Hierarchie einklappen" : "Hierarchie ausklappen";
+  const toggleLabel = open ? 'Hierarchie einklappen' : 'Hierarchie ausklappen';
 
   return (
     <aside
       className={[
-        "flex h-full min-h-0 shrink-0 flex-col",
-        "border-r border-border",
-        "bg-white/80 shadow-glass backdrop-blur-md",
-        "transition-[width] duration-200 ease-out",
-        "dark:border-white/10 dark:bg-slate-800/80",
-        open ? "w-72" : "w-12",
-      ].join(" ")}
+        'flex h-full min-h-0 shrink-0 flex-col',
+        'border-r border-border',
+        'bg-white/80 shadow-glass backdrop-blur-md',
+        'transition-[width] duration-200 ease-out',
+        'dark:border-white/10 dark:bg-slate-800/80',
+        open ? 'w-72' : 'w-12',
+      ].join(' ')}
       aria-label="Anwendungshierarchie"
-      data-state={open ? "open" : "collapsed"}
+      data-state={open ? 'open' : 'collapsed'}
     >
       <header
         className={[
-          "flex shrink-0 border-b border-border",
-          "dark:border-white/10",
+          'flex shrink-0 border-b border-border',
+          'dark:border-white/10',
           open
-            ? "min-h-16 items-center justify-between gap-3 px-4 py-3"
-            : "h-12 items-center justify-center px-1",
-        ].join(" ")}
+            ? 'min-h-16 items-center justify-between gap-3 px-4 py-3'
+            : 'h-12 items-center justify-center px-1',
+        ].join(' ')}
       >
         {open ? (
           <div className="min-w-0">
@@ -83,17 +83,17 @@ export function AppHierarchySidebar({
           type="button"
           onClick={toggleSidebar}
           className={[
-            "inline-flex h-9 w-9 shrink-0",
-            "items-center justify-center rounded-lg",
-            "text-text-muted transition",
-            "hover:bg-surface-hover hover:text-text",
-            "focus-visible:outline-none",
-            "focus-visible:ring-2",
-            "focus-visible:ring-primary",
-            "dark:text-gray-400",
-            "dark:hover:bg-slate-700/70",
-            "dark:hover:text-white",
-          ].join(" ")}
+            'inline-flex h-9 w-9 shrink-0',
+            'items-center justify-center rounded-lg',
+            'text-text-muted transition',
+            'hover:bg-surface-hover hover:text-text',
+            'focus-visible:outline-none',
+            'focus-visible:ring-2',
+            'focus-visible:ring-primary',
+            'dark:text-gray-400',
+            'dark:hover:bg-slate-700/70',
+            'dark:hover:text-white',
+          ].join(' ')}
           aria-label={toggleLabel}
           aria-expanded={open}
           title={toggleLabel}
@@ -110,10 +110,7 @@ export function AppHierarchySidebar({
           <div className="relative">
             {isBusy ? (
               <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/60 dark:bg-slate-900/60">
-                <svg
-                  className="h-8 w-8 animate-spin text-text-muted"
-                  viewBox="0 0 24 24"
-                >
+                <svg className="h-8 w-8 animate-spin text-text-muted" viewBox="0 0 24 24">
                   <circle
                     cx="12"
                     cy="12"
@@ -147,28 +144,28 @@ export function AppHierarchySidebar({
           type="button"
           onClick={toggleSidebar}
           className={[
-            "flex min-h-0 flex-1",
-            "items-center justify-center",
-            "text-text-subtle transition",
-            "hover:bg-surface-hover hover:text-text",
-            "focus-visible:outline-none",
-            "focus-visible:ring-2",
-            "focus-visible:ring-inset",
-            "focus-visible:ring-primary",
-            "dark:text-gray-500",
-            "dark:hover:bg-slate-800",
-            "dark:hover:text-gray-300",
-          ].join(" ")}
+            'flex min-h-0 flex-1',
+            'items-center justify-center',
+            'text-text-subtle transition',
+            'hover:bg-surface-hover hover:text-text',
+            'focus-visible:outline-none',
+            'focus-visible:ring-2',
+            'focus-visible:ring-inset',
+            'focus-visible:ring-primary',
+            'dark:text-gray-500',
+            'dark:hover:bg-slate-800',
+            'dark:hover:text-gray-300',
+          ].join(' ')}
           aria-label="Hierarchie ausklappen"
           title="Hierarchie ausklappen"
         >
           <span
             className={[
-              "select-none text-[10px]",
-              "font-semibold tracking-[0.18em]",
-              "uppercase",
-              "[writing-mode:vertical-rl]",
-            ].join(" ")}
+              'select-none text-[10px]',
+              'font-semibold tracking-[0.18em]',
+              'uppercase',
+              '[writing-mode:vertical-rl]',
+            ].join(' ')}
             aria-hidden="true"
           >
             Hierarchie
@@ -197,19 +194,9 @@ function HierarchyToggleIcon({ open }: HierarchyToggleIconProps) {
       <path d="M9 4v16" strokeWidth="1.8" />
 
       {open ? (
-        <path
-          d="m14 9-3 3 3 3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.8"
-        />
+        <path d="m14 9-3 3 3 3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
       ) : (
-        <path
-          d="m11 9 3 3-3 3"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth="1.8"
-        />
+        <path d="m11 9 3 3-3 3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
       )}
     </svg>
   );
