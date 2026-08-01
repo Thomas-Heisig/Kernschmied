@@ -15,12 +15,33 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
   const [calendars, setCalendars] = useState<components['schemas']['CalendarOut'][]>([]);
   const [selectedCalendar, setSelectedCalendar] = useState<string | null>(null);
   const [events, setEvents] = useState<components['schemas']['EventOut'][]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   const [newCalName, setNewCalName] = useState('');
   const [newEventTitle, setNewEventTitle] = useState('');
   const [loadingCals, setLoadingCals] = useState(false);
   const [calError, setCalError] = useState<string | null>(null);
   const [editingCalendarId, setEditingCalendarId] = useState<string | null>(null);
   const [editingCalendarName, setEditingCalendarName] = useState<string>('');
+
+  useEffect(() => {
+    if (!editingCalendarId) return;
+    const el = document.getElementById('calendar-edit-input') as HTMLInputElement | null;
+    el?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setEditingCalendarId(null);
+        setEditingCalendarName('');
+      }
+      if (e.key === 'Enter') {
+        // find currently editing calendar and trigger save by blurring (user can click save)
+        el?.blur();
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [editingCalendarId]);
 
   async function reloadCalendars() {
     setCalError(null);
@@ -43,8 +64,13 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     let mounted = true;
-    if (!selectedCalendar) return;
+    if (!selectedCalendar) {
+      setEvents([]);
+      return;
+    }
+
     (async () => {
+      setLoadingEvents(true);
       try {
         const now = new Date();
         const start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
@@ -52,9 +78,15 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
         const ev = await listEvents(selectedCalendar, { time_min: start, time_max: end });
         if (!mounted) return;
         setEvents(ev || []);
-      } catch {
+      } catch (err: any) {
         if (!mounted) return;
         setEvents([]);
+        setCalError(String(err));
+        // show quick feedback
+        alert('Ereignisse konnten nicht geladen werden: ' + String(err));
+      } finally {
+        if (!mounted) return;
+        setLoadingEvents(false);
       }
     })();
 
@@ -83,6 +115,7 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                 <div className="flex-1">
                   {editingCalendarId === c.id ? (
                     <input
+                      id="calendar-edit-input"
                       className="w-full rounded border px-2 py-1 text-sm"
                       value={editingCalendarName}
                       onChange={(e) => setEditingCalendarName(e.target.value)}
@@ -104,12 +137,13 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                         onClick={async () => {
                           // save
                           try {
-                            await patchCalendar(c.id, { name: editingCalendarName } as any);
+                            await patchCalendar(c.id, { name: editingCalendarName } as components['schemas']['CalendarUpdate']);
                             setEditingCalendarId(null);
                             setEditingCalendarName('');
                             await reloadCalendars();
-                          } catch (err) {
+                          } catch (err: any) {
                             setCalError(String(err));
+                            alert('Kalender konnte nicht gespeichert werden: ' + String(err));
                           }
                         }}
                       >
@@ -139,11 +173,13 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                       <button
                         className="text-sm text-red-600 px-2"
                         onClick={async () => {
+                          if (!window.confirm(`Kalender "${c.name}" wirklich löschen?`)) return;
                           try {
                             await deleteCalendar(c.id);
                             await reloadCalendars();
-                          } catch (e) {
+                          } catch (e: any) {
                             setCalError(String(e));
+                            alert('Kalender konnte nicht gelöscht werden: ' + String(e));
                           }
                         }}
                       >
@@ -175,7 +211,10 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                     await createCalendar({ name: newCalName.trim() });
                     setNewCalName('');
                     await reloadCalendars();
-                  } catch {}
+                  } catch (err: any) {
+                    setCalError(String(err));
+                    alert('Kalender konnte nicht erstellt werden: ' + String(err));
+                  }
                 }}
               >
                 Erstellen
@@ -189,6 +228,7 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
           {selectedCalendar ? (
             <>
               <ul className="mt-2 space-y-2 max-h-64 overflow-auto text-sm">
+                {loadingEvents && <div className="text-sm text-slate-500">Lade Ereignisse …</div>}
                 {events.map((e) => (
                   <li key={e.id} className="border-b pb-1">
                     <div className="flex items-center justify-between">
@@ -202,6 +242,7 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                         <button
                           className="text-sm text-red-600"
                           onClick={async () => {
+                            if (!window.confirm(`Ereignis "${e.title}" wirklich löschen?`)) return;
                             try {
                               await deleteEvent(selectedCalendar, e.id);
                               // reload events
@@ -224,7 +265,10 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                                 time_max: end,
                               });
                               setEvents(ev || []);
-                            } catch {}
+                            } catch (err: any) {
+                              setCalError(String(err));
+                              alert('Ereignis konnte nicht gelöscht werden: ' + String(err));
+                            }
                           }}
                         >
                           Löschen
