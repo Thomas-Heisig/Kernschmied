@@ -1068,7 +1068,7 @@ def register_exception_handlers(
 
         return structured_error_response(
             request=request,
-            status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+            status_code=HTTP_422_UNPROCESSABLE_CONTENT,
             code="REQUEST_VALIDATION_FAILED",
             message=("Die Anfrage enthält ungültige Daten."),
             details=details,

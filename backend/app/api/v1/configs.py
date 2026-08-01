@@ -34,12 +34,11 @@ from fastapi import (
     Response,
     status,
 )
-# Backwards compatibility: Some code in the repository uses the older
-# constant name HTTP_422_UNPROCESSABLE_CONTENT. Starlette/FastAPI uses
-# HTTP_422_UNPROCESSABLE_ENTITY. Provide a runtime alias so existing
-# usages continue to work without modifying many call sites.
-if not hasattr(status, "HTTP_422_UNPROCESSABLE_CONTENT") and hasattr(status, "HTTP_422_UNPROCESSABLE_ENTITY"):
-    setattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", status.HTTP_422_UNPROCESSABLE_ENTITY)
+
+# Use a typed compatibility constant for the problematic 422 name so
+# Pylance can statically resolve the type. The actual integer value is
+# exported from `app.status_compat`.
+from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 from pydantic import (
     BaseModel,
     ConfigDict,

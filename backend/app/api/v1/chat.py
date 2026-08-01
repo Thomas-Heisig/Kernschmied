@@ -1448,7 +1448,7 @@ async def generate_chat_events(
         status.HTTP_403_FORBIDDEN: {
             "description": ("Der Benutzer ist nicht berechtigt."),
         },
-        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+        HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": ("Die Chat-Anfrage ist ungültig."),
         },
         status.HTTP_503_SERVICE_UNAVAILABLE: {
