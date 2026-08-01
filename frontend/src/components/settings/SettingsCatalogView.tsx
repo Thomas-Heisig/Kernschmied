@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 
 import { fetchSettingsCatalog } from "../../api/settingsCatalog";
-import type { ConfigObject, ConfigValue } from "../../contracts/config";
+import type { ConfigObject, ConfigValue, ConfigEntryResponse } from "../../contracts/config";
 import type {
   SettingsAvailability,
   SettingsCatalogResponse,
@@ -825,28 +825,61 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
           ) : null}
         </dl>
 
-        <SettingsField
-          fieldKey={configKey}
-          label={field.title}
-          value={
-            // If the config value is missing, allow editing by
-            // passing `null` so the field renders an editable input.
-            currentValue === undefined ? null : currentValue
-          }
-          path={[configGroup, configKey]}
-          disabled={config.isSaving}
-          description={field.description ?? undefined}
-          sensitive={field.sensitive}
-          readOnly={!field.editable}
-          minimum={field.minimum ?? undefined}
-          maximum={field.maximum ?? undefined}
-          options={(field.options ?? []).map((option) => ({
-            value: option.value,
-            label: option.label,
-          }))}
-          valuesByFullKey={valuesByFullKey}
-          onChange={handleFieldChange}
-        />
+        {
+          (() => {
+            const fullKey = `${configGroup}.${configKey}`;
+
+            const entry: ConfigEntryResponse = {
+              group: configGroup,
+              key: configKey,
+              full_key: fullKey,
+              display_name: field.title,
+              description: field.description ?? "",
+              value: currentValue === undefined ? null : currentValue,
+              default_value: field.default ?? null,
+              schema_version: "2.0",
+              value_type: undefined,
+              value_schema: undefined,
+              editable: Boolean(field.editable),
+              sensitive: Boolean(field.sensitive),
+              secret_configured: false,
+              requires_restart: Boolean(field.restart_required),
+              runtime_editable: true,
+              nullable: !Boolean(field.required),
+              visibility: field.visibility ?? "",
+              allowed_scopes: [],
+              current_scope: "",
+              ui: {
+                component: (field.control as any) ?? undefined,
+                category: field.group ?? undefined,
+                section: field.section ?? undefined,
+                order: field.order ?? undefined,
+                placeholder: field.placeholder ?? null,
+                help_text: field.help_text ?? null,
+                unit: field.unit ?? null,
+                advanced: field.advanced ?? false,
+                hidden: field.hidden ?? false,
+                readonly: !field.editable,
+                options: (field.options ?? []).map((o) => ({
+                  value: o.value,
+                  label: o.label,
+                  description: o.description,
+                })),
+                dynamic_options: (field.dynamic_options as any) ?? null,
+              },
+            };
+
+            return (
+              <SettingsField
+                entry={entry}
+                path={[configGroup, configKey]}
+                disabled={config.isSaving}
+                valuesByFullKey={valuesByFullKey}
+                onChange={handleFieldChange}
+              />
+            );
+          })()
+        }
 
         <div className="mt-3 flex flex-wrap gap-2 text-xs">
           <FieldCapabilityBadge variant="success">
