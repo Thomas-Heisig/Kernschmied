@@ -1891,9 +1891,13 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
     # map of group id -> builder
     groups: dict[str, _GroupBuilder] = {}
 
-    # prepare groups from catalog
+    # prepare groups from catalog (use normalized lower-case keys)
     for g in catalog.groups:
-        groups[g.id] = {
+        group_id = (g.id or "").strip().lower()
+        if not group_id:
+            continue
+
+        groups[group_id] = {
             "id": g.id,
             "label": g.title,
             "description": g.description,
@@ -1968,6 +1972,16 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                     ui=ui,
                     deprecated=False,
                 )
+
+                # Ensure the group exists (normalized key used)
+                if cfg_group not in groups:
+                    groups[cfg_group] = {
+                        "id": cfg_group,
+                        "label": cfg_group,
+                        "description": None,
+                        "order": 1000,
+                        "entries": [],
+                    }
 
                 groups[cfg_group]["entries"].append(entry)
 
