@@ -570,20 +570,44 @@ function DatePicker({
         ))}
       </div>
 
-      <div className="mt-2 flex items-center gap-2">
+          <div className="flex items-center gap-2">
         <input
           className="flex-1 rounded border px-2 py-1"
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
         />
-        <button
-          className="rounded bg-sky-600 px-3 py-1 text-white"
-          onClick={() => {
-            // if no specific day chosen, pick today
-            const d = selectedDay ?? initialDate.getDate();
-            pick(d);
-          }}
+            <button
+              className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-50 dark:bg-slate-700"
+              onClick={() => setAutoRefresh((v) => !v)}
+              title="Automatisch aktualisieren (30s)"
+            >
+              {autoRefresh ? 'Auto‑Refresh: Ein' : 'Auto‑Refresh: Aus'}
+            </button>
+
+            {/* Konfiguration Badge (visible on md+) */}
+            <button
+              className="hidden md:inline-flex ml-2 items-center gap-2 text-xs px-2 py-0.5 rounded bg-gray-50 dark:bg-slate-700"
+              onClick={() => setSystemTab('versions')}
+              title={`Konfiguration Revision ${bootstrap?.config_revision ?? configRevision}`}
+            >
+              ⚙ Konf: {bootstrap?.config_revision ?? configRevision}
+            </button>
+
+            {/* Modelle/Werkzeuge indicators (compact) */}
+            <div className="hidden md:flex items-center gap-2 ml-2 text-xs">
+              <div className="flex items-center gap-1">
+                <span className={bootstrap?.revisions?.model_registry ? 'text-emerald-600' : 'text-gray-400'}>🤖</span>
+                <span>{bootstrap?.revisions?.model_registry ? 'Modelle bereit' : 'Modelle'}</span>
+              </div>
+              <div className="flex items-center gap-1 ml-3">
+                <span className={bootstrap?.revisions?.tool_registry ? 'text-emerald-600' : 'text-gray-400'}>🧰</span>
+                <span>{bootstrap?.revisions?.tool_registry ? 'Werkzeuge bereit' : 'Werkzeuge'}</span>
+              </div>
+            </div>
+
+            {/* Feedback link */}
+            <a className="hidden md:inline-block ml-3 text-xs text-sky-600 hover:underline" href="https://github.com/Thomas-Heisig/Kernschmied/issues/new" target="_blank" rel="noreferrer">Feedback</a>
         >
           OK
         </button>
