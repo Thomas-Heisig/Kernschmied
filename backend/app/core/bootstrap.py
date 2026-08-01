@@ -453,6 +453,16 @@ async def bootstrap_application(
             default_model_id=DEFAULT_MODEL_ID,
         )
 
+        # If model_registry exists, register an availability checker so the
+        # registry can surface runtime availability/selectability.
+        try:
+            model_registry.set_availability_checker(
+                model_service.is_model_available,
+                ttl=30.0,
+            )
+        except Exception:
+            # non-fatal if model_registry does not expose the setter
+            pass
         # Start des ModelService (Methode muss in ModelService existieren)
         await _run_bootstrap_step(
             step="models.start_service",

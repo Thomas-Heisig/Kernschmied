@@ -66,6 +66,7 @@ from enum import StrEnum
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Final, Protocol, TypeAlias, runtime_checkable
+from app.registries.model_registry import ModelRegistryEntry
 
 from app.contracts.model_backend import (
     BaseModelBackend,
@@ -2860,6 +2861,79 @@ class ModelService:
     ) -> None:
         if record.effectively_enabled:
             return
+
+        async def is_model_available(
+            self,
+            *,
+            entry: ModelRegistryEntry,
+        ) -> tuple[bool, bool]:
+            """
+            Probe whether a model (registry entry) is available and selectable at runtime.
+
+            Returns (available, selectable). This implementation tries to create
+            a provider backend via the configured `ModelProviderRegistry` and
+            calls `is_available()` / `is_selectable()` if present. Any error yields
+            (False, False) conservatively.
+            """
+            manifest = entry.manifest
+
+            provider_type = entry.provider_type
+
+            try:
+                provider_config = dict(manifest.provider.config)
+                provider_config.pop("model_id", None)
+                provider_config.pop("logical_model_id", None)
+                provider_config.pop("display_name", None)
+
+                provider_config["logical_model_id"] = entry.model_id
+                provider_config["display_name"] = manifest.display_name
+
+                # Create backend instance (may be async-heavy). Pass no dependencies.
+                backend = await self._provider_registry.create(
+                    provider_type=provider_type,
+                    provider_config=provider_config,
+                    dependencies=None,
+                )
+
+                available = True
+                selectable = True
+
+                is_avail = getattr(backend, "is_available", None)
+                if callable(is_avail):
+                    try:
+                        avail_res = is_avail()
+                        if asyncio.iscoroutine(avail_res):
+                            available = await avail_res
+                        else:
+                            available = bool(avail_res)
+                    except Exception:
+                        available = False
+
+                is_sel = getattr(backend, "is_selectable", None)
+                if callable(is_sel):
+                    try:
+                        sel_res = is_sel()
+                        if asyncio.iscoroutine(sel_res):
+                            selectable = await sel_res
+                        else:
+                            selectable = bool(sel_res)
+                    except Exception:
+                        selectable = False
+
+                # Try to close/unload backend if it exposes a cleanup method
+                cleanup = getattr(backend, "close", None) or getattr(backend, "shutdown", None)
+                if callable(cleanup):
+                    try:
+                        res = cleanup()
+                        if asyncio.iscoroutine(res):
+                            await res
+                    except Exception:
+                        pass
+
+                return bool(available), bool(selectable)
+
+            except Exception:
+                return False, False
 
         raise ModelDisabledError(
             record.model_id,
