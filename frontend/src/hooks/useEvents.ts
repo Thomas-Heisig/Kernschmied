@@ -13,7 +13,7 @@ function getMonthRange(date: Date = new Date()) {
   return { start, end };
 }
 
-export function useEvents(calendarId: string | null) {
+export function useEvents(calendarId: string | null, month: Date = new Date()) {
   const [events, setEvents] = useState<components['schemas']['EventOut'][]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +27,7 @@ export function useEvents(calendarId: string | null) {
     setLoading(true);
     setError(null);
     try {
-      const { start, end } = getMonthRange();
+      const { start, end } = getMonthRange(month);
       const ev = await apiListEvents(calendarId, { time_min: start, time_max: end });
       setEvents(ev || []);
     } catch (err: any) {
@@ -36,7 +36,7 @@ export function useEvents(calendarId: string | null) {
     } finally {
       setLoading(false);
     }
-  }, [calendarId]);
+  }, [calendarId, month]);
 
   const create = useCallback(async (payload: components['schemas']['EventCreate']) => {
     if (!calendarId) return false;

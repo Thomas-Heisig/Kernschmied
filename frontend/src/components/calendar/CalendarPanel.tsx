@@ -12,9 +12,26 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
   const [newEventEnd, setNewEventEnd] = useState('');
   const [editingCalendarId, setEditingCalendarId] = useState<string | null>(null);
   const [editingCalendarName, setEditingCalendarName] = useState<string>('');
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
 
   const { calendars, loading: loadingCals, error: calError, addCalendar, updateCalendar, removeCalendar, reload } = useCalendars();
-  const { events, loading: loadingEvents, error: eventsError, create: createEventHook, remove: removeEventHook, refresh: refreshEvents } = useEvents(selectedCalendar);
+  const { events, loading: loadingEvents, error: eventsError, create: createEventHook, update: updateEventHook, remove: removeEventHook, refresh: refreshEvents } = useEvents(
+    selectedCalendar,
+    currentMonth,
+  );
+
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
+  const [editingEventTitle, setEditingEventTitle] = useState('');
+  const [editingEventStartInput, setEditingEventStartInput] = useState('');
+  const [editingEventEndInput, setEditingEventEndInput] = useState('');
+
+  const toInputLocal = (iso: string) => {
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+      d.getHours(),
+    )}:${pad(d.getMinutes())}`;
+  };
 
   useEffect(() => {
     if (!selectedCalendar && calendars && calendars.length) setSelectedCalendar(calendars[0].id);
@@ -43,13 +60,13 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
       return;
     }
 
-    // events are handled by useEvents hook; refresh when selectedCalendar changes
+    // events are handled by useEvents hook; refresh when selectedCalendar or month changes
     void refreshEvents();
 
     return () => {
       mounted = false;
     };
-  }, [selectedCalendar]);
+  }, [selectedCalendar, currentMonth, refreshEvents]);
 
   return (
     <div className="p-4">
@@ -64,6 +81,25 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4">
+        <div className="col-span-2 mb-2 flex items-center justify-center">
+          <div className="flex items-center gap-2">
+            <button
+              className="rounded px-2 py-1"
+              onClick={() => setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
+            >
+              ◀
+            </button>
+            <div className="font-medium">
+              {currentMonth.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}
+            </div>
+            <button
+              className="rounded px-2 py-1"
+              onClick={() => setCurrentMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
+            >
+              ▶
+            </button>
+          </div>
+        </div>
         <div>
           <h4 className="font-medium">Kalender</h4>
           <ul className="mt-2 space-y-2">
@@ -181,27 +217,105 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
                 {eventsError ? <div className="text-sm text-red-600 mt-2">{eventsError}</div> : null}
                 {events.map((e) => (
                   <li key={e.id} className="border-b pb-1">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">{e.title}</div>
-                        <div className="text-xs text-slate-500">
-                          {new Date(e.start).toLocaleString()}
+                    {editingEventId === e.id ? (
+                      <div className="space-y-2">
+                        <input
+                          className="w-full rounded border px-2 py-1 text-sm"
+                          value={editingEventTitle}
+                          onChange={(ev) => setEditingEventTitle(ev.target.value)}
+                        />
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="datetime-local"
+                            className="w-full rounded border px-2 py-1 text-sm"
+                            value={editingEventStartInput}
+                            onChange={(ev) => setEditingEventStartInput(ev.target.value)}
+                          />
+                          <input
+                            type="datetime-local"
+                            className="w-full rounded border px-2 py-1 text-sm"
+                            value={editingEventEndInput}
+                            onChange={(ev) => setEditingEventEndInput(ev.target.value)}
+                          />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                          <button
+                            className="text-sm px-2"
+                            onClick={() => {
+                              setEditingEventId(null);
+                              setEditingEventTitle('');
+                              setEditingEventStartInput('');
+                              setEditingEventEndInput('');
+                            }}
+                          >
+                            Abbrechen
+                          </button>
+                          <button
+                            className="text-sm bg-sky-600 text-white px-2 rounded"
+                            onClick={async () => {
+                              try {
+                                const startIso = new Date(editingEventStartInput).toISOString();
+                                const endIso = new Date(editingEventEndInput).toISOString();
+                                if (new Date(endIso) <= new Date(startIso)) {
+                                  toast.error('Ende muss nach Start liegen.');
+                                  return;
+                                }
+                                const payload: components['schemas']['EventUpdate'] = {
+                                  title: editingEventTitle.trim(),
+                                  description: '',
+                                  start: startIso,
+                                  end: endIso,
+                                  all_day: false,
+                                };
+                                const ok = await updateEventHook(e.id, payload);
+                                if (ok) {
+                                  toast.success('Ereignis gespeichert');
+                                  setEditingEventId(null);
+                                  setEditingEventTitle('');
+                                  setEditingEventStartInput('');
+                                  setEditingEventEndInput('');
+                                }
+                              } catch (err: any) {
+                                toast.error('Ereignis konnte nicht gespeichert werden: ' + String(err));
+                              }
+                            }}
+                          >
+                            Speichern
+                          </button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="text-sm text-red-600"
-                          onClick={async () => {
-                            if (!window.confirm(`Ereignis "${e.title}" wirklich löschen?`)) return;
-                            const ok = await removeEventHook(e.id);
-                            if (!ok) toast.error('Ereignis konnte nicht gelöscht werden.');
-                            else toast.success('Ereignis gelöscht');
-                          }}
-                        >
-                          Löschen
-                        </button>
+                    ) : (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{e.title}</div>
+                          <div className="text-xs text-slate-500">{new Date(e.start).toLocaleString()}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            className="text-sm px-2"
+                            onClick={() => {
+                              setEditingEventId(e.id);
+                              setEditingEventTitle(e.title);
+                              setEditingEventStartInput(toInputLocal(e.start));
+                              setEditingEventEndInput(toInputLocal(e.end));
+                            }}
+                          >
+                            Bearbeiten
+                          </button>
+                          <button
+                            className="text-sm text-red-600"
+                            onClick={async () => {
+                              if (!window.confirm(`Ereignis "${e.title}" wirklich löschen?`)) return;
+                              const ok = await removeEventHook(e.id);
+                              if (!ok) toast.error('Ereignis konnte nicht gelöscht werden.');
+                              else toast.success('Ereignis gelöscht');
+                            }}
+                          >
+                            Löschen
+                          </button>
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </li>
                 ))}
               </ul>
