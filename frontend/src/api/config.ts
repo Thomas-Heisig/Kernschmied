@@ -62,13 +62,35 @@ export async function loadSystemConfig(
   }
 
   const payload = await readJsonResponse(response);
-
-  const loaded = normalizeConfigSnapshot(payload);
+  const loaded = normalizeConfigSnapshot(payload) as unknown as LoadedConfig;
 
   return {
     values: loaded.values,
     revision: loaded.revision,
   } as SystemConfigSnapshot;
+}
+
+export async function loadFullSystemConfig(
+  signal?: AbortSignal,
+): Promise<LoadedConfig> {
+  const response = await fetch(`${API_BASE_URL}/config`, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+    },
+    credentials: "same-origin",
+    signal,
+  });
+
+  if (!response.ok) {
+    throw await createConfigApiError(response);
+  }
+
+  const payload = await readJsonResponse(response);
+
+  const loaded = normalizeConfigSnapshot(payload) as unknown as LoadedConfig;
+
+  return loaded;
 }
 
 export async function updateSystemConfig(
