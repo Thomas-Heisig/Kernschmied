@@ -28,7 +28,7 @@ git clean -fdx
 git remote prune origin
 ```
 
-3. Falls du lokale Feature-Branches hattest, die auf der alten History basieren,
+1. Falls du lokale Feature-Branches hattest, die auf der alten History basieren,
    kannst du sie neu erstellen oder interaktiv auf `origin/master` rebasen.
    Falls das zu kompliziert ist, ist ein kompletter Neu-Klon sicher:
 
@@ -37,7 +37,7 @@ cd ..
 git clone https://github.com/Thomas-Heisig/Kernschmied.git
 ```
 
-4. Prüfe lokale Datei- und DB-Reste (z. B. `backend/data/`) und entferne sensible
+1. Prüfe lokale Datei- und DB-Reste (z. B. `backend/data/`) und entferne sensible
    Dateien, falls vorhanden.
 
 Hinweis

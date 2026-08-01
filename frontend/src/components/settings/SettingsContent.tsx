@@ -79,23 +79,20 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
 
   const sectionEntries = useMemo<[string, ConfigValue][]>(() => {
     if (groups && Array.isArray(groups)) {
-      return (
-        groups
-          .map((g: any) => [g.id as string, (values[g.id] ?? {}) as ConfigValue])
-          .sort((left: any, right: any) =>
-            formatSettingLabel(left[0]).localeCompare(formatSettingLabel(right[0]), 'de', {
-              sensitivity: 'base',
-            }),
-          ) as unknown
-      ) as [string, ConfigValue][];
+      return groups
+        .map((g: any) => [g.id as string, (values[g.id] ?? {}) as ConfigValue])
+        .sort((left: any, right: any) =>
+          formatSettingLabel(left[0]).localeCompare(formatSettingLabel(right[0]), 'de', {
+            sensitivity: 'base',
+          }),
+        ) as unknown as [string, ConfigValue][];
     }
 
-    return (Object.entries(values)
-      .sort((left, right) =>
-        formatSettingLabel(left[0]).localeCompare(formatSettingLabel(right[0]), 'de', {
-          sensitivity: 'base',
-        }),
-      ) as unknown) as [string, ConfigValue][];
+    return Object.entries(values).sort((left, right) =>
+      formatSettingLabel(left[0]).localeCompare(formatSettingLabel(right[0]), 'de', {
+        sensitivity: 'base',
+      }),
+    ) as unknown as [string, ConfigValue][];
   }, [values, groups]);
 
   const visibleSectionEntries = useMemo(

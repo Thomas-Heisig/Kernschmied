@@ -1569,7 +1569,10 @@
             "anyOf": [{ "type": "string" }, { "type": "null" }],
             "title": "Note"
           },
-          "user_id": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "User Id" },
+          "user_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "User Id"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",

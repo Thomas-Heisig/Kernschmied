@@ -9,7 +9,7 @@ import type {
   ConfigEntryResponse,
 } from '../contracts/config';
 
-interface LoadedConfig {
+export interface LoadedConfig {
   response: ConfigListResponse;
   values: ConfigObject;
   entriesByFullKey: Record<string, ConfigEntryResponse>;
@@ -60,7 +60,7 @@ export async function loadSystemConfig(signal?: AbortSignal): Promise<SystemConf
   }
 
   const payload = await readJsonResponse(response);
-  const loaded = normalizeConfigSnapshot(payload) as unknown as LoadedConfig;
+  const loaded = normalizeConfigSnapshot(payload);
 
   return {
     values: loaded.values,
@@ -84,7 +84,7 @@ export async function loadFullSystemConfig(signal?: AbortSignal): Promise<Loaded
 
   const payload = await readJsonResponse(response);
 
-  const loaded = normalizeConfigSnapshot(payload) as unknown as LoadedConfig;
+  const loaded = normalizeConfigSnapshot(payload);
 
   return loaded;
 }
@@ -104,7 +104,7 @@ export interface BulkUpdateRequest {
 export async function updateSystemConfig(
   request: BulkUpdateRequest,
   signal?: AbortSignal,
-): Promise<SystemConfigSnapshot> {
+): Promise<LoadedConfig> {
   const body: Record<string, unknown> = {};
 
   if (Array.isArray(request.changes) && request.changes.length > 0) {
@@ -147,7 +147,7 @@ async function readJsonResponse(response: Response): Promise<unknown> {
   return response.json() as Promise<unknown>;
 }
 
-function normalizeConfigSnapshot(payload: unknown): SystemConfigSnapshot {
+function normalizeConfigSnapshot(payload: unknown): LoadedConfig {
   if (!isRecord(payload)) {
     throw new ConfigApiError({
       code: 'invalid_config_response',
@@ -156,40 +156,113 @@ function normalizeConfigSnapshot(payload: unknown): SystemConfigSnapshot {
     });
   }
 
-  const response = payload as unknown as ConfigListResponse;
+  const payloadRecord = payload as Record<string, unknown>;
 
-  if (!Array.isArray(response.groups)) {
-    throw new ConfigApiError({
-      code: 'invalid_config_response',
-      message: 'Die Serverantwort entspricht nicht dem erwarteten ConfigListResponse-Format.',
-      status: 500,
-    });
+  // If the payload already follows ConfigListResponse (groups present), use it.
+  if (Array.isArray(payloadRecord.groups)) {
+    const response = payload as unknown as ConfigListResponse;
+
+    const values: ConfigObject = {};
+    const entriesByFullKey: Record<string, ConfigEntryResponse> = {};
+
+    for (const group of response.groups as ConfigGroupResponse[]) {
+      const groupId = (group.id || '').toString().trim().toLowerCase();
+      if (!groupId) continue;
+      values[groupId] = values[groupId] ?? {};
+
+      for (const entry of group.entries as ConfigEntryResponse[]) {
+        const key = (entry.key || '').toString().trim();
+        if (!key) continue;
+        (values[groupId] as Record<string, unknown>)[key] = entry.value;
+        entriesByFullKey[`${groupId}.${key}`] = entry;
+      }
+    }
+
+    const rawRevision = response.revision ?? null;
+
+    return {
+      response: response as ConfigListResponse,
+      values,
+      entriesByFullKey,
+      revision: typeof rawRevision === 'number' && Number.isInteger(rawRevision) ? rawRevision : null,
+    };
   }
+
+  // Fallback: payload may be a minimal snapshot { values, revision }
+  const valuesObj = (payloadRecord.values ?? payloadRecord.items) as Record<string, unknown> | undefined;
 
   const values: ConfigObject = {};
   const entriesByFullKey: Record<string, ConfigEntryResponse> = {};
 
-  for (const group of response.groups as ConfigGroupResponse[]) {
-    const groupId = (group.id || '').toString().trim().toLowerCase();
-    if (!groupId) continue;
-    values[groupId] = values[groupId] ?? {};
-
-    for (const entry of group.entries as ConfigEntryResponse[]) {
-      const key = (entry.key || '').toString().trim();
-      if (!key) continue;
-      (values[groupId] as Record<string, unknown>)[key] = entry.value;
-      entriesByFullKey[`${groupId}.${key}`] = entry;
+  if (valuesObj && typeof valuesObj === 'object') {
+    // If values is grouped { group: { key: value } }
+    for (const [rawGroup, rawGroupValue] of Object.entries(valuesObj)) {
+      const groupId = rawGroup.trim().toLowerCase();
+      if (!groupId) continue;
+      values[groupId] = values[groupId] ?? {};
+      if (typeof rawGroupValue === 'object' && rawGroupValue !== null) {
+        for (const [rawKey, rawVal] of Object.entries(rawGroupValue as Record<string, unknown>)) {
+          const key = rawKey.trim();
+          (values[groupId] as Record<string, unknown>)[key] = rawVal as unknown;
+          entriesByFullKey[`${groupId}.${key}`] = {
+            group: groupId,
+            key,
+            full_key: `${groupId}.${key}`,
+            display_name: key,
+            description: '',
+            value: rawVal as unknown,
+            default_value: null,
+            schema_version: '2.0',
+            value_type: undefined,
+            value_schema: undefined,
+            editable: true,
+            sensitive: false,
+            secret_configured: false,
+            requires_restart: false,
+            runtime_editable: true,
+            nullable: true,
+            visibility: '',
+            allowed_scopes: [],
+            current_scope: '',
+            ui: {
+              component: undefined,
+              category: undefined,
+              section: undefined,
+              order: undefined,
+              placeholder: null,
+              help_text: null,
+              unit: null,
+              advanced: false,
+              hidden: false,
+              readonly: false,
+              options: [],
+              dynamic_options: null,
+            },
+            permissions: {
+              read: 'config:read',
+              write: 'config:write',
+              reveal_secret: null,
+            },
+          } as ConfigEntryResponse;
+        }
+      }
     }
   }
 
-  const rawRevision = response.revision ?? response.revision ?? null;
+  const rawRevision = payloadRecord.revision ?? null;
+
+  const response: ConfigListResponse = {
+    schema_version: '2.0',
+    revision: typeof rawRevision === 'number' && Number.isInteger(rawRevision) ? rawRevision : 0,
+    groups: [],
+  };
 
   return {
-    response: response as ConfigListResponse,
+    response,
     values,
     entriesByFullKey,
     revision: typeof rawRevision === 'number' && Number.isInteger(rawRevision) ? rawRevision : null,
-  } as unknown as SystemConfigSnapshot;
+  };
 }
 
 async function createConfigApiError(response: Response): Promise<ConfigApiError> {

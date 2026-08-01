@@ -2,6 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import type { BootstrapResponse } from '../../types/bootstrap';
+import FooterCalendar from '../calendar/FooterCalendar';
+import { createEvent } from '../../api/fetchCalendarClient';
+import type { components } from '../../api/openapi-types';
 import { CalendarDays, Database, FolderTree, Plug, Server, Wifi } from 'lucide-react';
 
 interface AppFooterProps {
@@ -94,27 +97,8 @@ export function AppFooter({
   }, []);
 
   useEffect(() => {
-    let mounted = true;
-
-    async function loadCalendars() {
-      try {
-        // use generated client
-        const mod = await import('../../api/calendarClient');
-        const data = await mod.calendarClient.listCalendars();
-        if (!mounted) return;
-        setCalendars((data || []).map((c: any) => ({ id: c.id, name: c.name })));
-      } catch {
-        // ignore
-      }
-    }
-
-    if (showDatePicker) {
-      loadCalendars();
-    }
-
-    return () => {
-      mounted = false;
-    };
+    // calendar listing is now handled by FooterCalendar component
+    return undefined;
   }, [showDatePicker]);
 
   function openDetail(title: string, data: any) {
@@ -266,40 +250,22 @@ export function AppFooter({
               aria-modal="false"
               className="fixed right-4 bottom-16 z-50 w-72 max-w-full rounded border bg-white p-2 shadow dark:bg-slate-800"
             >
-              <div>
-                <div className="mb-2">
-                  <label className="block text-xs mb-1">Ziel-Kalender</label>
-                  <select
-                    className="w-full rounded border px-2 py-1 text-sm"
-                    value={targetCalendarId ?? ''}
-                    onChange={(e) => setTargetCalendarId(e.target.value)}
-                  >
-                    <option value="">-- auswählen --</option>
-                    {calendars.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <DatePicker
-                  initialDate={new Date()}
-                  setSelectedDate={setSelectedDate}
-                  onCancel={() => setShowDatePicker(false)}
-                  onSelect={(d) => {
-                    // open event modal for creation if calendar selected
-                    setShowDatePicker(false);
-                    setSelectedDate(d);
-                    if (targetCalendarId) {
-                      setEventModalOpen(true);
-                      setEventTitle('');
-                    } else {
-                      openDetail('Ausgewähltes Datum', { selected: d.toISOString() });
-                    }
-                  }}
-                />
-              </div>
+              <FooterCalendar
+                initialDate={new Date()}
+                targetCalendarId={targetCalendarId}
+                setTargetCalendarId={setTargetCalendarId}
+                onCancel={() => setShowDatePicker(false)}
+                onSelect={(d) => {
+                  setShowDatePicker(false);
+                  setSelectedDate(d);
+                  if (targetCalendarId) {
+                    setEventModalOpen(true);
+                    setEventTitle('');
+                  } else {
+                    openDetail('Ausgewähltes Datum', { selected: d.toISOString() });
+                  }
+                }}
+              />
             </div>
           )}
         </div>
@@ -372,15 +338,7 @@ export function AppFooter({
                   };
 
                   try {
-                    const res = await fetch(`/api/v1/calendars/${targetCalendarId}/events`, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(body),
-                    });
-
-                    if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-
-                    const data = await res.json();
+                    const data = await createEvent(targetCalendarId, body as any);
                     openDetail('Ereignis erstellt', data);
                   } catch (e: any) {
                     openDetail('Fehler beim Erstellen', { error: String(e) });

@@ -189,20 +189,19 @@ export function useSystemConfig(): UseSystemConfigResult {
         controller.signal,
       );
 
-      // The API may return a full LoadedConfig (with entriesByFullKey) or a minimal snapshot.
-      const asAny = rawSnapshot as any;
+      // The API returns a LoadedConfig normalized by the client helper.
+      const loaded = rawSnapshot as unknown as {
+        values: ConfigObject;
+        entriesByFullKey?: Record<string, ConfigEntryResponse> | null;
+        response?: { groups?: ConfigGroupResponse[] };
+        revision?: number | null;
+      };
 
-      if (asAny && asAny.values !== undefined) {
-        setPersistedValues(asAny.values as ConfigObject);
-        setValuesState(asAny.values as ConfigObject);
-        setPersistedEntriesByFullKey(asAny.entriesByFullKey ?? null);
-        setGroups(asAny.response?.groups ?? null);
-        setRevision(normalizeRevision(asAny.revision));
-        return true;
-      }
-
-      // No values returned; reload from server.
-      await reload();
+      setPersistedValues(loaded.values);
+      setValuesState(loaded.values);
+      setPersistedEntriesByFullKey(loaded.entriesByFullKey ?? null);
+      setGroups(loaded.response?.groups ?? null);
+      setRevision(normalizeRevision(loaded.revision));
 
       return true;
     } catch (caughtError: unknown) {
@@ -233,9 +232,9 @@ export function useSystemConfig(): UseSystemConfigResult {
 
   useEffect(() => {
     // Determine autosave preference from config values. Default to true.
-    const ui = (values as any)?.ui as Record<string, unknown> | undefined;
-    const autosavePref =
-      ui && typeof ui.autosave_enabled !== 'undefined' ? Boolean(ui.autosave_enabled) : true;
+    const valuesRec = values as unknown as Record<string, unknown>;
+    const ui = (valuesRec.ui as Record<string, unknown> | undefined) ?? undefined;
+    const autosavePref = ui && typeof ui.autosave_enabled !== 'undefined' ? Boolean(ui.autosave_enabled) : true;
 
     if (!autosavePref) {
       // If disabled, clear any pending timer and do nothing.

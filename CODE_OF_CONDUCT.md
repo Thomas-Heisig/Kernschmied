@@ -83,4 +83,4 @@ Alle Meldungen werden so vertraulich wie möglich behandelt. Die Privatsphäre u
 
 ## Quellenhinweis
 
-Dieser Verhaltenskodex basiert auf dem Contributor Covenant, Version 2.1, verfügbar unter https://www.contributor-covenant.org/version/2/1/code_of_conduct.html.
+Dieser Verhaltenskodex basiert auf dem Contributor Covenant, Version 2.1, verfügbar unter <https://www.contributor-covenant.org/version/2/1/code_of_conduct.html>.
