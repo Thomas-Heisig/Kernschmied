@@ -456,10 +456,21 @@ class ModelRegistry:
 
         async def _check(entry: ModelRegistryEntry) -> tuple[str, bool, bool]:
             try:
-                result = await self._availability_checker(entry)
-                if not isinstance(result, tuple) or len(result) != 2:
+                checker = self._availability_checker
+                if checker is None:
+                    return (entry.model_id, False, False)
+
+                result = await checker(entry)
+
+                # Prefer unpacking into (available, selectable); if that fails,
+                # treat the entire result as a truthy availability and mark
+                # selectable=True as a conservative fallback.
+                try:
+                    available, selectable = result  # type: ignore[misc]
+                    return (entry.model_id, bool(available), bool(selectable))
+                except Exception:
                     return (entry.model_id, bool(result), True)
-                return (entry.model_id, bool(result[0]), bool(result[1]))
+
             except Exception:
                 # On error, conservatively mark as unavailable/selectable=False
                 return (entry.model_id, False, False)
