@@ -8,7 +8,9 @@
   "paths": {
     "/api/v1/health": {
       "get": {
-        "tags": ["System / Health"],
+        "tags": [
+          "System / Health"
+        ],
         "summary": "Health Check",
         "operationId": "health_api_v1_health_get",
         "responses": {
@@ -25,9 +27,33 @@
         }
       }
     },
+    "/api/v1/settings/catalog": {
+      "get": {
+        "tags": [
+          "Administration / Settings"
+        ],
+        "summary": "Settings-Katalog laden",
+        "description": "Liefert die versionierte Navigations- und Metadatenstruktur der Kernschmied-Einstellungen. Der Katalog enthält keine Secrets und ersetzt keine serverseitige Autorisierung.",
+        "operationId": "get_settings_catalog_api_v1_settings_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsCatalogResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/bootstrap": {
       "get": {
-        "tags": ["System / Bootstrap"],
+        "tags": [
+          "System / Bootstrap"
+        ],
         "summary": "Frontend-Bootstrap laden",
         "description": "Liefert die initialen, nicht sensiblen Laufzeitinformationen für das schema-gesteuerte Frontend. Der Bootstrap ersetzt keine serverseitige Autorisierung.",
         "operationId": "bootstrap_api_v1_bootstrap_get",
@@ -47,7 +73,9 @@
     },
     "/api/v1/ui/schema": {
       "get": {
-        "tags": ["UI / Schema"],
+        "tags": [
+          "UI / Schema"
+        ],
         "summary": "UI-Schema laden",
         "description": "Liefert den versionierten, schema-gesteuerten UI-Vertrag. Das Frontend darf ausschließlich bekannte Komponenten- und Aktionstypen aus seinen festen Registries ausführen.",
         "operationId": "ui_schema_api_v1_ui_schema_get",
@@ -95,18 +123,867 @@
         }
       }
     },
-    "/api/v1/hierarchy": {
+    "/api/v1/calendar/selection": {
+      "post": {
+        "tags": [
+          "Calendar"
+        ],
+        "summary": "Select Date",
+        "description": "Persist a selected calendar date. Integration point for frontend calendar.",
+        "operationId": "select_date_api_v1_calendar_selection_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarSelectionIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarSelectionOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/calendars/calendars": {
       "get": {
-        "tags": ["Hierarchy"],
-        "summary": "Health Check",
-        "operationId": "health_api_v1_hierarchy_get",
+        "tags": [
+          "Calendar / CRUD"
+        ],
+        "summary": "List Calendars",
+        "operationId": "list_calendars_api_v1_calendars_calendars_get",
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
+                  "items": {
+                    "$ref": "#/components/schemas/CalendarOut"
+                  },
+                  "type": "array",
+                  "title": "Response List Calendars Api V1 Calendars Calendars Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Calendar / CRUD"
+        ],
+        "summary": "Create Calendar",
+        "operationId": "create_calendar_api_v1_calendars_calendars_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/calendars/calendars/{calendar_id}": {
+      "get": {
+        "tags": [
+          "Calendar / CRUD"
+        ],
+        "summary": "Get Calendar",
+        "operationId": "get_calendar_api_v1_calendars_calendars__calendar_id__get",
+        "parameters": [
+          {
+            "name": "calendar_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Calendar Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Calendar / CRUD"
+        ],
+        "summary": "Patch Calendar",
+        "operationId": "patch_calendar_api_v1_calendars_calendars__calendar_id__patch",
+        "parameters": [
+          {
+            "name": "calendar_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Calendar Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalendarUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalendarOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Calendar / CRUD"
+        ],
+        "summary": "Delete Calendar",
+        "operationId": "delete_calendar_api_v1_calendars_calendars__calendar_id__delete",
+        "parameters": [
+          {
+            "name": "calendar_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Calendar Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/calendars/calendars/{calendar_id}/events": {
+      "get": {
+        "tags": [
+          "Calendar / CRUD"
+        ],
+        "summary": "List Events",
+        "operationId": "list_events_api_v1_calendars_calendars__calendar_id__events_get",
+        "parameters": [
+          {
+            "name": "calendar_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Calendar Id"
+            }
+          },
+          {
+            "name": "time_min",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time Min"
+            }
+          },
+          {
+            "name": "time_max",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Time Max"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EventOut"
+                  },
+                  "title": "Response List Events Api V1 Calendars Calendars  Calendar Id  Events Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Calendar / CRUD"
+        ],
+        "summary": "Create Event",
+        "operationId": "create_event_api_v1_calendars_calendars__calendar_id__events_post",
+        "parameters": [
+          {
+            "name": "calendar_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Calendar Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/calendars/calendars/{calendar_id}/events/{event_id}": {
+      "get": {
+        "tags": [
+          "Calendar / CRUD"
+        ],
+        "summary": "Get Event",
+        "operationId": "get_event_api_v1_calendars_calendars__calendar_id__events__event_id__get",
+        "parameters": [
+          {
+            "name": "calendar_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Calendar Id"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Calendar / CRUD"
+        ],
+        "summary": "Patch Event",
+        "operationId": "patch_event_api_v1_calendars_calendars__calendar_id__events__event_id__patch",
+        "parameters": [
+          {
+            "name": "calendar_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Calendar Id"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EventUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Calendar / CRUD"
+        ],
+        "summary": "Delete Event",
+        "operationId": "delete_event_api_v1_calendars_calendars__calendar_id__events__event_id__delete",
+        "parameters": [
+          {
+            "name": "calendar_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Calendar Id"
+            }
+          },
+          {
+            "name": "event_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Event Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hierarchy": {
+      "get": {
+        "tags": [
+          "Hierarchy"
+        ],
+        "summary": "Hierarchie laden",
+        "description": "Liefert die generische Projekt-/Mandanten-/Objekthierarchie für das schema-gesteuerte Frontend.",
+        "operationId": "hierarchy_api_v1_hierarchy_get",
+        "parameters": [
+          {
+            "name": "root_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optionaler Startknoten.",
+              "title": "Root Id"
+            },
+            "description": "Optionaler Startknoten."
+          },
+          {
+            "name": "max_depth",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 32,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optionale maximale Rekursionstiefe.",
+              "title": "Max Depth"
+            },
+            "description": "Optionale maximale Rekursionstiefe."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HierarchyTreeResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Hierarchy"
+        ],
+        "summary": "Hierarchieknoten erstellen",
+        "operationId": "create_hierarchy_node_api_v1_hierarchy_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HierarchyNodeCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HierarchyNode"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hierarchy/{node_id}": {
+      "patch": {
+        "tags": [
+          "Hierarchy"
+        ],
+        "summary": "Hierarchieknoten aktualisieren",
+        "operationId": "update_hierarchy_node_api_v1_hierarchy__node_id__patch",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Node Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HierarchyNodeUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HierarchyNode"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Hierarchy"
+        ],
+        "summary": "Hierarchieknoten löschen",
+        "operationId": "delete_hierarchy_node_api_v1_hierarchy__node_id__delete",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Node Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/hierarchy/{node_id}/move": {
+      "post": {
+        "tags": [
+          "Hierarchy"
+        ],
+        "summary": "Hierarchieknoten verschieben",
+        "operationId": "move_hierarchy_node_api_v1_hierarchy__node_id__move_post",
+        "parameters": [
+          {
+            "name": "node_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Node Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/_MovePayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HierarchyNode"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentation": {
+      "get": {
+        "tags": [
+          "Documentation"
+        ],
+        "summary": "Dokumentationsübersicht laden",
+        "operationId": "list_documentation_api_v1_documentation_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentationIndexResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/documentation/pages/{page_id}": {
+      "get": {
+        "tags": [
+          "Documentation"
+        ],
+        "summary": "Dokumentationsseite laden",
+        "operationId": "get_documentation_page_api_v1_documentation_pages__page_id__get",
+        "parameters": [
+          {
+            "name": "page_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Page Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentationPageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/models/providers": {
+      "get": {
+        "tags": [
+          "Registry / Models"
+        ],
+        "summary": "Verfügbare Modellprovider auflisten",
+        "description": "Liefert die Provider der registrierten Modelle. Es werden keine Zugangsdaten oder internen Providerdetails ausgegeben.",
+        "operationId": "providers_api_v1_models_providers_get",
+        "parameters": [
+          {
+            "name": "include_disabled",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include Disabled"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProviderListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -116,7 +993,9 @@
     },
     "/api/v1/models": {
       "get": {
-        "tags": ["Registry / Models"],
+        "tags": [
+          "Registry / Models"
+        ],
         "summary": "Verfügbare Modelle auflisten",
         "description": "Liefert die serverseitig registrierten und für das Frontend sichtbaren Modelle. Die Sichtbarkeit ersetzt keine Autorisierung bei einer späteren Modellauswahl.",
         "operationId": "models_api_v1_models_get",
@@ -209,7 +1088,9 @@
     },
     "/api/v1/tools": {
       "get": {
-        "tags": ["Registry / Tools"],
+        "tags": [
+          "Registry / Tools"
+        ],
         "summary": "Verfügbare Tools auflisten",
         "description": "Liefert die registrierten und für das Frontend sichtbaren Tools. Die Listung eines Tools stellt keine Ausführungsfreigabe dar.",
         "operationId": "tools_api_v1_tools_get",
@@ -313,7 +1194,9 @@
     },
     "/api/v1/chat/stream": {
       "post": {
-        "tags": ["Chat"],
+        "tags": [
+          "Chat"
+        ],
         "summary": "Chat-Antwort streamen",
         "description": "Erzeugt eine Chat-Antwort als versionierten Server-Sent-Events-Datenstrom.",
         "operationId": "stream_chat_api_v1_chat_stream_post",
@@ -341,18 +1224,23 @@
               }
             }
           },
+          "403": {
+            "description": "Der Benutzer ist nicht berechtigt."
+          },
           "422": {
             "description": "Die Chat-Anfrage ist ungültig."
           },
           "503": {
-            "description": "Der produktive ChatService ist nicht verfügbar."
+            "description": "Der ChatService ist nicht verfügbar."
           }
         }
       }
     },
     "/api/v1/config": {
       "get": {
-        "tags": ["Administration / Configuration"],
+        "tags": [
+          "Administration / Configuration"
+        ],
         "summary": "Konfiguration auflisten",
         "description": "Liefert die sichtbare Fachkonfiguration und die aktuelle Revision. Sensible Werte werden nicht ausgegeben.",
         "operationId": "list_config_api_v1_config_get",
@@ -368,13 +1256,57 @@
             }
           }
         }
+      },
+      "put": {
+        "tags": [
+          "Administration / Configuration"
+        ],
+        "summary": "Mehrere Konfigurationswerte ändern (Bulk)",
+        "description": "Nimmt ein gruppiertes `values`-Objekt entgegen und speichert alle enthaltenen Werte in einer Transaktion.",
+        "operationId": "bulk_update_config_api_v1_config_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BulkConfigUpdateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Bulk Update Config Api V1 Config Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/config/{group}/{key}": {
       "put": {
-        "tags": ["Administration / Configuration"],
+        "tags": [
+          "Administration / Configuration"
+        ],
         "summary": "Konfigurationswert ändern",
-        "description": "Ändert einen runtime-editierbaren Konfigurationswert. Die Änderung muss durch den ConfigService validiert, versioniert und protokolliert werden.",
+        "description": "Ändert einen registrierten, runtime-editierbaren Konfigurationswert. Die Änderung wird anhand des Settings-Katalogs validiert, versioniert und protokolliert.",
         "operationId": "update_config_api_v1_config__group___key__put",
         "parameters": [
           {
@@ -431,7 +1363,9 @@
     },
     "/": {
       "get": {
-        "tags": ["System"],
+        "tags": [
+          "System"
+        ],
         "summary": "Anwendungsstatus",
         "operationId": "root__get",
         "responses": {
@@ -465,7 +1399,11 @@
           },
           "environment": {
             "type": "string",
-            "enum": ["development", "intranet", "internet"],
+            "enum": [
+              "development",
+              "intranet",
+              "internet"
+            ],
             "title": "Environment"
           },
           "api_prefix": {
@@ -475,7 +1413,12 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["name", "version", "environment", "api_prefix"],
+        "required": [
+          "name",
+          "version",
+          "environment",
+          "api_prefix"
+        ],
         "title": "BootstrapApplication",
         "description": "Grundinformationen über die laufende Anwendung."
       },
@@ -648,21 +1591,35 @@
       },
       "BootstrapResponse": {
         "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1.1"
+          },
+          "api_version": {
+            "type": "string",
+            "title": "Api Version",
+            "default": "v1"
+          },
           "application": {
             "$ref": "#/components/schemas/BootstrapApplication"
           },
           "environment": {
             "type": "string",
-            "enum": ["development", "intranet", "internet"],
+            "enum": [
+              "development",
+              "intranet",
+              "internet"
+            ],
             "title": "Environment"
           },
           "user": {
             "$ref": "#/components/schemas/BootstrapUser"
           },
-          "security": {
+          "security_profile": {
             "additionalProperties": true,
             "type": "object",
-            "title": "Security"
+            "title": "Security Profile"
           },
           "capabilities": {
             "$ref": "#/components/schemas/BootstrapCapabilities"
@@ -694,6 +1651,33 @@
               }
             ],
             "title": "Request Id"
+          },
+          "minimum_client_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum Client Version",
+            "description": "Erforderliche Mindestversion des Frontends."
+          },
+          "feature_flags": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feature Flags",
+            "description": "Feature-Flags für das Frontend."
           }
         },
         "additionalProperties": false,
@@ -702,7 +1686,7 @@
           "application",
           "environment",
           "user",
-          "security",
+          "security_profile",
           "capabilities",
           "features",
           "versions",
@@ -771,7 +1755,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "name"],
+        "required": [
+          "id",
+          "name"
+        ],
         "title": "BootstrapUser",
         "description": "Minimale, frontendfähige Darstellung des aktuellen Benutzers.\n\nEs werden keine Session-Tokens, Passwortdaten oder internen\nAuthentifizierungsinformationen ausgegeben."
       },
@@ -818,11 +1805,255 @@
         "title": "BootstrapVersions",
         "description": "Versionen der stabilen Backend- und Frontend-Verträge."
       },
+      "BulkConfigUpdateRequest": {
+        "properties": {
+          "values": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "$ref": "#/components/schemas/JsonValue"
+              },
+              "type": "object"
+            },
+            "type": "object",
+            "title": "Values",
+            "description": "Gruppierte Konfigurationswerte als Objekt { group: { key: value } }"
+          },
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/ConfigChangeItem"
+            },
+            "type": "array",
+            "title": "Changes",
+            "description": "Alternative sequentielle Änderungsbeschreibung [{group,key,value}, ...]"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision",
+            "description": "Erwartete Revision zur Vermeidung von Race-Conditions."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BulkConfigUpdateRequest"
+      },
+      "CalendarCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "CalendarCreate"
+      },
+      "CalendarOut": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "CalendarOut"
+      },
+      "CalendarSelectionIn": {
+        "properties": {
+          "selected": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Selected"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "selected"
+        ],
+        "title": "CalendarSelectionIn"
+      },
+      "CalendarSelectionOut": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "selected": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Selected"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "selected",
+          "created_at"
+        ],
+        "title": "CalendarSelectionOut"
+      },
+      "CalendarUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          }
+        },
+        "type": "object",
+        "title": "CalendarUpdate"
+      },
       "ChatRequest": {
         "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version",
+            "description": "Version des öffentlichen Chat-Request-Schemas.",
+            "default": "1.0"
+          },
           "message": {
             "type": "string",
-            "maxLength": 32000,
+            "maxLength": 50000,
             "minLength": 1,
             "title": "Message",
             "description": "Nachricht des Benutzers."
@@ -831,7 +2062,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "format": "uuid"
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -844,7 +2075,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "format": "uuid"
+                "maxLength": 255
               },
               {
                 "type": "null"
@@ -887,53 +2118,532 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "title": "ChatRequest",
-        "description": "Eingabevertrag für eine Chat-Anfrage.\n\nModell- und Tool-IDs sind ausschließlich Benutzerwünsche. Auswahl,\nFreigabe und Autorisierung erfolgen serverseitig."
+        "description": "Öffentlicher, versionierter Chat-Request.\n\nZusätzliche Felder werden bewusst abgelehnt. Neue öffentliche Felder\nmüssen explizit und versioniert ergänzt werden."
+      },
+      "ConfigChangeItem": {
+        "properties": {
+          "group": {
+            "type": "string",
+            "title": "Group"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonValue"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "group",
+          "key",
+          "value"
+        ],
+        "title": "ConfigChangeItem"
+      },
+      "ConfigDynamicOptionsResponse": {
+        "properties": {
+          "source": {
+            "type": "string",
+            "title": "Source"
+          },
+          "endpoint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint"
+          },
+          "value_field": {
+            "type": "string",
+            "title": "Value Field",
+            "default": "id"
+          },
+          "label_field": {
+            "type": "string",
+            "title": "Label Field",
+            "default": "name"
+          },
+          "description_field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Field",
+            "default": "description"
+          },
+          "filters": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Filters"
+          },
+          "depends_on": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Depends On"
+          },
+          "dependency_parameter": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Dependency Parameter"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "source"
+        ],
+        "title": "ConfigDynamicOptionsResponse"
       },
       "ConfigEntryResponse": {
         "properties": {
-          "group": { "type": "string", "title": "Group" },
-          "key": { "type": "string", "title": "Key" },
-          "full_key": { "type": "string", "title": "Full Key" },
-          "display_name": { "type": "string", "title": "Display Name" },
-          "description": { "type": "string", "title": "Description" },
-          "value": { "$ref": "#/components/schemas/JsonValue" },
-          "default_value": { "$ref": "#/components/schemas/JsonValue" },
-          "schema_version": { "type": "string", "title": "Schema Version" },
-          "value_type": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Value Type" },
-          "value_schema": { "type": "object", "additionalProperties": { "$ref": "#/components/schemas/JsonValue" }, "title": "Value Schema" },
-          "editable": { "type": "boolean", "title": "Editable" },
-          "sensitive": { "type": "boolean", "title": "Sensitive" },
-          "secret_configured": { "type": "boolean", "title": "Secret Configured" },
-          "requires_restart": { "type": "boolean", "title": "Requires Restart" },
-          "runtime_editable": { "type": "boolean", "title": "Runtime Editable" },
-          "nullable": { "type": "boolean", "title": "Nullable" },
-          "visibility": { "type": "string", "title": "Visibility" },
-          "allowed_scopes": { "type": "array", "items": { "type": "string" }, "title": "Allowed Scopes" },
-          "current_scope": { "type": "string", "title": "Current Scope" },
-          "permissions": { "type": "object", "properties": { "read": { "type": "string" }, "write": { "type": "string" }, "reveal_secret": { "anyOf": [{ "type": "string" }, { "type": "null" }] } }, "required": ["read", "write"] },
-          "ui": { "$ref": "#/components/schemas/ConfigUIResponse" },
-          "deprecated": { "type": "boolean" },
-          "deprecation_message": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
-          "replaced_by": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+          "group": {
+            "type": "string",
+            "title": "Group"
+          },
+          "key": {
+            "type": "string",
+            "title": "Key"
+          },
+          "full_key": {
+            "type": "string",
+            "title": "Full Key"
+          },
+          "display_name": {
+            "type": "string",
+            "title": "Display Name"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "value": {
+            "$ref": "#/components/schemas/JsonValue"
+          },
+          "default_value": {
+            "$ref": "#/components/schemas/JsonValue"
+          },
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version"
+          },
+          "value_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value Type"
+          },
+          "value_schema": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Value Schema"
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable"
+          },
+          "sensitive": {
+            "type": "boolean",
+            "title": "Sensitive"
+          },
+          "secret_configured": {
+            "type": "boolean",
+            "title": "Secret Configured",
+            "default": false
+          },
+          "requires_restart": {
+            "type": "boolean",
+            "title": "Requires Restart"
+          },
+          "runtime_editable": {
+            "type": "boolean",
+            "title": "Runtime Editable"
+          },
+          "nullable": {
+            "type": "boolean",
+            "title": "Nullable"
+          },
+          "visibility": {
+            "type": "string",
+            "title": "Visibility"
+          },
+          "allowed_scopes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Scopes"
+          },
+          "current_scope": {
+            "type": "string",
+            "title": "Current Scope"
+          },
+          "permissions": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfigPermissionsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ui": {
+            "$ref": "#/components/schemas/ConfigUIResponse"
+          },
+          "deprecated": {
+            "type": "boolean",
+            "title": "Deprecated",
+            "default": false
+          },
+          "deprecation_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deprecation Message"
+          },
+          "replaced_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Replaced By"
+          }
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["group", "key", "full_key", "display_name", "description", "value", "default_value", "schema_version", "editable", "sensitive", "secret_configured", "requires_restart", "runtime_editable", "nullable", "visibility", "allowed_scopes", "current_scope", "ui", "deprecated"],
+        "required": [
+          "group",
+          "key",
+          "full_key",
+          "display_name",
+          "description",
+          "value",
+          "default_value",
+          "schema_version",
+          "editable",
+          "sensitive",
+          "requires_restart",
+          "runtime_editable",
+          "nullable",
+          "visibility",
+          "current_scope",
+          "ui"
+        ],
         "title": "ConfigEntryResponse"
+      },
+      "ConfigGroupResponse": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "default": 0
+          },
+          "entries": {
+            "items": {
+              "$ref": "#/components/schemas/ConfigEntryResponse"
+            },
+            "type": "array",
+            "title": "Entries"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "label"
+        ],
+        "title": "ConfigGroupResponse"
       },
       "ConfigListResponse": {
         "properties": {
-          "schema_version": { "type": "string", "title": "Schema Version", "default": "2.0" },
-          "revision": { "type": "integer", "minimum": 0.0, "title": "Revision" },
-          "groups": { "type": "array", "items": { "$ref": "#/components/schemas/ConfigGroupResponse" }, "title": "Groups" },
-          "request_id": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Request Id" }
+          "schema_version": {
+            "type": "string",
+            "const": "2.0",
+            "title": "Schema Version",
+            "default": "2.0"
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/ConfigGroupResponse"
+            },
+            "type": "array",
+            "title": "Groups"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["revision", "groups"],
+        "required": [
+          "revision"
+        ],
         "title": "ConfigListResponse"
+      },
+      "ConfigOptionResponse": {
+        "properties": {
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "number"
+              },
+              {
+                "type": "boolean"
+              }
+            ],
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "disabled": {
+            "type": "boolean",
+            "title": "Disabled",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "ConfigOptionResponse"
+      },
+      "ConfigPermissionsResponse": {
+        "properties": {
+          "read": {
+            "type": "string",
+            "title": "Read"
+          },
+          "write": {
+            "type": "string",
+            "title": "Write"
+          },
+          "reveal_secret": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reveal Secret"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "read",
+          "write"
+        ],
+        "title": "ConfigPermissionsResponse"
+      },
+      "ConfigUIResponse": {
+        "properties": {
+          "component": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Component"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "section": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Section"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "default": 0
+          },
+          "placeholder": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placeholder"
+          },
+          "help_text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Help Text"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "advanced": {
+            "type": "boolean",
+            "title": "Advanced",
+            "default": false
+          },
+          "hidden": {
+            "type": "boolean",
+            "title": "Hidden",
+            "default": false
+          },
+          "readonly": {
+            "type": "boolean",
+            "title": "Readonly",
+            "default": false
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/ConfigOptionResponse"
+            },
+            "type": "array",
+            "title": "Options"
+          },
+          "dynamic_options": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ConfigDynamicOptionsResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ConfigUIResponse"
       },
       "ConfigUpdateRequest": {
         "properties": {
@@ -969,7 +2679,9 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["value"],
+        "required": [
+          "value"
+        ],
         "title": "ConfigUpdateRequest",
         "description": "Änderung eines einzelnen Konfigurationswertes.\n\n`expected_revision` schützt vor dem unbeabsichtigten Überschreiben\neiner zwischenzeitlich geänderten Konfiguration."
       },
@@ -1008,8 +2720,314 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["group", "key", "revision"],
+        "required": [
+          "group",
+          "key",
+          "revision"
+        ],
         "title": "ConfigUpdateResponse"
+      },
+      "DocumentationIndexResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "default_page_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Page Id"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentationSection"
+            },
+            "type": "array",
+            "title": "Sections"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "DocumentationIndexResponse"
+      },
+      "DocumentationPageResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "section_id": {
+            "type": "string",
+            "title": "Section Id"
+          },
+          "section_title": {
+            "type": "string",
+            "title": "Section Title"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "section_id",
+          "section_title",
+          "content"
+        ],
+        "title": "DocumentationPageResponse"
+      },
+      "DocumentationPageSummary": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "DocumentationPageSummary"
+      },
+      "DocumentationSection": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "pages": {
+            "items": {
+              "$ref": "#/components/schemas/DocumentationPageSummary"
+            },
+            "type": "array",
+            "title": "Pages"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "DocumentationSection"
+      },
+      "EventCreate": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "all_day": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "All Day",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "start",
+          "end"
+        ],
+        "title": "EventCreate"
+      },
+      "EventOut": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start"
+          },
+          "end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "End"
+          },
+          "all_day": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "All Day",
+            "default": false
+          },
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "calendar_id": {
+            "type": "string",
+            "title": "Calendar Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title",
+          "start",
+          "end",
+          "id",
+          "calendar_id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "EventOut"
+      },
+      "EventUpdate": {
+        "properties": {
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start"
+          },
+          "end": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End"
+          },
+          "all_day": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "All Day"
+          }
+        },
+        "type": "object",
+        "title": "EventUpdate"
       },
       "HTTPValidationError": {
         "properties": {
@@ -1086,6 +3104,287 @@
           "services"
         ],
         "title": "HealthResponse"
+      },
+      "HierarchyNode": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt"
+          },
+          "tool_policy": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Tool Policy"
+          },
+          "config_overrides": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Config Overrides"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Metadata"
+          },
+          "effective_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective Prompt"
+          },
+          "effective_tools": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Effective Tools"
+          },
+          "effective_config": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Effective Config"
+          },
+          "available_actions": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Available Actions"
+          },
+          "children": {
+            "items": {
+              "$ref": "#/components/schemas/HierarchyNode"
+            },
+            "type": "array",
+            "title": "Children"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "name"
+        ],
+        "title": "HierarchyNode"
+      },
+      "HierarchyNodeCreate": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Type"
+          },
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name"
+          },
+          "parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Parent Id"
+          },
+          "system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt"
+          },
+          "tool_policy": {
+            "additionalProperties": {
+              "type": "boolean"
+            },
+            "type": "object",
+            "title": "Tool Policy"
+          },
+          "config_overrides": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Config Overrides"
+          },
+          "metadata": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Metadata"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "type",
+          "name"
+        ],
+        "title": "HierarchyNodeCreate"
+      },
+      "HierarchyNodeUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "system_prompt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "System Prompt"
+          },
+          "tool_policy": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "type": "boolean"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tool Policy"
+          },
+          "config_overrides": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Overrides"
+          },
+          "metadata": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "$ref": "#/components/schemas/JsonValue"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Metadata"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "HierarchyNodeUpdate"
+      },
+      "HierarchyTreeResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "root": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Root"
+          },
+          "revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision",
+            "description": "Optionale globale Revision für Cache-Invalidierung."
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "root"
+        ],
+        "title": "HierarchyTreeResponse",
+        "description": "API-Vertrag für die Hierarchie – kompatibel mit Frontend-HierarchyTree."
       },
       "JsonValue": {},
       "ModelCapability": {
@@ -1212,7 +3511,11 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "name", "provider"],
+        "required": [
+          "id",
+          "name",
+          "provider"
+        ],
         "title": "ModelEntry",
         "description": "Öffentlicher, frontendfähiger Modelleintrag.\n\nInterne Dateipfade, Zugangsdaten und Provider-Secrets werden nicht\nan das Frontend weitergegeben."
       },
@@ -1287,21 +3590,424 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "ModelListResponse"
+      },
+      "ProviderEntry": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "model_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Model Count",
+            "default": 0
+          },
+          "available_model_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Available Model Count",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "name"
+        ],
+        "title": "ProviderEntry"
+      },
+      "ProviderListResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "registry_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Registry Revision",
+            "default": 0
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderEntry"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "ProviderListResponse"
       },
       "ServiceStatus": {
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["up", "down", "unknown"],
+            "enum": [
+              "up",
+              "down",
+              "unknown"
+            ],
             "title": "Status"
           }
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "title": "ServiceStatus"
+      },
+      "SettingsAvailability": {
+        "type": "string",
+        "enum": [
+          "available",
+          "prepared",
+          "planned"
+        ],
+        "title": "SettingsAvailability"
+      },
+      "SettingsCatalogResponse": {
+        "properties": {
+          "schema_version": {
+            "type": "string",
+            "const": "1.0",
+            "title": "Schema Version",
+            "default": "1.0"
+          },
+          "groups": {
+            "items": {
+              "$ref": "#/components/schemas/SettingsGroupDescriptor"
+            },
+            "type": "array",
+            "title": "Groups"
+          },
+          "request_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Request Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "groups"
+        ],
+        "title": "SettingsCatalogResponse"
+      },
+      "SettingsControl": {
+        "type": "string",
+        "enum": [
+          "text",
+          "textarea",
+          "number",
+          "boolean",
+          "select",
+          "multiselect",
+          "readonly",
+          "link"
+        ],
+        "title": "SettingsControl"
+      },
+      "SettingsFieldDescriptor": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "source": {
+            "$ref": "#/components/schemas/SettingsSource"
+          },
+          "availability": {
+            "$ref": "#/components/schemas/SettingsAvailability",
+            "default": "prepared"
+          },
+          "control": {
+            "$ref": "#/components/schemas/SettingsControl",
+            "default": "readonly"
+          },
+          "config_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Group"
+          },
+          "config_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config Key"
+          },
+          "endpoint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Endpoint"
+          },
+          "editable": {
+            "type": "boolean",
+            "title": "Editable",
+            "default": false
+          },
+          "sensitive": {
+            "type": "boolean",
+            "title": "Sensitive",
+            "default": false
+          },
+          "requires_confirmation": {
+            "type": "boolean",
+            "title": "Requires Confirmation",
+            "default": false
+          },
+          "restart_required": {
+            "type": "boolean",
+            "title": "Restart Required",
+            "default": false
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/SettingsOption"
+            },
+            "type": "array",
+            "title": "Options",
+            "default": []
+          },
+          "minimum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minimum"
+          },
+          "maximum": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Maximum"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "default": 0
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Tags",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "source"
+        ],
+        "title": "SettingsFieldDescriptor"
+      },
+      "SettingsGroupDescriptor": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "type": "string",
+            "title": "Description"
+          },
+          "icon": {
+            "type": "string",
+            "title": "Icon"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order"
+          },
+          "availability": {
+            "$ref": "#/components/schemas/SettingsAvailability",
+            "default": "prepared"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/SettingsSectionDescriptor"
+            },
+            "type": "array",
+            "title": "Sections",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title",
+          "description",
+          "icon",
+          "order"
+        ],
+        "title": "SettingsGroupDescriptor"
+      },
+      "SettingsOption": {
+        "properties": {
+          "value": {
+            "type": "string",
+            "title": "Value"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "value",
+          "label"
+        ],
+        "title": "SettingsOption"
+      },
+      "SettingsSectionDescriptor": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "order": {
+            "type": "integer",
+            "title": "Order",
+            "default": 0
+          },
+          "availability": {
+            "$ref": "#/components/schemas/SettingsAvailability",
+            "default": "prepared"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/SettingsFieldDescriptor"
+            },
+            "type": "array",
+            "title": "Fields",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "title"
+        ],
+        "title": "SettingsSectionDescriptor"
+      },
+      "SettingsSource": {
+        "type": "string",
+        "enum": [
+          "config",
+          "resource",
+          "runtime",
+          "local_preference"
+        ],
+        "title": "SettingsSource"
       },
       "ToolCapabilities": {
         "properties": {
@@ -1439,7 +4145,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["id", "name"],
+        "required": [
+          "id",
+          "name"
+        ],
         "title": "ToolEntry",
         "description": "Öffentlicher, frontendfähiger Tool-Eintrag.\n\nInterne Python-Pfade, Importnamen, Zugangsdaten und ausführbare\nImplementierungsdetails werden nicht ausgegeben."
       },
@@ -1527,245 +4236,50 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["items"],
+        "required": [
+          "items"
+        ],
         "title": "ToolListResponse"
-      },
-      "UIActionDefinition": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "label": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Label"
-          },
-          "icon": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Icon"
-          },
-          "endpoint": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Endpoint"
-          },
-          "method": {
-            "anyOf": [
-              {
-                "type": "string",
-                "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"]
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Method"
-          },
-          "required_permissions": {
-            "items": {
-              "type": "string"
-            },
-            "type": "array",
-            "title": "Required Permissions"
-          },
-          "confirmation_required": {
-            "type": "boolean",
-            "title": "Confirmation Required",
-            "default": false
-          },
-          "enabled": {
-            "type": "boolean",
-            "title": "Enabled",
-            "default": true
-          },
-          "payload_schema": {
-            "anyOf": [
-              {
-                "additionalProperties": {
-                  "$ref": "#/components/schemas/JsonValue"
-                },
-                "type": "object"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Payload Schema"
-          }
-        },
-        "additionalProperties": true,
-        "type": "object",
-        "required": ["id", "type"],
-        "title": "UIActionDefinition",
-        "description": "Beschreibung einer frontendseitig bekannten Aktion.\n\nEine deklarierte Aktion ersetzt niemals die serverseitige\nAutorisierung des zugehörigen API-Endpunkts."
-      },
-      "UIComponentDefinition": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "type": {
-            "type": "string",
-            "title": "Type"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "props": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/JsonValue"
-            },
-            "type": "object",
-            "title": "Props"
-          },
-          "children": {
-            "items": {
-              "$ref": "#/components/schemas/UIComponentDefinition"
-            },
-            "type": "array",
-            "title": "Children"
-          },
-          "visible": {
-            "type": "boolean",
-            "title": "Visible",
-            "default": true
-          },
-          "enabled": {
-            "type": "boolean",
-            "title": "Enabled",
-            "default": true
-          }
-        },
-        "additionalProperties": true,
-        "type": "object",
-        "required": ["id", "type"],
-        "title": "UIComponentDefinition",
-        "description": "Beschreibung einer bekannten generischen UI-Komponente.\n\nDer konkrete Komponententyp muss im Frontend in einer festen\nKomponenten-Registry vorhanden sein."
-      },
-      "UIFormDefinition": {
-        "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
-          },
-          "title": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Title"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "schema": {
-            "additionalProperties": {
-              "$ref": "#/components/schemas/JsonValue"
-            },
-            "type": "object",
-            "title": "Schema"
-          },
-          "submit_action_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Submit Action Id"
-          }
-        },
-        "additionalProperties": true,
-        "type": "object",
-        "required": ["id", "schema"],
-        "title": "UIFormDefinition",
-        "description": "Dynamisch renderbares Formular.\n\n`form_schema` wird im öffentlichen JSON-Vertrag weiterhin unter\ndem Feldnamen `schema` ausgegeben."
       },
       "UISchemaDocument": {
         "properties": {
+          "schema_name": {
+            "type": "string",
+            "title": "Schema Name",
+            "default": "default"
+          },
           "schema_version": {
             "type": "string",
             "title": "Schema Version",
             "default": "1.0"
           },
-          "components": {
-            "items": {
-              "$ref": "#/components/schemas/UIComponentDefinition"
+          "node_types": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
             },
-            "type": "array",
+            "type": "object",
+            "title": "Node Types"
+          },
+          "forms": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
+            "title": "Forms"
+          },
+          "components": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
+            },
+            "type": "object",
             "title": "Components"
           },
           "actions": {
-            "items": {
-              "$ref": "#/components/schemas/UIActionDefinition"
+            "additionalProperties": {
+              "$ref": "#/components/schemas/JsonValue"
             },
-            "type": "array",
+            "type": "object",
             "title": "Actions"
-          },
-          "forms": {
-            "items": {
-              "$ref": "#/components/schemas/UIFormDefinition"
-            },
-            "type": "array",
-            "title": "Forms"
           },
           "metadata": {
             "additionalProperties": {
@@ -1777,8 +4291,7 @@
         },
         "additionalProperties": true,
         "type": "object",
-        "title": "UISchemaDocument",
-        "description": "Öffentlicher UI-Schema-Vertrag.\n\nZusätzliche Felder bleiben vorerst erlaubt, damit der bestehende\nSchema-Builder schrittweise auf diesen Vertrag migriert werden kann."
+        "title": "UISchemaDocument"
       },
       "UISchemaResponse": {
         "properties": {
@@ -1814,7 +4327,10 @@
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["ui_schema_version", "schema"],
+        "required": [
+          "ui_schema_version",
+          "schema"
+        ],
         "title": "UISchemaResponse",
         "description": "Transportvertrag des API-Endpunkts.\n\n`ui_schema` wird im öffentlichen JSON-Vertrag weiterhin als\n`schema` serialisiert."
       },
@@ -1844,8 +4360,31 @@
           }
         },
         "type": "object",
-        "required": ["loc", "msg", "type"],
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
         "title": "ValidationError"
+      },
+      "_MovePayload": {
+        "properties": {
+          "new_parent_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New Parent Id",
+            "description": "Neuer Elternknoten oder null für Root"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "_MovePayload"
       }
     }
   }
