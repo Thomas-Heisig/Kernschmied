@@ -79,11 +79,13 @@ Für alle Arbeiten gelten folgende Grundsätze:
 - [-] Providerliste aus den registrierten Modellen erzeugen.
 - [-] Provider-Modell-Kombination serverseitig validieren.
 - [-] Atomare Speicherung zusammengehöriger Konfigurationsänderungen.
-- [-] Zentralen `SchemaRenderer` aus dem vorhandenen Platzhalter entwickeln.
+ - [-] Grundlegender SchemaRenderer implementiert; Typisierung, Feldbindung, Sichtbarkeit, Fehlergrenzen und Action-Kontext noch offen.
 - [-] Komponenten-Registry vervollständigen.
 - [-] Internes Wiki und Benutzerhandbuch als Popup integrieren.
 - [-] Hierarchieknoten im Frontend bearbeitbar machen.
 - [-] Dokumentation an den tatsächlichen Projektstand anpassen.
+ - [-] SettingsField mit dynamischen Optionen (Provider/Model-Abhängigkeiten) in Arbeit.
+ - [-] Config-Schema 2.0: Migration und Frontend-Verträge in Arbeit.
 
 ---
 
@@ -447,7 +449,7 @@ Für alle Arbeiten gelten folgende Grundsätze:
 
 - [-] Datei `SchemaRenderer.tsx` ist vorhanden.
 - [-] Aktuell existiert noch keine vollständige universelle Implementierung.
-- [ ] Platzhalter zu einem kontrollierten rekursiven Renderer ausbauen.
+- [-] Grundlegender SchemaRenderer implementiert; Typisierung, Feldbindung, Sichtbarkeit, Fehlergrenzen und Action-Kontext noch offen.
 - [ ] Vorgesehene Props stabilisieren:
 
   - `schema`
@@ -987,11 +989,11 @@ wiki/User-Manual/Troubleshooting.md
 - [ ] Request-ID im Fehlerbody.
 - [ ] OpenAPI referenziert korrekte Response-Modelle.
 
-## 13.3 Provider- und Modelltests
+-## 13.3 Provider- und Modelltests
 
 - [ ] Leere Providerliste.
-- [ ] Provideraggregation.
-- [ ] Providerzählung.
+- [x] Provideraggregation.
+- [x] Providerzählung.
 - [ ] Deaktivierte Modelle ausblenden.
 - [ ] `include_disabled=true`.
 - [ ] Keine Secrets in Providerantwort.
