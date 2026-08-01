@@ -33,6 +33,7 @@ from fastapi import (
     Response,
     status,
 )
+from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware

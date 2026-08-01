@@ -13,6 +13,7 @@
   "dependencies": {
     "@vitejs/plugin-react": "latest",
     "lucide-react": "latest",
+    "sonner": "latest",
     "react": "latest",
     "react-dom": "latest"
   },

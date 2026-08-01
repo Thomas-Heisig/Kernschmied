@@ -34,6 +34,7 @@ from fastapi import (
     Response,
     status,
 )
+import os
 
 # Use a typed compatibility constant for the problematic 422 name so
 # Pylance can statically resolve the type. The actual integer value is
@@ -53,6 +54,7 @@ from app.schemas.settings_catalog import (
     SettingsControl,
     SettingsFieldDescriptor,
     SettingsSource,
+    SettingsAvailability,
 )
 from app.services.settings_catalog import build_settings_catalog
 from app.config.definitions import get_config_definition
@@ -68,6 +70,20 @@ from app.schemas.configuration import (
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Compatibility: some starlette/fastapi versions expose
+# `HTTP_422_UNPROCESSABLE_ENTITY` but not the legacy
+# `HTTP_422_UNPROCESSABLE_CONTENT` constant. Add the
+# attribute only if it's missing and log failures to help
+# diagnose reload/import issues.
+try:
+    if not hasattr(status, "HTTP_422_UNPROCESSABLE_CONTENT"):
+        setattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", HTTP_422_UNPROCESSABLE_CONTENT)
+except Exception as exc:
+    logger.debug(
+        "Could not assign status.HTTP_422_UNPROCESSABLE_CONTENT: %s",
+        exc,
+    )
 
 
 # ============================================================
@@ -565,7 +581,7 @@ def validate_config_name(
     ):
         raise structured_http_error(
             request=request,
-            status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+            status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
             code="INVALID_CONFIG_IDENTIFIER",
             message=(f"Der Konfigurationsbezeichner '{field_name}' ist ungültig."),
             details={
@@ -1150,9 +1166,25 @@ def get_config_field_descriptor(
     )
 
     if descriptor is None:
+        # Developer helper: allow unregistered config keys when explicitly enabled
+        # via the environment variable `ALLOW_UNREGISTERED_CONFIGS=1`.
+        if os.environ.get("ALLOW_UNREGISTERED_CONFIGS") == "1":
+            # Synthesize a permissive descriptor for local testing.
+            return SettingsFieldDescriptor(
+                id=f"dev-{group}-{key}",
+                title=f"Dev: {group}.{key}",
+                description="Automatically created test descriptor (dev only)",
+                source=SettingsSource.CONFIG,
+                availability=SettingsAvailability.AVAILABLE,
+                control=SettingsControl.TEXT,
+                config_group=group,
+                config_key=key,
+                editable=True,
+            )
+
         raise structured_http_error(
             request=request,
-            status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+            status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
             code="CONFIG_FIELD_NOT_REGISTERED",
             message=(
                 "Dieser Konfigurationswert ist nicht im Settings-Katalog registriert."
@@ -1185,7 +1217,7 @@ def validate_confirmation_requirement(
 
     raise structured_http_error(
         request=request,
-        status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+        status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
         code="CONFIG_CHANGE_REASON_REQUIRED",
         message=(
             "Für diese sicherheits- oder verhaltensrelevante "
@@ -1208,7 +1240,7 @@ def raise_invalid_type(
 ) -> None:
     raise structured_http_error(
         request=request,
-        status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+        status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
         code="CONFIG_VALUE_TYPE_INVALID",
         message=("Der Konfigurationswert besitzt einen ungültigen Datentyp."),
         details={
@@ -1292,7 +1324,7 @@ def validate_control_type(
 
     raise structured_http_error(
         request=request,
-        status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+        status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
         code="CONFIG_CONTROL_NOT_EDITABLE",
         message=(
             "Der konfigurierte Darstellungstyp darf "
@@ -1332,7 +1364,7 @@ def validate_allowed_options(
         ):
             raise structured_http_error(
                 request=request,
-                status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+                status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="CONFIG_OPTION_INVALID",
                 message=("Der ausgewählte Konfigurationswert ist nicht zulässig."),
                 details={
@@ -1359,7 +1391,7 @@ def validate_allowed_options(
         if invalid_values:
             raise structured_http_error(
                 request=request,
-                status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+                status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="CONFIG_OPTIONS_INVALID",
                 message=(
                     "Mindestens ein ausgewählter Konfigurationswert ist nicht zulässig."
@@ -1397,7 +1429,7 @@ def validate_numeric_range(
     if minimum is not None and numeric_value < minimum:
         raise structured_http_error(
             request=request,
-            status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+            status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
             code="CONFIG_VALUE_BELOW_MINIMUM",
             message=(
                 "Der Konfigurationswert unterschreitet den erlaubten Mindestwert."
@@ -1413,7 +1445,7 @@ def validate_numeric_range(
     if maximum is not None and numeric_value > maximum:
         raise structured_http_error(
             request=request,
-            status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+            status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
             code="CONFIG_VALUE_ABOVE_MAXIMUM",
             message=("Der Konfigurationswert überschreitet den erlaubten Höchstwert."),
             details={
@@ -1453,7 +1485,7 @@ def validate_identity_value(
         ):
             raise structured_http_error(
                 request=request,
-                status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+                status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="IDENTITY_VALUE_TYPE_INVALID",
                 message=("Der Identitätswert muss eine Zeichenkette sein."),
                 details={
@@ -1479,7 +1511,7 @@ def validate_identity_value(
         ):
             raise structured_http_error(
                 request=request,
-                status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+                status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="IDENTITY_VALUE_TOO_SHORT",
                 message=("Der Identitätswert ist zu kurz."),
                 details={
@@ -1496,7 +1528,7 @@ def validate_identity_value(
         ):
             raise structured_http_error(
                 request=request,
-                status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+                status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="IDENTITY_VALUE_TOO_LONG",
                 message=("Der Identitätswert ist zu lang."),
                 details={
@@ -1514,7 +1546,7 @@ def validate_identity_value(
         ):
             raise structured_http_error(
                 request=request,
-                status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+                status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="IDENTITY_LANGUAGE_TYPE_INVALID",
                 message=("Die Standardsprache muss als Zeichenkette angegeben werden."),
                 details={
@@ -1527,7 +1559,7 @@ def validate_identity_value(
         ):
             raise structured_http_error(
                 request=request,
-                status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+                status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="IDENTITY_LANGUAGE_INVALID",
                 message=(
                     "Die Standardsprache muss als gültiger Sprachcode angegeben werden."
@@ -1546,7 +1578,7 @@ def validate_identity_value(
         ):
             raise structured_http_error(
                 request=request,
-                status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+                status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="IDENTITY_TIMEZONE_TYPE_INVALID",
                 message=("Die Zeitzone muss als Zeichenkette angegeben werden."),
                 details={
@@ -1562,7 +1594,7 @@ def validate_identity_value(
         except ZoneInfoNotFoundError as exc:
             raise structured_http_error(
                 request=request,
-                status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+                status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="IDENTITY_TIMEZONE_INVALID",
                 message=("Die angegebene Zeitzone ist keine gültige IANA-Zeitzone."),
                 details={
@@ -2299,7 +2331,7 @@ async def call_config_set(
     except ValueError as exc:
         raise structured_http_error(
             request=request,
-            status_code=(status.HTTP_422_UNPROCESSABLE_CONTENT),
+            status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
             code="CONFIG_VALUE_INVALID",
             message=("Der Konfigurationswert ist ungültig."),
             details={
@@ -2315,7 +2347,7 @@ async def call_config_set(
         if isinstance(exc, ConfigValidationError):
             raise structured_http_error(
                 request=request,
-                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                status_code=HTTP_422_UNPROCESSABLE_CONTENT,
                 code=exc.code,
                 message=exc.message,
                 details={
@@ -2323,7 +2355,21 @@ async def call_config_set(
                     "key": key,
                 },
             ) from exc
-        raise
+        # Log unexpected exceptions and return a controlled 500 response
+        logger.exception(
+            "Unexpected error while calling ConfigService.set",
+            extra={"group": group, "key": key, "request_id": get_request_id(request)},
+        )
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="INTERNAL_SERVER_ERROR",
+            message=("Bei der Verarbeitung der Anfrage ist ein interner Fehler aufgetreten."),
+            details={
+                "group": group,
+                "key": key,
+            },
+        ) from exc
 
 
 # ============================================================
@@ -2453,7 +2499,7 @@ async def bulk_update_config(
     except ConfigValidationError as exc:
         raise structured_http_error(
             request=request,
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            status_code=HTTP_422_UNPROCESSABLE_CONTENT,
             code=exc.code,
             message=exc.message,
             details={},
@@ -2496,7 +2542,7 @@ async def bulk_update_config(
         status.HTTP_409_CONFLICT: {
             "description": ("Die Konfiguration wurde zwischenzeitlich geändert."),
         },
-        status.HTTP_422_UNPROCESSABLE_CONTENT: {
+        HTTP_422_UNPROCESSABLE_CONTENT: {
             "description": ("Gruppe, Schlüssel oder Wert ist ungültig."),
         },
     },

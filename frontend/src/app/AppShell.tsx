@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { useAppStoreCommands } from '../store';
 
 import { AppErrorScreen } from '../components/errors';
+import { Toaster } from 'sonner';
 import { AppLoadingScreen } from '../components/status';
 import { ToastProvider, useToast } from '../components/ui/ToastProvider';
 import HierarchyActionModal from '../components/ui/HierarchyActionModal';
@@ -15,6 +16,7 @@ import {
   selectSelectedNode,
   selectSelectedNodeId,
 } from '../store';
+import type { HierarchyNode, HierarchyTree, HierarchyActionKind } from '../contracts/hierarchy';
 import { useTheme } from '../theme';
 import { AppWorkspace } from './AppWorkspace';
 import { useAppBootstrap } from './useAppBootstrap';
@@ -22,6 +24,7 @@ import { useAppBootstrap } from './useAppBootstrap';
 export function AppShell() {
   return (
     <ToastProvider>
+      <Toaster position="bottom-right" />
       <AppShellContent />
     </ToastProvider>
   );
@@ -50,8 +53,8 @@ function AppShellContent() {
 
   // Modal state for hierarchy actions (declare hooks early to preserve Hooks order)
   const [modalOpen, setModalOpen] = useState(false);
-  const [modalKind, setModalKind] = useState<string | null>(null);
-  const [modalNode, setModalNode] = useState<any | null>(null);
+  const [modalKind, setModalKind] = useState<HierarchyActionKind | null>(null);
+  const [modalNode, setModalNode] = useState<HierarchyNode | null>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [recentlyMovedNodeId, setRecentlyMovedNodeId] = useState<string | null>(null);
 
@@ -110,7 +113,7 @@ function AppShellContent() {
       }
     : null;
 
-  function openModalFor(action: string, node: any) {
+  function openModalFor(action: HierarchyActionKind, node: HierarchyNode) {
     setModalKind(action);
     setModalNode(node);
     setModalOpen(true);
@@ -133,7 +136,7 @@ function AppShellContent() {
 
     // Build optimistic tree
     try {
-      const optimistic = moveNodeInTree(prev, id, newParentId, position ?? null);
+      const optimistic = moveNodeInTree(prev as HierarchyTree, id, newParentId, position ?? null);
       replaceHierarchy(optimistic);
     } catch (err: unknown) {
       // If optimistic transform fails, abort
@@ -160,17 +163,17 @@ function AppShellContent() {
   };
 
   function moveNodeInTree(
-    hierarchy: any,
+    hierarchy: HierarchyTree,
     nodeId: string,
     newParentId: string | null,
     insertPosition: number | null = null,
   ) {
-    const clone = JSON.parse(JSON.stringify(hierarchy));
+    const clone = JSON.parse(JSON.stringify(hierarchy)) as HierarchyTree;
 
     // Find and remove node
-    let nodeToMove: any = null;
+    let nodeToMove: HierarchyNode | null = null;
 
-    function removeNode(parent: any) {
+    function removeNode(parent: HierarchyNode) {
       if (!parent.children) return false;
       for (let i = 0; i < parent.children.length; i++) {
         const c = parent.children[i];
@@ -206,15 +209,15 @@ function AppShellContent() {
       return clone;
     }
 
-    function insertInto(parent: any): boolean {
+    function insertInto(parent: HierarchyNode): boolean {
       if (parent.id === newParentId) {
         parent.children = parent.children || [];
-        if (insertPosition === null) parent.children.push(nodeToMove);
+        if (insertPosition === null) parent.children.push(nodeToMove as HierarchyNode);
         else
           parent.children.splice(
             Math.max(0, Math.min(parent.children.length, insertPosition)),
             0,
-            nodeToMove,
+            nodeToMove as HierarchyNode,
           );
         return true;
       }

@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 import { fetchSettingsCatalog } from '../../api/settingsCatalog';
-import type { ConfigObject, ConfigValue, ConfigEntryResponse } from '../../contracts/config';
+import type { ConfigObject, ConfigValue, ConfigEntryResponse, ConfigUIComponent } from '../../contracts/config';
 import type {
   SettingsAvailability,
   SettingsCatalogResponse,
@@ -124,18 +124,18 @@ export function SettingsCatalogView({ config }: SettingsCatalogViewProps) {
   const valuesByFullKey = useMemo(() => {
     const out: Record<string, ConfigValue> = {};
 
-    function walk(prefix: string[], node: any) {
-      if (node === null || typeof node !== 'object') {
+    function walk(prefix: string[], node: unknown) {
+      if (node === null || typeof node !== 'object' || Array.isArray(node)) {
         out[prefix.join('.')] = node as ConfigValue;
         return;
       }
 
-      for (const [k, v] of Object.entries(node)) {
+      for (const [k, v] of Object.entries(node as Record<string, unknown>)) {
         walk([...prefix, k], v);
       }
     }
 
-    walk([], config.values as any);
+    walk([], config.values as unknown);
 
     return out;
   }, [config.values]);
@@ -757,11 +757,11 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
         </dl>
 
         {(() => {
-          const cfgGroup = (field as any).config_group ?? configGroup;
-          const cfgKey = (field as any).config_key ?? configKey;
+          const cfgGroup = field.config_group ?? configGroup;
+          const cfgKey = field.config_key ?? configKey;
           const fullKey = `${cfgGroup}.${cfgKey}`;
 
-          function mapControl(c: string): any {
+          function mapControl(c: string): ConfigUIComponent {
             switch (c) {
               case 'textarea':
                 return 'textarea';
@@ -793,7 +793,7 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
             editable: Boolean(field.editable),
             sensitive: Boolean(field.sensitive),
             secret_configured: false,
-            requires_restart: Boolean((field as any).restart_required ?? field.restart_required),
+            requires_restart: Boolean(field.restart_required ?? false),
             runtime_editable: true,
             nullable: true,
             visibility: '',

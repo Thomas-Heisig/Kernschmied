@@ -304,24 +304,31 @@ export default function SchemaRenderer({
         const description = String(nodeDef.props?.description ?? '');
         const val = (nodeDef.props?.value ?? nodeDef.props?.default ?? undefined) as ConfigValue;
 
+        const propsObj = (nodeDef.props ?? {}) as Record<string, unknown>;
         const ui = {
-          component: (nodeDef.props?.component as any) ?? undefined,
-          category: nodeDef.props?.category ?? undefined,
-          section: nodeDef.props?.section ?? undefined,
-          order: nodeDef.props?.order ?? undefined,
-          placeholder: nodeDef.props?.placeholder ?? null,
-          help_text: nodeDef.props?.help_text ?? null,
-          unit: nodeDef.props?.unit ?? null,
-          advanced: Boolean(nodeDef.props?.advanced ?? false),
-          hidden: Boolean(nodeDef.props?.hidden ?? false),
-          readonly: Boolean(nodeDef.props?.readonly ?? false),
-          options: Array.isArray(nodeDef.props?.options)
-            ? nodeDef.props.options.map((o: any) => ({
-                value: o.value ?? o,
-                label: o.label ?? String(o),
-              }))
+          component: (propsObj.component as string | undefined) ?? undefined,
+          category: propsObj.category ?? undefined,
+          section: propsObj.section ?? undefined,
+          order: propsObj.order ?? undefined,
+          placeholder: propsObj.placeholder ?? null,
+          help_text: propsObj.help_text ?? null,
+          unit: propsObj.unit ?? null,
+          advanced: Boolean(propsObj.advanced ?? false),
+          hidden: Boolean(propsObj.hidden ?? false),
+          readonly: Boolean(propsObj.readonly ?? false),
+          options: Array.isArray(propsObj.options)
+            ? (propsObj.options as unknown[]).map((o: unknown) => {
+                if (o && typeof o === 'object' && !Array.isArray(o)) {
+                  const asObj = o as Record<string, unknown>;
+                  return {
+                    value: asObj.value ?? o,
+                    label: typeof asObj.label === 'string' ? (asObj.label as string) : String(o),
+                  };
+                }
+                return { value: o, label: String(o) };
+              })
             : [],
-          dynamic_options: nodeDef.props?.dynamic_options ?? null,
+          dynamic_options: propsObj.dynamic_options ?? null,
         };
 
         return {
@@ -330,7 +337,7 @@ export default function SchemaRenderer({
           full_key,
           display_name,
           description,
-          value: val as any,
+          value: val as ConfigValue,
           default_value: nodeDef.props?.default ?? null,
           schema_version: '2.0',
           value_type: undefined,
@@ -370,7 +377,7 @@ export default function SchemaRenderer({
               // reconstruct object with updated path
               const targetPath = nodeDef.props?.path ?? entry.full_key;
               // If the entry is bound via path, we let primitiveOnChange handle it
-              primitiveOnChange(v, targetPath as any);
+              primitiveOnChange(v, targetPath as string | string[] | undefined);
             }}
           />
         </div>

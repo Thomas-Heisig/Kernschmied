@@ -7,6 +7,7 @@ Die Roadmap beschreibt die geplante Entwicklung von Kernschmied von der aktuelle
 Sie definiert keine festen Veröffentlichungstermine. Stattdessen ist sie nach technischen und fachlichen Reifegraden gegliedert. Jede Phase soll auf stabilen Verträgen aufbauen und die Anwendung in einem startbaren, testbaren und wartbaren Zustand hinterlassen.
 
 Die konkreten aktuellen Arbeitspakete werden in [[TODO]] geführt.
+Hinweis: Die priorisierten, unmittelbar wichtigen Arbeitspakete wurden in der TODO‑Seite zusammengefasst. Siehe [[TODO]] für Blocker und Kurzaufgaben.
 
 ---
 

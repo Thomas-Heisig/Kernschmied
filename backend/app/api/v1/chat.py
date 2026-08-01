@@ -35,6 +35,7 @@ from pydantic import (
 
 from app.models.errors import ModelError
 from app.models.service import ModelAccessContext
+from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 from app.services.chat_service import (
     ChatRequest as ServiceChatRequest,
 )

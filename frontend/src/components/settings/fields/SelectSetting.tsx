@@ -30,15 +30,20 @@ export default function SelectSetting({
 }: Props) {
   const fieldId = ['setting', entry.full_key].join('-').replace(/[^a-zA-Z0-9_-]/g, '-');
 
+  // Map backend ConfigDynamicOptionsResponse -> hook DynamicOptionsSpec
+  const dynamicSpec = entry.ui.dynamic_options
+    ? {
+        endpoint: entry.ui.dynamic_options.endpoint ?? '',
+        depends_on: entry.ui.dynamic_options.depends_on ?? undefined,
+        dependency_parameter: entry.ui.dynamic_options.dependency_parameter ?? undefined,
+      }
+    : null;
+
   const {
     options: fetchedOptions,
     loading: optionsLoading,
     error: optionsError,
-  } = useConfigOptions(
-    // ConfigDynamicOptionsResponse.endpoint is optional in the contract; cast to satisfy the hook's stricter type
-    (entry.ui.dynamic_options as any) ?? null,
-    valuesByFullKey ?? null,
-  );
+  } = useConfigOptions(dynamicSpec, valuesByFullKey ?? null);
 
   const effectiveOptions = fetchedOptions ?? entry.ui.options ?? [];
 

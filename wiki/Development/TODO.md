@@ -2,6 +2,34 @@
 
 ## Stand: 01.08.2026
 
+## Priorisierte Blocker (Kurz)
+
+Diese Kurzliste fasst die unmittelbar wichtigsten Arbeitspakete zusammen. Ziel: Blocker für ein belastbares lokales MVP beseitigen.
+
+- Settings‑Migration (Backend + Frontend)
+  - Backend: `GET /api/v1/config` liefert vollständige, nicht‑sensitive Definitionsmetadaten (ConfigListResponse).
+  - Frontend: `SettingsField` rendert ausschließlich über `entry.ui.component` und nutzt `ConfigEntry`.
+  - Tests: Backend‑Vertragstest für Config‑API; Frontend Story/Unit für `SettingsField`.
+
+- Hierarchie‑Bearbeitung
+  - Kontextmenü (Kebab) pro Knoten: Aktionen aus Action‑Registry anzeigen.
+  - Modal‑Flows: Create / Rename / Edit / Delete mit serverseitiger Validierung und lokalem Baum‑Patch.
+
+- Chat‑Persistenz (Basis)
+  - DB‑Modelle: Conversation, Message (minimal), Alembic‑Migration vorbereiten.
+  - API: Create/Read/List Conversations, Append Message, Load Messages (paginiert).
+  - Frontend: Chatliste + Laden vorhandener Konversationen.
+
+- Repo‑Hygiene
+  - Root‑Artefakte prüfen und in `docs/archive/` oder `scripts/patches/` verschieben.
+  - `LICENSE` prüfen (Konsistenz mit gewählter OS‑Lizenz).
+
+- Modularisierung Backend
+  - `backend/app/api/v1/configs.py` schrittweise in Services splitten (`services/config_*`).
+
+Nächste Aktion: kleine PRs für die Settings‑Migration vorbereiten (Frontend zuerst empfohlen).
+
+
 Diese Seite dokumentiert die konkreten technischen Arbeitspakete für Kernschmied.
 
 Die langfristige strategische Entwicklung wird in der [[Roadmap]] beschrieben. Diese TODO-Liste konzentriert sich dagegen auf aktuelle Implementierungsaufgaben, technische Schulden, Tests, Dokumentation und die Konsolidierung der bestehenden Architektur.

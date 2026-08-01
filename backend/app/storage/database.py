@@ -25,6 +25,7 @@ importlib.import_module("app.storage.models")
 from app.storage.models.base import Base as StorageBase
 import logging
 from pathlib import Path
+from app.core.settings import DatabaseMigrationMode
 
 logger = logging.getLogger(__name__)
 
@@ -83,6 +84,40 @@ class DatabaseManager:
                     logger.info("Ensured SQLite parent directory exists: %s", str(parent))
                 except Exception as e:
                     logger.exception("Failed to ensure SQLite parent directory %s: %s", str(parent), e)
+
+            # If configured, attempt to run Alembic migrations before initializing the
+            # SQLAlchemy engine. This upgrades the schema to the latest revision and
+            # avoids OperationalError for missing columns during runtime.
+            try:
+                if settings.database_migration_mode == DatabaseMigrationMode.UPGRADE:
+                    try:
+                        from alembic.config import Config
+                        from alembic import command
+
+                        backend_dir = Path(__file__).resolve().parents[2]
+                        alembic_ini = backend_dir / "alembic.ini"
+
+                        if alembic_ini.exists():
+                            alembic_cfg = Config(str(alembic_ini))
+                            # Ensure script_location and DB URL are explicit and absolute
+                            alembic_cfg.set_main_option(
+                                "script_location",
+                                str(backend_dir / "migrations"),
+                            )
+                            alembic_cfg.set_main_option(
+                                "sqlalchemy.url",
+                                str(settings.effective_database_url),
+                            )
+                            logger.info("Running Alembic upgrade head using %s", str(alembic_ini))
+                            command.upgrade(alembic_cfg, "head")
+                        else:
+                            logger.info("Alembic config not found at %s, skipping migrations", str(alembic_ini))
+
+                    except Exception:
+                        logger.exception("Failed to run Alembic migrations; continuing and letting SQLAlchemy create missing tables.")
+            except Exception:
+                # Defensive: any errors while checking settings should not block initialization
+                logger.exception("Error while checking database migration mode")
 
         self._engine = create_async_engine(
             self._database_url,

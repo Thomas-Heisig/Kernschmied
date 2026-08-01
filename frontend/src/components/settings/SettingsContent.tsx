@@ -6,10 +6,16 @@ import type { ReactNode } from 'react';
 
 import { Check, Clipboard, RefreshCw, RotateCcw, Save, Search, X } from 'lucide-react';
 
-import type { ConfigObject, ConfigValue, ConfigEntryResponse } from '../../contracts/config';
+import type {
+  ConfigObject,
+  ConfigValue,
+  ConfigEntryResponse,
+  ConfigGroupResponse,
+} from '../../contracts/config';
 import type { UseSystemConfigReturn } from '../../hooks/useSystemConfig';
 import { SettingsCatalogView } from './SettingsCatalogView';
 import { SettingsField } from './SettingsField';
+import SettingsForm, { SettingsSingleSection } from './SettingsForm';
 
 interface SettingsContentProps {
   activeKey: string | null;
@@ -79,20 +85,22 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
 
   const sectionEntries = useMemo<[string, ConfigValue][]>(() => {
     if (groups && Array.isArray(groups)) {
-      return groups
-        .map((g: any) => [g.id as string, (values[g.id] ?? {}) as ConfigValue])
-        .sort((left: any, right: any) =>
-          formatSettingLabel(left[0]).localeCompare(formatSettingLabel(right[0]), 'de', {
+      const typed = groups as ConfigGroupResponse[];
+
+      return typed
+        .map((g) => [g.id, (values[g.id] ?? {}) as ConfigValue])
+        .sort((left, right) =>
+          formatSettingLabel(String(left[0])).localeCompare(formatSettingLabel(String(right[0])), 'de', {
             sensitivity: 'base',
           }),
-        ) as unknown as [string, ConfigValue][];
+        ) as [string, ConfigValue][];
     }
 
     return Object.entries(values).sort((left, right) =>
-      formatSettingLabel(left[0]).localeCompare(formatSettingLabel(right[0]), 'de', {
+      formatSettingLabel(String(left[0])).localeCompare(formatSettingLabel(String(right[0])), 'de', {
         sensitivity: 'base',
       }),
-    ) as unknown as [string, ConfigValue][];
+    ) as [string, ConfigValue][];
   }, [values, groups]);
 
   const visibleSectionEntries = useMemo(
@@ -114,37 +122,42 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
     [visibleSectionEntries],
   );
 
-  const entriesByFullKey = hookEntriesByFullKey as Record<string, any> | null | undefined;
+  const entriesByFullKey = hookEntriesByFullKey as
+    | Record<string, ConfigEntryResponse>
+    | null
+    | undefined;
 
   const valuesByFullKey = useMemo(() => {
     // Prefer the richer `entriesByFullKey` if provided by the hook.
     if (entriesByFullKey && typeof entriesByFullKey === 'object') {
       const out: Record<string, ConfigValue> = {};
 
-      for (const [full, entryObj] of Object.entries(entriesByFullKey)) {
-        const entry = entryObj as unknown as ConfigEntryResponse;
+      for (const [full, entry] of Object.entries(entriesByFullKey) as [string, ConfigEntryResponse][]) {
         out[full] = entry.value;
       }
 
       return out;
     }
 
+    // Fallback: flatten the nested `values` object into full keys like `group.key`.
+    // Keep this minimal and typed; this fallback exists only for older backends.
     const out: Record<string, ConfigValue> = {};
 
-    function walk(prefix: string[], node: unknown) {
-      if (node === null || typeof node !== 'object' || Array.isArray(node)) {
+    function flattenConfigValues(prefix: string[], node: ConfigValue | ConfigObject | undefined) {
+      if (node === undefined) return;
+
+      if (node === null || typeof node === 'string' || typeof node === 'number' || typeof node === 'boolean' || Array.isArray(node)) {
         out[prefix.join('.')] = node as ConfigValue;
         return;
       }
 
-      const record = node as Record<string, unknown>;
-
-      for (const [k, v] of Object.entries(record)) {
-        walk([...prefix, k], v);
+      // node is an object
+      for (const [k, v] of Object.entries(node)) {
+        flattenConfigValues([...prefix, k], v as ConfigValue | ConfigObject | undefined);
       }
     }
 
-    walk([], values as any);
+    flattenConfigValues([], values as ConfigObject);
 
     return out;
   }, [values, entriesByFullKey]);
@@ -535,105 +548,9 @@ function SettingsSearch({
   );
 }
 
-function SettingsForm({
-  entries,
-  disabled,
-  searchQuery,
-  totalEntryCount,
-  onChange,
-  valuesByFullKey,
-  entriesByFullKey,
-}: {
-  entries: [string, ConfigValue][];
-  disabled: boolean;
-  searchQuery: string;
-  totalEntryCount: number;
-  onChange: (path: string[], value: ConfigValue) => void;
-  valuesByFullKey?: Record<string, ConfigValue> | null;
-  entriesByFullKey?: Record<string, any> | null;
-}) {
-  if (totalEntryCount === 0) {
-    return (
-      <SettingsEmptyState
-        title="Keine Einstellungen vorhanden"
-        description="Der Server hat derzeit keine fachliche Konfiguration ausgeliefert."
-      />
-    );
-  }
-
-  if (entries.length === 0) {
-    return (
-      <SettingsEmptyState
-        title="Keine passenden Einstellungen"
-        description="Für den eingegebenen Suchbegriff wurden keine Konfigurationswerte gefunden."
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-5">
-      {entries.map(([sectionKey, sectionValue]) => (
-        <SettingsSection
-          key={sectionKey}
-          sectionKey={sectionKey}
-          value={sectionValue}
-          disabled={disabled}
-          searchQuery={searchQuery}
-          onChange={onChange}
-          valuesByFullKey={valuesByFullKey}
-        />
-      ))}
-    </div>
-  );
-}
-
-function SettingsSingleSection({
-  sectionKey,
-  value,
-  disabled,
-  searchQuery,
-  onChange,
-  valuesByFullKey,
-  entriesByFullKey,
-}: {
-  sectionKey: string;
-  value: ConfigValue | undefined;
-  disabled: boolean;
-  searchQuery: string;
-  onChange: (path: string[], value: ConfigValue) => void;
-  valuesByFullKey?: Record<string, ConfigValue> | null;
-  entriesByFullKey?: Record<string, any> | null;
-}) {
-  if (value === undefined || value === null) {
-    return (
-      <SettingsEmptyState
-        title="Keine Einstellungen vorhanden"
-        description="Diese Kategorie enthält derzeit keine Konfigurationswerte."
-      />
-    );
-  }
-
-  if (searchQuery && !matchesSearchQuery(sectionKey, value, searchQuery)) {
-    return (
-      <SettingsEmptyState
-        title="Keine passenden Einstellungen"
-        description="In dieser Kategorie wurden keine passenden Werte gefunden."
-      />
-    );
-  }
-
-  return (
-    <SettingsSection
-      sectionKey={sectionKey}
-      value={value}
-      disabled={disabled}
-      searchQuery={searchQuery}
-      onChange={onChange}
-      valuesByFullKey={valuesByFullKey}
-      entriesByFullKey={entriesByFullKey}
-    />
-  );
-}
+// `SettingsForm` and `SettingsSection` were extracted to SettingsForm.tsx to
+// keep this file focused on the overall layout and JSON editor. See
+// SettingsForm.tsx for the implementation.
 
 function SettingsSection({
   sectionKey,
@@ -647,7 +564,7 @@ function SettingsSection({
   entriesByFullKey,
 }: SettingsSectionProps & {
   valuesByFullKey?: Record<string, ConfigValue> | null;
-  entriesByFullKey?: Record<string, any> | null;
+  entriesByFullKey?: Record<string, ConfigEntryResponse> | null;
 }) {
   const currentPath = [...path, sectionKey];
 

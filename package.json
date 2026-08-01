@@ -2,5 +2,11 @@
   "devDependencies": {
     "markdownlint-cli2": "^0.23.2",
     "prettier": "^3.9.6"
+  },
+  "dependencies": {
+    "@fullcalendar/daygrid": "^6.1.21",
+    "@fullcalendar/interaction": "^6.1.21",
+    "@fullcalendar/react": "^7.0.2",
+    "@fullcalendar/timegrid": "^6.1.21"
   }
 }

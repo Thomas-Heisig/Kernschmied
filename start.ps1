@@ -34,23 +34,29 @@ if (-not (Test-Path $LogDir)) {
     New-Item -ItemType Directory -Path $LogDir | Out-Null
 }
 
-$BackendLog = Join-Path $LogDir "backend.log"
-$FrontendLog = Join-Path $LogDir "frontend.log"
+$timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
+$BackendLog = Join-Path $LogDir ("backend-$timestamp.log")
+$FrontendLog = Join-Path $LogDir ("frontend-$timestamp.log")
 
 # Start backend and frontend as background jobs and redirect stdout/stderr to log files
-Start-Job -Name "Kernschmied-Backend" -ScriptBlock {
-    param($backend, $venv, $port, $log)
-    Set-Location $backend
-    # Redirect all output (stdout+stderr) to the log file
-    & $venv -m uvicorn main:app --reload --host 0.0.0.0 --port $port *>$log 2>&1
-} -ArgumentList $Backend, $VenvPython, $BackendPort, $BackendLog
+# Start backend in a new external PowerShell window and redirect output to the log file
+# Build argument array to ensure a new external console window is created
+$backendArgs = @(
+    '-NoProfile'
+    '-NoExit'
+    '-Command'
+    "& { Set-Location '$Backend'; & '$VenvPython' -u -m uvicorn main:app --reload --host 0.0.0.0 --port $BackendPort 2>&1 | Tee-Object -FilePath '$BackendLog' }"
+)
+Start-Process -FilePath 'powershell.exe' -ArgumentList $backendArgs -WorkingDirectory $Backend -WindowStyle Normal
 
-Start-Job -Name "Kernschmied-Frontend" -ScriptBlock {
-    param($frontend, $port, $log)
-    Set-Location $frontend
-    # Redirect all output (stdout+stderr) to the log file
-    npx vite --host 0.0.0.0 --port $port *>$log 2>&1
-} -ArgumentList $Frontend, $FrontendPort, $FrontendLog
+# Start frontend in a new external PowerShell window and redirect output to the log file
+$frontendArgs = @(
+    '-NoProfile'
+    '-NoExit'
+    '-Command'
+    "& { Set-Location '$Frontend'; npx vite --host 0.0.0.0 --port $FrontendPort 2>&1 | Tee-Object -FilePath '$FrontendLog' }"
+)
+Start-Process -FilePath 'powershell.exe' -ArgumentList $frontendArgs -WorkingDirectory $Frontend -WindowStyle Normal
 
 Write-Host "Logs:"
 Write-Host "  Backend -> $BackendLog"
