@@ -2280,7 +2280,7 @@ class BulkConfigUpdateRequest(BaseModel):
         description="Gruppierte Konfigurationswerte als Objekt { group: { key: value } }",
     )
 
-    changes: list[ConfigChangeItem] = Field(
+    changes: list[ConfigChangeItem] = Field(  # type: ignore[reportUnknownVariableType]
         default_factory=list,
         description="Alternative sequentielle Änderungsbeschreibung [{group,key,value}, ...]",
     )
