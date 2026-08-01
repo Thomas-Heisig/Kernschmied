@@ -6,6 +6,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.storage.database import get_session
@@ -24,6 +25,7 @@ class CalendarCreate(BaseModel):
     name: str
     color: Optional[str] = None
     description: Optional[str] = None
+    is_default: Optional[bool] = False
 
 
 class CalendarOut(CalendarCreate):
@@ -37,6 +39,7 @@ class CalendarUpdate(BaseModel):
     name: Optional[str] = None
     color: Optional[str] = None
     description: Optional[str] = None
+    is_default: Optional[bool] = None
 
 
 class EventCreate(BaseModel):
@@ -115,15 +118,41 @@ async def create_calendar(request: Request, payload: CalendarCreate = Body(...),
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
+    # If payload asks to be default or user has no calendars yet, mark as default.
+    wants_default = bool(payload.is_default)
+    # check if user already has any calendars
+    stmt = select(Calendar).where(Calendar.owner_id == user.id)
+    result = await session.execute(stmt)
+    existing = result.scalars().all()
+
+    is_default = wants_default or (len(existing) == 0)
+
     obj = Calendar(
         owner_id=user.id,
         name=payload.name,
         color=payload.color,
         description=payload.description,
+        is_default=is_default,
     )
     session.add(obj)
     await session.commit()
     await session.refresh(obj)
+
+    # if this calendar is default, unset is_default on other calendars for this user
+    if is_default:
+        try:
+            await session.execute(
+                select(Calendar).where(Calendar.owner_id == user.id, Calendar.id != obj.id)
+            )
+            await session.execute(
+                # raw SQL update to unset other defaults
+                sa.text("UPDATE calendars SET is_default = 0 WHERE owner_id = :owner AND id != :id"),
+                {"owner": user.id, "id": obj.id},
+            )
+            await session.commit()
+        except Exception:
+            # Ignore; best-effort to maintain uniqueness at application layer
+            pass
 
     return CalendarOut(
         id=obj.id,
@@ -172,6 +201,19 @@ async def patch_calendar(calendar_id: str, payload: CalendarUpdate = Body(...), 
         obj.color = payload.color
     if payload.description is not None:
         obj.description = payload.description
+    if payload.is_default is not None:
+        # If setting this calendar to default, unset others for this owner first
+        if payload.is_default:
+            try:
+                await session.execute(
+                    sa.text("UPDATE calendars SET is_default = 0 WHERE owner_id = :owner AND id != :id"),
+                    {"owner": obj.owner_id, "id": obj.id},
+                )
+            except Exception:
+                pass
+            obj.is_default = True
+        else:
+            obj.is_default = False
 
     session.add(obj)
     await session.commit()

@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Index, String, Text
+from sqlalchemy import DateTime, Index, String, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.storage.models.base import Base, utc_now
@@ -50,6 +50,14 @@ class Calendar(Base):
         nullable=False,
         default=utc_now,
         onupdate=utc_now,
+    )
+
+    is_default: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        server_default="0",
+        index=True,
     )
 
     # index on owner_id created using `index=True` on the column mapping
