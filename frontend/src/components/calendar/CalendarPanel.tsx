@@ -35,7 +35,8 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
       setCalendars(c || []);
       if (!selectedCalendar && c && c.length) setSelectedCalendar(c[0].id);
     } catch (err: any) {
-      setCalError(String(err));
+      const message = err instanceof Error ? err.message : String(err);
+      setCalError(message);
       setCalendars([]);
     } finally {
       setLoadingCals(false);
@@ -62,12 +63,13 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
         const ev = await listEvents(selectedCalendar, { time_min: start, time_max: end });
         if (!mounted) return;
         setEvents(ev || []);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!mounted) return;
+        const message = err instanceof Error ? err.message : String(err);
         setEvents([]);
-        setCalError(String(err));
+        setCalError(message);
         // show quick feedback
-        toast.error('Ereignisse konnten nicht geladen werden: ' + String(err));
+        toast.error('Ereignisse konnten nicht geladen werden: ' + message);
       } finally {
         if (!mounted) return;
         setLoadingEvents(false);
@@ -90,8 +92,9 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
       const ev = await listEvents(selectedCalendar, { time_min: start, time_max: end });
       setEvents(ev || []);
       return true;
-    } catch (err: any) {
-      setCalError(String(err));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setCalError(message);
       return false;
     }
   }
@@ -106,8 +109,9 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
       const ev = await listEvents(selectedCalendar, { time_min: start, time_max: end });
       setEvents(ev || []);
       return true;
-    } catch (err: any) {
-      setCalError(String(err));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setCalError(message);
       return false;
     }
   }
@@ -123,8 +127,9 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
       const ev = await listEvents(selectedCalendar, { time_min: start, time_max: end });
       setEvents(ev || []);
       return true;
-    } catch (err: any) {
-      setCalError(String(err));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      setCalError(message);
       return false;
     }
   }

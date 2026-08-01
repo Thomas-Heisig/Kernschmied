@@ -280,10 +280,11 @@ function AppShellContent() {
                   type: 'chat',
                   name,
                   parent_id: modalNode.id ?? null,
+                  actions: [],
                   tool_policy: {},
                   config_overrides: {},
                   metadata: {},
-                });
+                } as any);
                 push('success', `Chat '${name}' erstellt.`);
                 break;
               }

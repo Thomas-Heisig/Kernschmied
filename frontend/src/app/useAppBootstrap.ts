@@ -2,6 +2,11 @@ import { useCallback, useEffect } from 'react';
 
 import { useAppSchema } from '../hooks/useAppSchema';
 import { useAppStoreCommands, useAppStoreState } from '../store';
+import type {
+  HierarchyNodeCreate,
+  HierarchyNodeUpdate,
+  HierarchyTree,
+} from '../contracts/hierarchy';
 
 export function useAppBootstrap() {
   const { schema, hierarchyTree, error, isLoading, reload, reloadHierarchy } = useAppSchema();
@@ -13,8 +18,22 @@ export function useAppBootstrap() {
 
   // Hierarchie-Mutationen
   const createHierarchyNode = useCallback(
-    async (payload: unknown) => {
+    async (payloadOrParentId: string | (HierarchyNodeCreate & Record<string, unknown>)) => {
       const { createHierarchyNode: apiCreate } = await import('../api/hierarchy');
+      let payload: HierarchyNodeCreate;
+      if (typeof payloadOrParentId === 'string') {
+        // called with parentId only -> create a default chat node
+        payload = {
+          type: 'chat',
+          name: 'Neuer Knoten',
+          parent_id: payloadOrParentId || null,
+          actions: [],
+          children: [],
+          metadata: {},
+        } as unknown as HierarchyNodeCreate;
+      } else {
+        payload = payloadOrParentId as HierarchyNodeCreate;
+      }
       await apiCreate(payload as any);
       void reloadHierarchy();
     },
@@ -24,7 +43,7 @@ export function useAppBootstrap() {
   const updateHierarchyNode = useCallback(
     async (id: string, payload: unknown) => {
       const { updateHierarchyNode: apiUpdate } = await import('../api/hierarchy');
-      await apiUpdate(id, payload as any);
+      await apiUpdate(id, payload as HierarchyNodeUpdate);
       void reloadHierarchy();
     },
     [reloadHierarchy],
@@ -67,7 +86,7 @@ export function useAppBootstrap() {
       return;
     }
 
-    setLoadedData(schema, hierarchyTree);
+    setLoadedData(schema, hierarchyTree as HierarchyTree);
   }, [hierarchyTree, schema, setLoadedData]);
 
   useEffect(() => {
