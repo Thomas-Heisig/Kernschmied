@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 import asyncio
 from types import SimpleNamespace
-from datetime import datetime
+from datetime import datetime, timezone
 
 import pytest
 from sqlalchemy import select
@@ -32,7 +32,7 @@ def test_calendar_selection_user_binding():
             state = SimpleNamespace(user=user)
             request = SimpleNamespace(state=state)
 
-            payload = SimpleNamespace(selected=datetime.utcnow(), note="a test note")
+            payload = SimpleNamespace(selected=datetime.now(timezone.utc), note="a test note")
 
             res = await select_date(payload, request, session=session)
 

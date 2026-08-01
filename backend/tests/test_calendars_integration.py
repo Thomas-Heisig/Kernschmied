@@ -3,7 +3,7 @@ import tempfile
 from pathlib import Path
 import importlib.util
 import sys
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 
@@ -41,7 +41,7 @@ def test_calendars_end_to_end(tmp_path):
         cal_id = cal["id"]
 
         # Create event
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         start = now.isoformat() + "Z"
         end = (now + timedelta(hours=1)).isoformat() + "Z"
 

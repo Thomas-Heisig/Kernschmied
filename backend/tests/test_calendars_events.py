@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 import asyncio
 from types import SimpleNamespace
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
@@ -48,7 +48,7 @@ def test_calendar_and_event_crud():
             assert any(i.id == cal.id for i in items)
 
             # Create event
-            now = datetime.utcnow()
+            now = datetime.now(timezone.utc)
             ev_payload = SimpleNamespace(title="Meeting", description="", start=now, end=now + timedelta(hours=1), all_day=False)
             ev = await create_event(cal.id, ev_payload, request, session=session)
             assert ev.calendar_id == cal.id
