@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 
-import type { ConfigObject, ConfigValue } from "../../contracts/config";
+import type { ConfigObject, ConfigValue, ConfigEntryResponse } from "../../contracts/config";
 import type { UseSystemConfigReturn } from "../../hooks/useSystemConfig";
 import { SettingsCatalogView } from "./SettingsCatalogView";
 import { SettingsField } from "./SettingsField";
@@ -670,18 +670,45 @@ function SettingsSection({
   const label = formatSettingLabel(sectionKey);
 
   if (depth > MAX_RENDER_DEPTH) {
-    return (
-      <SettingsField
-        fieldKey={sectionKey}
-        label={label}
-        value={value}
-        path={currentPath}
-        disabled={disabled}
-        description="Die maximale Darstellungstiefe wurde erreicht. Der Wert kann als JSON bearbeitet werden."
-        valuesByFullKey={valuesByFullKey}
-        onChange={onChange}
-      />
-    );
+    const fullKey = currentPath.join(".");
+
+    const entry: ConfigEntryResponse = {
+      group: sectionKey,
+      key: sectionKey,
+      full_key: fullKey,
+      display_name: label,
+      description: "Die maximale Darstellungstiefe wurde erreicht. Der Wert kann als JSON bearbeitet werden.",
+      value: value,
+      default_value: null,
+      schema_version: "2.0",
+      value_type: undefined,
+      value_schema: undefined,
+      editable: true,
+      sensitive: false,
+      secret_configured: false,
+      requires_restart: false,
+      runtime_editable: true,
+      nullable: true,
+      visibility: "",
+      allowed_scopes: [],
+      current_scope: "",
+      ui: {
+        component: undefined,
+        category: undefined,
+        section: undefined,
+        order: undefined,
+        placeholder: null,
+        help_text: null,
+        unit: null,
+        advanced: false,
+        hidden: false,
+        readonly: false,
+        options: [],
+        dynamic_options: null,
+      },
+    };
+
+    return <SettingsField entry={entry} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
   }
 
     if (!isConfigRecord(value)) {
@@ -710,27 +737,45 @@ function SettingsSection({
       path: currentPath,
       value,
     });
+    const fullKey = currentPath.join(".");
 
-    return (
-      <SettingsField
-        fieldKey={sectionKey}
-        label={label}
-        value={value}
-        path={currentPath}
-        disabled={disabled}
-        description={metadata.description}
-        sensitive={metadata.sensitive}
-        readOnly={metadata.readOnly}
-        required={metadata.required}
-        placeholder={metadata.placeholder}
-        minimum={metadata.minimum}
-        maximum={metadata.maximum}
-        step={metadata.step}
-        options={metadata.options}
-        valuesByFullKey={valuesByFullKey}
-        onChange={onChange}
-      />
-    );
+    const entry: ConfigEntryResponse = {
+      group: sectionKey,
+      key: sectionKey,
+      full_key: fullKey,
+      display_name: label,
+      description: metadata.description ?? "",
+      value: value,
+      default_value: null,
+      schema_version: "2.0",
+      value_type: undefined,
+      value_schema: undefined,
+      editable: metadata.readOnly ? false : true,
+      sensitive: Boolean(metadata.sensitive),
+      secret_configured: false,
+      requires_restart: false,
+      runtime_editable: true,
+      nullable: !(metadata.required ?? false),
+      visibility: "",
+      allowed_scopes: [],
+      current_scope: "",
+      ui: {
+        component: undefined,
+        category: undefined,
+        section: undefined,
+        order: undefined,
+        placeholder: metadata.placeholder ?? null,
+        help_text: null,
+        unit: null,
+        advanced: false,
+        hidden: false,
+        readonly: Boolean(metadata.readOnly),
+        options: (metadata.options ?? []).map((o) => ({ value: o.value, label: o.label, description: o.description })),
+        dynamic_options: null,
+      },
+    };
+
+    return <SettingsField entry={entry} path={currentPath} disabled={disabled} valuesByFullKey={valuesByFullKey} onChange={onChange} />;
   }
 
   const visibleEntries = Object.entries(value)
