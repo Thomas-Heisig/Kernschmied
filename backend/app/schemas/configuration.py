@@ -97,6 +97,15 @@ class ConfigEntryResponse(BaseModel):
 
     current_scope: str
 
+    class ConfigPermissionsResponse(BaseModel):
+        model_config = ConfigDict(extra="forbid")
+
+        read: str
+        write: str
+        reveal_secret: str | None = None
+
+    permissions: ConfigPermissionsResponse | None = None
+
     ui: ConfigUIResponse
 
     deprecated: bool = False
