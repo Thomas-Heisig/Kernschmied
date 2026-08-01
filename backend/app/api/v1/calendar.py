@@ -21,6 +21,7 @@ class CalendarSelectionOut(BaseModel):
     id: str
     selected: datetime
     note: str | None = None
+    user_id: str | None = None
     created_at: datetime
 
 
@@ -44,6 +45,7 @@ async def select_date(payload: CalendarSelectionIn, request: Request, session: A
             id=obj.id,
             selected=obj.selected_at,
             note=obj.note,
+            user_id=obj.user_id,
             created_at=obj.created_at,
         )
 

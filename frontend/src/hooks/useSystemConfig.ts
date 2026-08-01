@@ -64,6 +64,9 @@ export function useSystemConfig(): UseSystemConfigResult {
     ConfigEntryResponse
   > | null>(null);
 
+  const [groups, setGroups] = useState<ConfigGroupResponse[] | null>(null);
+
+  // `values` is the draft currently edited by the UI
   const [values, setValuesState] = useState<ConfigObject>({});
 
   const [revision, setRevision] = useState<number | null>(null);
@@ -103,6 +106,8 @@ export function useSystemConfig(): UseSystemConfigResult {
 
       setValuesState(loaded.values);
 
+      setGroups(loaded.response?.groups ?? null);
+
       setRevision(normalizeRevision(loaded.revision));
     } catch (caughtError: unknown) {
       if (caughtError instanceof DOMException && caughtError.name === 'AbortError') {
@@ -135,9 +140,50 @@ export function useSystemConfig(): UseSystemConfigResult {
     setError(null);
 
     try {
+      // Compute delta as changes[] (group/key/value) to send to the server.
+      const changes: Array<ConfigEntryLike> = [];
+
+      const persisted = persistedEntriesByFullKey ?? {};
+
+      // Collect keys from persisted entries
+      for (const fullKey of Object.keys(persisted)) {
+        const entry = persisted[fullKey];
+        const group = entry.group;
+        const key = entry.key;
+        const draftGroup = (values as any)[group] as Record<string, unknown> | undefined;
+        const draftValue = draftGroup ? (draftGroup[key] as ConfigValue) : undefined;
+
+        const persistedValue = entry.value as ConfigValue;
+
+        if (!configValuesEqual(draftValue, persistedValue)) {
+          changes.push({ group, key, value: draftValue as ConfigValue });
+        }
+      }
+
+      // Also include new draft keys not present in persistedEntries
+      for (const rawGroup of Object.keys(values)) {
+        const group = rawGroup;
+        const groupValues = (values as any)[group] as Record<string, unknown> | undefined;
+        if (!groupValues) continue;
+
+        for (const rawKey of Object.keys(groupValues)) {
+          const key = rawKey;
+          const fullKey = `${group}.${key}`;
+          if (persisted[fullKey]) continue;
+          const draftValue = groupValues[key] as ConfigValue;
+          changes.push({ group, key, value: draftValue });
+        }
+      }
+
+      if (changes.length === 0) {
+        // Nothing changed (race or normalization); reload to be safe.
+        await reload();
+        return true;
+      }
+
       const rawSnapshot = await updateSystemConfig(
         {
-          values,
+          changes,
           expected_revision: revision,
         },
         controller.signal,
@@ -150,6 +196,7 @@ export function useSystemConfig(): UseSystemConfigResult {
         setPersistedValues(asAny.values as ConfigObject);
         setValuesState(asAny.values as ConfigObject);
         setPersistedEntriesByFullKey(asAny.entriesByFullKey ?? null);
+        setGroups(asAny.response?.groups ?? null);
         setRevision(normalizeRevision(asAny.revision));
         return true;
       }
@@ -236,16 +283,25 @@ export function useSystemConfig(): UseSystemConfigResult {
 
   return {
     values,
+    groups,
+    entriesByFullKey: persistedEntriesByFullKey,
+    persistedEntriesByFullKey,
+    draftValues: values,
     revision,
     isLoading,
     isSaving,
     isDirty,
     error,
     setValues,
+    setDraftValues: setValues,
     reload,
     save,
     reset,
   };
+}
+
+function configValuesEqual(a: unknown, b: unknown): boolean {
+  return JSON.stringify(a) === JSON.stringify(b);
 }
 
 function normalizeSnapshotValues(snapshot: ConfigSnapshotLike): ConfigObject {

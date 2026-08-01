@@ -50,8 +50,20 @@ const SETTINGS_CATALOG_KEY = 'settings-catalog';
 const MAX_RENDER_DEPTH = 12;
 
 export function SettingsContent({ activeKey, showJson, config }: SettingsContentProps) {
-  const { values, revision, isLoading, isSaving, isDirty, error, setValues, reload, save, reset } =
-    config;
+  const {
+    values,
+    groups,
+    entriesByFullKey: hookEntriesByFullKey,
+    revision,
+    isLoading,
+    isSaving,
+    isDirty,
+    error,
+    setValues,
+    reload,
+    save,
+    reset,
+  } = config as UseSystemConfigReturn & { groups?: any };
 
   const [jsonDraft, setJsonDraft] = useState('');
 
@@ -65,15 +77,26 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
 
   const normalizedSearchQuery = searchQuery.trim().toLocaleLowerCase('de');
 
-  const sectionEntries = useMemo(
-    () =>
-      Object.entries(values).sort((left, right) =>
+  const sectionEntries = useMemo<[string, ConfigValue][]>(() => {
+    if (groups && Array.isArray(groups)) {
+      return (
+        groups
+          .map((g: any) => [g.id as string, (values[g.id] ?? {}) as ConfigValue])
+          .sort((left: any, right: any) =>
+            formatSettingLabel(left[0]).localeCompare(formatSettingLabel(right[0]), 'de', {
+              sensitivity: 'base',
+            }),
+          ) as unknown
+      ) as [string, ConfigValue][];
+    }
+
+    return (Object.entries(values)
+      .sort((left, right) =>
         formatSettingLabel(left[0]).localeCompare(formatSettingLabel(right[0]), 'de', {
           sensitivity: 'base',
         }),
-      ),
-    [values],
-  );
+      ) as unknown) as [string, ConfigValue][];
+  }, [values, groups]);
 
   const visibleSectionEntries = useMemo(
     () =>
@@ -94,8 +117,7 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
     [visibleSectionEntries],
   );
 
-  const entriesByFullKey = (config as any).entriesByFullKey as
-    Record<string, any> | null | undefined;
+  const entriesByFullKey = hookEntriesByFullKey as Record<string, any> | null | undefined;
 
   const valuesByFullKey = useMemo(() => {
     // Prefer the richer `entriesByFullKey` if provided by the hook.

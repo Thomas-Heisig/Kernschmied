@@ -1,5 +1,0 @@
-COMMAND: ruff format --check backend scripts
-WORKING DIRECTORY: F:\Kernschmied
-EXIT CODE: 0
-
-93 files already formatted

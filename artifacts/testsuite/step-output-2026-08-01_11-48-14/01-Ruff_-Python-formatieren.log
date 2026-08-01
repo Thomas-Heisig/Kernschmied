@@ -1,5 +1,0 @@
-COMMAND: ruff format backend scripts
-WORKING DIRECTORY: F:\Kernschmied
-EXIT CODE: 0
-
-1 file reformatted, 92 files left unchanged

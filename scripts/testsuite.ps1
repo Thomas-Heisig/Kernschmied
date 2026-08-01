@@ -248,18 +248,47 @@ function Test-CommandExists {
 function Prompt-YesNo {
     param(
         [Parameter(Mandatory)] [string]$Message,
-        [bool]$DefaultYes = $true
+        [bool]$DefaultYes = $true,
+        [int]$TimeoutSeconds = 5
     )
 
     $default = if ($DefaultYes) { 'Y' } else { 'N' }
-    $choice = Read-Host "$Message [Y/n] (default: $default)"
-    if ([string]::IsNullOrWhiteSpace($choice)) { return $DefaultYes }
-    switch ($choice.ToUpper()) {
-        'Y' { return $true }
-        'YES' { return $true }
-        'N' { return $false }
-        'NO' { return $false }
-        default { return $DefaultYes }
+    Write-Host "$Message [Y/n] (default: $default, timeout: ${TimeoutSeconds}s)"
+
+    # Prefer non-blocking key read when available (console hosts). Fall back to Read-Host without timeout.
+    try {
+        $input = ''
+        $endTime = (Get-Date).AddSeconds($TimeoutSeconds)
+        while ((Get-Date) -lt $endTime) {
+            if ([System.Console]::KeyAvailable) {
+                $keyInfo = [System.Console]::ReadKey($true)
+                $input = $keyInfo.KeyChar
+                break
+            }
+            Start-Sleep -Milliseconds 100
+        }
+
+        if ([string]::IsNullOrWhiteSpace($input)) {
+            return $DefaultYes
+        }
+
+        switch ($input.ToString().ToUpper()) {
+            'Y' { return $true }
+            'N' { return $false }
+            default { return $DefaultYes }
+        }
+    }
+    catch {
+        # Fallback for hosts where Console.KeyAvailable is not supported (e.g. certain IDE hosts)
+        $choice = Read-Host "$Message [Y/n] (default: $default)"
+        if ([string]::IsNullOrWhiteSpace($choice)) { return $DefaultYes }
+        switch ($choice.ToUpper()) {
+            'Y' { return $true }
+            'YES' { return $true }
+            'N' { return $false }
+            'NO' { return $false }
+            default { return $DefaultYes }
+        }
     }
 }
 
@@ -305,22 +334,64 @@ function Ensure-RequiredTools {
         Write-Host (" - {0}" -f $m.Name) -ForegroundColor Yellow
     }
 
-    if (-not (Prompt-YesNo "Möchten Sie versuchen, die fehlenden Tools jetzt automatisch zu installieren?" $false)) {
-        Write-Host "Überspringe automatische Installation. Fortfahren mit der Testsuite..." -ForegroundColor DarkYellow
-        return
+    # Determine whether to perform non-interactive auto-install.
+    $autoInstall = $false
+    if ($PSBoundParameters.ContainsKey('InstallDependencies') -and $InstallDependencies) {
+        $autoInstall = $true
+    }
+
+    if (-not $autoInstall) {
+        if ($env:TESTSUITE_AUTO_INSTALL -eq '1') { $autoInstall = $true }
+    }
+
+    if (-not $autoInstall) {
+        # Prompt with 5s timeout, default NO
+        $userAccepted = Prompt-YesNo "Möchten Sie versuchen, die fehlenden Tools jetzt automatisch zu installieren?" $false 5
+        if (-not $userAccepted) {
+            Write-Host "Überspringe automatische Installation. Fortfahren mit der Testsuite..." -ForegroundColor DarkYellow
+            return
+        }
     }
 
     foreach ($m in $missing) {
         if ($m.NpmPkg) {
+            if (-not (Test-CommandExists 'npm')) {
+                Write-Host "npm nicht gefunden; überspringe Installation von $($m.NpmPkg)." -ForegroundColor Yellow
+                continue
+            }
+
             $cmd = "npm install -g $($m.NpmPkg)"
             Write-Host "Versuche Installation von $($m.NpmPkg) via npm (global): $cmd" -ForegroundColor Cyan
             try {
-                & npm install -g $($m.NpmPkg) 2>&1 | Write-Host
+                # Use --no-fund and --no-audit to reduce interactive prompts from npm
+                & npm install -g $($m.NpmPkg) --no-fund --no-audit 2>&1 | Write-Host
                 Write-Host "Installation von $($m.NpmPkg) abgeschlossen." -ForegroundColor Green
             }
             catch {
-                Write-Host "Fehler beim Installieren von $($m.NpmPkg): $_" -ForegroundColor Red
-                Write-Host "Sie können das Paket manuell installieren: npm install -g $($m.NpmPkg)" -ForegroundColor Yellow
+                Write-Host "Fehler beim Installieren von $($m.NpmPkg) global: $_" -ForegroundColor Red
+                # Fallback: try local install into frontend directory (if exists)
+                if (Test-Path -LiteralPath $FrontendDirectory) {
+                    Write-Host "Versuche lokale Installation in $FrontendDirectory..." -ForegroundColor Cyan
+                    try {
+                        & npm install $($m.NpmPkg) --prefix $FrontendDirectory --no-fund --no-audit 2>&1 | Write-Host
+                        $binPath = Join-Path $FrontendDirectory 'node_modules\.bin'
+                        if (Test-Path -LiteralPath $binPath) {
+                            $env:PATH = "$binPath;$env:PATH"
+                            Write-Host "Lokale Installation erfolgreich; füge $binPath dem PATH hinzu." -ForegroundColor Green
+                        }
+                        else {
+                            Write-Host "Lokale Installation abgeschlossen, aber Bin-Verzeichnis nicht gefunden: $binPath" -ForegroundColor Yellow
+                        }
+                    }
+                    catch {
+                        Write-Host "Lokale Installation fehlgeschlagen: $_" -ForegroundColor Red
+                        Write-Host "Sie können das Paket manuell installieren: npm install -g $($m.NpmPkg)" -ForegroundColor Yellow
+                    }
+                }
+                else {
+                    Write-Host "Frontend-Verzeichnis nicht gefunden; überspringe lokale Installation." -ForegroundColor Yellow
+                    Write-Host "Sie können das Paket manuell installieren: npm install -g $($m.NpmPkg)" -ForegroundColor Yellow
+                }
             }
         }
         else {

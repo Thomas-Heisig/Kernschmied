@@ -1,5 +1,0 @@
-COMMAND: python -m pip_audit --progress-spinner off --format json --output F:\Kernschmied\artifacts\testsuite\pip-audit-2026-08-01_11-48-14.json
-WORKING DIRECTORY: F:\Kernschmied
-EXIT CODE: 1
-
-Found 39 known vulnerabilities in 5 packages
