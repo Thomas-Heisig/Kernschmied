@@ -120,7 +120,23 @@ export function SettingsContent({
     [visibleSectionEntries],
   );
 
+  const entriesByFullKey = (config as any).entriesByFullKey as
+    | Record<string, any>
+    | null
+    | undefined;
+
   const valuesByFullKey = useMemo(() => {
+    // Prefer the richer `entriesByFullKey` if provided by the hook.
+    if (entriesByFullKey && typeof entriesByFullKey === "object") {
+      const out: Record<string, ConfigValue> = {};
+
+      for (const [full, entry] of Object.entries(entriesByFullKey)) {
+        out[full] = (entry as any).value;
+      }
+
+      return out;
+    }
+
     const out: Record<string, ConfigValue> = {};
 
     function walk(prefix: string[], node: any) {
@@ -137,7 +153,7 @@ export function SettingsContent({
     walk([], values as any);
 
     return out;
-  }, [values]);
+  }, [values, entriesByFullKey]);
 
   useEffect(() => {
     if (!showJson) {
@@ -455,6 +471,7 @@ export function SettingsContent({
             totalEntryCount={sectionEntries.length}
             onChange={handleFieldChange}
             valuesByFullKey={valuesByFullKey}
+          entriesByFullKey={entriesByFullKey ?? null}
           />
         ) : (
           <SettingsSingleSection
@@ -762,6 +779,7 @@ function SettingsSection({
             depth={depth + 1}
             onChange={onChange}
             valuesByFullKey={valuesByFullKey}
+          entriesByFullKey={entriesByFullKey ?? null}
           />
         ))}
       </div>
