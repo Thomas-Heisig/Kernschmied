@@ -1,6 +1,6 @@
 # Roadmap – Kernschmied
 
-**Stand: 01.08.2026**
+Stand: 01.08.2026
 
 Die Roadmap beschreibt die geplante Entwicklung von Kernschmied von der aktuellen lokalen MVP-Anwendung zu einer modularen, sicheren und erweiterbaren KI-Plattform.
 

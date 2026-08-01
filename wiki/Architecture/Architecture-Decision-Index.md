@@ -165,7 +165,7 @@ Example:
 
 ### Schema-Driven UI
 
-**Decision**
+Decision
 
 The frontend is built around a schema-driven architecture rather than hardcoded business components.
 
