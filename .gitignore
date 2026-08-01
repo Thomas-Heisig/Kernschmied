@@ -7,3 +7,10 @@ dist/
 backend/data/*.db
 backend/data/uploads/
 backend/data/logs/
+backend/data/*.db*
+backend/data/*.db.bak
+backend/.venv
+frontend/dist/
+artifacts/
+*.env
+*.log
