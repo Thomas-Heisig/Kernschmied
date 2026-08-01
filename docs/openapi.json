@@ -809,48 +809,56 @@
         "properties": {
           "group": { "type": "string", "title": "Group" },
           "key": { "type": "string", "title": "Key" },
+          "full_key": { "type": "string", "title": "Full Key" },
+          "display_name": { "type": "string", "title": "Display Name" },
+          "description": { "type": "string", "title": "Description" },
           "value": { "$ref": "#/components/schemas/JsonValue" },
-          "editable": {
-            "type": "boolean",
-            "title": "Editable",
-            "default": true
+          "default_value": { "$ref": "#/components/schemas/JsonValue" },
+          "schema_version": { "type": "string", "title": "Schema Version" },
+          "value_type": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Value Type" },
+          "value_schema": {
+            "type": "object",
+            "additionalProperties": { "$ref": "#/components/schemas/JsonValue" },
+            "title": "Value Schema"
           },
-          "sensitive": {
-            "type": "boolean",
-            "title": "Sensitive",
-            "default": false
-          }
+          "editable": { "type": "boolean", "title": "Editable" },
+          "sensitive": { "type": "boolean", "title": "Sensitive" },
+          "secret_configured": { "type": "boolean", "title": "Secret Configured" },
+          "requires_restart": { "type": "boolean", "title": "Requires Restart" },
+          "runtime_editable": { "type": "boolean", "title": "Runtime Editable" },
+          "nullable": { "type": "boolean", "title": "Nullable" },
+          "visibility": { "type": "string", "title": "Visibility" },
+          "allowed_scopes": { "type": "array", "items": { "type": "string" }, "title": "Allowed Scopes" },
+          "current_scope": { "type": "string", "title": "Current Scope" },
+          "permissions": {
+            "type": "object",
+            "properties": {
+              "read": { "type": "string" },
+              "write": { "type": "string" },
+              "reveal_secret": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
+            },
+            "required": ["read", "write"]
+          },
+          "ui": { "$ref": "#/components/schemas/ConfigUIResponse" },
+          "deprecated": { "type": "boolean" },
+          "deprecation_message": { "anyOf": [{ "type": "string" }, { "type": "null" }] },
+          "replaced_by": { "anyOf": [{ "type": "string" }, { "type": "null" }] }
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["group", "key", "value"],
+        "required": ["group", "key", "full_key", "display_name", "description", "value", "default_value", "schema_version", "editable", "sensitive", "secret_configured", "requires_restart", "runtime_editable", "nullable", "visibility", "allowed_scopes", "current_scope", "ui", "deprecated"],
         "title": "ConfigEntryResponse"
       },
       "ConfigListResponse": {
         "properties": {
-          "schema_version": {
-            "type": "string",
-            "title": "Schema Version",
-            "default": "1.1"
-          },
-          "revision": {
-            "type": "integer",
-            "minimum": 0.0,
-            "title": "Revision"
-          },
-          "items": {
-            "items": { "$ref": "#/components/schemas/ConfigEntryResponse" },
-            "type": "array",
-            "title": "Items"
-          },
-          "request_id": {
-            "anyOf": [{ "type": "string" }, { "type": "null" }],
-            "title": "Request Id"
-          }
+          "schema_version": { "type": "string", "title": "Schema Version", "default": "2.0" },
+          "revision": { "type": "integer", "minimum": 0.0, "title": "Revision" },
+          "groups": { "type": "array", "items": { "$ref": "#/components/schemas/ConfigGroupResponse" }, "title": "Groups" },
+          "request_id": { "anyOf": [{ "type": "string" }, { "type": "null" }], "title": "Request Id" }
         },
         "additionalProperties": false,
         "type": "object",
-        "required": ["revision", "items"],
+        "required": ["revision", "groups"],
         "title": "ConfigListResponse"
       },
       "ConfigUpdateRequest": {

@@ -1971,6 +1971,11 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                         allowed_scopes=[s.value for s in definition.allowed_scopes],
                         current_scope="application",
                         ui=ui,
+                        permissions=ConfigEntryResponse.ConfigPermissionsResponse(
+                            read=definition.permissions.read,
+                            write=definition.permissions.write,
+                            reveal_secret=getattr(definition.permissions, "reveal_secret", None),
+                        ),
                         deprecated=definition.deprecated,
                     )
                 else:
@@ -2029,6 +2034,11 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                         allowed_scopes=[],
                         current_scope="application",
                         ui=ui,
+                        permissions=ConfigEntryResponse.ConfigPermissionsResponse(
+                            read="config:read",
+                            write="config:write",
+                            reveal_secret=None,
+                        ),
                         deprecated=False,
                     )
 
@@ -2074,6 +2084,11 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
             allowed_scopes=[],
             current_scope="application",
             ui=ui,
+            permissions=ConfigEntryResponse.ConfigPermissionsResponse(
+                read="config:read",
+                write="config:write",
+                reveal_secret=None,
+            ),
             deprecated=False,
         )
 
