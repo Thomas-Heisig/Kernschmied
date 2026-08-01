@@ -128,8 +128,8 @@ The application core communicates only with registries and never directly with i
 
 ## Architectural Principle (2)
 
-> **Core systems depend on registries.  
-> Registries depend on implementations.  
+> **Core systems depend on registries.
+> Registries depend on implementations.
 > Implementations never modify the core.
 
 ---
