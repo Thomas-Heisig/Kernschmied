@@ -63,6 +63,19 @@ from app.schemas.configuration import (
     ConfigUIResponse,
 )
 
+# Service helpers moved to configs_service module
+from .configs_service import (
+    get_config_service,
+    resolve_maybe_awaitable,
+    get_service_revision,
+    build_config_set_kwargs,
+    call_config_set,
+    read_config_entries,
+    get_settings_field_map,
+    get_config_field_descriptor,
+    add_normalized_entry,
+)
+
 # Import request/response schema models from local module
 from .configs_schema import (
     ConfigUpdateRequest,
