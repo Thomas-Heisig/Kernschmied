@@ -1,0 +1,202 @@
+// F:\Kernschmied\frontend\src\components\schema\GenericTree.tsx
+
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
+
+import type { HierarchyNode } from "../../contracts/hierarchy";
+import type { UISchema } from "../../contracts/schema";
+import { isKnownActionKind } from "../../registry/actionRegistry";
+import { DynamicIcon } from "../../registry/iconRegistry";
+
+const DEFAULT_NODE_ICON = "Circle";
+const UNKNOWN_NODE_ICON = "CircleHelp";
+
+const DEFAULT_VISIBLE_ACTION_COUNT = 2;
+const INDENT_SIZE_PX = 16;
+const BASE_INDENT_PX = 8;
+
+// Hilfsfunktion: Prüft, ob ein Wert ein Objekt ist (und nicht null/Array)
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export interface GenericTreeProps {
+  root: HierarchyNode;
+  schema: UISchema;
+  onSelect: (node: HierarchyNode) => void;
+
+  /**
+   * Aktuell ausgewählter Knoten.
+   */
+  selectedNodeId?: string | null;
+
+  /**
+   * Wird aufgerufen, wenn eine bekannte Aktion angefordert wird.
+   *
+   * GenericTree führt Aktionen niemals selbst aus. Die tatsächliche
+   * Ausführung und Autorisierung erfolgen außerhalb der Darstellung.
+   */
+  onAction?: (action: string, node: HierarchyNode) => void;
+
+  /**
+   * Wird aufgerufen, wenn für einen Projektknoten ein neuer Chat erstellt werden soll.
+   */
+  onCreateChat?: (parentNodeId: string) => void;
+
+  /**
+   * Kontrollierte Menge aufgeklappter Knoten.
+   *
+   * Wird dieser Wert nicht übergeben, verwaltet GenericTree den
+   * Aufklappzustand intern.
+   */
+  expandedNodeIds?: ReadonlySet<string>;
+
+  /**
+   * Wird aufgerufen, wenn sich der Aufklappzustand ändert.
+   */
+  onExpandedNodeIdsChange?: (expandedNodeIds: ReadonlySet<string>) => void;
+
+  /**
+   * Maximale Anzahl direkt sichtbarer Aktionen je Knoten.
+   */
+  maxVisibleActions?: number;
+
+  /**
+   * Zusätzliche CSS-Klassen für den äußeren Baum.
+   */
+  className?: string;
+
+  /**
+   * Optionaler Renderer für Knotennamen.
+   */
+  renderLabel?: (node: HierarchyNode) => ReactNode;
+}
+
+interface TreeNodeProps {
+  node: HierarchyNode;
+  schema: UISchema;
+  depth: number;
+  selectedNodeId: string | null;
+  expandedNodeIds: ReadonlySet<string>;
+  maxVisibleActions: number;
+  onSelect: (node: HierarchyNode) => void;
+  onAction?: (action: string, node: HierarchyNode) => void;
+  onCreateChat?: (parentNodeId: string) => void;
+  onToggleExpanded: (nodeId: string) => void;
+  renderLabel?: (node: HierarchyNode) => ReactNode;
+}
+
+function joinClassNames(
+  ...values: Array<string | false | null | undefined>
+): string {
+  return values.filter(Boolean).join(" ");
+}
+
+function getChildren(node: HierarchyNode): readonly HierarchyNode[] {
+  return Array.isArray(node.children) ? node.children : [];
+}
+
+function hasChildren(node: HierarchyNode): boolean {
+  return getChildren(node).length > 0;
+}
+
+function getNodeActions(node: HierarchyNode): readonly string[] {
+  return Array.isArray(node.actions) ? node.actions : [];
+}
+
+function normalizeVisibleActionCount(value: number | undefined): number {
+  if (value === undefined || !Number.isFinite(value)) {
+    return DEFAULT_VISIBLE_ACTION_COUNT;
+  }
+
+  return Math.max(0, Math.floor(value));
+}
+
+function GenericTreeComponent({
+  root,
+  schema,
+  onSelect,
+  selectedNodeId = null,
+  onAction,
+  onCreateChat,
+  expandedNodeIds,
+  onExpandedNodeIdsChange,
+  maxVisibleActions,
+  className,
+  renderLabel,
+}: GenericTreeProps) {
+  const [internalExpandedNodeIds, setInternalExpandedNodeIds] = useState<
+    Set<string>
+  >(() => new Set([root.id]));
+
+  const isControlled = expandedNodeIds !== undefined;
+
+  const effectiveExpandedNodeIds = expandedNodeIds ?? internalExpandedNodeIds;
+
+  const visibleActionCount = useMemo(
+    () => normalizeVisibleActionCount(maxVisibleActions),
+    [maxVisibleActions],
+  );
+
+  useEffect(() => {
+    if (isControlled) {
+      return;
+    }
+
+    setInternalExpandedNodeIds((currentExpandedNodeIds) => {
+      if (currentExpandedNodeIds.has(root.id)) {
+        return currentExpandedNodeIds;
+      }
+
+      return new Set([root.id]);
+    });
+  }, [isControlled, root.id]);
+
+  const handleToggleExpanded = useCallback(
+    (nodeId: string) => {
+      const nextExpandedNodeIds = new Set(effectiveExpandedNodeIds);
+
+      if (nextExpandedNodeIds.has(nodeId)) {
+        nextExpandedNodeIds.delete(nodeId);
+      } else {
+        nextExpandedNodeIds.add(nodeId);
+      }
+
+      if (!isControlled) {
+        setInternalExpandedNodeIds(nextExpandedNodeIds);
+      }
+
+      onExpandedNodeIdsChange?.(nextExpandedNodeIds);
+    },
+    [effectiveExpandedNodeIds, isControlled, onExpandedNodeIdsChange],
+  );
+
+  return (
+    <div
+      className={joinClassNames("min-w-0", className)}
+      role="tree"
+      aria-label="Anwendungshierarchie"
+    >
+      <TreeNode
+        node={root}
+        schema={schema}
+        depth={0}
+        selectedNodeId={selectedNodeId}
+        expandedNodeIds={effectiveExpandedNodeIds}
+        maxVisibleActions={visibleActionCount}
+        onSelect={onSelect}
+        onAction={onAction}
+        onCreateChat={onCreateChat}
+        onToggleExpanded={handleToggleExpanded}
+        renderLabel={renderLabel}
+      />
+    </div>
+  );
+}

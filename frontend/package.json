@@ -12,36 +12,35 @@
     "lint:fix": "eslint src --ext .ts,.tsx,.js,.jsx --fix"
   },
   "dependencies": {
-    "@vitejs/plugin-react": "latest",
-    "lucide-react": "latest",
-    "sonner": "latest",
-    "react": "latest",
-    "react-dom": "latest"
+    "lucide-react": "^0.552.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "sonner": "^2.0.3"
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.40.1",
-    "@tailwindcss/postcss": "^4.3.3",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "@typescript-eslint/eslint-plugin": "^8.65.0",
-    "@typescript-eslint/parser": "^8.65.0",
-    "autoprefixer": "latest",
+    "@tailwindcss/postcss": "^4.0.15",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.3.0",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@typescript-eslint/parser": "^8.29.0",
+    "autoprefixer": "^10.4.21",
     "eslint": "^9.39.5",
-    "eslint-config-prettier": "^10.1.8",
+    "eslint-config-prettier": "^10.1.0",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "jsdom": "^26.1.0",
     "openapi-typescript": "^7.13.0",
     "openapi-typescript-codegen": "^0.31.0",
-    "postcss": "^8.5.23",
+    "postcss": "^8.5.3",
     "prettier": "^3.9.6",
-    "tailwindcss": "latest",
-    "typescript": "latest",
-    "vite": "latest"
-    ,"vitest": "latest",
-    "@testing-library/react": "latest",
-    "@testing-library/jest-dom": "latest",
-    "jsdom": "latest"
+    "tailwindcss": "^4.0.15",
+    "typescript": "^5.9.0",
+    "vite": "^8.1.0",
+    "vitest": "^3.2.0"
   }
 }

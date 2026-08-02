@@ -58,7 +58,7 @@ const SETTINGS_CATALOG_KEY = 'settings-catalog';
 
 const MAX_RENDER_DEPTH = 12;
 
-export function SettingsContent({ activeKey, showJson, config, allowLegacyValuesFallback = false }: SettingsContentProps & { allowLegacyValuesFallback?: boolean }) {
+export function SettingsContent({ activeKey, showJson, config }: SettingsContentProps) {
   const {
     values,
     groups,
@@ -87,29 +87,20 @@ export function SettingsContent({ activeKey, showJson, config, allowLegacyValues
   const normalizedSearchQuery = searchQuery.trim().toLocaleLowerCase('de');
 
   const sectionEntries = useMemo<[string, ConfigValue][]>(() => {
-    if (groups && Array.isArray(groups)) {
-      const typed = groups as ConfigGroupResponse[];
-
-      return typed
-        .map((g) => [g.id, (values[g.id] ?? {}) as ConfigValue])
-        .sort((left, right) =>
-          formatSettingLabel(String(left[0])).localeCompare(formatSettingLabel(String(right[0])), 'de', {
-            sensitivity: 'base',
-          }),
-        ) as [string, ConfigValue][];
-    }
-
-    if (!allowLegacyValuesFallback) {
-      // No groups provided and fallback disabled: show empty.
+    if (!groups || !Array.isArray(groups)) {
       return [];
     }
 
-    return Object.entries(values).sort((left, right) =>
-      formatSettingLabel(String(left[0])).localeCompare(formatSettingLabel(String(right[0])), 'de', {
-        sensitivity: 'base',
-      }),
-    ) as [string, ConfigValue][];
-  }, [values, groups, allowLegacyValuesFallback]);
+    const typed = groups as ConfigGroupResponse[];
+
+    return typed
+      .map((g) => [g.id, (values[g.id] ?? {}) as ConfigValue])
+      .sort((left, right) =>
+        formatSettingLabel(String(left[0])).localeCompare(formatSettingLabel(String(right[0])), 'de', {
+          sensitivity: 'base',
+        }),
+      ) as [string, ConfigValue][];
+  }, [values, groups]);
 
   const visibleSectionEntries = useMemo(
     () =>
@@ -119,7 +110,11 @@ export function SettingsContent({ activeKey, showJson, config, allowLegacyValues
     [sectionEntries, normalizedSearchQuery],
   );
 
-  const totalSettingCount = useMemo(() => countConfigValues(values), [values]);
+  const totalSettingCount = useMemo(() => {
+    if (!groups || !Array.isArray(groups)) return 0;
+
+    return (groups as ConfigGroupResponse[]).reduce((acc, g) => acc + countConfigValues(values[g.id]), 0);
+  }, [values, groups]);
 
   const visibleSettingCount = useMemo(
     () =>
@@ -130,10 +125,7 @@ export function SettingsContent({ activeKey, showJson, config, allowLegacyValues
     [visibleSectionEntries],
   );
 
-  const entriesByFullKey = hookEntriesByFullKey as
-    | Record<string, ConfigEntryResponse>
-    | null
-    | undefined;
+  const entriesByFullKey = hookEntriesByFullKey as Record<string, ConfigEntryResponse> | null | undefined;
 
   const valuesByFullKey = useMemo(() => {
     // Prefer the richer `entriesByFullKey` if provided by the hook.
@@ -146,32 +138,10 @@ export function SettingsContent({ activeKey, showJson, config, allowLegacyValues
 
       return out;
     }
-    // Fallback: flatten the nested `values` object into full keys like `group.key`.
-    // This fallback is gated and only allowed when `allowLegacyValuesFallback` is true.
-    if (!allowLegacyValuesFallback) {
-      return {};
-    }
 
-    const out: Record<string, ConfigValue> = {};
-
-    function flattenConfigValues(prefix: string[], node: ConfigValue | ConfigObject | undefined) {
-      if (node === undefined) return;
-
-      if (node === null || typeof node === 'string' || typeof node === 'number' || typeof node === 'boolean' || Array.isArray(node)) {
-        out[prefix.join('.')] = node as ConfigValue;
-        return;
-      }
-
-      // node is an object
-      for (const [k, v] of Object.entries(node)) {
-        flattenConfigValues([...prefix, k], v as ConfigValue | ConfigObject | undefined);
-      }
-    }
-
-    flattenConfigValues([], values as ConfigObject);
-
-    return out;
-  }, [values, entriesByFullKey]);
+    // No fallback: rely on entriesByFullKey being provided by the backend.
+    return {};
+  }, [entriesByFullKey]);
   
 
   useEffect(() => {
@@ -196,13 +166,17 @@ export function SettingsContent({ activeKey, showJson, config, allowLegacyValues
 
   useEffect(() => {
     if (!jsonCopied) {
-            <SettingsToolbar isDirty={isDirty} isSaving={isSaving} onSave={handleSave} onReload={reload} onReset={reset} />
-    setJsonDraft(JSON.stringify(parsedResult.value, null, 2));
+      return;
+    }
 
-    setJsonError(null);
-    setIsJsonDraftDirty(false);
-  }
+    const timeoutId = window.setTimeout(() => {
+      setJsonCopied(false);
+    }, 1_500);
 
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [jsonCopied]);
   function handleFormatJson(): void {
     const parsedResult = parseConfigObject(jsonDraft);
 

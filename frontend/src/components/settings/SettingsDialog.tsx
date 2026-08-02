@@ -315,7 +315,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
               'dark:bg-slate-950/30',
             ].join(' ')}
           >
-            <SettingsContent activeKey={activeKey} showJson={showJson} config={config} allowLegacyValuesFallback={false} />
+            <SettingsContent activeKey={activeKey} showJson={showJson} config={config} />
           </main>
         </div>
 

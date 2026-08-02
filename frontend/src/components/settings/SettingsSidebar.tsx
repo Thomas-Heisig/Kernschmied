@@ -17,19 +17,22 @@ const SETTINGS_CATALOG_KEY = 'settings-catalog';
 
 export function SettingsSidebar({
   values,
+  groups,
   activeKey,
   isJsonActive,
   onSelectKey,
   onSelectJson,
 }: SettingsSidebarProps) {
-  const sections = useMemo(() => {
+  const sections = useMemo<string[]>(() => {
     if (groups && Array.isArray(groups) && groups.length > 0) {
-      return groups.map((g) => g.id).sort((left, right) =>
-        formatSidebarLabel(left).localeCompare(formatSidebarLabel(right), 'de', { sensitivity: 'base' }),
-      );
+      return groups
+        .map((g: ConfigGroupResponse) => g.id)
+        .sort((left: string, right: string) =>
+          formatSidebarLabel(left).localeCompare(formatSidebarLabel(right), 'de', { sensitivity: 'base' }),
+        );
     }
 
-    return Object.keys(values).sort((left, right) =>
+    return Object.keys(values).sort((left: string, right: string) =>
       formatSidebarLabel(left).localeCompare(formatSidebarLabel(right), 'de', { sensitivity: 'base' }),
     );
   }, [values, groups]);
@@ -100,7 +103,7 @@ export function SettingsSidebar({
 
         <div className="space-y-1">
           {sections.length > 0 ? (
-            sections.map((key) => {
+            sections.map((key: string) => {
               const isActive = activeKey === key && !isJsonActive;
 
               return (
@@ -130,7 +133,7 @@ export function SettingsSidebar({
                     ].join(' ')}
                   >
                     {groups && Array.isArray(groups)
-                      ? (groups.find((g) => g.id === key)?.entries ?? []).length
+                      ? (groups.find((g: ConfigGroupResponse) => g.id === key)?.entries ?? []).length
                       : countSectionEntries(values[key])}
                   </span>
                 </button>

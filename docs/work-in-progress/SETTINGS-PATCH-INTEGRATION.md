@@ -14,7 +14,7 @@ from app.api.v1.settings_catalog import router as settings_catalog_router
 api_router.include_router(settings_catalog_router)
 ```
 
-Falls die Anwendung Router direkt in `backend/main.py` registriert:
+Falls die Anwendung Router direkt in `backend/main.py` registriert werden:
 
 ```python
 from app.api.v1.settings_catalog import router as settings_catalog_router

@@ -22,7 +22,7 @@ export default function SettingsGroupList({ groups, activeKey, onSelect }: Props
             className={`w-full text-left px-4 py-2 ${activeKey === g.id ? 'bg-amber-100' : ''}`}
             onClick={() => onSelect(g.id)}
           >
-            <div className="font-medium">{g.title ?? g.id}</div>
+            <div className="font-medium">{g.label ?? g.id}</div>
             {g.description ? <div className="text-xs text-muted">{g.description}</div> : null}
           </button>
         </li>
