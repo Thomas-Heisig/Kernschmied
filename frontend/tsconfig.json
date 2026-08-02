@@ -17,5 +17,6 @@
     "jsx": "react-jsx"
   },
   "include": ["src"],
+  "exclude": ["src/**/*.spec.tsx", "src/**/*.test.tsx", "src/**/__tests__/**"],
   "references": []
 }

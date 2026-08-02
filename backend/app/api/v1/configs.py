@@ -315,7 +315,7 @@ def get_request_id(
 
 def structured_http_error(
     *,
-    request: Request,
+    request: Request | None,
     status_code: int,
     code: str,
     message: str,
@@ -323,13 +323,15 @@ def structured_http_error(
 ) -> HTTPException:
     normalized_details: dict[str, object] = (dict(details) if details is not None else {})
 
+    request_id = get_request_id(request) if request is not None else None
+
     return HTTPException(
         status_code=status_code,
         detail={
             "code": code,
             "message": message,
             "details": normalized_details,
-            "request_id": get_request_id(request),
+            "request_id": request_id,
         },
     )
 
@@ -375,7 +377,7 @@ def validate_config_name(value: object, *, field_name: str = "value", request: R
             details={"field": field_name},
         )
 
-    value = cast(str, value)
+    # `isinstance` above ensures `value` is a `str` for static analysis
 
     normalized = value.strip().lower()
 
@@ -1226,9 +1228,8 @@ def validate_identity_value(
                 },
             )
 
-        validated_value = cast(str, validated_value)
-
-        normalized = validated_value.strip()
+        # `isinstance` above ensures `validated_value` is a `str`
+        normalized = str(validated_value).strip()
 
         (
             minimum_length,
@@ -1286,10 +1287,9 @@ def validate_identity_value(
                 },
             )
 
-        validated_value = cast(str, validated_value)
-
+        # `isinstance` above ensures `validated_value` is a `str`
         if not LANGUAGE_CODE_PATTERN.fullmatch(
-            validated_value,
+            str(validated_value),
         ):
             raise structured_http_error(
                 request=request,
@@ -1320,11 +1320,10 @@ def validate_identity_value(
                 },
             )
 
-        validated_value = cast(str, validated_value)
-
+        # `isinstance` above ensures `validated_value` is a `str`
         try:
             ZoneInfo(
-                validated_value,
+                str(validated_value),
             )
 
         except ZoneInfoNotFoundError as exc:

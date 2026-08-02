@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fastapi import Request, Response, status
-from typing import cast
 
 from .configs import (
     router,
@@ -86,15 +85,15 @@ async def bulk_update_config(payload: BulkConfigUpdateRequest, request: Request,
 
     changes_list: list[ConfigChangeItem] = payload.changes
     if changes_list:
-        for change in changes_list:
-            g = cast(str, change.group)
-            k = cast(str, change.key)
-            updates[(g.strip().lower(), k.strip().lower())] = change.value
+            for change in changes_list:
+                g = change.group
+                k = change.key
+                updates[(g.strip().lower(), k.strip().lower())] = change.value
     else:
         for raw_group, raw_group_value in payload.values.items():
-            normalized_group = cast(str, raw_group).strip().lower()
+            normalized_group = str(raw_group).strip().lower()
             for raw_key, raw_value in raw_group_value.items():
-                updates[(normalized_group, cast(str, raw_key).strip().lower())] = raw_value
+                updates[(normalized_group, str(raw_key).strip().lower())] = raw_value
 
     try:
         await service.set_many(updates, expected_revision=payload.expected_revision)

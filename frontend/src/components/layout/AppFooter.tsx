@@ -5,6 +5,7 @@ import type { BootstrapResponse } from '../../types/bootstrap';
 import FooterCalendar from '../calendar/FooterCalendar';
 import { createEvent, listCalendars } from '../../api/fetchCalendarClient';
 import type { components } from '../../api/openapi-types';
+import { sendSelectedDate, shouldSendSelection, sendSelectedDateIfOptIn } from '../../lib/calendar';
 import { CalendarDays, Database, FolderTree, Plug, Server, Wifi } from 'lucide-react';
 
 interface AppFooterProps {
@@ -69,6 +70,12 @@ export function AppFooter({
 
   const [modelsCount, setModelsCount] = useState<number | null>(null);
   const [toolsCount, setToolsCount] = useState<number | null>(null);
+
+  // refs for click-outside detection
+  const datePickerRef = React.useRef<HTMLDivElement | null>(null);
+  const dateToggleRef = React.useRef<HTMLButtonElement | null>(null);
+  const systemInfoRef = React.useRef<HTMLDivElement | null>(null);
+  const systemToggleRef = React.useRef<HTMLButtonElement | null>(null);
 
   // bootstrap/health loader (unchanged)
 
@@ -237,6 +244,40 @@ export function AppFooter({
     { title: 'Datei-Upload', ok: caps.file_upload ?? null, emoji: '📎' },
   ];
   
+  // Close panels when clicking outside or clicking their toggle again
+  React.useEffect(() => {
+    function onDown(e: MouseEvent) {
+      const target = e.target as Node | null;
+
+      if (showDatePicker) {
+        const insidePicker = datePickerRef.current?.contains(target ?? null);
+        const onToggle = dateToggleRef.current?.contains(target ?? null);
+        if (!insidePicker && !onToggle) setShowDatePicker(false);
+      }
+
+      if (systemInfoOpen) {
+        const insideSys = systemInfoRef.current?.contains(target ?? null);
+        const onToggleSys = systemToggleRef.current?.contains(target ?? null);
+        if (!insideSys && !onToggleSys) setSystemInfoOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [showDatePicker, systemInfoOpen]);
+
+  // Close panels on Escape
+  React.useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (showDatePicker) setShowDatePicker(false);
+        if (systemInfoOpen) setSystemInfoOpen(false);
+      }
+    }
+
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [showDatePicker, systemInfoOpen]);
  
 
   return (
@@ -272,49 +313,47 @@ export function AppFooter({
           <span className="text-xs text-text-muted">API {bootstrap?.versions?.api ?? apiVersion} · Schema {bootstrap?.schema_version ?? schemaVersion}</span>
 
           {/* Clock and calendar trigger */}
-          <div className="flex items-center gap-2">
-            <Clock />
-            <button
-              className="text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800 flex items-center gap-2"
-              onClick={() => setShowDatePicker(true)}
-              aria-label="Datum auswählen"
-              title="Datum auswählen"
-            >
-              <CalendarDays className="w-4 h-4" />
-              <span className="hidden sm:inline">Kalender</span>
-            </button>
-          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-text-muted">API {bootstrap?.versions?.api ?? apiVersion} · Schema {bootstrap?.schema_version ?? schemaVersion}</span>
 
-          <button
-            className="text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800"
-            onClick={() => setSystemInfoOpen(true)}
-            aria-label="Systeminfo"
-          >
-            ⓘ Systeminfo
-          </button>
-
-          {/* opt-in toggle for saving calendar selections */}
-          <div className="ml-3 flex items-center gap-2 text-xs">
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={saveSelectionsEnabled}
-                onChange={(e) => {
-                  setSaveSelectionsEnabled(e.target.checked);
-                  try {
-                    localStorage.setItem('calendar.saveSelection', e.target.checked ? 'true' : 'false');
-                  } catch {}
+              <button
+                ref={dateToggleRef}
+                className="text-xs p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-800"
+                onClick={() => {
+                  setShowDatePicker((s) => !s);
+                  if (!showDatePicker) setSystemInfoOpen(false);
                 }}
-              />
-              <span>Speichern</span>
-            </label>
+                aria-label="Datum auswählen"
+                title="Datum auswählen"
+              >
+                <CalendarDays className="w-4 h-4" />
+              </button>
+
+              <button
+                ref={systemToggleRef}
+                className="text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800"
+                onClick={() => {
+                  setSystemInfoOpen((s) => !s);
+                  if (!systemInfoOpen) setShowDatePicker(false);
+                }}
+                aria-label="Systeminfo"
+              >
+                ⓘ
+              </button>
+            </div>
+
+            {/* Clock placed to the far right using margin-left auto on a wrapper */}
+            <div className="ml-auto">
+              <Clock />
+            </div>
           </div>
         </div>
       </div>
 
       {/* Inline DatePicker modal when requested */}
       {showDatePicker ? (
-        <div className="fixed right-4 bottom-16 z-50 w-[min(520px,95%)] max-w-full rounded border bg-white p-4 shadow dark:bg-slate-800">
+        <div ref={datePickerRef} className="fixed right-4 bottom-16 z-50 w-[min(520px,95%)] max-w-full rounded border bg-white p-4 shadow dark:bg-slate-800">
           <div className="flex items-center justify-between">
             <strong>Datum auswählen</strong>
             <button className="text-sm text-gray-500" onClick={() => setShowDatePicker(false)}>✕</button>
@@ -335,7 +374,7 @@ export function AppFooter({
       ) : null}
 
       {systemInfoOpen && (
-        <div className="fixed right-4 bottom-16 z-50 w-[min(720px,95%)] max-w-full rounded border bg-white p-4 shadow dark:bg-slate-800">
+        <div ref={systemInfoRef} className="fixed right-4 bottom-16 z-50 w-[min(720px,95%)] max-w-full rounded border bg-white p-4 shadow dark:bg-slate-800">
           <div className="flex items-center justify-between">
             <strong>Systeminformationen</strong>
             <div className="flex items-center gap-2">
@@ -373,24 +412,13 @@ export function AppFooter({
                   <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
                     <div className="rounded border p-3">
                       <div className="font-medium">Dienste</div>
-                      <ul className="mt-2 space-y-1">
-                        <li>Backend: <span className={online ? 'text-emerald-600' : 'text-red-500'}>{online ? 'Online' : online === false ? 'Nicht erreichbar' : 'Unbekannt'}</span></li>
-                        <li>Authentifizierung: {bootstrap?.authenticated ? 'Aktiv' : 'Nicht aktiv'}</li>
+                      <div className="mt-2">
+                        <button className="text-xs px-2 py-1 rounded bg-gray-100" onClick={() => { setSystemTab('versions'); }}>Details</button>
+                      </div>
                         <li>Live-Chat: {caps.chat_streaming ? 'Verfügbar' : 'Nicht verfügbar'}</li>
                         <li>Modelle: {caps.model_service ? 'Verfügbar' : 'Nicht verfügbar'}</li>
                       </ul>
                     </div>
-
-                    <div className="rounded border p-3">
-                      <div className="font-medium">Konfiguration</div>
-                      <div className="mt-2 text-sm">Status: {bootstrap?.config_revision ? 'Aktuell' : 'Unbekannt'}</div>
-                      <div className="text-sm">Revision: {bootstrap?.config_revision ?? configRevision}</div>
-                      <div className="mt-2">
-                            <button className="text-xs px-2 py-1 rounded bg-gray-100" onClick={() => { setSystemTab('versions'); }}>Details</button>
-                      </div>
-                    </div>
-                  </div>
-
                       <div className="mt-3">
                         <button
                           className="text-sm px-3 py-1 rounded bg-sky-600 text-white flex items-center gap-2"
@@ -411,6 +439,16 @@ export function AppFooter({
                               }
                             } catch (e: any) {
                               setOnline(false);
+                              setError(String(e));
+                            } finally {
+                              setIsRefreshing(false);
+                            }
+                          }}
+                        >
+                          {isRefreshing ? <span className="animate-spin">⟳</span> : null}
+                          <span>Status neu prüfen</span>
+                        </button>
+                      </div>
                               setError(String(e));
                             } finally {
                               setIsRefreshing(false);
@@ -548,27 +586,27 @@ function DatePicker({
   setSelectedDate,
   onSelect,
   onCancel,
-  saveSelectionsEnabled,
-  autoRefresh,
-  setAutoRefresh,
-  setSystemTab,
-  bootstrap,
-  configRevision,
-  modelsCount,
-  toolsCount,
+  saveSelectionsEnabled = true,
+  autoRefresh = false,
+  setAutoRefresh = (_: React.SetStateAction<boolean>) => {},
+  setSystemTab = (_: 'overview' | 'functions' | 'versions' | 'technical') => {},
+  bootstrap = null,
+  configRevision = 0,
+  modelsCount = null,
+  toolsCount = null,
 }: {
   initialDate: Date;
   setSelectedDate: (d: Date) => void;
   onSelect: (d: Date) => void;
   onCancel: () => void;
-  saveSelectionsEnabled: boolean;
-  autoRefresh: boolean;
-  setAutoRefresh: React.Dispatch<React.SetStateAction<boolean>>;
-  setSystemTab: (t: 'overview' | 'functions' | 'versions' | 'technical') => void;
-  bootstrap: BootstrapResponse | null;
-  configRevision: number;
-  modelsCount: number | null;
-  toolsCount: number | null;
+  saveSelectionsEnabled?: boolean;
+  autoRefresh?: boolean;
+  setAutoRefresh?: React.Dispatch<React.SetStateAction<boolean>>;
+  setSystemTab?: (t: 'overview' | 'functions' | 'versions' | 'technical') => void;
+  bootstrap?: BootstrapResponse | null;
+  configRevision?: number;
+  modelsCount?: number | null;
+  toolsCount?: number | null;
 }) {
   const [viewDate, setViewDate] = useState<Date>(new Date(initialDate));
   const [selectedDay, setSelectedDay] = useState<number | null>(initialDate.getDate());
@@ -726,37 +764,5 @@ function DatePicker({
   );
 }
 
-export async function sendSelectedDate(date: Date) {
-  try {
-    const res = await fetch('/api/v1/calendar/selection', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ selected: date.toISOString() }),
-    });
-
-    if (!res.ok) {
-      // Not fatal; backend may not implement this yet
-      throw new Error(`${res.status} ${res.statusText}`);
-    }
-
-    return res.json();
-  } catch (e) {
-    // swallow; integration point prepared
-    return null;
-  }
-}
-
-export function shouldSendSelection(): boolean {
-  try {
-    const v = localStorage.getItem('calendar.saveSelection');
-    if (v === null) return true;
-    return v === 'true';
-  } catch {
-    return true;
-  }
-}
-
-export async function sendSelectedDateIfOptIn(date: Date) {
-  if (!shouldSendSelection()) return null;
-  return sendSelectedDate(date);
-}
+// calendar helper functions moved to src/lib/calendar.ts to keep module exports
+// stable for React Fast Refresh/HMR.
