@@ -898,6 +898,47 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
     ),
     config_definition(
         group="identity",
+        key="response_depth",
+        display_name="Antworttiefe",
+        description=(
+            "Bestimmt den standardmäßigen Umfang und Detailgrad von Antworten."
+        ),
+        value_schema={
+            "type": "string",
+            "enum": [
+                "compact",
+                "balanced",
+                "detailed",
+                "comprehensive",
+            ],
+        },
+        default_value="balanced",
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+            ConfigScope.USER,
+        },
+        value_type=ConfigValueType.STRING,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.SELECT,
+            category="Identität und Verhalten",
+            section="Kommunikation",
+            order=60,
+            options=(
+                ConfigOption(value="compact", label="Kompakt"),
+                ConfigOption(value="balanced", label="Ausgewogen"),
+                ConfigOption(value="detailed", label="Detailliert"),
+                ConfigOption(value="comprehensive", label="Umfassend"),
+            ),
+        ),
+        tags={
+            "identity",
+            "communication",
+            "verbosity",
+        },
+    ),
+    config_definition(
+        group="identity",
         key="timezone",
         display_name="Zeitzone",
         description=("IANA-Zeitzone für Termine, Fristen und zeitabhängige Aufgaben."),
