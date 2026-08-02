@@ -73,23 +73,32 @@ export function useConfigOptions(
         if (cancelled) return;
 
         // Support structured responses that include full ConfigEntryResponse items
-        let items: any[] = [];
+        const extractArray = (v: unknown): unknown[] => {
+          if (Array.isArray(v)) return v;
+          if (v && typeof v === 'object') {
+            const record = v as Record<string, unknown>;
+            if (Array.isArray(record.items)) return record.items;
+            if (Array.isArray(record.providers)) return record.providers;
+            if (Array.isArray(record.results)) return record.results;
+          }
+          return [];
+        };
 
-        if (Array.isArray(data)) items = data;
-        else if (Array.isArray((data as any).items)) items = (data as any).items;
-        else if (Array.isArray((data as any).providers)) items = (data as any).providers;
-        else items = [];
+        const items = extractArray(data);
 
         const mapped = items.map((it) => {
           if (it && typeof it === 'object') {
+            const record = it as Record<string, unknown>;
             // If the remote endpoint returned full entries, prefer `value` and `label` fields.
-            const value =
-              it.value ?? it.id ?? it.model_id ?? it.provider_id ?? it.name ?? JSON.stringify(it);
-            const label = it.label ?? it.name ?? it.display_name ?? String(value);
-            return { value, label } as SettingsFieldOption;
+            const valueCandidate =
+              record.value ?? record.id ?? record.model_id ?? record.provider_id ?? record.name ?? undefined;
+            const value = valueCandidate !== undefined ? valueCandidate : record;
+            const labelCandidate = record.label ?? record.name ?? record.display_name ?? undefined;
+            const label = labelCandidate !== undefined ? String(labelCandidate) : JSON.stringify(value);
+            return { value: value as string | number | boolean, label } as SettingsFieldOption;
           }
 
-          return { value: it, label: String(it) } as SettingsFieldOption;
+          return { value: it as string | number | boolean, label: String(it) } as SettingsFieldOption;
         });
 
         setOptions(mapped);
