@@ -16,8 +16,8 @@ import type { UseSystemConfigReturn } from '../../hooks/useSystemConfig';
 import { SettingsCatalogView } from './SettingsCatalogView';
 import { SettingsField } from './SettingsField';
 import SettingsForm, { SettingsSingleSection } from './SettingsForm';
-import SettingsJsonEditor from './SettingsJsonEditor';
-import SettingsSearch from './SettingsSearch';
+import SettingsJsonEditorComponent from './SettingsJsonEditor';
+import SettingsSearchComponent from './SettingsSearch';
 import SettingsToolbar from './SettingsToolbar';
 
 interface SettingsContentProps {
@@ -196,12 +196,18 @@ export function SettingsContent({ activeKey, showJson, config, allowLegacyValues
 
   useEffect(() => {
     if (!jsonCopied) {
-            <SettingsToolbar isDirty={isDirty} isSaving={isSaving} onSave={handleSave} onReload={reload} onReset={reset} />
-    setJsonDraft(JSON.stringify(parsedResult.value, null, 2));
+      return;
+    }
 
-    setJsonError(null);
-    setIsJsonDraftDirty(false);
-  }
+    const timeoutId = window.setTimeout(() => {
+      setJsonCopied(false);
+    }, 1_500);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+
+  }, [jsonCopied]);
 
   function handleFormatJson(): void {
     const parsedResult = parseConfigObject(jsonDraft);
@@ -401,7 +407,7 @@ export function SettingsContent({ activeKey, showJson, config, allowLegacyValues
         </div>
 
         {!showJson ? (
-          <SettingsSearch
+          <SettingsSearchComponent
             value={searchQuery}
             resultCount={normalizedSearchQuery ? visibleSettingCount : undefined}
             onChange={setSearchQuery}
@@ -425,7 +431,7 @@ export function SettingsContent({ activeKey, showJson, config, allowLegacyValues
 
       <div className="flex-1 p-5 md:p-8">
         {showJson ? (
-          <SettingsJsonEditor
+          <SettingsJsonEditorComponent
             value={jsonDraft}
             error={jsonError}
             disabled={isSaving}
