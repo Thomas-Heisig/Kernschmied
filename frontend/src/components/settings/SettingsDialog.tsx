@@ -299,7 +299,8 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
             ].join(' ')}
           >
             <SettingsSidebar
-              values={config.values}
+                values={config.values}
+                groups={config.groups}
               activeKey={activeKey}
               isJsonActive={showJson}
               onSelectKey={handleSelectKey}
