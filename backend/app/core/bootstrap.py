@@ -671,13 +671,16 @@ async def bootstrap_application(
 
             # Use DB-backed chat repository adapter so ChatService persists messages
             from app.storage.adapters.chat_repository_adapter import ChatRepositoryAdapter
+            from app.storage.adapters.chat_history_provider import ChatHistoryProviderAdapter
 
             chat_repo_adapter = ChatRepositoryAdapter(session_factory)
+            chat_history_provider = ChatHistoryProviderAdapter(session_factory)
 
             chat_service = ChatService(
                 model_service=model_service,
                 default_model_id=DEFAULT_MODEL_ID,
                 repository=chat_repo_adapter,
+                history_provider=chat_history_provider,
             )
 
         await _run_bootstrap_step(

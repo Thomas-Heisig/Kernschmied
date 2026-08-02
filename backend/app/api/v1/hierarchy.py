@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Awaitable, Mapping, Sequence
-from typing import Protocol, cast, runtime_checkable
+from typing import Protocol, cast, runtime_checkable, Any, Optional
+from typing import List
 
 from fastapi import (
     APIRouter,
@@ -39,6 +40,7 @@ HIERARCHY_SCHEMA_VERSION = "1.0"
 # Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
 JsonScalar = str | int | float | bool | None
 JsonObject = dict[str, JsonValue]
+JSONDict = dict[str, Any]
 
 
 @runtime_checkable
@@ -289,6 +291,139 @@ def normalize_hierarchy(
     return normalized
 
 
+def _map_backend_tree_to_frontend(value: object) -> object:
+    """Map backend HierarchyTree (config_revision + roots) to frontend root shape.
+
+    The serializer/service may return a model or dict with
+    `config_revision` and `roots`. The frontend expects a single
+    `root` node. This helper is a minimal, defensive mapping layer
+    used by the API surface to keep the internal contract stable.
+    """
+    # If it's a pydantic model, prefer its model_dump representation
+    model_dump = getattr(value, "model_dump", None)
+
+    if callable(model_dump):
+        try:
+            as_dict_any: Any = model_dump()
+        except Exception:
+            as_dict_any = value
+    else:
+        as_dict_any = value
+
+    if not isinstance(as_dict_any, dict):
+        return value
+
+    as_dict = cast(JSONDict, as_dict_any)
+
+    # Detect legacy backend tree shape: has `config_revision` and `roots`
+    if "roots" in as_dict and ("config_revision" in as_dict or "roots" in as_dict):
+        roots_raw: Any = as_dict.get("roots")
+        if isinstance(roots_raw, list):
+            roots = cast(List[Any], roots_raw)
+        else:
+            roots = []
+
+        root_node: Optional[Any] = None
+
+        if len(roots) > 0:
+            root_node = roots[0]
+
+        # Defensive: if no root available, return an empty dict so the
+        # normalizer can fail loudly or the caller can handle it.
+        if root_node is None:
+            return {}
+
+        return root_node
+
+    return value
+
+
+def _publicize_node(node: object) -> object:
+    """Recursively normalize a node to the public API shape.
+
+    - Rename `available_actions` -> `actions`
+    - Ensure `children` is always a list (empty if missing)
+    - Ensure `actions` is always a list (empty if missing)
+    - Avoid returning ORM/Pydantic internals by working on plain dicts
+    """
+    # Convert pydantic models to dicts if possible
+    model_dump = getattr(node, "model_dump", None)
+    if callable(model_dump):
+        try:
+            obj_any: Any = model_dump()
+        except Exception:
+            obj_any = node
+    else:
+        obj_any = node
+
+    if not isinstance(obj_any, dict):
+        return obj_any
+
+    obj: JSONDict = cast(JSONDict, obj_any)
+
+    # Prepare a shallow copy to avoid mutating originals
+    out: dict[str, Any] = {}
+
+    # Copy known scalar/string fields directly
+    for key in (
+        "id",
+        "type",
+        "name",
+        "parent_id",
+        "sort_order",
+        "selectable",
+        "disabled",
+        "status",
+        "metadata",
+        "revision",
+        "system_prompt",
+    ):
+        if key in obj:
+            out[key] = obj[key]
+
+    # Actions: map available_actions -> actions
+    actions_any: Any = obj.get("actions")
+    if actions_any is None:
+        actions_any = obj.get("available_actions")
+
+    if actions_any is None or not isinstance(actions_any, list):
+        out["actions"] = []
+    else:
+        actions_list = cast(List[Any], actions_any)
+        out["actions"] = [a for a in actions_list]
+
+    # Children: ensure list and recursively publicize
+    raw_children_any: Any = obj.get("children")
+    if raw_children_any is None or not isinstance(raw_children_any, list):
+        out["children"] = []
+    else:
+        raw_children = cast(List[Any], raw_children_any)
+        children: List[object] = []
+        for child_any in raw_children:
+            try:
+                children.append(_publicize_node(child_any))
+            except Exception:
+                # If a child cannot be serialized, skip it
+                continue
+
+        out["children"] = children
+
+    # Preserve additional safe fields that frontend may rely on
+    for optional in (
+        "tool_policy",
+        "config_overrides",
+        "metadata",
+        "effective_prompt",
+        "effective_tools",
+        "effective_config",
+        "system_prompt",
+    ):
+        if optional in obj and obj[optional] is not None:
+            out[optional] = obj[optional]
+
+    return out
+
+
 def build_actor_from_request(request: Request) -> HierarchyActor:
     principal: object | None = getattr(request.state, "user", None)
 
@@ -374,10 +509,18 @@ async def hierarchy(
 
     try:
         raw_tree = await service.get_tree(
-            actor=actor,
-            root_id=root_id,
-            max_depth=max_depth,
-        )
+                actor=actor,
+                root_id=root_id,
+                max_depth=max_depth,
+            )
+
+        # Map internal backend tree shape (config_revision + roots)
+        # to the frontend-expected single `root` node shape.
+        raw_tree = _map_backend_tree_to_frontend(raw_tree)
+
+        # Ensure node fields match the public contract (rename actions,
+        # enforce arrays for children/actions, recurse).
+        raw_tree = _publicize_node(raw_tree)
     except PermissionError as exc:
         raise structured_http_error(
             request=request,
@@ -386,9 +529,7 @@ async def hierarchy(
             message=str(exc),
         ) from exc
 
-    tree = normalize_hierarchy(
-        raw_tree,
-    )
+    tree = normalize_hierarchy(raw_tree)
 
     revision = await get_config_revision(
         request,

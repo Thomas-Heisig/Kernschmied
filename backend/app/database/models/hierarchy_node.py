@@ -161,3 +161,34 @@ class HierarchyNodeModel(Base):
             "position",
         ),
     )
+
+    # Backwards-compatibility aliases for legacy storage model field names.
+    # Older code (and tests) construct instances using names like
+    # `node_type`, `prompt`, and `config`. Provide property aliases so the
+    # declarative constructor accepts these keywords without creating a
+    # duplicate ORM mapping.
+
+    @property
+    def node_type(self) -> str:
+        return self.type
+
+    @node_type.setter
+    def node_type(self, value: str) -> None:
+        self.type = value
+
+    @property
+    def prompt(self) -> str | None:
+        return self.system_prompt
+
+    @prompt.setter
+    def prompt(self, value: str | None) -> None:
+        self.system_prompt = value
+
+    @property
+    def config(self) -> JsonObject:
+        return self.config_overrides
+
+    @config.setter
+    def config(self, value: JsonObject) -> None:
+        self.config_overrides = value
+    
