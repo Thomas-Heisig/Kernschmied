@@ -1866,16 +1866,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.BOOLEAN,
     ),
-    config_definition(
-        group="models",
-        key="temperature",
-        display_name="Temperature",
-        description="Standardwert für die Antwortvarianz.",
-        value_schema={"type": "number", "minimum": 0, "maximum": 2},
-        default_value=1.0,
-        allowed_scopes={ConfigScope.SYSTEM, ConfigScope.USER},
-        value_type=ConfigValueType.NUMBER,
-    ),
+    # `models.temperature` rich definition exists later; earlier placeholder removed.
     config_definition(
         group="models",
         key="top_p",
