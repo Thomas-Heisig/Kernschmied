@@ -51,10 +51,17 @@ interface ConfigEntryLike {
   value: ConfigValue;
 }
 
-interface ConfigSnapshotLike {
-  revision: number;
-  values?: unknown;
-  items?: unknown;
+function getConfigGroup(
+  values: ConfigObject,
+  group: string,
+): Readonly<Record<string, ConfigValue>> | undefined {
+  const candidate = values[group];
+
+  if (typeof candidate !== 'object' || candidate === null || Array.isArray(candidate)) {
+    return undefined;
+  }
+
+  return candidate as Readonly<Record<string, ConfigValue>>;
 }
 
 export function useSystemConfig(): UseSystemConfigResult {
@@ -150,7 +157,7 @@ export function useSystemConfig(): UseSystemConfigResult {
         const entry = persisted[fullKey];
         const group = entry.group;
         const key = entry.key;
-        const draftGroup = (values as any)[group] as Record<string, unknown> | undefined;
+        const draftGroup = getConfigGroup(values, group);
         const draftValue = draftGroup ? (draftGroup[key] as ConfigValue) : undefined;
 
         const persistedValue = entry.value as ConfigValue;
@@ -163,7 +170,7 @@ export function useSystemConfig(): UseSystemConfigResult {
       // Also include new draft keys not present in persistedEntries
       for (const rawGroup of Object.keys(values)) {
         const group = rawGroup;
-        const groupValues = (values as any)[group] as Record<string, unknown> | undefined;
+        const groupValues = getConfigGroup(values, group) as Record<string, ConfigValue> | undefined;
         if (!groupValues) continue;
 
         for (const rawKey of Object.keys(groupValues)) {
@@ -232,10 +239,8 @@ export function useSystemConfig(): UseSystemConfigResult {
 
   useEffect(() => {
     // Determine autosave preference from config values. Default to true.
-    const valuesRec = values as unknown as Record<string, unknown>;
-    const ui = (valuesRec.ui as Record<string, unknown> | undefined) ?? undefined;
-    const autosavePref =
-      ui && typeof ui.autosave_enabled !== 'undefined' ? Boolean(ui.autosave_enabled) : true;
+    const uiGroup = getConfigGroup(values, 'ui');
+    const autosavePref = uiGroup && typeof uiGroup.autosave_enabled !== 'undefined' ? Boolean(uiGroup.autosave_enabled) : true;
 
     if (!autosavePref) {
       // If disabled, clear any pending timer and do nothing.
@@ -304,90 +309,6 @@ function configValuesEqual(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-function normalizeSnapshotValues(snapshot: ConfigSnapshotLike): ConfigObject {
-  /*
-   * Bevorzugte Frontend-Struktur:
-   *
-   * {
-   *   identity: {
-   *     name: "Kernschmied"
-   *   }
-   * }
-   */
-  if (isConfigObject(snapshot.values)) {
-    return cloneConfigObject(snapshot.values);
-  }
-
-  /*
-   * Backend-Transportstruktur:
-   *
-   * {
-   *   items: [
-   *     {
-   *       group: "identity",
-   *       key: "name",
-   *       value: "Kernschmied"
-   *     }
-   *   ]
-   * }
-   */
-  if (Array.isArray(snapshot.items)) {
-    return buildConfigObject(snapshot.items);
-  }
-
-  /*
-   * Kompatibilität für API-Clients, die items versehentlich
-   * unter values zurückgeben.
-   */
-  if (Array.isArray(snapshot.values)) {
-    return buildConfigObject(snapshot.values);
-  }
-
-  return {};
-}
-
-function buildConfigObject(rawEntries: unknown[]): ConfigObject {
-  const result: ConfigObject = {};
-
-  for (const rawEntry of rawEntries) {
-    if (!isConfigEntryLike(rawEntry)) {
-      continue;
-    }
-
-    const group = rawEntry.group.trim().toLowerCase();
-
-    const key = rawEntry.key.trim().toLowerCase();
-
-    if (!group || !key) {
-      continue;
-    }
-
-    const existingGroup = result[group];
-
-    const groupValues: ConfigObject = isConfigObject(existingGroup) ? existingGroup : {};
-
-    result[group] = {
-      ...groupValues,
-      [key]: rawEntry.value,
-    };
-  }
-
-  return result;
-}
-
-function isConfigEntryLike(value: unknown): value is ConfigEntryLike {
-  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    return false;
-  }
-
-  const record = value as Record<string, unknown>;
-
-  return (
-    typeof record.group === 'string' &&
-    typeof record.key === 'string' &&
-    isConfigValue(record.value)
-  );
-}
 
 function isConfigObject(value: unknown): value is ConfigObject {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
