@@ -305,6 +305,12 @@ export function useSystemConfig(): UseSystemConfigResult {
   };
 }
 
+// Compatibility flag: when `true`, the settings UI will fall back to
+// traversing the raw `values` object when the backend does not provide
+// a `groups`/`entries` contract. Default is `false` to prefer the
+// structured backend contract and avoid implicit fallbacks.
+export const LEGACY_VALUES_FALLBACK_ENABLED = false;
+
 function configValuesEqual(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }

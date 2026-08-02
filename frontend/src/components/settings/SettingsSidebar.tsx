@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 
-import type { ConfigObject } from '../../contracts/config';
+import type { ConfigObject, ConfigGroupResponse } from '../../contracts/config';
 
 interface SettingsSidebarProps {
   values: ConfigObject;

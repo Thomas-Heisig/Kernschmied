@@ -18,6 +18,7 @@ import { SettingsField } from './SettingsField';
 import SettingsForm, { SettingsSingleSection } from './SettingsForm';
 import SettingsJsonEditor from './SettingsJsonEditor';
 import SettingsSearch from './SettingsSearch';
+import SettingsToolbar from './SettingsToolbar';
 
 interface SettingsContentProps {
   activeKey: string | null;
@@ -57,7 +58,7 @@ const SETTINGS_CATALOG_KEY = 'settings-catalog';
 
 const MAX_RENDER_DEPTH = 12;
 
-export function SettingsContent({ activeKey, showJson, config }: SettingsContentProps) {
+export function SettingsContent({ activeKey, showJson, config, allowLegacyValuesFallback = false }: SettingsContentProps & { allowLegacyValuesFallback?: boolean }) {
   const {
     values,
     groups,
@@ -98,12 +99,17 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
         ) as [string, ConfigValue][];
     }
 
+    if (!allowLegacyValuesFallback) {
+      // No groups provided and fallback disabled: show empty.
+      return [];
+    }
+
     return Object.entries(values).sort((left, right) =>
       formatSettingLabel(String(left[0])).localeCompare(formatSettingLabel(String(right[0])), 'de', {
         sensitivity: 'base',
       }),
     ) as [string, ConfigValue][];
-  }, [values, groups]);
+  }, [values, groups, allowLegacyValuesFallback]);
 
   const visibleSectionEntries = useMemo(
     () =>
@@ -140,9 +146,12 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
 
       return out;
     }
-
     // Fallback: flatten the nested `values` object into full keys like `group.key`.
-    // Keep this minimal and typed; this fallback exists only for older backends.
+    // This fallback is gated and only allowed when `allowLegacyValuesFallback` is true.
+    if (!allowLegacyValuesFallback) {
+      return {};
+    }
+
     const out: Record<string, ConfigValue> = {};
 
     function flattenConfigValues(prefix: string[], node: ConfigValue | ConfigObject | undefined) {
@@ -163,6 +172,7 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
 
     return out;
   }, [values, entriesByFullKey]);
+  
 
   useEffect(() => {
     if (!showJson) {
@@ -186,40 +196,7 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
 
   useEffect(() => {
     if (!jsonCopied) {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setJsonCopied(false);
-    }, 1_500);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [jsonCopied]);
-
-  if (isLoading) {
-    return <SettingsLoadingState />;
-  }
-
-  if (!showJson && activeKey === SETTINGS_CATALOG_KEY) {
-    return (
-      <div className="min-h-full overflow-y-auto bg-slate-50 p-5 dark:bg-slate-950/30 md:p-8">
-        <SettingsCatalogView config={config} />
-      </div>
-    );
-  }
-
-  function handleApplyJson(): void {
-    const parsedResult = parseConfigObject(jsonDraft);
-
-    if (!parsedResult.ok) {
-      setJsonError(parsedResult.error);
-      return;
-    }
-
-    setValues(parsedResult.value);
-
+            <SettingsToolbar isDirty={isDirty} isSaving={isSaving} onSave={handleSave} onReload={reload} onReset={reset} />
     setJsonDraft(JSON.stringify(parsedResult.value, null, 2));
 
     setJsonError(null);
