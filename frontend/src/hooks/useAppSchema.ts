@@ -152,6 +152,10 @@ export function useAppSchema(): UseAppSchemaResult {
         signal: requestController.signal,
       });
 
+      if (import.meta.env.DEV) {
+        console.debug('Bootstrap raw response:', rawBootstrapResponse);
+      }
+
       assertRequestIsCurrent(requestController, requestGeneration, requestGenerationRef);
 
       const bootstrap = normalizeBootstrapResponse(rawBootstrapResponse);
@@ -179,11 +183,22 @@ export function useAppSchema(): UseAppSchemaResult {
         }),
       ]);
 
+      if (import.meta.env.DEV) {
+        console.debug('UI schema raw response:', rawSchemaResponse);
+        console.debug('Hierarchy raw response:', rawHierarchyResponse);
+      }
+
       assertRequestIsCurrent(requestController, requestGeneration, requestGenerationRef);
+
 
       const normalizedSchema = normalizeUISchemaResponse(rawSchemaResponse);
 
       const normalizedHierarchy = normalizeHierarchyResponse(rawHierarchyResponse);
+
+      if (import.meta.env.DEV) {
+        console.debug('UI schema normalized:', normalizedSchema);
+        console.debug('Hierarchy normalized:', normalizedHierarchy);
+      }
 
       assertRequestIsCurrent(requestController, requestGeneration, requestGenerationRef);
 
@@ -207,7 +222,7 @@ export function useAppSchema(): UseAppSchemaResult {
 
       logDevelopmentError(
         'Bootstrap, UI-Schema oder Hierarchie konnten nicht geladen werden.',
-        normalizedError,
+        caughtError,
       );
 
       setError(normalizedError);
@@ -296,7 +311,7 @@ export function useAppSchema(): UseAppSchemaResult {
 
       const normalizedError = normalizeAppSchemaError(caughtError);
 
-      logDevelopmentError('Hierarchie konnte nicht neu geladen werden.', normalizedError);
+      logDevelopmentError('Hierarchie konnte nicht neu geladen werden.', caughtError);
 
       // Fehler setzen, aber Status bleibt "success", da wir bereits Daten haben
       setError(normalizedError);
@@ -679,16 +694,51 @@ function describeValueType(value: unknown): string {
   return typeof value;
 }
 
-function logDevelopmentError(message: string, error: AppSchemaError): void {
+function logDevelopmentError(message: string, error: unknown): void {
   if (!import.meta.env.DEV) {
     return;
   }
 
-  console.error(message, {
-    code: error.code,
-    message: error.message,
-    status: error.status,
-    requestId: error.requestId,
-    details: error.details,
-  });
+  // Always log the top-level context
+  console.error(message, error);
+
+  // If this is an Error instance, show detailed diagnostics
+  if (error instanceof Error) {
+    console.error('Fehlername:', error.name);
+    console.error('Fehlermeldung:', error.message);
+    console.error('Stack:', error.stack);
+    return;
+  }
+
+  // If it's the normalized AppSchemaError-like shape, try to log useful fields
+  try {
+    const asAny = error as any;
+
+    if (asAny && typeof asAny === 'object') {
+      const maybeCode = asAny.code ?? asAny.error_code ?? null;
+      const maybeMessage = asAny.message ?? asAny.error_message ?? null;
+      const maybeStatus = asAny.status ?? null;
+      const maybeRequestId = asAny.requestId ?? asAny.request_id ?? null;
+
+      if (maybeCode || maybeMessage || maybeStatus || maybeRequestId) {
+        console.error('Structured Error:', {
+          code: maybeCode,
+          message: maybeMessage,
+          status: maybeStatus,
+          requestId: maybeRequestId,
+          details: asAny.details ?? null,
+        });
+        return;
+      }
+    }
+  } catch (e) {
+    // fall through to generic stringify
+  }
+
+  // Fallback: attempt to stringify the value for inspection
+  try {
+    console.error('Unbekannter Fehlerwert:', JSON.stringify(error, null, 2));
+  } catch (e) {
+    console.error('Unbekannter Fehlerwert (nicht serialisierbar):', error);
+  }
 }

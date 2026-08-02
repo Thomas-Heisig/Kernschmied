@@ -14,7 +14,6 @@ sys.path.insert(0, str(BACKEND_DIR))
 
 from app.core.settings import settings
 from app.database.base import Base as DatabaseBase
-from app.storage.models.base import Base as StorageBase
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -57,8 +56,11 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    # `config.get_section` may return None; default to empty dict for typing
+    cfg_section = config.get_section(config.config_ini_section) or {}
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
+        cfg_section,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )

@@ -44,6 +44,7 @@ from pydantic import (
 
 from app.config.service import (
     ConfigValidationError,
+    ConfigServiceError,
     ConfigService,
     ConfigDefinitionNotFoundError,
     ConfigPersistenceError,
@@ -2231,8 +2232,8 @@ async def bulk_update_config(
             message=(exc.reason if hasattr(exc, "reason") else str(exc)),
             details={},
         ) from exc
-    except ConfigService as exc:
-        # Generic service-layer errors
+    except ConfigServiceError as exc:
+        # Generic service-layer errors emitted by the ConfigService
         raise structured_http_error(
             request=request,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

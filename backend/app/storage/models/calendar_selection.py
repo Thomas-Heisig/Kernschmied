@@ -5,7 +5,6 @@ from uuid import uuid4
 
 from sqlalchemy import (
     DateTime,
-    ForeignKey,
     Index,
     String,
     Text,

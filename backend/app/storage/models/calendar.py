@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Index, String, Text, Boolean
+from sqlalchemy import DateTime, String, Text, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.storage.models.base import Base, utc_now

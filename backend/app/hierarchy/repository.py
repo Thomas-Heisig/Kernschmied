@@ -7,6 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts.hierarchy import HierarchyNodeCreate, HierarchyNodeUpdate
 from app.database.models.hierarchy_node import HierarchyNodeModel
+from uuid import uuid4
+
+
+class HierarchyParentNotFoundError(LookupError):
+    def __init__(self, parent_id: str) -> None:
+        super().__init__(f"Parent node '{parent_id}' not found")
 
 
 class HierarchyRepository:
@@ -62,7 +68,16 @@ class HierarchyRepository:
     ) -> HierarchyNodeModel:
         position = await self._next_position(data.parent_id)
 
+        # ensure parent exists when provided
+        if data.parent_id is not None:
+            parent = await self.get_node(data.parent_id)
+            if parent is None:
+                raise HierarchyParentNotFoundError(data.parent_id)
+
+        node_id = data.node_id or str(uuid4())
+
         node = HierarchyNodeModel(
+            id=node_id,
             parent_id=data.parent_id,
             type=data.type.strip().lower(),
             name=data.name.strip(),

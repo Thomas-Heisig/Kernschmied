@@ -11,7 +11,7 @@ from collections.abc import (
 )
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Protocol, TypeVar, cast
+from typing import Protocol, TypeVar, cast, Any, Optional
 
 from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import (
@@ -28,9 +28,11 @@ from app.registries.model_registry import ModelRegistry
 from app.registries.tool_registry import ToolRegistry
 from app.services.chat_service import (
     ChatService,
-    NullChatRepository,
 )
 from app.storage.database import init_database
+from app.core.settings import settings
+from app.hierarchy.repository import HierarchyRepository as CoreHierarchyRepository
+from app.services.hierarchy_service import create_hierarchy_service
 
 logger = logging.getLogger(__name__)
 
@@ -39,6 +41,7 @@ logger = logging.getLogger(__name__)
 # ============================================================
 
 T = TypeVar("T")
+R = TypeVar("R")
 
 
 # ============================================================
@@ -266,6 +269,80 @@ class MinimalHierarchyService:
         )
 
 
+class PersistentHierarchyService:
+    """
+    Adapter that provides a HierarchyService backed by the database.
+
+    It creates a fresh SQLAlchemy session for each operation using the
+    `session_factory` produced by the bootstrap database initialization.
+    This keeps the public service contract stable while using persistent
+    storage as source of truth.
+    """
+
+    def __init__(self, session_factory: async_sessionmaker[AsyncSession]) -> None:
+        self._session_factory = session_factory
+
+    async def _with_service(self, func: Callable[..., Awaitable[R]], *args: Any, **kwargs: Any) -> R:
+        async with self._session_factory() as session:
+            repository = CoreHierarchyRepository(session)
+            service = create_hierarchy_service(repository)
+            return await func(service, *args, **kwargs)
+
+    async def get_tree(
+        self,
+        *,
+        actor: Optional[Any] = None,
+        root_id: Optional[str] = None,
+        max_depth: Optional[int] = None,
+    ) -> HierarchyNode:
+        async def op(s: Any) -> HierarchyNode:
+            return await s.get_tree(actor=actor, root_id=root_id, max_depth=max_depth)
+
+        return await self._with_service(op)
+
+    async def get_node(self, node_id: str, actor: Optional[Any] = None) -> dict[str, Any]:
+        async def op(s: Any) -> dict[str, Any]:
+            return await s.get_node(node_id=node_id, actor=actor)
+
+        return await self._with_service(op)
+
+    async def create_node(self, data: dict[str, Any], actor: Optional[Any] = None) -> dict[str, Any]:
+        async def op(s: Any) -> dict[str, Any]:
+            return await s.create_node(data, actor=actor)
+
+        return await self._with_service(op)
+
+    async def update_node(self, node_id: str, data: dict[str, Any], actor: Optional[Any] = None) -> dict[str, Any]:
+        async def op(s: Any) -> dict[str, Any]:
+            return await s.update_node(node_id=node_id, data=data, actor=actor)
+
+        return await self._with_service(op)
+
+    async def move_node(self, node_id: str, new_parent_id: str, actor: Optional[Any] = None) -> dict[str, Any]:
+        async def op(s: Any) -> dict[str, Any]:
+            return await s.move_node(node_id=node_id, new_parent_id=new_parent_id, actor=actor)
+
+        return await self._with_service(op)
+
+    async def reorder_nodes(self, moves: list[Any], actor: Optional[Any] = None) -> dict[str, Any]:
+        async def op(s: Any) -> dict[str, Any]:
+            return await s.reorder_nodes(moves=moves, actor=actor)
+
+        return await self._with_service(op)
+
+    async def delete_node(self, node_id: str, actor: Optional[Any] = None) -> Any:
+        async def op(s: Any) -> Any:
+            return await s.delete_node(node_id=node_id, actor=actor)
+
+        return await self._with_service(op)
+
+    async def resolve_effective_values(self, node_id: str, actor: Optional[Any] = None) -> dict[str, Any]:
+        async def op(s: Any) -> dict[str, Any]:
+            return await s.resolve_effective_values(node_id=node_id, actor=actor)
+
+        return await self._with_service(op)
+
+
 # ============================================================
 # Bootstrap-Ergebnis
 # ============================================================
@@ -281,12 +358,12 @@ class BootstrapResult:
     erfolgreich abgeschlossen wurden.
     """
 
-    session_factory: async_sessionmaker[AsyncSession]
+    session_factory: Optional[async_sessionmaker[AsyncSession]]
     config_service: ConfigService
     model_registry: ModelRegistry
     tool_registry: ToolRegistry
-    hierarchy_repository: InMemoryHierarchyRepository
-    hierarchy_service: MinimalHierarchyService
+    hierarchy_repository: Any
+    hierarchy_service: Any
     model_service: ModelService
     chat_service: ChatService
 
@@ -337,15 +414,20 @@ async def bootstrap_application(
     app.state.bootstrap_complete = False
     app.state.bootstrap_error = None
 
-    session_factory: async_sessionmaker[AsyncSession] | None = None
+    # NOTE: Core bootstrap locals below are expected to hold concrete
+    # non-None service instances once their respective initialization
+    # steps have completed. Do not reintroduce `| None` annotations for
+    # these locals — use `_run_bootstrap_step` which returns the proper
+    # concrete type or raise a `BootstrapStepError` on failure.
+    session_factory: Optional[async_sessionmaker[AsyncSession]] = None
 
     config_service: ConfigService | None = None
     model_registry: ModelRegistry | None = None
     tool_registry: ToolRegistry | None = None
 
-    hierarchy_repository: InMemoryHierarchyRepository | None = None
+    hierarchy_repository: Any | None = None
 
-    hierarchy_service: MinimalHierarchyService | None = None
+    hierarchy_service: Any | None = None
 
     model_service: ModelService | None = None
     chat_service: ChatService | None = None
@@ -368,11 +450,24 @@ async def bootstrap_application(
             nonlocal hierarchy_repository
             nonlocal hierarchy_service
 
-            hierarchy_repository = InMemoryHierarchyRepository()
+            # Use DB-backed hierarchy service (session_factory is initialized above).
+            # Cast session_factory because local variable is Optional for bootstrapping
+            # flow, but init_database() returns a concrete session factory.
+            assert session_factory is not None
+            sf = session_factory
+            hierarchy_service = PersistentHierarchyService(sf)
+            hierarchy_repository = sf
 
-            hierarchy_service = MinimalHierarchyService(
-                hierarchy_repository,
-            )
+            # run development seed only in development environment
+            try:
+                from app.core.dev_seed import seed_development_hierarchy
+                from app.core.settings import AppEnvironment
+
+                if settings.app_environment == AppEnvironment.DEVELOPMENT:
+                    await seed_development_hierarchy(sf)
+            except Exception:
+                # Let bootstrap step wrapper transform this into a BootstrapStepError
+                raise
 
         await _run_bootstrap_step(
             step="hierarchy.initialize",
@@ -407,7 +502,7 @@ async def bootstrap_application(
         model_registry = ModelRegistry()
         # Make model registry available to the already-created config_service
         try:
-            config_service._model_registry = model_registry
+            cast(Any, config_service)._model_registry = model_registry
         except Exception:
             pass
 
@@ -456,8 +551,9 @@ async def bootstrap_application(
         # If model_registry exists, register an availability checker so the
         # registry can surface runtime availability/selectability.
         try:
+            # model_service types may be opaque to the type checker; cast to Any
             model_registry.set_availability_checker(
-                model_service.is_model_available,
+                cast(Any, model_service).is_model_available,
                 ttl=30.0,
             )
         except Exception:
@@ -656,7 +752,7 @@ async def bootstrap_application(
             tool_registry=tool_registry,
             model_registry=model_registry,
             config_service=config_service,
-            session_factory=session_factory,
+            session_factory=session_factory, # type: ignore
             model_service=model_service,
             chat_service=chat_service,
         )

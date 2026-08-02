@@ -46,6 +46,7 @@ class HierarchyServiceProtocol(Protocol):
     async def get_tree(
         self,
         *,
+        actor: object | None = None,
         root_id: str | None = None,
         max_depth: int | None = None,
     ) -> object: ...
@@ -367,14 +368,23 @@ async def hierarchy(
         description="Optionale maximale Rekursionstiefe.",
     ),
 ) -> HierarchyTreeResponse:
-    service = get_hierarchy_service(
-        request,
-    )
+    service = get_hierarchy_service(request)
 
-    raw_tree = await service.get_tree(
-        root_id=root_id,
-        max_depth=max_depth,
-    )
+    actor = build_actor_from_request(request)
+
+    try:
+        raw_tree = await service.get_tree(
+            actor=actor,
+            root_id=root_id,
+            max_depth=max_depth,
+        )
+    except PermissionError as exc:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="HIERARCHY_READ_FORBIDDEN",
+            message=str(exc),
+        ) from exc
 
     tree = normalize_hierarchy(
         raw_tree,

@@ -1,14 +1,14 @@
-import os
-import tempfile
-from pathlib import Path
 import importlib.util
+import os
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+from types import ModuleType
 
 from fastapi.testclient import TestClient
 
 
-def _load_create_application():
+def _load_create_application() -> ModuleType:
     repo_root = Path(__file__).resolve().parents[2]
     main_path = repo_root / "backend" / "main.py"
     # ensure backend directory is on sys.path so `import app` works
@@ -17,21 +17,21 @@ def _load_create_application():
         sys.path.insert(0, str(backend_dir))
 
     spec = importlib.util.spec_from_file_location("backend.main", str(main_path))
+    assert spec is not None, f"Could not load spec from {main_path}"
     mod = importlib.util.module_from_spec(spec)
     # register module name so dataclass string-annotation resolution works
-    import sys as _sys
-
-    _sys.modules[spec.name] = mod
+    sys.modules[spec.name] = mod
+    assert spec.loader is not None, "Loader is None"
     spec.loader.exec_module(mod)
-    return mod.create_application
+    return mod
 
 
-def test_calendars_end_to_end(tmp_path):
+def test_calendars_end_to_end(tmp_path: Path) -> None:
     db_file = tmp_path / "kernschmied_integration.db"
     os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{db_file.resolve()}"
 
-    create_application = _load_create_application()
-    app = create_application()
+    mod = _load_create_application()
+    app = mod.create_application()
 
     with TestClient(app) as client:
         # Create calendar
@@ -41,9 +41,10 @@ def test_calendars_end_to_end(tmp_path):
         cal_id = cal["id"]
 
         # Create event
-        now = datetime.now(timezone.utc)
-        start = now.isoformat() + "Z"
-        end = (now + timedelta(hours=1)).isoformat() + "Z"
+        now = datetime.now(UTC)
+        # produce RFC3339/ISO datetimes acceptable to FastAPI/Pydantic
+        start = now.isoformat()
+        end = (now + timedelta(hours=1)).isoformat()
 
         ev_payload = {
             "title": "Integration Meeting",

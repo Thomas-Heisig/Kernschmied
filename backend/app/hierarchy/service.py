@@ -39,11 +39,30 @@ class HierarchyService:
     async def get_tree(
         self,
         *,
-        actor: HierarchyActor,
+        actor: HierarchyActor | None = None,
+        root_id: str | None = None,
+        max_depth: int | None = None,
         config_revision: int = 0,
-    ) -> HierarchyTree:
+    ) -> HierarchyTree | HierarchyNode:
+        # allow anonymous calls when actor is not provided
+        if actor is None:
+            actor = HierarchyActor()
+
         self._permissions.require(actor, READ_ACTION)
+
         nodes = await self._repository.list_nodes()
+
+        # if a specific root is requested, serialize only that subtree
+        if root_id is not None:
+            root = await self._require_node(root_id)
+            return self._serializer.serialize_subtree(
+                root,
+                nodes=nodes,
+                actor=actor,
+            )
+
+        # otherwise build full tree
+        del max_depth
         return self._serializer.build_tree(
             nodes,
             actor=actor,

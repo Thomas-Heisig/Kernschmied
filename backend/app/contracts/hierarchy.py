@@ -37,6 +37,9 @@ class HierarchyNodeCreate(BaseModel):
         extra="forbid",
     )
 
+    # Optional explicit id to allow deterministic seeds and imports
+    node_id: str | None = None
+
     type: str = Field(
         min_length=1,
         max_length=100,

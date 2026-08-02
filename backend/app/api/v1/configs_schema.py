@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Literal, Mapping
+from typing import Literal, Mapping, List
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
@@ -102,7 +102,7 @@ class BulkConfigUpdateRequest(BaseModel):
         description="Gruppierte Konfigurationswerte als Objekt { group: { key: value } }",
     )
 
-    changes: list[ConfigChangeItem] = Field(
+    changes: List['ConfigChangeItem'] = Field(  # type: ignore[reportUnknownVariableType]
         default_factory=list,
         description="Alternative sequentielle Änderungsbeschreibung [{group,key,value}, ...]",
     )

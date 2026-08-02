@@ -358,6 +358,13 @@ class ChatAccessDeniedError(
     status_code = 403
 
 
+class ChatHierarchyNodeNotFoundError(
+    ChatServiceError,
+):
+    code = "HIERARCHY_NODE_NOT_FOUND"
+    status_code = 404
+
+
 class ChatGenerationError(
     ChatServiceError,
 ):
@@ -1009,8 +1016,10 @@ class ChatService:
 
         self._model_resolver = model_resolver
 
-        self._repository: ChatRepository = (
-            repository if repository is not None else NullChatRepository()
+        from typing import cast
+
+        self._repository: ChatRepository = cast(
+            ChatRepository, repository if repository is not None else NullChatRepository()
         )
 
         self._history_provider: ChatHistoryProvider = (
@@ -1083,6 +1092,8 @@ class ChatService:
             model_id=model_id,
             streaming=False,
         )
+
+        error: ChatServiceError | None = None
 
         try:
             model_event: StreamEvent = await self._model_service.generate(
@@ -1274,6 +1285,8 @@ class ChatService:
         )
 
         sequence += 1
+
+        error: ChatServiceError | None = None
 
         try:
             async for model_event in self._model_service.stream(
@@ -2125,7 +2138,7 @@ class ChatService:
 
         except Exception as exc:
             raise ChatPersistenceError(
-                "Die Benutzeranfrage konnte nicht gespeichert werden.",
+                "Beim Speichern Ihrer Anfrage ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.",
                 request_id=(context.request_id),
                 details={
                     "conversation_id": (conversation_id),

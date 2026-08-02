@@ -3,12 +3,15 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
-
-from app.storage.models.chat import Chat as ChatModel, Message as MessageModel
-from app.storage.models.hierarchy import HierarchyNode
+from app.storage.models.chat import Chat as ChatModel
+from app.storage.models.chat import Message as MessageModel
+from app.database.models.hierarchy_node import HierarchyNodeModel
+from app.services.chat_service import ChatHierarchyNodeNotFoundError
 from app.storage.repositories.chat import ChatRepository as StorageChatRepository
-from app.storage.repositories.hierarchy import HierarchyRepository as StorageHierarchyRepository
+from app.storage.repositories.hierarchy import (
+    HierarchyRepository as StorageHierarchyRepository,
+)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
 class ChatRepositoryAdapter:
@@ -40,12 +43,22 @@ class ChatRepositoryAdapter:
             except Exception:
                 node_id = None
 
+            if node_id:
+                # validate that the provided hierarchy node exists
+                existing = await hierarchy_repo.get(node_id)
+                if existing is None:
+                    raise ChatHierarchyNodeNotFoundError(
+                        f"Der Hierarchieknoten '{node_id}' wurde nicht gefunden.",
+                    )
             if not node_id:
                 # create a dedicated hierarchy node for this chat
-                node = HierarchyNode(
-                    node_type="chat",
+                node = HierarchyNodeModel(
+                    type="chat",
                     name=f"Conversation {conversation_id}",
-                    config=dict(metadata or {}),
+                    system_prompt=None,
+                    tool_policy={},
+                    config_overrides=dict(metadata or {}),
+                    node_metadata={},
                 )
 
                 await hierarchy_repo.add(node)
@@ -74,10 +87,7 @@ class ChatRepositoryAdapter:
         async with self._session_factory() as session:
             chat_repo = StorageChatRepository(session)
 
-            # compute next position
-            messages = await chat_repo.list_messages(conversation_id)
-            position = (messages[-1].position + 1) if messages else 0
-
+            # Let the repository assign the sequence_number atomically.
             message = MessageModel(
                 id=message_id,
                 conversation_id=conversation_id,
@@ -85,7 +95,6 @@ class ChatRepositoryAdapter:
                 role="user",
                 content=content,
                 ui_context=(dict(metadata or {})),
-                sequence_number=position,
             )
 
             await chat_repo.add_message(message)
@@ -107,16 +116,12 @@ class ChatRepositoryAdapter:
         async with self._session_factory() as session:
             chat_repo = StorageChatRepository(session)
 
-            messages = await chat_repo.list_messages(conversation_id)
-            position = (messages[-1].position + 1) if messages else 0
-
             # include finish_reason and usage into metadata for traceability
             md = dict(metadata or {})
             if finish_reason is not None:
                 md.setdefault("finish_reason", finish_reason)
             if usage is not None:
                 md.setdefault("usage", dict(usage))
-
             message = MessageModel(
                 id=message_id,
                 conversation_id=conversation_id,
@@ -124,7 +129,6 @@ class ChatRepositoryAdapter:
                 role="assistant",
                 content=content,
                 ui_context=md,
-                sequence_number=position,
             )
 
             await chat_repo.add_message(message)
@@ -145,11 +149,16 @@ class ChatRepositoryAdapter:
             if msg is None:
                 return
 
-            md = dict(getattr(msg, "metadata_json", {}) or {})
-            md.setdefault("error", {})
-            md["error"].update({"code": error_code, "message": error_message})
-            md.update(dict(metadata or {}))
+            md: dict[str, Any] = dict(getattr(msg, "ui_context", {}) or {})
+            # store only limited error information to avoid dumping full traces
+            error: dict[str, Any] = md.get("error", {}) or {}
+            error.update({"code": error_code, "message": error_message})
+            md["error"] = error
+            # preserve provided metadata keys that are not sensitive
+            for k, v in dict(metadata or {}).items():
+                if k not in ("traceback", "exception"):
+                    md.setdefault(k, v)
 
-            msg.metadata_json = md
+            msg.ui_context = md
             session.add(msg)
             await session.commit()

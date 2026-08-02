@@ -18,14 +18,8 @@ from app.schemas.settings_catalog import (
     SettingsSource,
     SettingsAvailability,
 )
-from app.config.definitions import get_config_definition
-from app.schemas.configuration import (
-    ConfigDynamicOptionsResponse,
-    ConfigEntryResponse,
-    ConfigGroupResponse,
-    ConfigOptionResponse,
-    ConfigUIResponse,
-)
+# Note: responses from `app.schemas.configuration` are intentionally not
+# imported here to avoid unused-import diagnostics in these helper functions.
 from .configs_schema import ConfigUpdateRequest
 from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 
@@ -239,7 +233,7 @@ async def call_config_set(
         ) from exc
 
 
-def add_normalized_entry(*, target: dict, group: str, key: str, value: object) -> None:
+def add_normalized_entry(*, target: dict[tuple[str, str], object], group: str, key: str, value: object) -> None:
     from .configs import normalize_config_value
 
     normalized_group = group.strip().lower()

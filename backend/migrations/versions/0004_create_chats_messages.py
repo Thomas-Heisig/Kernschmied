@@ -45,9 +45,10 @@ def upgrade() -> None:
         try:
             for uq in inspector.get_unique_constraints('chats'):
                 cols = uq.get('column_names') or uq.get('columns') or []
-                if 'node_id' in cols:
+                name = uq.get('name')
+                if 'node_id' in cols and name:
                     try:
-                        op.drop_constraint(uq['name'], 'chats', type_='unique')
+                        op.drop_constraint(name, 'chats', type_='unique')
                     except Exception:
                         pass
         except Exception:

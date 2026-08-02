@@ -1,29 +1,48 @@
-import sys
-from pathlib import Path
 import asyncio
+import sys
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from types import SimpleNamespace
-from datetime import datetime, timedelta, timezone
+from typing import Protocol, cast
 
-import pytest
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 # Ensure backend package is importable when tests run from repo root
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.storage.models.base import Base as StorageBase
-from app.storage.models.calendar import Calendar
-from app.storage.models.event import Event
 from app.api.v1.calendars import (
     create_calendar,
-    list_calendars,
     create_event,
+    list_calendars,
     list_events,
 )
+from app.storage.models.base import Base as StorageBase
 
 
-def test_calendar_and_event_crud():
-    async def _run():
+class UserProto(Protocol):
+    id: str
+    roles: tuple[str, ...]
+    permissions: tuple[str, ...]
+
+
+class CalendarOutProto(Protocol):
+    id: str
+    owner_id: str | None
+    name: str
+    color: str | None
+    description: str | None
+
+
+class EventOutProto(Protocol):
+    id: str
+    calendar_id: str
+    title: str
+    description: str | None
+
+
+def test_calendar_and_event_crud() -> None:
+    async def _run() -> None:
         # Setup in-memory SQLite and create schema
         engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
         async with engine.begin() as conn:
@@ -31,31 +50,37 @@ def test_calendar_and_event_crud():
 
         session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
-        async with session_factory() as session:  # type: AsyncSession
+        async with session_factory() as session:
             # Dummy request with user in state
-            user = SimpleNamespace(id="test-user", roles=(), permissions=())
+            user = cast(UserProto, SimpleNamespace(id="test-user", roles=(), permissions=()))
             state = SimpleNamespace(user=user)
             request = SimpleNamespace(state=state)
 
             # Create calendar
             payload = SimpleNamespace(name="My Cal", color="#ff0000", description="desc")
-            cal = await create_calendar(request, payload, session=session)
+            cal = cast(CalendarOutProto, await create_calendar(request, payload, session=session))  # type: ignore[arg-type]
             assert cal.owner_id == "test-user"
             assert cal.name == "My Cal"
 
             # List calendars
-            items = await list_calendars(request, session=session)
+            items = cast(list[CalendarOutProto], await list_calendars(request, session=session))  # type: ignore[arg-type]
             assert any(i.id == cal.id for i in items)
 
             # Create event
-            now = datetime.now(timezone.utc)
-            ev_payload = SimpleNamespace(title="Meeting", description="", start=now, end=now + timedelta(hours=1), all_day=False)
-            ev = await create_event(cal.id, ev_payload, request, session=session)
+            now = datetime.now(UTC)
+            ev_payload = SimpleNamespace(
+                title="Meeting",
+                description="",
+                start=now,
+                end=now + timedelta(hours=1),
+                all_day=False
+            )
+            ev = cast(EventOutProto, await create_event(cal.id, ev_payload, request, session=session))  # type: ignore[arg-type]
             assert ev.calendar_id == cal.id
             assert ev.title == "Meeting"
 
             # List events
-            evs = await list_events(cal.id, request, session=session)
+            evs = cast(list[EventOutProto], await list_events(cal.id, request, session=session))  # type: ignore[arg-type]
             assert any(e.id == ev.id for e in evs)
 
         await engine.dispose()

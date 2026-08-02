@@ -1,24 +1,25 @@
-import sys
-from pathlib import Path
 import asyncio
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
-from datetime import datetime, timezone
+from typing import cast
 
-import pytest
+from fastapi import Request
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 # Ensure backend package is importable when tests run from repo root
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from app.storage.models.base import Base as StorageBase
 from app.api.v1.calendar import select_date
+from app.storage.models.base import Base as StorageBase
 from app.storage.models.calendar_selection import CalendarSelection
 
 
-def test_calendar_selection_user_binding():
-    async def _run():
+def test_calendar_selection_user_binding() -> None:
+    async def _run() -> None:
         # Setup in-memory SQLite and create schema
         engine = create_async_engine("sqlite+aiosqlite:///:memory:", echo=False)
         async with engine.begin() as conn:
@@ -26,13 +27,14 @@ def test_calendar_selection_user_binding():
 
         session_factory = async_sessionmaker(engine, expire_on_commit=False)
 
-        async with session_factory() as session:  # type: AsyncSession
+        async with session_factory() as session:
             # Dummy request with user in state
             user = SimpleNamespace(id="user-123")
             state = SimpleNamespace(user=user)
-            request = SimpleNamespace(state=state)
+            request = cast(Request, SimpleNamespace(state=state))
 
-            payload = SimpleNamespace(selected=datetime.now(timezone.utc), note="a test note")
+            from app.api.v1.calendar import CalendarSelectionIn
+            payload = CalendarSelectionIn(selected=datetime.now(UTC), note="a test note")
 
             res = await select_date(payload, request, session=session)
 

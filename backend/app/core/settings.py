@@ -6,6 +6,7 @@ from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Final
+from collections.abc import Sequence
 from urllib.parse import urlparse
 
 from pydantic import (
@@ -143,7 +144,7 @@ def _normalize_path(
 
 
 def _normalize_string_tuple(
-    values: tuple[str, ...] | list[str] | str,
+    values: Sequence[str] | str,
 ) -> tuple[str, ...]:
     if isinstance(values, str):
         values = tuple(part.strip() for part in values.split(",") if part.strip())
@@ -157,6 +158,48 @@ def _normalize_string_tuple(
             normalized.append(item)
 
     return tuple(normalized)
+
+
+def resolve_database_url(
+    configured_url: str | None,
+    *,
+    backend_directory: Path,
+) -> str | None:
+    """Resolve SQLite relative paths in a configured database URL to absolute URLs.
+
+    - If `configured_url` is None, returns None.
+    - `sqlite+aiosqlite:///:memory:` and non-sql URLs are returned unchanged.
+    - Relative sqlite paths are resolved against `backend_directory`.
+    """
+    if configured_url is None:
+        return None
+
+    url = str(configured_url).strip()
+    if not url:
+        return None
+
+    if url.startswith("sqlite+aiosqlite://"):
+        parts = url.split("sqlite+aiosqlite://", 1)
+        if len(parts) == 2:
+            raw_path = parts[1]
+            # keep in-memory URLs untouched
+            if raw_path == ":memory:" or ":memory:" in raw_path:
+                return url
+
+            stripped = raw_path.lstrip("/")
+            candidate = Path(stripped)
+
+            if not candidate.is_absolute():
+                base = backend_directory
+                candidate_parts = candidate.parts
+                # avoid accidental duplication of 'backend' when input already started with it
+                if candidate_parts and candidate_parts[0] == base.name:
+                    candidate = Path(*candidate_parts[1:])
+
+                resolved = (base / candidate).resolve()
+                return f"sqlite+aiosqlite:///{resolved.as_posix()}"
+
+    return url
 
 
 # ============================================================
@@ -972,8 +1015,10 @@ class Settings(BaseSettings):
         SQLite-Standard-URL.
         """
 
-        if self.database_url:
-            return self.database_url
+        # If a URL is explicitly configured, normalize sqlite relative paths
+        url = resolve_database_url(self.database_url, backend_directory=BACKEND_DIRECTORY)
+        if url:
+            return url
 
         return _sqlite_database_url(
             self.data_directory / "kernschmied.db",

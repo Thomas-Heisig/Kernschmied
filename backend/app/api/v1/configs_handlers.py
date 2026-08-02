@@ -27,7 +27,7 @@ from .configs_schema import (
     ConfigUpdateResponse,
 )
 
-from app.schemas.configuration import ConfigListResponse
+from app.schemas.configuration import ConfigListResponse, ConfigEntryResponse
 
 
 @router.get(

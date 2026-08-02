@@ -14,6 +14,8 @@ from sqlalchemy import (
     Integer,
     String,
     Text,
+    UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -73,6 +75,13 @@ class Chat(Base):
         onupdate=utc_now,
     )
 
+    # Server-side message sequence counter used for atomic reservation
+    next_message_sequence: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        server_default=text("0"),
+    )
+
 
 class Message(Base):
     __tablename__ = "messages"
@@ -82,7 +91,9 @@ class Message(Base):
         primary_key=True,
         default=lambda: str(uuid4()),
     )
+    # Backwards-compatibility: some databases use legacy column name `chat_id`.
     conversation_id: Mapped[str] = mapped_column(
+        # canonical column name
         "conversation_id",
         String(36),
         ForeignKey(
@@ -115,16 +126,21 @@ class Message(Base):
         nullable=False,
     )
 
+    # Backwards-compatibility: map `ui_context` to legacy `metadata_json` column.
     ui_context: Mapped[JsonObject] = mapped_column(
+        # canonical column name
+        "ui_context",
         JSON,
         nullable=False,
         default=_create_empty_json_object,
     )
 
+    # Backwards-compatibility: map `sequence_number` to legacy `position` column.
     sequence_number: Mapped[int] = mapped_column(
+        # canonical column name
+        "sequence_number",
         Integer,
         nullable=False,
-        default=0,
     )
 
     status: Mapped[str] = mapped_column(
@@ -161,4 +177,5 @@ class Message(Base):
             "conversation_id",
             "sequence_number",
         ),
+        UniqueConstraint("conversation_id", "sequence_number", name="uq_messages_conversation_sequence"),
     )

@@ -1,6 +1,10 @@
 from __future__ import annotations
 
+# Ensure all ORM model modules are imported so their Table objects
+# are registered on Base.metadata before calling create_all().
+import importlib
 from collections.abc import AsyncIterator
+from typing import Any
 
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -12,20 +16,17 @@ from sqlalchemy.ext.asyncio import (
 from app.core.settings import settings
 from app.database.base import Base
 
-# Ensure all ORM model modules are imported so their Table objects
-# are registered on Base.metadata before calling create_all().
-import importlib
-
 # Use importlib.import_module to perform a runtime-only import. This
 # preserves the side-effect (module-level Table registrations) while
 # avoiding Pylance reporting an unused import.
 importlib.import_module("app.database.models")
 # Also import storage models so their Table objects are registered too.
 importlib.import_module("app.storage.models")
-from app.storage.models.base import Base as StorageBase
 import logging
 from pathlib import Path
+
 from app.core.settings import DatabaseMigrationMode
+from app.storage.models.base import Base as StorageBase
 
 logger = logging.getLogger(__name__)
 
@@ -66,9 +67,12 @@ class DatabaseManager:
         if self._engine is not None:
             return self.session_factory
 
-        # Log the database URL and ensure parent directory exists for SQLite.
+        # Log the configured and effective database URLs and ensure parent
+        # directory exists for SQLite. This helps diagnosing mismatches
+        # between Alembic and the application at startup.
         try:
-            logger.info("Initializing database with URL: %s", self._database_url)
+            logger.info("Configured DATABASE_URL: %s", getattr(settings, "database_url", None))
+            logger.info("Effective database URL: %s", self._database_url)
         except Exception:
             pass
 
@@ -91,8 +95,9 @@ class DatabaseManager:
             try:
                 if settings.database_migration_mode == DatabaseMigrationMode.UPGRADE:
                     try:
-                        from alembic.config import Config
                         from alembic import command
+                        from alembic.config import Config
+                        from alembic.script import ScriptDirectory
 
                         backend_dir = Path(__file__).resolve().parents[2]
                         alembic_ini = backend_dir / "alembic.ini"
@@ -108,13 +113,28 @@ class DatabaseManager:
                                 "sqlalchemy.url",
                                 str(settings.effective_database_url),
                             )
+
+                            # Log available Alembic heads for diagnostics
+                            try:
+                                script = ScriptDirectory.from_config(alembic_cfg)
+                                heads = script.get_heads()
+                                logger.info("Alembic available heads: %s", heads)
+                            except Exception:
+                                logger.debug("Could not enumerate Alembic heads", exc_info=True)
+
                             logger.info("Running Alembic upgrade head using %s", str(alembic_ini))
+                            # If Alembic fails here we must NOT continue with create_all()
+                            # because that can hide migration problems and lead to FK errors.
                             command.upgrade(alembic_cfg, "head")
                         else:
                             logger.info("Alembic config not found at %s, skipping migrations", str(alembic_ini))
-
                     except Exception:
-                        logger.exception("Failed to run Alembic migrations; continuing and letting SQLAlchemy create missing tables.")
+                        # Structured logging and re-raise to abort startup instead of
+                        # silently continuing and letting SQLAlchemy create missing tables.
+                        logger.exception(
+                            "Failed to run Alembic migrations; aborting startup."
+                        )
+                        raise
             except Exception:
                 # Defensive: any errors while checking settings should not block initialization
                 logger.exception("Error while checking database migration mode")
@@ -124,6 +144,24 @@ class DatabaseManager:
             echo=echo,
             pool_pre_ping=True,
         )
+
+        # Ensure SQLite foreign keys are enabled for every new DBAPI connection.
+        # Use event.listen on the underlying sync engine so both sync and async
+        # connections created by SQLAlchemy will have the PRAGMA applied.
+        try:
+            if self._database_url.startswith("sqlite"):
+                from sqlalchemy import event
+
+                def _enable_sqlite_fk(dbapi_connection: Any, connection_record: Any) -> None:
+                    try:
+                        dbapi_connection.execute("PRAGMA foreign_keys = ON")
+                    except Exception:
+                        # best-effort, do not fail initialization
+                        pass
+
+                event.listen(self._engine.sync_engine, "connect", _enable_sqlite_fk)
+        except Exception:
+            logger.exception("Failed to attach SQLite PRAGMA foreign_keys handler")
 
         self._session_factory = async_sessionmaker(
             self._engine,

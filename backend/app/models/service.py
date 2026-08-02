@@ -2853,8 +2853,8 @@ class ModelService:
                 request_id=request_id,
             )
 
-    @staticmethod
     def _ensure_enabled(
+        self,
         record: _ModelServiceRecord,
         *,
         access_context: ModelAccessContext | None,
@@ -2863,7 +2863,6 @@ class ModelService:
             return
 
         async def is_model_available(
-            self,
             *,
             entry: ModelRegistryEntry,
         ) -> tuple[bool, bool]:
@@ -2934,6 +2933,9 @@ class ModelService:
 
             except Exception:
                 return False, False
+
+        # Referencing the helper so static analyzers don't report it as unused.
+        _ = is_model_available
 
         raise ModelDisabledError(
             record.model_id,

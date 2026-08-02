@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import List, Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query, Request, status
+import sqlalchemy as sa
+from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select
-import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.storage.database import get_session
@@ -23,31 +22,31 @@ router = APIRouter()
 
 class CalendarCreate(BaseModel):
     name: str
-    color: Optional[str] = None
-    description: Optional[str] = None
-    is_default: Optional[bool] = False
+    color: str | None = None
+    description: str | None = None
+    is_default: bool | None = False
 
 
 class CalendarOut(CalendarCreate):
     id: str
-    owner_id: Optional[str] = None
+    owner_id: str | None = None
     created_at: datetime
     updated_at: datetime
 
 
 class CalendarUpdate(BaseModel):
-    name: Optional[str] = None
-    color: Optional[str] = None
-    description: Optional[str] = None
-    is_default: Optional[bool] = None
+    name: str | None = None
+    color: str | None = None
+    description: str | None = None
+    is_default: bool | None = None
 
 
 class EventCreate(BaseModel):
     title: str
-    description: Optional[str] = None
+    description: str | None = None
     start: datetime
     end: datetime
-    all_day: Optional[bool] = False
+    all_day: bool | None = False
 
 
 class EventOut(EventCreate):
@@ -58,14 +57,17 @@ class EventOut(EventCreate):
 
 
 class EventUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    start: Optional[datetime] = None
-    end: Optional[datetime] = None
-    all_day: Optional[bool] = None
+    title: str | None = None
+    description: str | None = None
+    start: datetime | None = None
+    end: datetime | None = None
+    all_day: bool | None = None
 
 
-def _ensure_owner(request: Request, owner_id: Optional[str]):
+def _ensure_owner(request: Request = None, owner_id: str | None = None):  # type: ignore[assignment]
+    if request is None:  # type: ignore[reportUnnecessaryComparison]
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
     user = getattr(request.state, "user", None)
 
     if user is None:
@@ -88,8 +90,11 @@ def _ensure_owner(request: Request, owner_id: Optional[str]):
 # -----------------------------
 
 
-@router.get("/", response_model=List[CalendarOut])
+@router.get("/", response_model=list[CalendarOut])
 async def list_calendars(request: Request, session: AsyncSession = Depends(get_session)):
+    if request is None:  # type: ignore[reportUnnecessaryComparison]
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
     user = getattr(request.state, "user", None)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
@@ -114,12 +119,16 @@ async def list_calendars(request: Request, session: AsyncSession = Depends(get_s
 
 @router.post("/", response_model=CalendarOut, status_code=status.HTTP_201_CREATED)
 async def create_calendar(request: Request, payload: CalendarCreate = Body(...), session: AsyncSession = Depends(get_session)):
+    if request is None:  # type: ignore[reportUnnecessaryComparison]
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
+
     user = getattr(request.state, "user", None)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
     # If payload asks to be default or user has no calendars yet, mark as default.
-    wants_default = bool(payload.is_default)
+    # payload can be a pydantic model or a SimpleNamespace in tests, so access safely.
+    wants_default = bool(getattr(payload, "is_default", False))
     # check if user already has any calendars
     stmt = select(Calendar).where(Calendar.owner_id == user.id)
     result = await session.execute(stmt)
@@ -191,7 +200,7 @@ async def get_calendar(calendar_id: str, request: Request, session: AsyncSession
 
 
 @router.patch("/{calendar_id}", response_model=CalendarOut)
-async def patch_calendar(calendar_id: str, payload: CalendarUpdate = Body(...), request: Request = None, session: AsyncSession = Depends(get_session)):
+async def patch_calendar(calendar_id: str, payload: CalendarUpdate = Body(...), request: Request = None, session: AsyncSession = Depends(get_session)):  # type: ignore[assignment]
     obj = await _get_calendar_or_404(calendar_id, session)
     _ensure_owner(request, obj.owner_id)
 
@@ -201,7 +210,7 @@ async def patch_calendar(calendar_id: str, payload: CalendarUpdate = Body(...), 
         obj.color = payload.color
     if payload.description is not None:
         obj.description = payload.description
-    if payload.is_default is not None:
+    if getattr(payload, "is_default", None) is not None:
         # If setting this calendar to default, unset others for this owner first
         if payload.is_default:
             try:
@@ -231,7 +240,7 @@ async def patch_calendar(calendar_id: str, payload: CalendarUpdate = Body(...), 
 
 
 @router.delete("/{calendar_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_calendar(calendar_id: str, request: Request, session: AsyncSession = Depends(get_session)):
+async def delete_calendar(calendar_id: str, request: Request = None, session: AsyncSession = Depends(get_session)):  # type: ignore[assignment]
     obj = await _get_calendar_or_404(calendar_id, session)
     _ensure_owner(request, obj.owner_id)
 
@@ -246,12 +255,12 @@ async def delete_calendar(calendar_id: str, request: Request, session: AsyncSess
 # -----------------------------
 
 
-@router.get("/{calendar_id}/events", response_model=List[EventOut])
+@router.get("/{calendar_id}/events", response_model=list[EventOut])
 async def list_events(
     calendar_id: str,
-    request: Request,
-    time_min: Optional[datetime] = None,
-    time_max: Optional[datetime] = None,
+    request: Request = None,  # type: ignore[assignment]
+    time_min: datetime | None = None,
+    time_max: datetime | None = None,
     session: AsyncSession = Depends(get_session),
 ):
     cal = await _get_calendar_or_404(calendar_id, session)
@@ -282,7 +291,7 @@ async def list_events(
 
 
 @router.post("/{calendar_id}/events", response_model=EventOut, status_code=status.HTTP_201_CREATED)
-async def create_event(calendar_id: str, payload: EventCreate = Body(...), request: Request = None, session: AsyncSession = Depends(get_session)):
+async def create_event(calendar_id: str, payload: EventCreate = Body(...), request: Request = None, session: AsyncSession = Depends(get_session)):  # type: ignore[assignment]
     cal = await _get_calendar_or_404(calendar_id, session)
     _ensure_owner(request, cal.owner_id)
 
@@ -322,7 +331,7 @@ async def _get_event_or_404(event_id: str, session: AsyncSession) -> Event:
 
 
 @router.get("/{calendar_id}/events/{event_id}", response_model=EventOut)
-async def get_event(calendar_id: str, event_id: str, request: Request, session: AsyncSession = Depends(get_session)):
+async def get_event(calendar_id: str, event_id: str, request: Request = None, session: AsyncSession = Depends(get_session)):  # type: ignore[assignment]
     cal = await _get_calendar_or_404(calendar_id, session)
     _ensure_owner(request, cal.owner_id)
     evt = await _get_event_or_404(event_id, session)
@@ -344,7 +353,7 @@ async def get_event(calendar_id: str, event_id: str, request: Request, session: 
 
 
 @router.patch("/{calendar_id}/events/{event_id}", response_model=EventOut)
-async def patch_event(calendar_id: str, event_id: str, payload: EventUpdate = Body(...), request: Request = None, session: AsyncSession = Depends(get_session)):
+async def patch_event(calendar_id: str, event_id: str, payload: EventUpdate = Body(...), request: Request = None, session: AsyncSession = Depends(get_session)):  # type: ignore[assignment]
     cal = await _get_calendar_or_404(calendar_id, session)
     _ensure_owner(request, cal.owner_id)
     evt = await _get_event_or_404(event_id, session)
@@ -381,7 +390,7 @@ async def patch_event(calendar_id: str, event_id: str, payload: EventUpdate = Bo
 
 
 @router.delete("/{calendar_id}/events/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_event(calendar_id: str, event_id: str, request: Request, session: AsyncSession = Depends(get_session)):
+async def delete_event(calendar_id: str, event_id: str, request: Request = None, session: AsyncSession = Depends(get_session)):  # type: ignore[assignment]
     cal = await _get_calendar_or_404(calendar_id, session)
     _ensure_owner(request, cal.owner_id)
     evt = await _get_event_or_404(event_id, session)
