@@ -1399,7 +1399,7 @@ def _build_models_group() -> SettingsGroupDescriptor:
                             "Modellzuordnung."
                         ),
                         group="models",
-                        key="default_model_id",
+                        key="default_model",
                         control=SettingsControl.TEXT,
                         order=30,
                         tags=(

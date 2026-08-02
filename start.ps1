@@ -1,6 +1,7 @@
 param(
     [int]$BackendPort = 8000,
-    [int]$FrontendPort = 5173
+    [int]$FrontendPort = 5173,
+    [bool]$Reload = $true
 )
 
 $ErrorActionPreference = "Stop"
@@ -38,6 +39,15 @@ $timestamp = Get-Date -Format "yyyyMMdd_HHmmss"
 $BackendLog = Join-Path $LogDir ("backend-$timestamp.log")
 $FrontendLog = Join-Path $LogDir ("frontend-$timestamp.log")
 
+# Control reload flag for backend uvicorn
+if ($Reload) {
+    $reloadFlag = "--reload"
+    Write-Host "Backend wird mit Reload gestartet."
+} else {
+    $reloadFlag = ""
+    Write-Host "Backend wird OHNE Reload gestartet."
+}
+
 # Start backend and frontend as background jobs and redirect stdout/stderr to log files
 # Start backend in a new external PowerShell window and redirect output to the log file
 # Build argument array to ensure a new external console window is created
@@ -45,7 +55,7 @@ $backendArgs = @(
     '-NoProfile'
     '-NoExit'
     '-Command'
-    "& { Set-Location '$Backend'; & '$VenvPython' -u -m uvicorn main:app --reload --host 0.0.0.0 --port $BackendPort 2>&1 | Tee-Object -FilePath '$BackendLog' }"
+    "& { Set-Location '$Backend'; & '$VenvPython' -u -m uvicorn main:app $reloadFlag --host 0.0.0.0 --port $BackendPort 2>&1 | Tee-Object -FilePath '$BackendLog' }"
 )
 Start-Process -FilePath 'powershell.exe' -ArgumentList $backendArgs -WorkingDirectory $Backend -WindowStyle Normal
 
