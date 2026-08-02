@@ -1,5 +1,4 @@
 /// <reference types="vitest" />
-import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
 import { sendSelectedDateIfOptIn } from '../../../lib/calendar';
 
 describe('sendSelectedDateIfOptIn opt-in behavior', () => {
@@ -12,7 +11,7 @@ describe('sendSelectedDateIfOptIn opt-in behavior', () => {
   });
 
   afterEach(() => {
-    global.fetch = realFetch;
+    (globalThis as any).fetch = realFetch;
   });
 
   it('does not call fetch when opt-in is false', async () => {
