@@ -1,8 +1,9 @@
+/// <reference types="vitest" />
 import { describe, it, beforeEach, afterEach, expect, vi } from 'vitest';
-import { sendSelectedDateIfOptIn } from '../AppFooter';
+import { sendSelectedDateIfOptIn } from '../../../lib/calendar';
 
 describe('sendSelectedDateIfOptIn opt-in behavior', () => {
-  const realFetch = global.fetch;
+  const realFetch = (globalThis as any).fetch;
 
   beforeEach(() => {
     // clear localStorage key
@@ -18,8 +19,7 @@ describe('sendSelectedDateIfOptIn opt-in behavior', () => {
     localStorage.setItem('calendar.saveSelection', 'false');
 
     const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({}) }));
-    // @ts-ignore
-    global.fetch = fetchMock;
+    (globalThis as any).fetch = fetchMock;
 
     await sendSelectedDateIfOptIn(new Date());
 
@@ -30,8 +30,7 @@ describe('sendSelectedDateIfOptIn opt-in behavior', () => {
     localStorage.setItem('calendar.saveSelection', 'true');
 
     const fetchMock = vi.fn(async (url: string, opts: any) => ({ ok: true, json: async () => ({}) }));
-    // @ts-ignore
-    global.fetch = fetchMock;
+    (globalThis as any).fetch = fetchMock;
 
     const now = new Date();
     await sendSelectedDateIfOptIn(now);

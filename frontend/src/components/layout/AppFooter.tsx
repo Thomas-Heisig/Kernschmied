@@ -365,6 +365,8 @@ export function AppFooter({
             systemTab={systemTab}
             setSystemTab={setSystemTab}
             onClose={() => setSystemInfoOpen(false)}
+            chatHistoryOpen={chatHistoryOpen}
+            setChatHistoryOpen={setChatHistoryOpen}
             isRefreshing={isRefreshing}
             setIsRefreshing={setIsRefreshing}
             autoRefresh={autoRefresh}
@@ -634,6 +636,8 @@ function SystemInfoPanel({
   setAutoRefresh,
   apiVersion,
   schemaVersion,
+  chatHistoryOpen,
+  setChatHistoryOpen,
 }: {
   appName: string;
   appVersion: string;
@@ -660,6 +664,8 @@ function SystemInfoPanel({
   setAutoRefresh: React.Dispatch<React.SetStateAction<boolean>>;
   apiVersion: string;
   schemaVersion: string;
+  chatHistoryOpen?: boolean;
+  setChatHistoryOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const caps = (bootstrap?.capabilities ?? bootstrap?.features ?? {}) as Record<string, any>;
 
@@ -901,7 +907,7 @@ function SystemInfoPanel({
                   {error && <span className="text-red-500">Fehler: {error}</span>}
                       <button
                         className="text-xs px-2 py-1 rounded bg-gray-100"
-                        onClick={() => setChatHistoryOpen(true)}
+                        onClick={() => setChatHistoryOpen?.(true)}
                       >Chat-Historie</button>
                 </div>
                 <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 max-h-64 overflow-auto bg-gray-50 dark:bg-slate-900/50">
@@ -913,7 +919,7 @@ function SystemInfoPanel({
             </div>
           )}
               {chatHistoryOpen ? (
-                <ChatHistoryPanel onClose={() => setChatHistoryOpen(false)} />
+                <ChatHistoryPanel onClose={() => setChatHistoryOpen?.(false)} />
               ) : null}
         </div>
       </div>
