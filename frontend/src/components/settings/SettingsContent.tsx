@@ -196,18 +196,12 @@ export function SettingsContent({ activeKey, showJson, config, allowLegacyValues
 
   useEffect(() => {
     if (!jsonCopied) {
-      return;
-    }
+            <SettingsToolbar isDirty={isDirty} isSaving={isSaving} onSave={handleSave} onReload={reload} onReset={reset} />
+    setJsonDraft(JSON.stringify(parsedResult.value, null, 2));
 
-    const timeoutId = window.setTimeout(() => {
-      setJsonCopied(false);
-    }, 1_500);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-
-  }, [jsonCopied]);
+    setJsonError(null);
+    setIsJsonDraftDirty(false);
+  }
 
   function handleFormatJson(): void {
     const parsedResult = parseConfigObject(jsonDraft);
@@ -246,6 +240,20 @@ export function SettingsContent({ activeKey, showJson, config, allowLegacyValues
     if (jsonError !== null) {
       setJsonError(null);
     }
+  }
+
+  function handleApplyJson(): void {
+    const parsedResult = parseConfigObject(jsonDraft);
+
+    if (!parsedResult.ok) {
+      setJsonError(parsedResult.error);
+      return;
+    }
+
+    // Apply parsed object to the local draft values (do not auto-save).
+    setValues(parsedResult.value);
+    setIsJsonDraftDirty(false);
+    setJsonError(null);
   }
 
   function handleFieldChange(path: string[], value: ConfigValue): void {
