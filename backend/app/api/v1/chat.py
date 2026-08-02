@@ -1492,6 +1492,17 @@ async def stream_chat(
         stream_schema_version=(CHAT_STREAM_SCHEMA_VERSION),
     )
 
+    # Also log a compact plain-text line so simple log formatters show the key
+    try:
+        logger.info(
+            "Chat stream request accepted: request_conversation_id=%s requested_model_id=%s message_length=%s",
+            payload.conversation_id,
+            payload.model_id,
+            len(payload.message),
+        )
+    except Exception:
+        pass
+
     return StreamingResponse(
         generate_chat_events(
             request=request,

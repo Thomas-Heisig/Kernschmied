@@ -265,14 +265,20 @@ function TreeNode(props: any) {
         <div className="relative ml-2" ref={menuRef}>
           <button
             type="button"
+            draggable={false}
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
+            onMouseDown={(e) => {
+              // Prevent parent drag/selection from starting when interacting with the menu
+              e.stopPropagation();
+            }}
             onClick={(e) => {
               e.stopPropagation();
               setMenuOpen((s) => !s);
             }}
             className="p-1 rounded"
           >
-            {' '}
-            <DynamicIcon name="MoreHorizontal" size={16} />{' '}
+            <DynamicIcon name="MoreHorizontal" size={16} />
           </button>
           {menuOpen ? (
             <div className="absolute right-0 mt-2 w-56 bg-white shadow z-10 border border-border dark:bg-slate-900">
@@ -285,6 +291,7 @@ function TreeNode(props: any) {
                     const disabled = !hasActionHandler(action) && !onAction;
                     return (
                       <button
+                        draggable={false}
                         key={action}
                         disabled={disabled}
                         onClick={(ev) => {
@@ -322,6 +329,7 @@ function TreeNode(props: any) {
                     const disabled = !hasActionHandler(action) && !onAction;
                     return (
                       <button
+                        draggable={false}
                         key={action}
                         disabled={disabled}
                         onClick={(ev) => {

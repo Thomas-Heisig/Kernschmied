@@ -37,11 +37,17 @@ class ChatHistoryProviderAdapter:
                     # unknown roles default to user
                     role = MessageRole.USER
 
+                # ensure metadata is a plain dict and include message id and sequence for deterministic behavior
+                md = dict(getattr(m, "ui_context", {}) or {})
+                md.setdefault("message_id", getattr(m, "id", None))
+                md.setdefault("sequence_number", getattr(m, "sequence_number", None))
+                md.setdefault("message_type", getattr(m, "message_type", None))
+
                 cm = ChatMessage.create(
                     role=role,
                     content=(m.content or ""),
                     name=m.user_id,
-                    metadata=(m.ui_context or {}),
+                    metadata=md,
                 )
 
                 result.append(cm)

@@ -507,6 +507,38 @@ export function GenericChatView({ title, hierarchyNodeId }: GenericChatViewProps
 
   const [conversationId, setConversationId] = useState<string | null>(null);
 
+  // Persist conversation_id per hierarchy node in localStorage to survive reloads.
+  const CONVERSATION_MAP_KEY = 'chat:conversation_map';
+
+  function loadConversationMap(): Record<string, string> {
+    try {
+      const raw = window.localStorage.getItem(CONVERSATION_MAP_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (isRecord(parsed)) return parsed as Record<string, string>;
+    } catch {}
+    return {};
+  }
+
+  function saveConversationForNode(nodeId: string, convId: string | null): void {
+    try {
+      const map = loadConversationMap();
+      if (convId === null) {
+        delete map[nodeId];
+      } else {
+        map[nodeId] = convId;
+      }
+      window.localStorage.setItem(CONVERSATION_MAP_KEY, JSON.stringify(map));
+    } catch {}
+  }
+
+  function persistAndSetConversationId(convId: string | null): void {
+    setConversationId(convId);
+    try {
+      saveConversationForNode(hierarchyNodeId, convId);
+    } catch {}
+  }
+
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const streamHandleRef = useRef<ApiStreamHandle | null>(null);
@@ -528,7 +560,13 @@ export function GenericChatView({ title, hierarchyNodeId }: GenericChatViewProps
     });
 
     setMessages([]);
-    setConversationId(null);
+    // restore persisted conversation id for this hierarchy node (if any)
+    try {
+      const map = loadConversationMap();
+      setConversationId(map[hierarchyNodeId] ?? null);
+    } catch {
+      setConversationId(null);
+    }
     setInput('');
     setError(null);
     setRequestStatus('idle');
@@ -749,7 +787,7 @@ export function GenericChatView({ title, hierarchyNodeId }: GenericChatViewProps
           setRequestStatus('streaming');
 
           if (streamEvent.conversationId) {
-            setConversationId(streamEvent.conversationId);
+            persistAndSetConversationId(streamEvent.conversationId);
           }
 
           updateAssistantMessage(assistantMessageId, {
@@ -823,7 +861,7 @@ export function GenericChatView({ title, hierarchyNodeId }: GenericChatViewProps
           }
 
           if (streamEvent.conversationId) {
-            setConversationId(streamEvent.conversationId);
+            persistAndSetConversationId(streamEvent.conversationId);
           }
 
           logDeveloperStep('info', 'generation-completed', {
