@@ -7,6 +7,7 @@ import {
   loadSystemConfig,
   loadFullSystemConfig,
   updateSystemConfig,
+  LoadedConfig,
 } from '../api/config';
 import type {
   ConfigObject,
@@ -188,21 +189,13 @@ export function useSystemConfig(): UseSystemConfigResult {
         return true;
       }
 
-      const rawSnapshot = await updateSystemConfig(
+      const loaded = (await updateSystemConfig(
         {
           changes,
           expected_revision: revision,
         },
         controller.signal,
-      );
-
-      // The API returns a LoadedConfig normalized by the client helper.
-      const loaded = rawSnapshot as unknown as {
-        values: ConfigObject;
-        entriesByFullKey?: Record<string, ConfigEntryResponse> | null;
-        response?: { groups?: ConfigGroupResponse[] };
-        revision?: number | null;
-      };
+      )) as LoadedConfig;
 
       setPersistedValues(loaded.values);
       setValuesState(loaded.values);
@@ -226,7 +219,7 @@ export function useSystemConfig(): UseSystemConfigResult {
         saveAbortController.current = null;
       }
     }
-  }, [isDirty, isSaving, reload, revision, values]);
+  }, [isDirty, isSaving, reload, revision, values, persistedEntriesByFullKey]);
 
   const reset = useCallback((): void => {
     setValuesState(cloneConfigObject(persistedValues));

@@ -427,6 +427,8 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
               void handleCopyJson();
             }}
           />
+        ) : activeKey === SETTINGS_CATALOG_KEY ? (
+          <SettingsCatalogView config={config} />
         ) : activeKey === null ? (
           <SettingsForm
             entries={visibleSectionEntries}

@@ -108,13 +108,43 @@ async def bulk_update_config(payload: BulkConfigUpdateRequest, request: Request,
     try:
         await service.set_many(updates, expected_revision=payload.expected_revision)
     except Exception as exc:
-        # forward known validation exception types via service helper
-        from app.config.service import ConfigValidationError
+        # forward known service-level exceptions as structured HTTP errors
+        from app.config.service import (
+            ConfigValidationError,
+            ConfigPersistenceError,
+            ConfigServiceError,
+        )
+
+        from .configs import structured_http_error
 
         if isinstance(exc, ConfigValidationError):
-            from .configs import structured_http_error
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                code=exc.code,
+                message=exc.message,
+                details={},
+            ) from exc
 
-            raise structured_http_error(request=request, status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, code=exc.code, message=exc.message, details={}) from exc
+        if isinstance(exc, ConfigPersistenceError):
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                code="CONFIG_PERSISTENCE_ERROR",
+                message=(exc.reason if hasattr(exc, "reason") else str(exc)),
+                details={},
+            ) from exc
+
+        if isinstance(exc, ConfigServiceError):
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                code="CONFIG_SERVICE_ERROR",
+                message=str(exc),
+                details={},
+            ) from exc
+
+        # Unknown exception: re-raise to surface as 500 with traceback
         raise
 
     revision = await get_service_revision(service)
