@@ -136,4 +136,11 @@ class ConfigListResponse(BaseModel):
         default_factory=lambda: list[ConfigGroupResponse](),
     )
 
+    # Map of full_key -> ConfigEntryResponse to allow clients to quickly
+    # index entries by their canonical `group.key` identifier. This field
+    # is optional for backward compatibility.
+    entriesByFullKey: dict[str, ConfigEntryResponse] = Field(
+        default_factory=lambda: dict(),
+    )
+
     request_id: str | None = None

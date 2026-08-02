@@ -61,9 +61,19 @@ async def list_config(request: Request, response: Response) -> ConfigListRespons
         (g, k): v for (g, k), v in entries.items()
     }
 
+    groups = build_config_groups(typed_entries)
+
+    # Build an index of entries by their full_key for convenient client
+    # consumption (keys look like 'group.key').
+    entries_by_full_key: dict[str, ConfigEntryResponse] = {}
+    for g in groups:
+        for entry in g.entries:
+            entries_by_full_key[entry.full_key] = entry
+
     return ConfigListResponse(
         revision=revision,
-        groups=build_config_groups(typed_entries),
+        groups=groups,
+        entriesByFullKey=entries_by_full_key,
         request_id=get_request_id(request),
     )
 
