@@ -42,7 +42,12 @@ from pydantic import (
     JsonValue,
 )
 
-from app.config.service import ConfigValidationError, ConfigService
+from app.config.service import (
+    ConfigValidationError,
+    ConfigService,
+    ConfigDefinitionNotFoundError,
+    ConfigPersistenceError,
+)
 from app.core.security_profile import get_security_profile
 from app.schemas.settings_catalog import (
     SettingsControl,
@@ -2206,6 +2211,33 @@ async def bulk_update_config(
             status_code=HTTP_422_UNPROCESSABLE_CONTENT,
             code=exc.code,
             message=exc.message,
+            details={},
+        ) from exc
+    except ConfigDefinitionNotFoundError as exc:
+        # Client tried to set a configuration key that is not defined in the catalog
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="CONFIG_NOT_DEFINED",
+            message=str(exc),
+            details={"group": getattr(exc, "group", None), "key": getattr(exc, "key", None)},
+        ) from exc
+    except ConfigPersistenceError as exc:
+        # Persistence failures are server errors but return structured details
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="CONFIG_PERSISTENCE_ERROR",
+            message=(exc.reason if hasattr(exc, "reason") else str(exc)),
+            details={},
+        ) from exc
+    except ConfigService as exc:
+        # Generic service-layer errors
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            code="CONFIG_SERVICE_ERROR",
+            message=str(exc),
             details={},
         ) from exc
 
