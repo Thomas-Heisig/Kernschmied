@@ -46,7 +46,6 @@ class Chat(Base):
             ondelete="CASCADE",
         ),
         nullable=False,
-        unique=True,
         index=True,
     )
 

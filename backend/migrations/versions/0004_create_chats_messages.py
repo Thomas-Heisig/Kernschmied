@@ -15,34 +15,66 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.create_table(
-        'chats',
-        sa.Column('id', sa.String(length=36), primary_key=True),
-        sa.Column('node_id', sa.String(length=36), sa.ForeignKey('hierarchy_nodes.id', ondelete='CASCADE'), nullable=False, unique=True),
-        sa.Column('title', sa.String(length=255), nullable=False),
-        sa.Column('config', sa.JSON(), nullable=False),
-        sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
-        sa.Column('updated_at', sa.TIMESTAMP(timezone=True), nullable=False),
-    )
-    try:
-        op.create_index('ix_chats_node_id', 'chats', ['node_id'])
-    except Exception:
-        pass
+    # Make the migration idempotent: only create tables/indexes if they don't exist.
+    conn = op.get_bind()
+    inspector = sa.inspect(conn)
+    existing_tables = inspector.get_table_names()
 
-    op.create_table(
-        'messages',
-        sa.Column('id', sa.String(length=36), primary_key=True),
-        sa.Column('chat_id', sa.String(length=36), sa.ForeignKey('chats.id', ondelete='CASCADE'), nullable=False),
-        sa.Column('role', sa.String(length=50), nullable=False),
-        sa.Column('content', sa.Text(), nullable=False),
-        sa.Column('metadata_json', sa.JSON(), nullable=False),
-        sa.Column('position', sa.Integer(), nullable=False, server_default='0'),
-        sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
-    )
-    try:
-        op.create_index('ix_messages_chat_position', 'messages', ['chat_id', 'position'])
-    except Exception:
-        pass
+    if 'chats' not in existing_tables:
+        op.create_table(
+            'chats',
+            sa.Column('id', sa.String(length=36), primary_key=True),
+            # Do not enforce a UNIQUE constraint on node_id here. Multiple chats
+            # per hierarchy node are allowed and the UNIQUE constraint caused
+            # conflicts when a single node was reused.
+            sa.Column('node_id', sa.String(length=36), sa.ForeignKey('hierarchy_nodes.id', ondelete='CASCADE'), nullable=False),
+            sa.Column('title', sa.String(length=255), nullable=False),
+            sa.Column('config', sa.JSON(), nullable=False),
+            sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
+            sa.Column('updated_at', sa.TIMESTAMP(timezone=True), nullable=False),
+        )
+        try:
+            op.create_index('ix_chats_node_id', 'chats', ['node_id'])
+        except Exception:
+            pass
+    else:
+        # If the table already exists, try to remove an existing UNIQUE constraint
+        # on `node_id` to avoid future insert errors. Constraint names vary by
+        # backend, so inspect unique constraints and drop any that include
+        # the `node_id` column.
+        try:
+            for uq in inspector.get_unique_constraints('chats'):
+                cols = uq.get('column_names') or uq.get('columns') or []
+                if 'node_id' in cols:
+                    try:
+                        op.drop_constraint(uq['name'], 'chats', type_='unique')
+                    except Exception:
+                        pass
+        except Exception:
+            pass
+        # Ensure the node_id index exists
+        try:
+            index_names = [idx['name'] for idx in inspector.get_indexes('chats')]
+            if 'ix_chats_node_id' not in index_names:
+                op.create_index('ix_chats_node_id', 'chats', ['node_id'])
+        except Exception:
+            pass
+
+    if 'messages' not in existing_tables:
+        op.create_table(
+            'messages',
+            sa.Column('id', sa.String(length=36), primary_key=True),
+            sa.Column('chat_id', sa.String(length=36), sa.ForeignKey('chats.id', ondelete='CASCADE'), nullable=False),
+            sa.Column('role', sa.String(length=50), nullable=False),
+            sa.Column('content', sa.Text(), nullable=False),
+            sa.Column('metadata_json', sa.JSON(), nullable=False),
+            sa.Column('position', sa.Integer(), nullable=False, server_default='0'),
+            sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
+        )
+        try:
+            op.create_index('ix_messages_chat_position', 'messages', ['chat_id', 'position'])
+        except Exception:
+            pass
 
 
 def downgrade() -> None:
