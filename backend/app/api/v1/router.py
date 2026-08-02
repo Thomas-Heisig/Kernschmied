@@ -18,6 +18,7 @@ from app.api.v1 import (
 from app.api.v1 import calendar
 from app.api.v1 import calendars
 from app.api.v1.settings_catalog import router as settings_catalog_router
+from app.api.v1 import chats
 
 API_VERSION = "v1"
 
@@ -101,6 +102,13 @@ api_router.include_router(
     chat.router,
     prefix="/chat",
     tags=["Chat"],
+)
+
+# Persistent chat storage endpoints
+api_router.include_router(
+    chats.router,
+    prefix="/chats",
+    tags=["Chat / Persistence"],
 )
 
 # ---------------------------------------------------------------------------

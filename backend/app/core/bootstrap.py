@@ -573,10 +573,15 @@ async def bootstrap_application(
                     "Der ModelService ist nicht verfügbar.",
                 )
 
+            # Use DB-backed chat repository adapter so ChatService persists messages
+            from app.storage.adapters.chat_repository_adapter import ChatRepositoryAdapter
+
+            chat_repo_adapter = ChatRepositoryAdapter(session_factory)
+
             chat_service = ChatService(
                 model_service=model_service,
                 default_model_id=DEFAULT_MODEL_ID,
-                repository=NullChatRepository(),
+                repository=chat_repo_adapter,
             )
 
         await _run_bootstrap_step(

@@ -2,32 +2,42 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import type { BootstrapResponse } from '../../types/bootstrap';
-import FooterCalendar from '../calendar/FooterCalendar';
-import { createEvent, listCalendars } from '../../api/fetchCalendarClient';
-import type { components } from '../../api/openapi-types';
-import { sendSelectedDate, shouldSendSelection, sendSelectedDateIfOptIn } from '../../lib/calendar';
-import { CalendarDays, Database, FolderTree, Plug, Server, Wifi } from 'lucide-react';
+import { listCalendars } from '../../api/fetchCalendarClient';
+import { sendSelectedDateIfOptIn } from '../../lib/calendar';
+import {
+  CalendarDays,
+  Database,
+  FolderTree,
+  Plug,
+  Server,
+  Wifi,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  RefreshCw,
+  Settings,
+  Globe,
+  Cpu,
+  Zap,
+  Layers,
+  Clock as ClockIcon,
+  Info,
+} from 'lucide-react';
+import ChatHistoryPanel from '../../components/chat/ChatHistoryPanel';
 
 interface AppFooterProps {
   schemaVersion?: string;
-
   environment?: string;
-
   apiVersion?: string;
-
   applicationVersion?: string;
-
   configRevision?: number;
-
   modelRevision?: number;
-
   toolRevision?: number;
-
   backendOnline?: boolean;
 }
 
 export function AppFooter({
-  schemaVersion,
+  schemaVersion = '1.0',
   environment = 'Development',
   apiVersion = 'v1',
   applicationVersion = '0.1.0',
@@ -39,30 +49,22 @@ export function AppFooter({
   const [bootstrap, setBootstrap] = useState<BootstrapResponse | null>(null);
   const [online, setOnline] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [detailOpen, setDetailOpen] = useState(false);
-  const [detailTitle, setDetailTitle] = useState<string | null>(null);
-  const [detailContent, setDetailContent] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [calendars, setCalendars] = useState<Array<{ id: string; name: string }>>([]);
   const [targetCalendarId, setTargetCalendarId] = useState<string | null>(null);
-  const [eventModalOpen, setEventModalOpen] = useState(false);
-  const [eventTitle, setEventTitle] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [loadingDetail, setLoadingDetail] = useState(false);
   const [systemInfoOpen, setSystemInfoOpen] = useState(false);
   const [systemTab, setSystemTab] = useState<'overview' | 'functions' | 'versions' | 'technical'>('overview');
+  const [chatHistoryOpen, setChatHistoryOpen] = useState(false);
   const [lastChecked, setLastChecked] = useState<Date | null>(null);
   const [requestId, setRequestId] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(false);
-  const autoRefreshIntervalMs = 30000; // 30s
-  const [saveSelectionsEnabled, setSaveSelectionsEnabled] = useState<boolean>(() => {
+  const autoRefreshIntervalMs = 30000;
+  const [saveSelectionsEnabled] = useState<boolean>(() => {
     try {
       const v = localStorage.getItem('calendar.saveSelection');
-      // Default to true when no explicit preference is stored (opt-in default true)
-      if (v === null) return true;
-      return v === 'true';
+      return v === null ? true : v === 'true';
     } catch {
       return true;
     }
@@ -71,44 +73,34 @@ export function AppFooter({
   const [modelsCount, setModelsCount] = useState<number | null>(null);
   const [toolsCount, setToolsCount] = useState<number | null>(null);
 
-  // refs for click-outside detection
   const datePickerRef = React.useRef<HTMLDivElement | null>(null);
   const dateToggleRef = React.useRef<HTMLButtonElement | null>(null);
   const systemInfoRef = React.useRef<HTMLDivElement | null>(null);
-  const systemToggleRef = React.useRef<HTMLButtonElement | null>(null);
+  const systemTriggerRef = React.useRef<HTMLButtonElement | null>(null);
 
-  // bootstrap/health loader (unchanged)
-
+  // Bootstrap laden
   useEffect(() => {
     let mounted = true;
-
     async function loadBootstrap() {
       try {
         const res = await fetch('/api/v1/bootstrap', { cache: 'no-store' });
-
         if (!mounted) return;
-
-        if (!res.ok) {
-          throw new Error(`${res.status} ${res.statusText}`);
-        }
-
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         const data = (await res.json()) as BootstrapResponse;
         setBootstrap(data);
         setOnline(true);
         setLastChecked(new Date());
         setRequestId((data as any)?.request_id ?? res.headers.get('X-Request-Id'));
-        // fetch counts for models/tools if endpoints provided
+        // Modelle & Tools zählen
         try {
           const m = await fetch('/api/v1/models', { cache: 'no-store' });
           if (m.ok) {
             const md = await m.json();
-            // if API returns array or object with items
             if (Array.isArray(md)) setModelsCount(md.length);
             else if (typeof md === 'object' && md?.items) setModelsCount(md.items.length ?? null);
             else if (typeof md === 'object' && md?.length) setModelsCount(md.length ?? null);
           }
         } catch {}
-
         try {
           const t = await fetch('/api/v1/tools', { cache: 'no-store' });
           if (t.ok) {
@@ -119,34 +111,23 @@ export function AppFooter({
           }
         } catch {}
       } catch (err: any) {
-        // Fallback: try health endpoint to at least determine online state
         try {
           const h = await fetch('/api/v1/health', { cache: 'no-store' });
-
           if (!mounted) return;
-
-          if (h.ok) {
-            setOnline(true);
-          } else {
-            setOnline(false);
-          }
-        } catch (err2) {
+          if (h.ok) setOnline(true);
+          else setOnline(false);
+        } catch {
           if (!mounted) return;
           setOnline(false);
         }
-
         setError(err?.message ?? String(err));
       }
     }
-
     loadBootstrap();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
 
-  // Auto-refresh when enabled
+  // Auto-Refresh
   useEffect(() => {
     if (!autoRefresh) return;
     let cancelled = false;
@@ -171,102 +152,48 @@ export function AppFooter({
         setError(String(e));
       }
     };
-
     const id = window.setInterval(tick, autoRefreshIntervalMs);
-    // do an immediate tick
     tick();
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
+    return () => { cancelled = true; window.clearInterval(id); };
   }, [autoRefresh]);
 
   useEffect(() => {
     let mounted = true;
-
     async function ensureUserCalendarDefault() {
       if (!showDatePicker) return;
       try {
         const all = await listCalendars();
         if (!mounted) return;
-        // prefer bootstrap.user.id if available
         const userId = (bootstrap as any)?.user?.id;
         if (userId) {
-          const own = (all || []).find(
-            (c) => c.owner_id === userId || (c.owner_id ?? '') === userId,
-          );
+          const own = (all || []).find((c) => c.owner_id === userId || (c.owner_id ?? '') === userId);
           if (own) setTargetCalendarId(own.id);
         }
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
-
     ensureUserCalendarDefault();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, [showDatePicker]);
 
-  function openDetail(title: string, data: any) {
-    setDetailTitle(title);
-    try {
-      setDetailContent(JSON.stringify(data, null, 2));
-    } catch {
-      setDetailContent(String(data));
-    }
-    setDetailOpen(true);
-  }
-
-  function closeDetail() {
-    setDetailOpen(false);
-    setDetailTitle(null);
-    setDetailContent(null);
-  }
-
-  // derive friendly values
-  const appName = bootstrap?.application?.name ?? 'Kernschmied';
-  const appVersion = bootstrap?.application?.version ?? applicationVersion;
-  const env = (bootstrap?.environment ?? environment) as string;
-  const envLabel = env === 'production' ? 'Produktiv' : env === 'development' ? 'Entwicklung' : env;
-  const statusLabel = online ? 'System bereit' : online === false ? 'System nicht erreichbar' : 'Unbekannt';
-  const statusColor = online ? 'text-emerald-600' : online === false ? 'text-red-500' : 'text-gray-500';
-
-  // capabilities mapping for friendly display
-  const caps = (bootstrap?.capabilities ?? bootstrap?.features ?? {}) as Record<string, any>;
-  const friendlyCaps: Array<{ title: string; ok: boolean | null; emoji?: string }> = [
-    { title: 'Live-Chat', ok: !!caps.chat_streaming, emoji: '💬' },
-    { title: 'KI-Modelle', ok: !!caps.model_service, emoji: '🤖' },
-    { title: 'Werkzeuge', ok: !!caps.tool_registry, emoji: '🧰' },
-    { title: 'Speicherung', ok: caps.chat_persistence ?? null, emoji: '💾' },
-    { title: 'Datei-Upload', ok: caps.file_upload ?? null, emoji: '📎' },
-  ];
-  
-  // Close panels when clicking outside or clicking their toggle again
+  // Klick ausserhalb / Escape
   React.useEffect(() => {
     function onDown(e: MouseEvent) {
       const target = e.target as Node | null;
-
       if (showDatePicker) {
         const insidePicker = datePickerRef.current?.contains(target ?? null);
         const onToggle = dateToggleRef.current?.contains(target ?? null);
         if (!insidePicker && !onToggle) setShowDatePicker(false);
       }
-
       if (systemInfoOpen) {
         const insideSys = systemInfoRef.current?.contains(target ?? null);
-        const onToggleSys = systemToggleRef.current?.contains(target ?? null);
+        const onToggleSys = systemTriggerRef.current?.contains(target ?? null);
         if (!insideSys && !onToggleSys) setSystemInfoOpen(false);
       }
     }
-
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
   }, [showDatePicker, systemInfoOpen]);
 
-  // Close panels on Escape
   React.useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') {
@@ -274,326 +201,227 @@ export function AppFooter({
         if (systemInfoOpen) setSystemInfoOpen(false);
       }
     }
-
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [showDatePicker, systemInfoOpen]);
- 
+
+  // Ableitungen
+  const appName = bootstrap?.application?.name ?? 'Kernschmied';
+  const appVersion = bootstrap?.application?.version ?? applicationVersion;
+  const env = (bootstrap?.environment ?? environment) as string;
+  const envLabel = env === 'production' ? 'Produktiv' : env === 'development' ? 'Entwicklung' : env;
+  const envColor =
+    env === 'production'
+      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
+      : env === 'development'
+      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+      : 'bg-gray-100 text-gray-800 dark:bg-gray-700/30 dark:text-gray-300';
+  const statusLabel = online ? 'System bereit' : online === false ? 'System nicht erreichbar' : 'Unbekannt';
+  const statusColor = online ? 'text-emerald-600' : online === false ? 'text-red-500' : 'text-gray-500';
+  const StatusIcon = online ? CheckCircle : online === false ? XCircle : AlertCircle;
+
+  const caps = (bootstrap?.capabilities ?? bootstrap?.features ?? {}) as Record<string, any>;
+  const friendlyCaps: Array<{ title: string; ok: boolean | null; icon?: React.ReactNode }> = [
+    { title: 'Live-Chat', ok: !!caps.chat_streaming, icon: <Zap className="w-4 h-4" /> },
+    { title: 'KI-Modelle', ok: !!caps.model_service, icon: <Cpu className="w-4 h-4" /> },
+    { title: 'Werkzeuge', ok: !!caps.tool_registry, icon: <FolderTree className="w-4 h-4" /> },
+    { title: 'Speicherung', ok: caps.chat_persistence ?? null, icon: <Database className="w-4 h-4" /> },
+    { title: 'Datei-Upload', ok: caps.file_upload ?? null, icon: <Plug className="w-4 h-4" /> },
+  ];
 
   return (
-    <footer className="z-30 shrink-0 border-t border-border bg-white/90 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/90">
-      <div className="flex h-10 items-center justify-between gap-4 overflow-x-auto px-4 text-sm text-text-muted dark:text-gray-400">
-        <div className="flex items-center gap-4">
+    <footer className="z-30 shrink-0 border-t border-gray-200 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/90 shadow-sm">
+      <div className="flex h-12 items-center justify-between gap-3 px-4 text-sm text-gray-600 dark:text-gray-300">
+        {/* Linker Bereich */}
+        <div className="flex items-center gap-3">
           <button
-            className="flex items-baseline gap-2 hover:underline focus:outline-none"
+            ref={systemTriggerRef}
+            className="flex items-center gap-2 hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 rounded px-1 py-0.5"
             onClick={() => {
               setSystemTab('overview');
               setSystemInfoOpen(true);
             }}
+            aria-label="Systeminformationen öffnen"
           >
-            <strong className="text-sm font-semibold text-text dark:text-white">{appName}</strong>
-            <span className="text-xs text-text-muted">{appVersion}</span>
+            <span className="font-semibold text-gray-900 dark:text-white">{appName}</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+              v{appVersion}
+            </span>
           </button>
 
-          <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 dark:bg-slate-800">
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${envColor}`}>
+            <Globe className="w-3 h-3" />
             {envLabel}
           </span>
 
-          <div className="flex items-center gap-2">
-            <span className={`${statusColor} font-medium`} aria-hidden>
-              ●
-            </span>
-            <button className="text-xs hover:underline" onClick={() => setSystemInfoOpen(true)}>
+          <div className="flex items-center gap-1.5">
+            <StatusIcon className={`w-4 h-4 ${statusColor}`} />
+            <button
+              className="text-xs hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 rounded px-1"
+              onClick={() => setSystemInfoOpen(true)}
+            >
               {statusLabel}
             </button>
+            {error && <span className="text-xs text-red-500 ml-1" title={error}>⚠</span>}
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <span className="text-xs text-text-muted">API {bootstrap?.versions?.api ?? apiVersion} · Schema {bootstrap?.schema_version ?? schemaVersion}</span>
+        {/* Rechter Bereich */}
+        <div className="flex items-center gap-3 flex-1 justify-end">
+          <span className="hidden sm:inline text-xs text-gray-400 dark:text-gray-500">
+            API {bootstrap?.versions?.api ?? apiVersion}
+            <span className="mx-1">·</span>
+            Schema {bootstrap?.schema_version ?? schemaVersion}
+          </span>
 
-          {/* Clock and calendar trigger */}
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-text-muted">API {bootstrap?.versions?.api ?? apiVersion} · Schema {bootstrap?.schema_version ?? schemaVersion}</span>
+          <div className="flex items-center gap-1">
+            <button
+              className={`p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors ${
+                autoRefresh ? 'text-sky-600 dark:text-sky-400' : 'text-gray-400'
+              }`}
+              onClick={() => setAutoRefresh((v) => !v)}
+              title={autoRefresh ? 'Auto-Refresh aktiv (30s)' : 'Auto-Refresh deaktiviert'}
+            >
+              <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin-slow' : ''}`} />
+            </button>
 
-              <button
-                ref={dateToggleRef}
-                className="text-xs p-2 rounded hover:bg-gray-100 dark:hover:bg-slate-800"
-                onClick={() => {
-                  setShowDatePicker((s) => !s);
-                  if (!showDatePicker) setSystemInfoOpen(false);
-                }}
-                aria-label="Datum auswählen"
-                title="Datum auswählen"
-              >
-                <CalendarDays className="w-4 h-4" />
-              </button>
+            <button
+              ref={dateToggleRef}
+              className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors"
+              onClick={() => {
+                setShowDatePicker((s) => !s);
+                if (!showDatePicker) setSystemInfoOpen(false);
+              }}
+              aria-label="Datum auswählen"
+            >
+              <CalendarDays className="w-4 h-4" />
+            </button>
 
-              <button
-                ref={systemToggleRef}
-                className="text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-slate-800"
-                onClick={() => {
-                  setSystemInfoOpen((s) => !s);
-                  if (!systemInfoOpen) setShowDatePicker(false);
-                }}
-                aria-label="Systeminfo"
-              >
-                ⓘ
-              </button>
-            </div>
-
-            {/* Clock placed to the far right using margin-left auto on a wrapper */}
-            <div className="ml-auto">
-              <Clock />
-            </div>
+            <button
+              className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors"
+              onClick={() => {
+                setSystemTab('overview');
+                setSystemInfoOpen(true);
+              }}
+              aria-label="Systeminformationen"
+            >
+              <Info className="w-4 h-4" />
+            </button>
           </div>
+
+          <Clock />
         </div>
       </div>
 
-      {/* Inline DatePicker modal when requested */}
-      {showDatePicker ? (
-        <div ref={datePickerRef} className="fixed right-4 bottom-16 z-50 w-[min(520px,95%)] max-w-full rounded border bg-white p-4 shadow dark:bg-slate-800">
-          <div className="flex items-center justify-between">
-            <strong>Datum auswählen</strong>
-            <button className="text-sm text-gray-500" onClick={() => setShowDatePicker(false)}>✕</button>
-          </div>
-          <div className="mt-3">
-            {/* use the DatePicker defined inside this component */}
-            <DatePicker
-              initialDate={selectedDate ?? new Date()}
-              setSelectedDate={(d) => setSelectedDate(d)}
-              onSelect={(d) => {
-                setSelectedDate(d);
-                setShowDatePicker(false);
-              }}
-              onCancel={() => setShowDatePicker(false)}
-            />
-          </div>
+      {/* DatePicker Popup */}
+      {showDatePicker && (
+        <div
+          ref={datePickerRef}
+          className="fixed right-4 bottom-16 z-50 w-[min(520px,95%)] max-w-full rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-slate-800"
+        >
+          <DatePickerPopup
+            initialDate={selectedDate ?? new Date()}
+            setSelectedDate={setSelectedDate}
+            onSelect={(d) => {
+              setSelectedDate(d);
+              setShowDatePicker(false);
+            }}
+            onCancel={() => setShowDatePicker(false)}
+            saveSelectionsEnabled={saveSelectionsEnabled}
+            autoRefresh={autoRefresh}
+            setAutoRefresh={setAutoRefresh}
+            setSystemTab={setSystemTab}
+            bootstrap={bootstrap}
+            configRevision={configRevision}
+            modelsCount={modelsCount}
+            toolsCount={toolsCount}
+          />
         </div>
-      ) : null}
+      )}
 
+      {/* Systeminfo Panel */}
       {systemInfoOpen && (
-        <div ref={systemInfoRef} className="fixed right-4 bottom-16 z-50 w-[min(720px,95%)] max-w-full rounded border bg-white p-4 shadow dark:bg-slate-800">
-          <div className="flex items-center justify-between">
-            <strong>Systeminformationen</strong>
-            <div className="flex items-center gap-2">
-                <div className="text-xs text-text-muted">{lastChecked ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(lastChecked) : new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(new Date())}</div>
-              <button className="text-sm text-gray-500" onClick={() => setSystemInfoOpen(false)}>
-                ✕
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-3 flex gap-4">
-            <nav className="w-40">
-              <ul className="space-y-1 text-sm">
-                <li>
-                  <button className={`w-full text-left p-2 rounded ${systemTab === 'overview' ? 'bg-gray-100 dark:bg-slate-700' : ''}`} onClick={() => setSystemTab('overview')}>Übersicht</button>
-                </li>
-                <li>
-                  <button className={`w-full text-left p-2 rounded ${systemTab === 'functions' ? 'bg-gray-100 dark:bg-slate-700' : ''}`} onClick={() => setSystemTab('functions')}>Funktionen</button>
-                </li>
-                <li>
-                  <button className={`w-full text-left p-2 rounded ${systemTab === 'versions' ? 'bg-gray-100 dark:bg-slate-700' : ''}`} onClick={() => setSystemTab('versions')}>Versionen</button>
-                </li>
-                <li>
-                  <button className={`w-full text-left p-2 rounded ${systemTab === 'technical' ? 'bg-gray-100 dark:bg-slate-700' : ''}`} onClick={() => setSystemTab('technical')}>Technik</button>
-                </li>
-              </ul>
-            </nav>
-
-            <div className="flex-1">
-              {systemTab === 'overview' && (
-                <div>
-                  <h3 className="font-semibold">{appName} {appVersion}</h3>
-                  <p className="text-sm text-text-muted">Lokale Chat- und Assistenzplattform</p>
-
-                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded border p-3">
-                      <div className="font-medium">Dienste</div>
-                      <div className="mt-2">
-                        <button className="text-xs px-2 py-1 rounded bg-gray-100" onClick={() => { setSystemTab('versions'); }}>Details</button>
-                      </div>
-                        <li>Live-Chat: {caps.chat_streaming ? 'Verfügbar' : 'Nicht verfügbar'}</li>
-                        <li>Modelle: {caps.model_service ? 'Verfügbar' : 'Nicht verfügbar'}</li>
-                      </ul>
-                    </div>
-                      <div className="mt-3">
-                        <button
-                          className="text-sm px-3 py-1 rounded bg-sky-600 text-white flex items-center gap-2"
-                          onClick={async () => {
-                            setIsRefreshing(true);
-                            try {
-                              const res = await fetch('/api/v1/bootstrap', { cache: 'no-store' });
-                              if (res.ok) {
-                                const data = await res.json();
-                                setBootstrap(data);
-                                setOnline(true);
-                                setError(null);
-                                setLastChecked(new Date());
-                                setRequestId((data as any)?.request_id ?? res.headers.get('X-Request-Id'));
-                              } else {
-                                setOnline(false);
-                                setError(`${res.status} ${res.statusText}`);
-                              }
-                            } catch (e: any) {
-                              setOnline(false);
-                              setError(String(e));
-                            } finally {
-                              setIsRefreshing(false);
-                            }
-                          }}
-                        >
-                          {isRefreshing ? <span className="animate-spin">⟳</span> : null}
-                          <span>Status neu prüfen</span>
-                        </button>
-                      </div>
-                              setError(String(e));
-                            } finally {
-                              setIsRefreshing(false);
-                            }
-                          }}
-                        >
-                          {isRefreshing ? <span className="animate-spin">⟳</span> : null}
-                          <span>Status neu prüfen</span>
-                        </button>
-                      </div>
-                </div>
-              )}
-
-              {systemTab === 'functions' && (
-                <div>
-                  <h3 className="font-semibold">Funktionen</h3>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    {friendlyCaps.map((c) => {
-                      const count = c.title === 'KI-Modelle' ? modelsCount : c.title === 'Werkzeuge' ? toolsCount : null;
-
-                      return (
-                        <div key={c.title} className="rounded border p-3 text-sm flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span>{c.emoji}</span>
-                            <div>
-                              <div className="font-medium">{c.title} {count !== null ? <span className="ml-2 text-xs text-text-muted">{count}</span> : null}</div>
-                              <div className="text-xs text-text-muted">{c.ok === true ? 'Verfügbar' : c.ok === false ? 'Nicht aktiviert' : 'Unbekannt'}</div>
-                            </div>
-                          </div>
-                          {c.ok === true ? <span className="text-emerald-600">●</span> : c.ok === false ? <span className="text-gray-400">○</span> : <span className="text-gray-500">–</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {systemTab === 'versions' && (
-                <div>
-                  <h3 className="font-semibold">Schnittstellen & Versionen</h3>
-                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-                    <div className="rounded border p-3">API: {bootstrap?.versions?.api ?? apiVersion}</div>
-                    <div className="rounded border p-3">Schema: {bootstrap?.schema_version ?? schemaVersion}</div>
-                    <div className="rounded border p-3">UI Schema: {bootstrap?.ui_schema ?? 'n/a'}</div>
-                    <div className="rounded border p-3">Bootstrap Schema: {bootstrap?.bootstrap_schema ?? 'n/a'}</div>
-                  </div>
-                </div>
-              )}
-
-              {systemTab === 'technical' && (
-                <div>
-                  <h3 className="font-semibold">Technische Details</h3>
-                  <div className="mt-3 text-xs">
-                    <div className="mb-2 text-xs text-text-muted">Request ID: {requestId ?? '—'} · Letzte Prüfung: {lastChecked ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(lastChecked) : '—'}</div>
-                    <div className="rounded border p-3 max-h-64 overflow-auto bg-gray-50 dark:bg-slate-900">
-                      <pre className="whitespace-pre-wrap">{JSON.stringify(bootstrap ?? { online, error, versions: (bootstrap as BootstrapResponse | null)?.versions }, null, 2)}</pre>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+        <div
+          ref={systemInfoRef}
+          className="fixed right-4 bottom-16 z-50 w-[min(720px,95%)] max-w-full rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-slate-800"
+        >
+          <SystemInfoPanel
+            appName={appName}
+            appVersion={appVersion}
+            bootstrap={bootstrap}
+            setBootstrap={setBootstrap}
+            online={online}
+            setOnline={setOnline}
+            error={error}
+            setError={setError}
+            lastChecked={lastChecked}
+            setLastChecked={setLastChecked}
+            requestId={requestId}
+            setRequestId={setRequestId}
+            configRevision={configRevision}
+            modelsCount={modelsCount}
+            toolsCount={toolsCount}
+            friendlyCaps={friendlyCaps}
+            systemTab={systemTab}
+            setSystemTab={setSystemTab}
+            onClose={() => setSystemInfoOpen(false)}
+            isRefreshing={isRefreshing}
+            setIsRefreshing={setIsRefreshing}
+            autoRefresh={autoRefresh}
+            setAutoRefresh={setAutoRefresh}
+            apiVersion={apiVersion}
+            schemaVersion={schemaVersion}
+          />
         </div>
       )}
     </footer>
   );
 }
 
-interface StatusItemProps {
-  children: React.ReactNode;
-
-  icon?: React.ReactNode;
-
-  onClick?: () => void;
-}
-
-function StatusItem({ children, icon, onClick }: StatusItemProps) {
-  const base = 'flex items-center gap-1.5 whitespace-nowrap';
-
-  if (onClick) {
-    return (
-      <button
-        onClick={onClick}
-        className={
-          base +
-          ' cursor-pointer hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 rounded'
-        }
-        aria-label={typeof children === 'string' ? children : undefined}
-      >
-        {icon}
-
-        <span>{children}</span>
-      </button>
-    );
-  }
-
-  return (
-    <div className={base}>
-      {icon}
-
-      <span>{children}</span>
-    </div>
-  );
-}
+// ------------------------------------------------------------
+// Hilfskomponenten
+// ------------------------------------------------------------
 
 function Clock() {
   const [now, setNow] = useState(new Date());
-
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
-
-  const formatted = useMemo(() => {
-    return new Intl.DateTimeFormat('de-DE', {
-      weekday: 'short',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    }).format(now);
-  }, [now]);
-
+  const formatted = useMemo(
+    () =>
+      new Intl.DateTimeFormat('de-DE', {
+        weekday: 'short',
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+      }).format(now),
+    [now]
+  );
   return (
-    <span className="font-mono w-48 text-right" aria-live="polite">
+    <span className="font-mono text-xs text-gray-500 dark:text-gray-400 w-44 text-right" aria-live="polite">
       {formatted}
     </span>
   );
 }
 
-function DatePicker({
+/** DatePicker-Popup (unverändert, aber ich füge es der Vollständigkeit halber ein) */
+function DatePickerPopup({
   initialDate,
   setSelectedDate,
   onSelect,
   onCancel,
-  saveSelectionsEnabled = true,
-  autoRefresh = false,
-  setAutoRefresh = (_: React.SetStateAction<boolean>) => {},
-  setSystemTab = (_: 'overview' | 'functions' | 'versions' | 'technical') => {},
-  bootstrap = null,
-  configRevision = 0,
-  modelsCount = null,
-  toolsCount = null,
+  saveSelectionsEnabled,
+  autoRefresh,
+  setAutoRefresh,
+  setSystemTab,
+  bootstrap,
+  configRevision,
+  modelsCount,
+  toolsCount,
 }: {
   initialDate: Date;
   setSelectedDate: (d: Date) => void;
@@ -618,19 +446,21 @@ function DatePicker({
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
+  const today = new Date();
+  const todayDate = today.getDate();
+  const todayMonth = today.getMonth();
+  const todayYear = today.getFullYear();
 
   function daysInMonth(y: number, m: number) {
     return new Date(y, m + 1, 0).getDate();
   }
-
   function startWeekday(y: number, m: number) {
     return new Date(y, m, 1).getDay();
   }
 
-  const days = [] as (number | null)[];
-  const start = startWeekday(year, month);
   const total = daysInMonth(year, month);
-
+  const start = startWeekday(year, month);
+  const days: (number | null)[] = [];
   for (let i = 0; i < start; i++) days.push(null);
   for (let d = 1; d <= total; d++) days.push(d);
 
@@ -640,129 +470,453 @@ function DatePicker({
     setSelectedDay(day);
     setSelectedDate(chosen);
     onSelect(chosen);
-    // send to backend (prepared endpoint) only if user enabled saving
     if (saveSelectionsEnabled) {
-        sendSelectedDateIfOptIn(chosen).catch(() => {});
+      sendSelectedDateIfOptIn(chosen).catch(() => {});
     }
   }
 
-  // keyboard navigation
   function onKey(e: React.KeyboardEvent) {
     if (!selectedDay) return;
     let d = selectedDay;
-
     if (e.key === 'ArrowLeft') d = Math.max(1, d - 1);
     else if (e.key === 'ArrowRight') d = Math.min(total, d + 1);
     else if (e.key === 'ArrowUp') d = Math.max(1, d - 7);
     else if (e.key === 'ArrowDown') d = Math.min(total, d + 7);
-    else if (e.key === 'Enter') {
-      pick(d);
-      return;
-    } else if (e.key === 'Escape') {
-      onCancel();
-      return;
-    }
-
+    else if (e.key === 'Enter') { pick(d); return; }
+    else if (e.key === 'Escape') { onCancel(); return; }
     if (d !== selectedDay) {
       setSelectedDay(d);
-      // ensure visible
       if (d <= 0) setViewDate(new Date(year, month - 1, 1));
     }
   }
 
   return (
     <div className="text-sm">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <button
-            className="px-2 focus:ring-2 focus:ring-sky-500 rounded"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
             onClick={() => setViewDate(new Date(year, month - 1, 1))}
           >
             ◀
           </button>
-          <strong>{viewDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' })}</strong>
+          <strong className="text-base">
+            {viewDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' })}
+          </strong>
           <button
-            className="px-2 focus:ring-2 focus:ring-sky-500 rounded"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
             onClick={() => setViewDate(new Date(year, month + 1, 1))}
           >
             ▶
           </button>
         </div>
-        <div>
-          <button className="text-xs text-gray-500" onClick={onCancel}>
-            Abbrechen
-          </button>
-        </div>
+        <button className="text-sm text-gray-500 hover:underline" onClick={onCancel}>
+          Abbrechen
+        </button>
       </div>
 
       <div
-        className="mt-2 grid grid-cols-7 gap-1 text-center text-xs"
+        className="grid grid-cols-7 gap-1 text-center text-xs focus:outline-none"
         tabIndex={0}
         onKeyDown={onKey}
+        role="grid"
       >
-        {['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'].map((w) => (
-          <div key={w} className="font-medium">
+        {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((w) => (
+          <div key={w} className="font-medium text-gray-500 dark:text-gray-400 py-1">
             {w}
           </div>
         ))}
-        {days.map((d, i) => (
-          <div key={i} className={`py-1 ${d ? 'cursor-pointer rounded' : ''}`}>
-            {d ? (
-              <button
-                onClick={() => pick(d)}
-                className={`w-full ${selectedDay === d ? 'bg-sky-600 text-white rounded' : 'hover:bg-gray-100 dark:hover:bg-slate-700 rounded'} focus:outline-none focus:ring-2 focus:ring-sky-500`}
-              >
-                {d}
-              </button>
-            ) : null}
-          </div>
-        ))}
+        {days.map((d, i) => {
+          const isToday =
+            d !== null && year === todayYear && month === todayMonth && d === todayDate;
+          const isSelected = d !== null && selectedDay === d;
+          return (
+            <div key={i} className="py-1">
+              {d !== null ? (
+                <button
+                  onClick={() => pick(d)}
+                  className={`w-full h-8 rounded-full flex items-center justify-center text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                    isSelected
+                      ? 'bg-sky-600 text-white hover:bg-sky-700'
+                      : isToday
+                      ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300 hover:bg-sky-200'
+                      : 'hover:bg-gray-100 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {d}
+                </button>
+              ) : (
+                <span className="w-full h-8 block" />
+              )}
+            </div>
+          );
+        })}
       </div>
 
-          <div className="flex items-center gap-2">
-        <input
-          className="flex-1 rounded border px-2 py-1"
-          type="time"
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-        />
-            <button
-              className="ml-2 text-xs px-2 py-0.5 rounded bg-gray-50 dark:bg-slate-700"
-              onClick={() => setAutoRefresh((v: boolean) => !v)}
-              title="Automatisch aktualisieren (30s)"
-            >
-              {autoRefresh ? 'Auto‑Refresh: Ein' : 'Auto‑Refresh: Aus'}
-            </button>
+      <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="flex items-center gap-2">
+          <ClockIcon className="w-4 h-4 text-gray-400" />
+          <input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+            className="rounded border border-gray-300 dark:border-gray-600 bg-transparent px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+          />
+        </div>
 
-            {/* Konfiguration Badge (visible on md+) */}
-            <button
-              className="hidden md:inline-flex ml-2 items-center gap-2 text-xs px-2 py-0.5 rounded bg-gray-50 dark:bg-slate-700"
-              onClick={() => setSystemTab('versions')}
-              title={`Konfiguration Revision ${bootstrap?.config_revision ?? configRevision}`}
-            >
-              ⚙ Konf: {bootstrap?.config_revision ?? configRevision}
-            </button>
+        <div className="flex items-center gap-2 ml-auto">
+          <button
+            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${
+              autoRefresh
+                ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
+                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+            }`}
+            onClick={() => setAutoRefresh?.((v) => !v)}
+          >
+            <RefreshCw className={`w-3 h-3 ${autoRefresh ? 'animate-spin-slow' : ''}`} />
+            {autoRefresh ? 'Auto ein' : 'Auto aus'}
+          </button>
 
-            {/* Modelle/Werkzeuge indicators (compact) */}
-            <div className="hidden md:flex items-center gap-2 ml-2 text-xs">
-              <div className="flex items-center gap-2">
-                <span className={bootstrap?.revisions?.model_registry ? 'text-emerald-600' : 'text-gray-400'}>🤖</span>
-                <span>{bootstrap?.revisions?.model_registry ? 'Modelle bereit' : 'Modelle'}</span>
-                <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded bg-gray-100 dark:bg-slate-700">{modelsCount ?? '—'}</span>
-              </div>
-              <div className="flex items-center gap-2 ml-3">
-                <span className={bootstrap?.revisions?.tool_registry ? 'text-emerald-600' : 'text-gray-400'}>🧰</span>
-                <span>{bootstrap?.revisions?.tool_registry ? 'Werkzeuge bereit' : 'Werkzeuge'}</span>
-                <span className="ml-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-medium rounded bg-gray-100 dark:bg-slate-700">{toolsCount ?? '—'}</span>
-              </div>
-            </div>
+          <button
+            className="hidden md:flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700"
+            onClick={() => setSystemTab?.('versions')}
+          >
+            <Layers className="w-3 h-3" />
+            Konf {bootstrap?.config_revision ?? configRevision}
+          </button>
 
-            {/* Feedback link */}
-            <a className="hidden md:inline-block ml-3 text-xs text-sky-600 hover:underline" href="https://github.com/Thomas-Heisig/Kernschmied/issues/new" target="_blank" rel="noreferrer">Feedback</a>
+          <div className="hidden md:flex items-center gap-3 text-xs">
+            <span className="flex items-center gap-1">
+              <Cpu className="w-3 h-3" />
+              <span className="text-gray-500">Modelle</span>
+              <span className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+                {modelsCount ?? '—'}
+              </span>
+            </span>
+            <span className="flex items-center gap-1">
+              <FolderTree className="w-3 h-3" />
+              <span className="text-gray-500">Werkzeuge</span>
+              <span className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+                {toolsCount ?? '—'}
+              </span>
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-// calendar helper functions moved to src/lib/calendar.ts to keep module exports
-// stable for React Fast Refresh/HMR.
+/** Systeminfo-Panel – nun mit allen benötigten Props */
+function SystemInfoPanel({
+  appName,
+  appVersion,
+  bootstrap,
+  setBootstrap,
+  online,
+  setOnline,
+  error,
+  setError,
+  lastChecked,
+  setLastChecked,
+  requestId,
+  setRequestId,
+  configRevision,
+  modelsCount,
+  toolsCount,
+  friendlyCaps,
+  systemTab,
+  setSystemTab,
+  onClose,
+  isRefreshing,
+  setIsRefreshing,
+  autoRefresh,
+  setAutoRefresh,
+  apiVersion,
+  schemaVersion,
+}: {
+  appName: string;
+  appVersion: string;
+  bootstrap: BootstrapResponse | null;
+  setBootstrap: React.Dispatch<React.SetStateAction<BootstrapResponse | null>>;
+  online: boolean | null;
+  setOnline: React.Dispatch<React.SetStateAction<boolean | null>>;
+  error: string | null;
+  setError: React.Dispatch<React.SetStateAction<string | null>>;
+  lastChecked: Date | null;
+  setLastChecked: React.Dispatch<React.SetStateAction<Date | null>>;
+  requestId: string | null;
+  setRequestId: React.Dispatch<React.SetStateAction<string | null>>;
+  configRevision: number;
+  modelsCount: number | null;
+  toolsCount: number | null;
+  friendlyCaps: Array<{ title: string; ok: boolean | null; icon?: React.ReactNode }>;
+  systemTab: 'overview' | 'functions' | 'versions' | 'technical';
+  setSystemTab: (t: 'overview' | 'functions' | 'versions' | 'technical') => void;
+  onClose: () => void;
+  isRefreshing: boolean;
+  setIsRefreshing: React.Dispatch<React.SetStateAction<boolean>>;
+  autoRefresh: boolean;
+  setAutoRefresh: React.Dispatch<React.SetStateAction<boolean>>;
+  apiVersion: string;
+  schemaVersion: string;
+}) {
+  const caps = (bootstrap?.capabilities ?? bootstrap?.features ?? {}) as Record<string, any>;
+
+  const refreshStatus = async () => {
+    setIsRefreshing(true);
+    try {
+      const res = await fetch('/api/v1/bootstrap', { cache: 'no-store' });
+      if (res.ok) {
+        const data = await res.json();
+        setBootstrap(data);
+        setOnline(true);
+        setError(null);
+        setLastChecked(new Date());
+        setRequestId((data as any)?.request_id ?? res.headers.get('X-Request-Id'));
+      } else {
+        setOnline(false);
+        setError(`${res.status} ${res.statusText}`);
+      }
+    } catch (e: any) {
+      setOnline(false);
+      setError(String(e));
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Settings className="w-5 h-5" />
+          Systeminformationen
+        </h2>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-gray-400">
+            {lastChecked
+              ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(lastChecked)
+              : new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(new Date())}
+          </span>
+          <button
+            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
+            onClick={onClose}
+            aria-label="Schließen"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-4">
+        <nav className="md:w-40">
+          <ul className="space-y-1 text-sm">
+            {(['overview', 'functions', 'versions', 'technical'] as const).map((tab) => {
+              const icons = {
+                overview: <Globe className="w-4 h-4" />,
+                functions: <Zap className="w-4 h-4" />,
+                versions: <Layers className="w-4 h-4" />,
+                technical: <Server className="w-4 h-4" />,
+              };
+              const labels = {
+                overview: 'Übersicht',
+                functions: 'Funktionen',
+                versions: 'Versionen',
+                technical: 'Technik',
+              };
+              return (
+                <li key={tab}>
+                  <button
+                    className={`flex items-center gap-2 w-full text-left px-3 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                      systemTab === tab
+                        ? 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
+                        : 'hover:bg-gray-100 dark:hover:bg-slate-800'
+                    }`}
+                    onClick={() => setSystemTab(tab)}
+                  >
+                    {icons[tab]}
+                    {labels[tab]}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="flex-1 min-w-0">
+          {systemTab === 'overview' && (
+            <div>
+              <h3 className="font-semibold text-lg">{appName}</h3>
+              <p className="text-sm text-gray-500">Version {appVersion}</p>
+              <p className="text-sm text-gray-500 mt-1">Lokale Chat- und Assistenzplattform</p>
+
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                  <div className="font-medium flex items-center gap-2">
+                    <Server className="w-4 h-4" />
+                    Dienste
+                  </div>
+                  <ul className="mt-2 space-y-1 text-sm">
+                    <li className="flex justify-between">
+                      <span>Backend</span>
+                      <span className={online ? 'text-emerald-600' : online === false ? 'text-red-500' : 'text-gray-500'}>
+                        {online ? 'Online' : online === false ? 'Nicht erreichbar' : 'Unbekannt'}
+                      </span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>Authentifizierung</span>
+                      <span>{bootstrap?.authenticated ? 'Aktiv' : 'Nicht aktiv'}</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>Live-Chat</span>
+                      <span>{caps.chat_streaming ? 'Verfügbar' : 'Nicht verfügbar'}</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>Modelle</span>
+                      <span>{caps.model_service ? 'Verfügbar' : 'Nicht verfügbar'}</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                  <div className="font-medium flex items-center gap-2">
+                    <Layers className="w-4 h-4" />
+                    Konfiguration
+                  </div>
+                  <div className="mt-2 text-sm">
+                    <div className="flex justify-between">
+                      <span>Status</span>
+                      <span>{bootstrap?.config_revision ? 'Aktuell' : 'Unbekannt'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Revision</span>
+                      <span>{bootstrap?.config_revision ?? configRevision}</span>
+                    </div>
+                  </div>
+                  <button
+                    className="mt-3 text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    onClick={() => setSystemTab('versions')}
+                  >
+                    Details anzeigen
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-sky-600 text-white hover:bg-sky-700 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  onClick={refreshStatus}
+                  disabled={isRefreshing}
+                >
+                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  {isRefreshing ? 'Aktualisiere...' : 'Status neu prüfen'}
+                </button>
+                <button
+                  className={`flex items-center gap-1 text-sm px-4 py-2 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                    autoRefresh
+                      ? 'border-sky-300 bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-300'
+                      : 'border-gray-300 bg-white text-gray-700 dark:border-gray-600 dark:bg-slate-800 dark:text-gray-300'
+                  }`}
+                  onClick={() => setAutoRefresh((v) => !v)}
+                >
+                  <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin-slow' : ''}`} />
+                  {autoRefresh ? 'Auto-Refresh ein' : 'Auto-Refresh aus'}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {systemTab === 'functions' && (
+            <div>
+              <h3 className="font-semibold text-lg">Funktionen</h3>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {friendlyCaps.map((c) => {
+                  const count =
+                    c.title === 'KI-Modelle' ? modelsCount : c.title === 'Werkzeuge' ? toolsCount : null;
+                  return (
+                    <div
+                      key={c.title}
+                      className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="text-gray-500">{c.icon}</div>
+                        <div>
+                          <div className="font-medium">
+                            {c.title}
+                            {count !== null && (
+                              <span className="ml-2 text-xs text-gray-400">({count})</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            {c.ok === true ? 'Verfügbar' : c.ok === false ? 'Nicht aktiviert' : 'Unbekannt'}
+                          </div>
+                        </div>
+                      </div>
+                      {c.ok === true ? (
+                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                      ) : c.ok === false ? (
+                        <XCircle className="w-5 h-5 text-gray-300" />
+                      ) : (
+                        <AlertCircle className="w-5 h-5 text-gray-400" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {systemTab === 'versions' && (
+            <div>
+              <h3 className="font-semibold text-lg">Schnittstellen & Versionen</h3>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex justify-between">
+                  <span className="text-gray-500">API</span>
+                  <span className="font-mono">{bootstrap?.versions?.api ?? apiVersion}</span>
+                </div>
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex justify-between">
+                  <span className="text-gray-500">Schema</span>
+                  <span className="font-mono">{bootstrap?.schema_version ?? schemaVersion}</span>
+                </div>
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex justify-between">
+                  <span className="text-gray-500">UI Schema</span>
+                  <span className="font-mono">{bootstrap?.ui_schema ?? 'n/a'}</span>
+                </div>
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex justify-between">
+                  <span className="text-gray-500">Bootstrap Schema</span>
+                  <span className="font-mono">{bootstrap?.bootstrap_schema ?? 'n/a'}</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+              {systemTab === 'technical' && (
+            <div>
+              <h3 className="font-semibold text-lg">Technische Details</h3>
+              <div className="mt-2 text-xs">
+                <div className="flex flex-wrap gap-4 text-gray-500 mb-3">
+                  <span>Request ID: {requestId ?? '—'}</span>
+                  <span>Letzte Prüfung: {lastChecked ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(lastChecked) : '—'}</span>
+                  {error && <span className="text-red-500">Fehler: {error}</span>}
+                      <button
+                        className="text-xs px-2 py-1 rounded bg-gray-100"
+                        onClick={() => setChatHistoryOpen(true)}
+                      >Chat-Historie</button>
+                </div>
+                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 max-h-64 overflow-auto bg-gray-50 dark:bg-slate-900/50">
+                  <pre className="whitespace-pre-wrap break-all">
+                    {JSON.stringify(bootstrap ?? { online, error, versions: (bootstrap as BootstrapResponse | null)?.versions }, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            </div>
+          )}
+              {chatHistoryOpen ? (
+                <ChatHistoryPanel onClose={() => setChatHistoryOpen(false)} />
+              ) : null}
+        </div>
+      </div>
+    </>
+  );
+}
