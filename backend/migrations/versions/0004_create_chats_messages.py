@@ -64,15 +64,27 @@ def upgrade() -> None:
         op.create_table(
             'messages',
             sa.Column('id', sa.String(length=36), primary_key=True),
-            sa.Column('chat_id', sa.String(length=36), sa.ForeignKey('chats.id', ondelete='CASCADE'), nullable=False),
+            # conversation_id refers to chats.id (conversation)
+            sa.Column('conversation_id', sa.String(length=36), sa.ForeignKey('chats.id', ondelete='CASCADE'), nullable=False),
+            sa.Column('user_id', sa.String(length=36), nullable=True, index=False),
             sa.Column('role', sa.String(length=50), nullable=False),
+            sa.Column('message_type', sa.String(length=50), nullable=False, server_default='text'),
             sa.Column('content', sa.Text(), nullable=False),
-            sa.Column('metadata_json', sa.JSON(), nullable=False),
-            sa.Column('position', sa.Integer(), nullable=False, server_default='0'),
+            sa.Column('ui_context', sa.JSON(), nullable=False),
+            sa.Column('sequence_number', sa.Integer(), nullable=False, server_default='0'),
+            sa.Column('status', sa.String(length=20), nullable=False, server_default='pending'),
+            sa.Column('request_id', sa.String(length=128), nullable=True),
             sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
+            sa.Column('completed_at', sa.TIMESTAMP(timezone=True), nullable=True),
+            sa.Column('schema_version', sa.String(length=32), nullable=False, server_default='1.0'),
         )
         try:
-            op.create_index('ix_messages_chat_position', 'messages', ['chat_id', 'position'])
+            # unique constraint on (conversation_id, sequence_number)
+            op.create_unique_constraint('uq_messages_conversation_sequence', 'messages', ['conversation_id', 'sequence_number'])
+        except Exception:
+            pass
+        try:
+            op.create_index('ix_messages_conversation_sequence', 'messages', ['conversation_id', 'sequence_number'])
         except Exception:
             pass
 

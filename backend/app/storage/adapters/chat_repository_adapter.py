@@ -69,6 +69,7 @@ class ChatRepositoryAdapter:
         parent_message_id: str | None,
         content: str,
         metadata: Mapping[str, Any],
+        user_id: str | None = None,
     ) -> None:
         async with self._session_factory() as session:
             chat_repo = StorageChatRepository(session)
@@ -79,11 +80,12 @@ class ChatRepositoryAdapter:
 
             message = MessageModel(
                 id=message_id,
-                chat_id=conversation_id,
+                conversation_id=conversation_id,
+                user_id=user_id,
                 role="user",
                 content=content,
-                metadata_json=(dict(metadata or {})),
-                position=position,
+                ui_context=(dict(metadata or {})),
+                sequence_number=position,
             )
 
             await chat_repo.add_message(message)
@@ -96,6 +98,7 @@ class ChatRepositoryAdapter:
         message_id: str,
         parent_message_id: str | None,
         model_id: str,
+        user_id: str | None = None,
         content: str,
         finish_reason: str | None,
         usage: Mapping[str, Any] | None,
@@ -116,11 +119,12 @@ class ChatRepositoryAdapter:
 
             message = MessageModel(
                 id=message_id,
-                chat_id=conversation_id,
+                conversation_id=conversation_id,
+                user_id=user_id,
                 role="assistant",
                 content=content,
-                metadata_json=md,
-                position=position,
+                ui_context=md,
+                sequence_number=position,
             )
 
             await chat_repo.add_message(message)

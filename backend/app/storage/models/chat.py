@@ -82,8 +82,8 @@ class Message(Base):
         primary_key=True,
         default=lambda: str(uuid4()),
     )
-
-    chat_id: Mapped[str] = mapped_column(
+    conversation_id: Mapped[str] = mapped_column(
+        "conversation_id",
         String(36),
         ForeignKey(
             "chats.id",
@@ -93,9 +93,21 @@ class Message(Base):
         index=True,
     )
 
+    user_id: Mapped[str | None] = mapped_column(
+        String(36),
+        nullable=True,
+        index=True,
+    )
+
     role: Mapped[str] = mapped_column(
         String(50),
         nullable=False,
+    )
+
+    message_type: Mapped[str] = mapped_column(
+        String(50),
+        nullable=False,
+        default="text",
     )
 
     content: Mapped[str] = mapped_column(
@@ -103,16 +115,27 @@ class Message(Base):
         nullable=False,
     )
 
-    metadata_json: Mapped[JsonObject] = mapped_column(
+    ui_context: Mapped[JsonObject] = mapped_column(
         JSON,
         nullable=False,
         default=_create_empty_json_object,
     )
 
-    position: Mapped[int] = mapped_column(
+    sequence_number: Mapped[int] = mapped_column(
         Integer,
         nullable=False,
         default=0,
+    )
+
+    status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default="pending",
+    )
+
+    request_id: Mapped[str | None] = mapped_column(
+        String(128),
+        nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -121,10 +144,21 @@ class Message(Base):
         default=utc_now,
     )
 
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    schema_version: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="1.0",
+    )
+
     __table_args__ = (
         Index(
-            "ix_messages_chat_position",
-            "chat_id",
-            "position",
+            "ix_messages_conversation_sequence",
+            "conversation_id",
+            "sequence_number",
         ),
     )

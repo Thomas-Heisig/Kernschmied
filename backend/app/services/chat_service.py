@@ -786,6 +786,7 @@ class ChatRepository(Protocol):
             str,
             JsonValue,
         ],
+        user_id: str | None = None,
     ) -> Awaitable[None] | None: ...
 
     def append_assistant_message(
@@ -795,6 +796,7 @@ class ChatRepository(Protocol):
         message_id: str,
         parent_message_id: str | None,
         model_id: str,
+        user_id: str | None = None,
         content: str,
         finish_reason: str | None,
         usage: (
@@ -2114,6 +2116,7 @@ class ChatService:
                         ),
                         "request_id": (context.request_id),
                     },
+                    user_id=(context.user_id),
                 ),
             )
 
