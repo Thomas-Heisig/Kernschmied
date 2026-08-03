@@ -64,6 +64,7 @@
         { "file": "adr/adr-0005-versioned-contracts.md", "title": "ADR-0005" },
           { "file": "adr/adr-0006-api-contracts-and-versioning.md", "title": "ADR-0006" },
           { "file": "adr/adr-0024-identity-and-authorization.md", "title": "ADR-0024" },
+          { "file": "adr/adr-0025-deployment-architecture.md", "title": "ADR-0025" },
           { "file": "adr/adr-0032-backup-and-disaster-recovery.md", "title": "ADR-0032" }
       ]
     },
