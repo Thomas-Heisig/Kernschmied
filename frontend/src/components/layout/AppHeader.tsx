@@ -10,6 +10,7 @@ import {
   Sun,
   CalendarDays,
 } from 'lucide-react';
+import UserMenu from '../UserMenu';
 
 type AppTheme = 'light' | 'dark';
 
@@ -135,19 +136,8 @@ export function AppHeader({
 
           <div className="hidden h-7 w-px bg-border dark:bg-white/10 sm:block" />
 
-          <div
-            className="hidden min-w-0 items-center gap-2 rounded-lg px-2 py-1.5 sm:flex"
-            title={`Angemeldet als ${userName}`}
-          >
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold text-primary ring-1 ring-primary/15 dark:bg-primary/20 dark:ring-primary/25">
-              {userInitials}
-            </span>
-            <div className="hidden min-w-0 text-left lg:block">
-              <p className="max-w-40 truncate text-xs font-medium text-text dark:text-white">
-                {userName}
-              </p>
-              <p className="text-[10px] text-text-muted dark:text-gray-500">Angemeldet</p>
-            </div>
+          <div className="hidden sm:flex">
+            <UserMenu />
           </div>
 
           <button

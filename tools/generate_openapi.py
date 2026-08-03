@@ -6,10 +6,11 @@ The script will attempt to import the application's `app` object by
 adding `backend` to sys.path (so that `main.py` can initialize the app).
 """
 import json
-import pathlib
+import sys
+from pathlib import Path
 from importlib import util
 
-repo_root = pathlib.Path(__file__).resolve().parents[1]
+repo_root: Path = Path(__file__).resolve().parents[1]
 backend_path = str(repo_root / "backend")
 
 if backend_path not in sys.path:

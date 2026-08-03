@@ -10,6 +10,8 @@ import { SettingsDialog } from '../components/settings';
 import { DocumentationDialog } from '../components/documentation';
 import React from 'react';
 const CalendarPanel = React.lazy(() => import('../components/calendar/CalendarPanel'));
+import AuthProvider, { useAuth } from '../auth/AuthProvider';
+import LoginPage from '../auth/LoginPage';
 import {
   selectExpandedNodeIds,
   selectHierarchyRoot,
@@ -26,12 +28,25 @@ export function AppShell() {
   return (
     <ToastProvider>
       <Toaster position="bottom-right" />
-      <AppShellContent />
+      <AuthProvider>
+        <AppShellContent />
+      </AuthProvider>
     </ToastProvider>
   );
 }
 
 function AppShellContent() {
+  const auth = useAuth();
+
+  if (auth && !auth.loading && !auth.user) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+        <div className="p-4">
+          <LoginPage onSuccess={() => void auth.refresh()} />
+        </div>
+      </div>
+    );
+  }
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDocumentationOpen, setIsDocumentationOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);

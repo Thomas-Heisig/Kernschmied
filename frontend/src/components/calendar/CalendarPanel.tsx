@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { toast } from 'sonner';
+import { toast, Toaster } from 'sonner';
 import type { components } from '../../api/openapi-types';
 import {
   listCalendars,
@@ -18,64 +18,140 @@ export function CalendarPanel({ onClose }: { onClose: () => void }) {
   const [selectedCalendar, setSelectedCalendar] = useState<string | null>(null);
   const [events, setEvents] = useState<components['schemas']['EventOut'][]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [loadingCals, setLoadingCals] = useState(false);
+  const [calError, setCalError] = useState<string | null>(null);
+  const [eventsError, setEventsError] = useState<string | null>(null);
   const [newCalName, setNewCalName] = useState('');
-  const [newEventTitle, setNewEventTitle] = useState('');
-  const [newEventStart, setNewEventStart] = useState('');
-  const [newEventEnd, setNewEventEnd] = useState('');
   const [editingCalendarId, setEditingCalendarId] = useState<string | null>(null);
   const [editingCalendarName, setEditingCalendarName] = useState<string>('');
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [showCalendarView, setShowCalendarView] = useState(true);
 
-  // Use domain hooks for calendars and events; they encapsulate API operations
-  const { calendars, loading: loadingCals, error: calError, addCalendar, updateCalendar, removeCalendar, reload } = useCalendars();
-  const { events, loading: loadingEvents, error: eventsError, create: createEventHook, update: updateEventHook, remove: removeEventHook, refresh: refreshEvents } = useEvents(
-    selectedCalendar,
-    currentMonth,
-  );
+  async function reloadCalendars() {
+    setCalError(null);
+    setLoadingCals(true);
+    try {
+      const c = await listCalendars();
+      setCalendars(c || []);
+      if (!selectedCalendar && c && c.length) setSelectedCalendar(c[0].id);
+    } catch (err: any) {
+      setCalError(err instanceof Error ? err.message : String(err));
+      setCalendars([]);
+    } finally {
+      setLoadingCals(false);
+    }
+  }
 
-  const [editingEventId, setEditingEventId] = useState<string | null>(null);
-  const [editingEventTitle, setEditingEventTitle] = useState('');
-  const [editingEventStartInput, setEditingEventStartInput] = useState('');
-  const [editingEventEndInput, setEditingEventEndInput] = useState('');
-
-  const toInputLocal = (iso: string) => {
-    const d = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  };
+  async function refreshEvents(calendarId?: string) {
+    const calId = calendarId ?? selectedCalendar;
+    if (!calId) {
+      setEvents([]);
+      return;
+    }
+    setEventsError(null);
+    setLoadingEvents(true);
+    try {
+      const m = currentMonth || new Date();
+      const start = new Date(m.getFullYear(), m.getMonth(), 1).toISOString();
+      const end = new Date(m.getFullYear(), m.getMonth() + 1, 0, 23, 59, 59).toISOString();
+      const ev = await listEvents(calId, { time_min: start, time_max: end });
+      setEvents(ev || []);
+    } catch (err: any) {
+      setEventsError(err instanceof Error ? err.message : String(err));
+      setEvents([]);
+      toast.error('Ereignisse konnten nicht geladen werden: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      setLoadingEvents(false);
+    }
+  }
 
   useEffect(() => {
-    if (!selectedCalendar && calendars && calendars.length) setSelectedCalendar(calendars[0].id);
-  }, [calendars]);
-
-  // initialize new event start/end to next full hour and +1h
-  useEffect(() => {
-    const toLocalInput = (d: Date) => {
-      const pad = (n: number) => String(n).padStart(2, '0');
-      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-    };
-
-    const now = new Date();
-    const next = new Date(now);
-    next.setHours(now.getHours() + 1, 0, 0, 0);
-    const end = new Date(next.getTime() + 60 * 60 * 1000);
-    setNewEventStart(toLocalInput(next));
-    setNewEventEnd(toLocalInput(end));
+    void reloadCalendars();
   }, []);
 
   useEffect(() => {
     if (!selectedCalendar) return;
-    // events are handled by useEvents hook; refresh when selectedCalendar or month changes
-    void refreshEvents();
-  }, [selectedCalendar, currentMonth, refreshEvents]);
+    void refreshEvents(selectedCalendar);
+  }, [selectedCalendar, currentMonth]);
 
-  return (
-    <div className="p-4">
-      <Toaster position="bottom-right" />
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Kalenderverwaltung</h3>
-        <div>
-          <button className="mr-2 rounded px-2 py-1" onClick={onClose}>
-            Schließen
-          </button>
+  const handleAddCalendar = async () => {
+    if (!newCalName.trim()) return;
+    try {
+      await createCalendar({ name: newCalName.trim() });
+      setNewCalName('');
+      void reloadCalendars();
+      toast.success('Kalender erstellt');
+    } catch (err: any) {
+      toast.error('Kalender konnte nicht erstellt werden: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const startEditingCalendar = (id: string, name: string) => {
+    setEditingCalendarId(id);
+    setEditingCalendarName(name);
+  };
+
+  const cancelEditCalendar = () => {
+    setEditingCalendarId(null);
+    setEditingCalendarName('');
+  };
+
+  const handleSaveCalendarEdit = async () => {
+    if (!editingCalendarId) return;
+    try {
+      await patchCalendar(editingCalendarId, { name: editingCalendarName } as any);
+      toast.success('Kalender aktualisiert');
+      cancelEditCalendar();
+      void reloadCalendars();
+    } catch (err: any) {
+      toast.error('Aktualisierung fehlgeschlagen: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const handleRemoveCalendar = async (id: string) => {
+    if (!window.confirm('Kalender wirklich löschen?')) return;
+    try {
+      await deleteCalendar(id);
+      toast.success('Kalender gelöscht');
+      if (selectedCalendar === id) setSelectedCalendar(null);
+      void reloadCalendars();
+    } catch (err: any) {
+      toast.error('Löschen fehlgeschlagen: ' + (err instanceof Error ? err.message : String(err)));
+    }
+  };
+
+  const handleCreateEvent = async (payload: components['schemas']['EventCreate']) => {
+    if (!selectedCalendar) return false;
+    try {
+      await createEvent(selectedCalendar, payload);
+      void refreshEvents(selectedCalendar);
+      return true;
+    } catch (err: any) {
+      toast.error('Ereignis konnte nicht erstellt werden: ' + (err instanceof Error ? err.message : String(err)));
+      return false;
+    }
+  };
+
+  const handleUpdateEvent = async (id: string, payload: components['schemas']['EventUpdate']) => {
+    if (!selectedCalendar) return false;
+    try {
+      await patchEvent(selectedCalendar, id, payload);
+      void refreshEvents(selectedCalendar);
+      return true;
+    } catch (err: any) {
+      toast.error('Ereignis konnte nicht aktualisiert werden: ' + (err instanceof Error ? err.message : String(err)));
+      return false;
+    }
+  };
+
+  const handleRemoveEvent = async (id: string) => {
+    if (!selectedCalendar) return false;
+    try {
+      await deleteEvent(selectedCalendar, id);
+      void refreshEvents(selectedCalendar);
+      return true;
+    } catch (err: any) {
+      toast.error('Ereignis konnte nicht gelöscht werden: ' + (err instanceof Error ? err.message : String(err)));
+      return false;
+    }
+  };
