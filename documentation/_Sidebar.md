@@ -1,115 +1,133 @@
-- [Home](Home.md)
-- api/
-  - [bootstrap](api/bootstrap.md)
-  - [chat](api/chat.md)
-  - [configuration](api/configuration.md)
-  - [errors](api/errors.md)
-  - [hierarchy](api/hierarchy.md)
-  - [models](api/models.md)
-  - [sse](api/sse.md)
-  - [tools](api/tools.md)
-  - [ui-schema](api/ui-schema.md)
-- architecture/
-  - [architecture-decision-index](architecture/architecture-decision-index.md)
-  - [bootstrap-lifecycle](architecture/bootstrap-lifecycle.md)
-  - [c4-container](architecture/c4-container.md)
-  - [configuration-architecture](architecture/configuration-architecture.md)
-  - [contract-versioning](architecture/contract-versioning.md)
-  - [deployment-architecture](architecture/deployment-architecture.md)
-  - [extension-points](architecture/extension-points.md)
-  - [hierarchy-architecture](architecture/hierarchy-architecture.md)
-  - [manifest-system](architecture/manifest-system.md)
-  - [prompt-inheritance](architecture/prompt-inheritance.md)
-  - [registry-architecture](architecture/registry-architecture.md)
-  - [repository-structure](architecture/repository-structure.md)
-  - [request-lifecycle](architecture/request-lifecycle.md)
-  - [Security-Architecture](architecture/Security-Architecture.md)
-  - [Settings-Catalog](architecture/Settings-Catalog.md)
-  - [ui-schema-pipeline](architecture/ui-schema-pipeline.md)
-- assets/
-- generated/
-  - [audit-hinweise](generated/audit-hinweise.md)
-- getting-started/
-  - [Installation](getting-started/Installation.md)
-- internal-work/
-  - [fehlerbehebung_der_chat_pipelien](internal-work/fehlerbehebung_der_chat_pipelien.md)
-  - [PROJECT_PROMPT](internal-work/PROJECT_PROMPT.md)
-  - [readme-patch](internal-work/readme-patch.md)
-  - [settings-patch-integration](internal-work/settings-patch-integration.md)
-  - [änderungen](internal-work/änderungen.md)
-repository-entry/
-  - [home](repository-entry/home.md)
-  - [installation](repository-entry/installation.md)
-  - [readme](repository-entry/readme.md)
-- security/
-  - [security](security/security.md)
-- unknown/
-  - [_footer](unknown/_footer.md)
-  - [_sidebar](unknown/_sidebar.md)
-  - [action-registry](unknown/action-registry.md)
-  - [adr-0001-schema-driven-ui](unknown/adr-0001-schema-driven-ui.md)
-  - [adr-0002-bootstrap](unknown/adr-0002-bootstrap.md)
-  - [adr-0003-registries](unknown/adr-0003-registries.md)
-  - [adr-0004-security-profiles](unknown/adr-0004-security-profiles.md)
-  - [adr-0005-versioned-contracts](unknown/adr-0005-versioned-contracts.md)
-  - [adr-0006-api-contracts-and-versioning](unknown/adr-0006-api-contracts-and-versioning.md)
-  - [adr-0007-database-and-storage-architecture](unknown/adr-0007-database-and-storage-architecture.md)
-  - [adr-0008-tool-architecture](unknown/adr-0008-tool-architecture.md)
-  - [adr-0009-authentication-and-authorization](unknown/adr-0009-authentication-and-authorization.md)
-  - [adr-0010-configuration-management](unknown/adr-0010-configuration-management.md)
-  - [adr-0011-hierarchy-and-prompt-inheritance](unknown/adr-0011-hierarchy-and-prompt-inheritance.md)
-  - [adr-0012-frontend-architecture](unknown/adr-0012-frontend-architecture.md)
-  - [adr-0013-error-handling-and-logging](unknown/adr-0013-error-handling-and-logging.md)
-  - [adr-0014-deployment-profiles](unknown/adr-0014-deployment-profiles.md)
-  - [adr-0015-llm-provider-architecture](unknown/adr-0015-llm-provider-architecture.md)
-  - [api-client](unknown/api-client.md)
-  - [api-todo](unknown/api-todo.md)
-  - [architecture](unknown/architecture.md)
-  - [backend-overview](unknown/backend-overview.md)
-  - [bootstrap](unknown/bootstrap.md)
-  - [calendar](unknown/calendar.md)
-  - [chat](unknown/chat.md)
-  - [coding-guidelines](unknown/coding-guidelines.md)
-  - [component-registry](unknown/component-registry.md)
-  - [configuration-revisions](unknown/configuration-revisions.md)
-  - [configuration](unknown/configuration.md)
-  - [contracts](unknown/contracts.md)
-  - [database](unknown/database.md)
-  - [dependency-injection](unknown/dependency-injection.md)
-  - [development](unknown/development.md)
-  - [dynamic-ui](unknown/dynamic-ui.md)
-  - [error-handling](unknown/error-handling.md)
-  - [faq](unknown/faq.md)
-  - [forms](unknown/forms.md)
-  - [frontend-overview](unknown/frontend-overview.md)
-  - [generic-tree](unknown/generic-tree.md)
-  - [getting-started](unknown/getting-started.md)
-  - [glossary](unknown/glossary.md)
-  - [hierarchy](unknown/hierarchy.md)
-  - [history_rewrite](unknown/history_rewrite.md)
-  - [home](unknown/home.md)
-  - [installation](unknown/installation.md)
-  - [internet](unknown/internet.md)
-  - [intranet](unknown/intranet.md)
-  - [model-registry](unknown/model-registry.md)
-  - [plugin-system](unknown/plugin-system.md)
-  - [project-principles](unknown/project-principles.md)
-  - [project_prompt.agent](unknown/project_prompt.agent.md)
-  - [PROJECT_PROMPT](unknown/PROJECT_PROMPT.md)
-  - [prompt-inheritance](unknown/prompt-inheritance.md)
-  - [pull_request_template](unknown/pull_request_template.md)
-  - [release-process](unknown/release-process.md)
-  - [roadmap](unknown/roadmap.md)
-  - [routing](unknown/routing.md)
-  - [runtime-configuration](unknown/runtime-configuration.md)
-  - [schema-renderer](unknown/schema-renderer.md)
-  - [schema-versioning](unknown/schema-versioning.md)
-  - [state-management](unknown/state-management.md)
-  - [streaming](unknown/streaming.md)
-  - [testing](unknown/testing.md)
-  - [todo](unknown/todo.md)
-  - [tool-registry](unknown/tool-registry.md)
-  - [ui-schema](unknown/ui-schema.md)
+ - Home
+
+ ---
+
+ ## 🏠 Start
+
+ - [[Home]]
+ - [[Getting-Started]]
+ - [[Installation]]
+ - [[Project-Principles]]
+ - [[Architecture]]
+ - [[Glossary]]
+ - [[FAQ]]
+
+ ---
+
+ ## 🏛️ Architektur
+
+ - [[Architecture]]
+ - [[System-Context]]
+ - [[C4-Container]]
+ - [[Request-Lifecycle]]
+ - [[Bootstrap-Lifecycle]]
+ - [[Configuration-Architecture]]
+ - [[Registry-Architecture]]
+ - [[Manifest-System]]
+ - [[UI-Schema-Pipeline]]
+ - [[Hierarchy-Architecture]]
+ - [[Prompt-Inheritance]]
+ - [[Deployment-Architecture]]
+ - [[Security-Architecture]]
+ - [[Contract-Versioning]]
+ - [[Extension-Points]]
+ - [[Repository-Structure]]
+ - [[Architecture-Decision-Index]]
+
+ ---
+
+ ## ⚙️ Backend
+
+ - [[Backend-Overview]]
+ - [[Bootstrap]]
+ - [[Configuration]]
+ - [[Contracts]]
+ - [[Hierarchy]]
+ - [[Chat]]
+ - [[Model-Registry]]
+ - [[Tool-Registry]]
+ - [[Security]]
+ - [[Error-Handling]]
+ - [[Database]]
+ - [[Dependency-Injection]]
+
+ ---
+
+ ## 🎨 Frontend
+
+ - [[Frontend-Overview]]
+ - [[Schema-Renderer]]
+ - [[Generic-Tree]]
+ - [[Component-Registry]]
+ - [[Action-Registry]]
+ - [[State-Management]]
+ - [[Routing]]
+ - [[API-Client]]
+ - [[Streaming]]
+ - [[Forms]]
+ - [[UI-Schema]]
+
+ ---
+
+ ## 🌐 REST API
+
+ - [[Bootstrap]]
+ - [[Hierarchy]]
+ - [[UI-Schema]]
+ - [[Chat]]
+ - [[Models]]
+ - [[Tools]]
+ - [[Configuration]]
+ - [[Errors]]
+ - [[SSE]]
+
+ ---
+
+ ## 🧠 Konzepte
+
+ - [[Dynamic-UI]]
+ - [[Runtime-Configuration]]
+ - [[Configuration-Revisions]]
+ - [[Prompt-Inheritance]]
+ - [[Plugin-System]]
+ - [[Schema-Versioning]]
+
+ ---
+
+ ## 🚀 Deployment
+
+ - [[Development]]
+ - [[Intranet]]
+ - [[Internet]]
+
+ ---
+
+ ## 👨‍💻 Entwicklung
+
+ - [[Coding-Guidelines]]
+ - [[Testing]]
+ - [[Release-Process]]
+ - [[Roadmap]]
+ - [[TODO]]
+
+ ---
+
+ ## 📐 Architecture Decision Records
+
+ - [[ADR-0001-Schema-Driven-UI]]
+ - [[ADR-0002-Bootstrap]]
+ - [[ADR-0003-Registries]]
+ - [[ADR-0004-Security-Profiles]]
+ - [[ADR-0005-Versioned-Contracts]]
+ - [[ADR-0024-Identity-and-Authorization]]
+ - [[ADR-0032-Backup-and-Disaster-Recovery]]
+
+ ---
+
+ ## 📚 Referenz
+
+ - [[Glossary]]
+ - [[FAQ]]
 - user-guide/
   - [Chat](user-guide/Chat.md)
   - [hierarchy](user-guide/hierarchy.md)

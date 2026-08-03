@@ -1523,6 +1523,19 @@ async def stream_chat(
     except Exception:
         pass
 
+    # Log the hierarchy context explicitly for diagnostics (no message content)
+    try:
+        logger.info(
+            "Chat request hierarchy context",
+            extra={
+                "hierarchy_node_id": payload.hierarchy_node_id,
+                "conversation_id": payload.conversation_id,
+                "request_id": context.request_id,
+            },
+        )
+    except Exception:
+        pass
+
     return StreamingResponse(
         generate_chat_events(
             request=request,

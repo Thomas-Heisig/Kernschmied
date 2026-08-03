@@ -1,0 +1,66 @@
+openapi: 3.1.0
+info:
+  title: Kernschmied IAM API (partial)
+  version: 1.0.0
+
+paths:
+  /api/v1/permission-evaluation:
+    post:
+      summary: Evaluate a permission for an actor in a scope
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [actor, permission, scope]
+              properties:
+                actor:
+                  type: object
+                  properties:
+                    identity_id:
+                      type: string
+                permission:
+                  type: string
+                scope:
+                  type: object
+                context:
+                  type: object
+      responses:
+        '200':
+          description: Decision result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  allowed:
+                    type: boolean
+                  reason:
+                    type: string
+                  via:
+                    type: object
+
+  /api/v1/identity-providers:
+    get:
+      summary: List configured Identity Providers
+      responses:
+        '200':
+          description: OK
+
+  /api/v1/roles:
+    post:
+      summary: Create a Role
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, permissions]
+              properties:
+                name:
+                  type: string
+                permissions:
+                  type: array
+                  items:
+                    type: string

@@ -5,6 +5,7 @@ import pytest
 from app.services.chat_service import ChatService, ChatRequest, ChatServiceContext
 from app.storage.adapters.chat_repository_adapter import ChatRepositoryAdapter
 from app.storage.adapters.chat_history_provider import ChatHistoryProviderAdapter
+from app.database.models.hierarchy_node import HierarchyNodeModel
 from app.models.service import ModelAccessContext
 from app.contracts.model_backend import GenerationRequest, StreamEvent, StreamEventType
 from app.models.service import ModelService
@@ -83,8 +84,15 @@ async def test_second_request_contains_previous_conversation_history(session_fac
     # create service (cast recording service to ModelService for the test)
     service = ChatService(model_service=cast(ModelService, model_service), default_model_id="m", repository=repo_adapter, history_provider=history_provider)
 
+    # create a chat hierarchy node and pass its id in request metadata
+    async with session_factory() as session:
+        node = HierarchyNodeModel(id="node-1", parent_id=None, type="chat", name="Node 1")
+        session.add(node)
+        await session.flush()
+        await session.commit()
+
     # first user message: let the service create the conversation id
-    req1 = ChatRequest(message="Mein Name ist Thomas Heisig.", conversation_id=None, history=(), system_prompt=None)
+    req1 = ChatRequest(message="Mein Name ist Thomas Heisig.", conversation_id=None, history=(), system_prompt=None, hierarchy_node_id="node-1")
     ctx = ChatServiceContext(request_id="r1", access=ModelAccessContext())
     events = await collect_stream(service.stream(req1, context=ctx))
 

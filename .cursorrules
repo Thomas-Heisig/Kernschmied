@@ -1,0 +1,84 @@
+# Agenten-Regeln für Kernschmied
+
+Damit deine KI-Agenten (wie Copilot, Cursor, oder ChatGPT) keine `Any`-Typen, fehlenden Annotationen oder unnötigen `# type: ignore` mehr produzieren, musst du ihnen **klare, harte Spielregeln** geben – am besten als **System-Prompt** oder in einer `.cursorrules`-Datei.
+
+Zusätzlich solltest du dein Projekt so konfigurieren, dass Pylance die Fehler direkt in der IDE anzeigt und der Agent sie sofort sieht.
+
+---
+
+### 1. Die harte Basis: `pyproject.toml` konfigurieren
+
+Damit der Agent die Fehler nicht ignorieren kann, stellst du Pyright/Pylance auf **Strict Mode**. Füge das in deine `pyproject.toml` ein:
+
+```toml
+[tool.pyright]
+typeCheckingMode = "strict"
+# Explizite Verbote, die den Agenten zwingen, sauber zu arbeiten
+reportAny = "error"
+reportUnusedImport = "error"
+reportMissingParameterType = "error"
+reportUnknownParameterType = "error"
+reportUnknownMemberType = "warning"  # Bei SQLAlchemy leider oft nötig
+reportUnnecessaryCast = "error"
+```
+
+---
+
+### 2. Der ultimative Agenten-Prompt (Copy & Paste)
+Lege eine Datei namens `.cursorrules` im Projekt-Root an (funktioniert bei Cursor) oder packe diesen Prompt in deine "Custom Instructions" bei Copilot/ChatGPT. **Gib dem Agenten diese 5 Gebote mit:**
+
+---
+
+**System-Prompt / Regelwerk für den Coding-Agenten:**
+
+> **Du bist ein strenger Python-Entwickler. Du vermeidest konsequent alle Pylance/Pyright-Diagnostik-Fehler. Halte dich an diese Regeln:**
+>
+> 1. **Absolutes `Any`-Verbot:** Verwende niemals den Typ `Any`. Wenn der Typ unbekannt ist, nutze entweder:
+>    - Ein Pydantic-Modell (`model_validate`) für externe API-Daten,
+>    - Oder konkretes `dict[str, Unbekannt]` (oder besser: `TypedDict`),
+>    - Oder das `Unknown`-Äquivalent (in Python: konkrete Strukturen).
+>    *Ausnahme:* Nur erlaubt, wenn eine externe Library es zwingend verlangt – dann muss ein Kommentar daneben stehen.
+>
+> 2. **Vollständige Typannotationen:** Jede Funktion, jeder Parameter und jeder Rückgabewert MUSS eine Typannotation haben (`def foo(x: int) -> str:`). Kein `def foo(x):` mehr!
+>
+> 3. **`# type: ignore` nur mit Kommentar:** Du darfst `# type: ignore` **ausschließlich** bei SQLAlchemy `merge`, `commit`, `execute` und `scalar_one` verwenden (weil SQLAlchemy dynamisch ist). Für jede andere Verwendung schreibst du einen erklärenden Kommentar. Suche immer zuerst nach einer sauberen Lösung ohne `# type: ignore`.
+>
+> 4. **Kein unnötiger Cast:** Verwende `typing.cast` NIE zur Laufzeit-Konvertierung. Nutze es nur, wenn du dem Linter einen Typ mitteilen musst, den er nicht ableiten kann. (Falls Pylance `reportUnnecessaryCast` meldet, löschst du den Cast sofort.)
+>
+> 5. **Fixture-Parameter typisieren:** In Tests musst du die Pytest-Fixtures (`tmp_path`, `monkeypatch`, `session_factory`) immer mit `: Path`, `: MonkeyPatch`, `: AsyncSession` typisieren.
+
+---
+
+### 3. Spezieller Befehl für den Agenten (für jeden neuen Task)
+Wenn du einen Agenten eine neue Datei schreiben lässt, sagst du ihm zusätzlich explizit:
+
+> *"Schreibe den Code so, dass Pylance keine `reportUnknownMemberType`, `reportAny` oder `reportMissingParameterType` wirft. Verwende für unbekannte Daten Pydantic. Falls du bei SQLAlchemy nicht weiterkommst, nutze `# type: ignore` mit dem Kommentar `# SQLAlchemy dynamic`."*
+
+---
+
+### 4. Automatisches Fixen nach dem Generieren
+Damit der Agent *nachträglich* seine Fehler behebt, kannst du ihm diesen **Fix-it-Befehl** geben, nachdem er Code geliefert hat:
+
+> *"Überprüfe die Datei auf alle Pylance-Diagnosen. Ersetze jedes `Any` durch einen konkreten Typ oder ein Pydantic-Modell. Füge für alle fehlenden Parameter-Typen Annotationen hinzu. Entferne überflüssige `cast`-Aufrufe. SQLAlchemy-`# type: ignore` sind okay, aber markiere sie mit einem Kommentar."*
+
+---
+
+### 5. Speziell für deine SQLAlchemy-Probleme
+Da SQLAlchemy die Typen dynamisch erzeugt, wird der Agent immer wieder auf `reportUnknownMemberType` für `.merge()`, `.commit()` etc. stoßen. 
+Sage ihm:
+
+> *"Bei `session.merge()` und `session.commit()` akzeptiere ich `# type: ignore`, weil SQLAlchemy keine kompletten Typstubs hat. Aber wenn du einen Rückgabewert bekommst (wie `c = await s.get(...)`), füge danach immer ein `assert c is not None` hinzu, damit der Linter den Typ für die nächste Zeile kennt."*
+
+---
+
+### Zusammenfassung für deinen Arbeitsalltag
+
+| Problem | Anweisung an den Agenten |
+| :--- | :--- |
+| `reportUnknownParameterType` | "Füge für `tmp_path` den Typ `Path` hinzu." |
+| `reportUnusedImport` | "Lösche Imports, die nicht direkt verwendet werden. Wenn du sie später brauchst, holst du sie per Auto-Import." |
+| `reportAny` | "Tausche `Any` gegen ein Pydantic-Schema oder `TypedDict` aus." |
+| `reportUnknownMemberType` (bei SQLAlchemy) | "Füge ein `assert c is not None` vor dem Zugriff ein, oder setze `# type: ignore`." |
+| `reportUnnecessaryCast` | "Lösche den `cast` komplett." |
+
+Wenn du diese Regeln einmal als feste System-Prompt hinterlegst, werden die Agenten ab sofort **deutlich** weniger nervige Pylance-Fehler produzieren!

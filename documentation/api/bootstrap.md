@@ -2,32 +2,45 @@
 
 The Bootstrap API is the first endpoint every Kernschmied client calls after startup.
 
-It provides all information required to initialize the application without hardcoding deployment-specific knowledge into the frontend.
+It provides the minimum amount of information required for a client to safely initialize itself without embedding deployment-specific knowledge or hardcoded assumptions.
 
-The bootstrap endpoint intentionally contains only lightweight metadata. Large resources such as hierarchy trees, UI schemas or configuration data are retrieved through their dedicated APIs.
+The Bootstrap endpoint acts as the **discovery mechanism** for the platform.
 
----
+It intentionally returns only lightweight metadata.
 
-## Goals
-
-The Bootstrap endpoint is designed to provide:
-
-- Application identification
-- API compatibility information
-- Deployment profile
-- Security profile
-- Supported capabilities
-- Available endpoint locations
-- Contract versions
-- Configuration revisions
-- Feature flags
-- Startup metadata
-
-The bootstrap response should remain small, deterministic and cacheable.
+Large resources such as hierarchy data, UI schemas, registries, runtime configuration, conversations or documents are retrieved through their dedicated APIs.
 
 ---
 
-## Endpoint
+# Purpose
+
+The Bootstrap endpoint provides:
+
+* application identity
+* deployment profile
+* security profile
+* authenticated user information
+* effective tenant information
+* platform capabilities
+* enabled features
+* supported contract versions
+* endpoint discovery
+* runtime revisions
+* registry revisions
+* startup metadata
+* diagnostic information
+
+The bootstrap response is intentionally:
+
+* deterministic
+* lightweight
+* cacheable
+* versioned
+* forward compatible
+
+---
+
+# Endpoint
 
 ```http
 GET /api/v1/bootstrap
@@ -35,7 +48,7 @@ GET /api/v1/bootstrap
 
 ---
 
-## Authentication
+# Authentication
 
 Authentication depends on the active deployment profile.
 
@@ -45,92 +58,54 @@ Authentication depends on the active deployment profile.
 | intranet    | Required       |
 | internet    | Required       |
 
+The bootstrap endpoint never bypasses authentication rules.
+
 ---
 
-## Response
-
-Example:
+# Response Structure
 
 ```json
 {
-  "application": {
-    "name": "Kernschmied",
-    "version": "0.1.0"
-  },
-  "environment": {
-    "profile": "development"
-  },
-  "user": {
-    "id": "local-user",
-    "display_name": "Development User"
-  },
-  "security": {
-    "profile": "development"
-  },
-  "capabilities": {
-    "hierarchy": true,
-    "ui_schema": true,
-    "chat_streaming": true,
-    "configuration": true,
-    "model_registry": true,
-    "tool_registry": true
-  },
-  "features": {
-    "schema_driven_ui": true,
-    "recursive_hierarchy": true,
-    "streaming": true
-  },
-  "versions": {
-    "api": 1,
-    "bootstrap": 1,
-    "ui_schema": 1,
-    "hierarchy": 1,
-    "chat": 1,
-    "model_registry": 1,
-    "tool_registry": 1,
-    "configuration": 1
-  },
-  "endpoints": {
-    "hierarchy": "/api/v1/hierarchy",
-    "ui_schema": "/api/v1/ui/schema",
-    "chat_stream": "/api/v1/chat/stream",
-    "models": "/api/v1/models",
-    "tools": "/api/v1/tools",
-    "configuration": "/api/v1/config"
-  },
-  "revisions": {
-    "configuration": 17,
-    "model_registry": 3,
-    "tool_registry": 8
-  },
-  "request_id": "3d52fef3"
+  "application": { },
+  "environment": { },
+  "deployment": { },
+  "user": { },
+  "tenant": { },
+  "security": { },
+  "capabilities": { },
+  "features": { },
+  "versions": { },
+  "endpoints": { },
+  "revisions": { },
+  "diagnostics": { },
+  "request_id": "..."
 }
 ```
 
+Each section represents an independent contract.
+
 ---
 
-## Response Sections
+# Application
 
-## Application
-
-Provides application metadata.
+Application metadata.
 
 ```json
 {
   "name": "Kernschmied",
-  "version": "0.1.0"
+  "version": "0.1.0",
+  "build": "20260803",
+  "edition": "community"
 }
 ```
 
-This information is displayed by the frontend and used for diagnostics.
+The frontend may display this information for diagnostics.
 
 ---
 
-## Environment
+# Environment
 
-Describes the active deployment profile.
-
-Example:
+Describes the active runtime profile.
 
 ```json
 {
@@ -140,313 +115,412 @@ Example:
 
 Possible values:
 
-- development
-- intranet
-- internet
+* development
+* intranet
+* internet
 
 ---
 
-## User
+# Deployment
 
-Contains information about the current authenticated user.
-
-Example:
+Provides deployment metadata.
 
 ```json
 {
-  "id": "local-user",
-  "display_name": "Development User"
+  "instance_id": "local-dev",
+  "node": "desktop-01",
+  "startup_time": "...",
+  "timezone": "Europe/Berlin"
 }
 ```
 
-The frontend should treat this information as informational only.
+Clients should treat these values as informational.
+
+---
+
+# User
+
+Contains information about the authenticated identity.
+
+```json
+{
+  "id": "user-123",
+  "display_name": "Thomas Heisig",
+  "authenticated": true
+}
+```
+
+This information is informational only.
 
 Authorization decisions remain server-side.
 
 ---
 
-## Security
+# Tenant
+
+Provides the currently active tenant.
+
+```json
+{
+    "id": "tenant-default",
+    "display_name": "Default Tenant"
+}
+```
+
+Future multi-tenant deployments may switch tenants dynamically.
+
+---
+
+# Security
 
 Indicates the active security profile.
 
+```json
+{
+    "profile": "internet",
+    "authorization": "required"
+}
+```
+
+The frontend may adapt its presentation but never enforce permissions.
+
+---
+
+# Capabilities
+
+Capabilities describe what the backend currently supports.
+
 Example:
 
 ```json
 {
-  "profile": "internet"
+  "hierarchy": true,
+  "chat": true,
+  "resources": true,
+  "widgets": true,
+  "actions": true,
+  "registries": true,
+  "workflows": false
 }
 ```
 
-The frontend may adapt its presentation accordingly.
+Capabilities enable forward compatibility.
+
+Clients simply hide unsupported functionality.
 
 ---
 
-## Capabilities
+# Features
 
-Capabilities describe backend functionality.
-
-Example:
-
-```json
-{
-  "chat_streaming": true,
-  "tool_registry": true,
-  "configuration": true
-}
-```
-
-Capabilities allow older clients to hide unsupported functionality.
-
----
-
-## Features
-
-Features describe optional frontend behavior.
+Features describe optional behaviour.
 
 Examples:
 
-- schema_driven_ui
-- recursive_hierarchy
-- streaming
+* schema_driven_ui
+* runtime_registry
+* dynamic_resources
+* widget_layouts
+* streaming
+* reasoning
+* multi_tenant
 
 Features are intentionally coarse-grained.
 
 ---
 
-## Versions
+# Versions
 
-Every public contract exposes its version independently.
-
-Example:
-
-```json
-{
-  "api": 1,
-  "chat": 1,
-  "ui_schema": 1
-}
-```
-
-Clients should compare versions before assuming compatibility.
-
----
-
-## Endpoints
-
-The bootstrap endpoint publishes the canonical API locations.
+Every public contract exposes its own version.
 
 Example:
 
 ```json
 {
-  "chat_stream": "/api/v1/chat/stream"
+    "api": 1,
+    "bootstrap": 1,
+    "hierarchy": 1,
+    "context": 1,
+    "chat": 1,
+    "resources": 1,
+    "widgets": 1,
+    "actions": 1,
+    "events": 1,
+    "registries": 1,
+    "configuration": 1
 }
 ```
 
-This avoids hardcoded URLs inside frontend modules.
+Clients compare versions before assuming compatibility.
 
 ---
 
-## Revisions
+# Endpoints
 
-Revision numbers identify mutable runtime state.
-
-Examples:
-
-- configuration
-- model registry
-- tool registry
-
-Whenever a revision changes the frontend knows cached data may no longer be valid.
-
----
-
-## Request ID
-
-Every bootstrap request returns a request identifier.
+Bootstrap publishes canonical endpoint locations.
 
 Example:
 
 ```json
 {
-  "request_id": "e3f5b4e9"
+    "bootstrap": "/api/v1/bootstrap",
+    "hierarchy": "/api/v1/hierarchy",
+    "context": "/api/v1/context",
+    "resources": "/api/v1/resources",
+    "widgets": "/api/v1/widgets",
+    "actions": "/api/v1/actions",
+    "registries": "/api/v1/registries"
 }
 ```
 
-This identifier supports diagnostics and support requests.
+Clients should never hardcode API URLs.
 
 ---
 
-## Startup Sequence
+# Revisions
 
-Typical startup flow:
+Revision numbers describe mutable runtime state.
+
+```json
+{
+    "configuration": 18,
+    "hierarchy": 7,
+    "registries": {
+        "resource_types": 12,
+        "widget_types": 5,
+        "actions": 9,
+        "concepts": 4,
+        "models": 8,
+        "tools": 11
+    }
+}
+```
+
+Whenever a revision changes, cached information becomes invalid.
+
+---
+
+# Diagnostics
+
+Provides diagnostic metadata.
+
+```json
+{
+    "server_time": "...",
+    "api_status": "online",
+    "request_duration_ms": 3
+}
+```
+
+Useful for debugging and support.
+
+---
+
+# Request ID
+
+Every response contains a request identifier.
+
+```json
+{
+    "request_id": "5f42cb67"
+}
+```
+
+The request identifier must appear in logs and error responses.
+
+---
+
+# Startup Sequence
+
+Typical client initialization:
 
 ```text
-Frontend
+Application Start
 
-↓
+        │
+
+        ▼
 
 GET /bootstrap
 
-↓
+        │
 
-Load Endpoints
+        ▼
 
-↓
+Read Contract Versions
+
+        │
+
+        ▼
+
+Read Capabilities
+
+        │
+
+        ▼
+
+Read Endpoints
+
+        │
+
+        ▼
+
+Load Effective Context
+
+        │
+
+        ▼
+
+Load Runtime Registries
+
+        │
+
+        ▼
 
 Load UI Schema
 
-↓
+        │
+
+        ▼
 
 Load Hierarchy
 
-↓
+        │
 
-Initialize Application
+        ▼
 
-↓
+Initialize Widgets
+
+        │
+
+        ▼
 
 Ready
-
 ```
-
-The bootstrap endpoint should always be the first API request.
 
 ---
 
-## Why Not Return Everything?
+# Why Bootstrap Does Not Return Business Data
 
-Bootstrap intentionally does **not** return:
+Bootstrap intentionally excludes:
 
-- hierarchy tree
-- UI schema
-- chats
-- configuration
-- model definitions
-- tool definitions
+* hierarchy data
+* conversations
+* resources
+* widgets
+* prompts
+* workflows
+* runtime configuration
+* registry contents
+* model definitions
+* tool definitions
+* search indexes
 
 Reasons:
 
-- smaller responses
-- faster startup
-- independent caching
-- independent versioning
-- lower bandwidth
+* smaller payloads
+* faster startup
+* independent versioning
+* independent caching
+* reduced bandwidth
+* better scalability
 
 ---
 
-## Versioning
+# Versioning
 
-The Bootstrap API follows the REST API version.
-
-Current endpoint:
-
-```text
-/api/v1/bootstrap
+The Bootstrap endpoint follows the REST API version.
 
 ```
+/api/v1/bootstrap
+```
 
-The bootstrap payload also contains independent contract versions.
+The payload additionally contains independent contract versions for every public subsystem.
+
+This allows contracts to evolve independently while maintaining backward compatibility.
 
 ---
 
-## Error Responses
+# Error Responses
 
-Errors follow the standard platform contract.
-
-Example:
+Errors follow the platform-wide error contract.
 
 ```json
 {
-  "code": "internal_error",
-  "message": "Bootstrap could not be generated.",
-  "details": {},
-  "request_id": "..."
+    "code": "bootstrap_generation_failed",
+    "message": "Bootstrap could not be generated.",
+    "details": {},
+    "request_id": "..."
 }
 ```
 
 ---
 
-## Caching
+# Caching
 
-The bootstrap response may be cached briefly.
+Bootstrap responses may be cached for a short time.
 
-However, clients should invalidate cached information whenever:
+Clients should invalidate cached responses when:
 
-- application restarts
-- configuration revisions change
-- deployment changes
-- authentication changes
-
----
-
-## Security Considerations
-
-Bootstrap intentionally excludes sensitive information.
-
-It must never expose:
-
-- API keys
-- passwords
-- provider secrets
-- internal file paths
-- private configuration
-
-The response should be safe for authenticated clients.
+* authentication changes
+* deployment changes
+* application restarts
+* configuration revisions change
+* registry revisions change
+* contract versions change
 
 ---
 
-## Performance Considerations
+# Security Considerations
 
-The endpoint should:
+Bootstrap must never expose:
 
-- execute quickly
-- avoid database-heavy operations
-- avoid loading registries unnecessarily
-- avoid large payloads
+* secrets
+* passwords
+* API keys
+* encryption keys
+* internal filesystem paths
+* private runtime configuration
+* provider credentials
 
-Bootstrap should typically complete within a few milliseconds.
-
----
-
-## Related Endpoints
-
-After bootstrap, clients typically request:
-
-```text
-GET /api/v1/ui/schema
-
-GET /api/v1/hierarchy
-
-GET /api/v1/models
-
-GET /api/v1/tools
-
-```
+Only information required for client initialization may be returned.
 
 ---
 
-## Related Documentation
+# Performance Considerations
 
-- [[REST-API]]
-- [[Architecture]]
-- [[Configuration]]
-- [[UI-Schema]]
-- [[Hierarchy]]
-- [[Streaming]]
-- [[ADR-0002-Bootstrap]]
-- [[ADR-0005-Versioned-Contracts]]
+Bootstrap should:
 
----
+* execute within a few milliseconds
+* avoid expensive database queries
+* avoid loading complete registries
+* avoid loading hierarchy data
+* avoid loading large configuration objects
 
-## Summary
-
-The Bootstrap API provides a lightweight initialization contract for every Kernschmied client.
-
-Rather than embedding deployment knowledge into the frontend, the backend communicates application metadata, supported capabilities, endpoint locations, contract versions and runtime revisions through a single, stable endpoint.
-
-This approach enables independent evolution of frontend and backend while minimizing startup complexity and maintaining long-term compatibility.
+The endpoint should remain lightweight regardless of platform size.
 
 ---
 
-Back to [[Home]].
+# Related ADRs
+
+* ADR-0002 — Bootstrap Configuration and Runtime Initialization
+* ADR-0003 — Registry-Based Extension Architecture
+* ADR-0005 — Versioned Contracts and Schema Evolution
+* ADR-0006 — API Contracts and Versioning
+* ADR-0007 — Generic Hierarchy and Context Architecture
+* ADR-0009 — Runtime Registry Architecture
+* ADR-0014 — Runtime Configuration Architecture
+* ADR-0020 — Multi-Tenant Architecture
+
+---
+
+# Summary
+
+The Bootstrap API is the canonical discovery endpoint of the Kernschmied platform.
+
+It provides only the metadata required for client initialization while delegating all business data to dedicated APIs.
+
+By exposing contract versions, capabilities, endpoint discovery, runtime revisions and deployment metadata through a lightweight, stable and versioned contract, the Bootstrap API enables independent evolution of frontend and backend while maintaining long-term compatibility and minimizing startup complexity.
+
+---
+
+Ich würde sogar noch einen Schritt weitergehen und den Bootstrap komplett an den **32-ADR-Standard** anpassen. Dann wäre er praktisch die "Visitenkarte" der gesamten Plattform und müsste später kaum noch verändert werden.

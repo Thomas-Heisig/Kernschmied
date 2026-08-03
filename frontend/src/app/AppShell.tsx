@@ -17,6 +17,7 @@ import {
   selectSelectedNodeId,
 } from '../store';
 import type { HierarchyNode, HierarchyTree, HierarchyActionKind } from '../contracts/hierarchy';
+import { SYSTEM_ROOT_NODE_ID } from '../contracts/hierarchy';
 import { useTheme } from '../theme';
 import { AppWorkspace } from './AppWorkspace';
 import { useAppBootstrap } from './useAppBootstrap';
@@ -204,9 +205,9 @@ function AppShellContent() {
       const name = 'Neuer Benutzer';
       await createHierarchyNode?.({
         type: 'user',
-        name,
-        // Users should be created at the top level (no parent)
-        parent_id: null,
+        name: name.trim() || 'Neuer Benutzer',
+        // Always create users under the stable system root. Backend enforces admin check.
+        parent_id: SYSTEM_ROOT_NODE_ID,
         metadata: {},
       } as any);
       push('success', `Benutzer '${name}' erstellt.`);

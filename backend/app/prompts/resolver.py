@@ -13,7 +13,7 @@ PROMPT_SEPARATOR = "\n\n"
 
 
 class PromptResolver:
-    VALID_MODES = {"append", "prepend", "replace"}
+    VALID_MODES = {"append", "prepend", "replace", "disabled"}
 
     def __init__(self, *, permission_service: HierarchyPermissionService | None = None):
         self._permissions = permission_service
@@ -65,6 +65,10 @@ class PromptResolver:
                 raise UnsupportedPromptModeError(
                     f"Unbekannter prompt_mode '{mode}' auf Knoten {getattr(node,'id',None)}"
                 )
+
+            # explicit 'disabled' mode takes precedence and skips the fragment
+            if mode == "disabled":
+                continue
 
             enabled = getattr(node, "prompt_enabled", True)
             if not enabled:

@@ -20,19 +20,19 @@ async def seed_development_hierarchy(session_factory: async_sessionmaker[AsyncSe
         return
 
     async with session_factory() as session:
-        # Run the entire seed inside a single transaction for atomicity.
+        # Run the minimal seed inside a single transaction for atomicity.
         async with session.begin():
             repo = HierarchyRepository(session)
 
             try:
-                # root
-                root = await repo.get_node("root")
-                if root is None:
+                # Ensure system-root exists and protective flags are correct
+                system_root = await repo.get_node("system-root")
+                if system_root is None:
                     await repo.create_node(
                         HierarchyNodeCreate(
-                            node_id="root",
-                            type="user",
-                            name="Thomas Heisig",
+                            node_id="system-root",
+                            type="system",
+                            name="System Root",
                             parent_id=None,
                             system_prompt=None,
                             tool_policy={},
@@ -41,85 +41,56 @@ async def seed_development_hierarchy(session_factory: async_sessionmaker[AsyncSe
                         )
                     )
                 else:
-                    # repair existing node attributes to canonical values
-                    if root.type != "user":
-                        root.type = "user"
-                    if root.name != "Thomas Heisig":
-                        root.name = "Thomas Heisig"
-                    # ensure parent is system-root
-                    if root.parent_id is not None:
-                        await repo.move_node(root, new_parent_id=None)
+                    # Repair protective attributes
+                    changed = False
+                    if not getattr(system_root, "is_system", False):
+                        system_root.is_system = True
+                        changed = True
+                    if getattr(system_root, "is_movable", True):
+                        system_root.is_movable = False
+                        changed = True
+                    if getattr(system_root, "is_deletable", True):
+                        system_root.is_deletable = False
+                        changed = True
 
-                # workspace-1
-                ws = await repo.get_node("workspace-1")
-                if ws is None:
+                    if changed:
+                        await repo._session.flush()  # type: ignore[attr-defined]
+
+                # Bootstrap administrator (neutral).
+                admin = await repo.get_node("bootstrap-admin")
+                if admin is None:
                     await repo.create_node(
                         HierarchyNodeCreate(
-                            node_id="workspace-1",
-                            type="workspace",
-                            name="Heisig Naturstein",
-                            parent_id="root",
+                            node_id="bootstrap-admin",
+                            type="user",
+                            name="Administrator",
+                            parent_id="system-root",
                             system_prompt=None,
                             tool_policy={},
                             config_overrides={},
-                            metadata={},
+                            metadata={
+                                "bootstrap_admin": True,
+                                "user_id": "local-development-admin",
+                                "display_name": "Administrator",
+                            },
                         )
                     )
                 else:
-                    if ws.type != "workspace":
-                        ws.type = "workspace"
-                    if ws.name != "Heisig Naturstein":
-                        ws.name = "Heisig Naturstein"
-                    if ws.parent_id != "root":
-                        await repo.move_node(ws, new_parent_id="root")
+                    # Repair admin node attributes conservatively
+                    repaired = False
+                    if admin.type != "user":
+                        admin.type = "user"
+                        repaired = True
+                    if admin.name != "Administrator":
+                        admin.name = "Administrator"
+                        repaired = True
+                    if admin.parent_id != "system-root":
+                        await repo.move_node(admin, new_parent_id="system-root")
 
-                # project-1
-                proj = await repo.get_node("project-1")
-                if proj is None:
-                    await repo.create_node(
-                        HierarchyNodeCreate(
-                            node_id="project-1",
-                            type="project",
-                            name="Angebote",
-                            parent_id="workspace-1",
-                            system_prompt=None,
-                            tool_policy={},
-                            config_overrides={},
-                            metadata={},
-                        )
-                    )
-                else:
-                    if proj.type != "project":
-                        proj.type = "project"
-                    if proj.name != "Angebote":
-                        proj.name = "Angebote"
-                    if proj.parent_id != "workspace-1":
-                        await repo.move_node(proj, new_parent_id="workspace-1")
+                    if repaired:
+                        await repo._session.flush()  # type: ignore[attr-defined]
 
-                # chat-1
-                chat = await repo.get_node("chat-1")
-                if chat is None:
-                    await repo.create_node(
-                        HierarchyNodeCreate(
-                            node_id="chat-1",
-                            type="chat",
-                            name="Angebot Müller",
-                            parent_id="project-1",
-                            system_prompt=None,
-                            tool_policy={},
-                            config_overrides={},
-                            metadata={},
-                        )
-                    )
-                else:
-                    if chat.type != "chat":
-                        chat.type = "chat"
-                    if chat.name != "Angebot Müller":
-                        chat.name = "Angebot Müller"
-                    if chat.parent_id != "project-1":
-                        await repo.move_node(chat, new_parent_id="project-1")
-
-                logger.info("Development hierarchy seed applied (idempotent)")
+                logger.info("Development minimal hierarchy seed applied (idempotent)")
             except Exception:
                 # session.begin() will rollback on exception
                 logger.exception("Development hierarchy seed failed")

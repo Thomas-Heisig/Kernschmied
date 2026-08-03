@@ -1,0 +1,154 @@
+status: 200
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:0
+retry: 3000
+event: start
+data: {"schema_version":"1.0","event":"start","sequence":0,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"user_message_id":"message_9b431617f79c47d783cb1c1bf2bdb905","parent_message_id":null,"model_id":"ollama-qwen2.5-7b","accepted_tool_ids":[],"rejected_tool_ids":[]}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:1
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":1,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" It","index":0}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:2
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":2,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" seems","index":1}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:3
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":3,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" like","index":2}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:4
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":4,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" you","index":3}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:5
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":5,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"'re","index":4}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:6
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":6,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" interested","index":5}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:7
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":7,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" in","index":6}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:8
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":8,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" testing","index":7}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:9
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":9,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" the","index":8}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:10
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":10,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" `","index":9}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:11
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":11,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"system","index":10}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:12
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":12,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"_message","index":11}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:13
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":13,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"_count","index":12}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:14
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":14,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"`","index":13}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:15
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":15,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" feature","index":14}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:16
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":16,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":".","index":15}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:17
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":17,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" To","index":16}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:18
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":18,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" provide","index":17}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:19
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":19,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" you","index":18}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:20
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":20,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" with","index":19}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:21
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":21,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" accurate","index":20}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:22
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":22,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" and","index":21}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:23
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":23,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" helpful","index":22}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:24
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":24,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" information","index":23}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:25
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":25,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":",","index":24}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:26
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":26,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" I","index":25}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:27
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":27,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"'ll","index":26}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:28
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":28,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" need","index":27}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:29
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":29,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" more","index":28}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:30
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":30,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" context","index":29}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:31
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":31,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" about","index":30}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:32
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":32,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" what","index":31}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:33
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":33,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" specific","index":32}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:34
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":34,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" aspect","index":33}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:35
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":35,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" of","index":34}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:36
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":36,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" `","index":35}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:37
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":37,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"system","index":36}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:38
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":38,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"_message","index":37}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:39
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":39,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"_count","index":38}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:40
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":40,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"`","index":39}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:41
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":41,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" you","index":40}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:42
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":42,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" want","index":41}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:43
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":43,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" to","index":42}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:44
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":44,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" test","index":43}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:45
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":45,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" or","index":44}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:46
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":46,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" how","index":45}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:47
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":47,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" it","index":46}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:48
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":48,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":"'s","index":47}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:49
+event: token
+data: {"schema_version":"1.0","event":"token","sequence":49,"request_id":"c1915937-7254-49a4-8869-09e6d4d87bdd","conversation_id":"conversation_969ad812b13242159bfc4a3fa9daa7ff","message_id":"message_82759b7079fe4a849af1d88a9c5d79f3","data":{"content":" implemented","index":48}}
+id: f713af6a-7a15-4d8c-9bba-19b6764cfdd7:50
+done

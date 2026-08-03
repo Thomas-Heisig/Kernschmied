@@ -409,8 +409,8 @@ class UserContext(BaseModel):
     def development_admin(
         cls,
         *,
-        user_id: str = "local-user",
-        name: str = "Lokaler Benutzer",
+        user_id: str = "local-development-admin",
+        name: str = "Administrator",
     ) -> UserContext:
         return cls(
             id=user_id,
@@ -418,7 +418,24 @@ class UserContext(BaseModel):
             authenticated=True,
             active=True,
             roles=("admin",),
-            permissions=("*",),
+            permissions=(
+                "hierarchy.read",
+                "hierarchy.create",
+                "hierarchy.update",
+                "hierarchy.delete",
+                "hierarchy.move",
+                "hierarchy.reorder",
+                "config.read",
+                "config.write",
+                "models.read",
+                "models.manage",
+                "tools.read",
+                "tools.manage",
+                "users.read",
+                "users.create",
+                "users.update",
+                "users.delete",
+            ),
             authentication_method="development",
         )
 

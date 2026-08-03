@@ -2,6 +2,16 @@
 
 export const HIERARCHY_SCHEMA_VERSION = '1.0' as const;
 
+/**
+ * Stabile ID des technischen Systemwurzelknotens.
+ *
+ * Dieser Knoten ist Teil des Backend-Vertrags und darf nicht aus der
+ * projizierten Benutzeransicht abgeleitet werden. Verwende diese Konstante
+ * in allen Aktionen, die den technischen Systemknoten explizit adressieren
+ * (z.B. das Anlegen globaler Benutzerknoten durch Admins).
+ */
+export const SYSTEM_ROOT_NODE_ID = 'system-root' as const;
+
 export type HierarchyNodeId = string;
 export type HierarchyNodeType = string;
 export type HierarchyActionKind = string;

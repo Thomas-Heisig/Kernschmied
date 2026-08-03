@@ -35,10 +35,25 @@ export function useAppBootstrap() {
       } else {
         payload = payloadOrParentId as HierarchyNodeCreate;
       }
-      await apiCreate(payload as any);
-      void reloadHierarchy();
+      // Create node and ensure UI selects the newly created node after reload.
+      const created = await apiCreate(payload as any);
+      try {
+        await reloadHierarchy();
+      } catch {
+        // ignore reload errors here – selection may still be useful
+      }
+
+      // If the API returned the created node id, select it in the UI state.
+      try {
+        const id = (created as any)?.id;
+        if (id && typeof selectHierarchyNode === 'function') {
+          selectHierarchyNode(id);
+        }
+      } catch {
+        // silent fallback
+      }
     },
-    [reloadHierarchy],
+    [reloadHierarchy, selectHierarchyNode],
   );
 
   const updateHierarchyNode = useCallback(

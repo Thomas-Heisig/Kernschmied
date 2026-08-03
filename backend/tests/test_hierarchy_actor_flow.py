@@ -24,7 +24,7 @@ from app.hierarchy.models import HierarchyActor
 
 
 class InMemoryChatRepository:
-    async def create_conversation(self, *, conversation_id: str, user_id: str | None, tenant_id: str | None, model_id: str, metadata: Mapping[str, JsonValue]) -> None:
+    async def create_conversation(self, *, conversation_id: str, user_id: str | None, tenant_id: str | None, model_id: str, metadata: Mapping[str, JsonValue] | None = None, hierarchy_node_id: str | None = None) -> None:
         return None
 
     async def append_user_message(self, *, conversation_id: str, message_id: str, parent_message_id: str | None, content: str, metadata: Mapping[str, JsonValue], user_id: str | None = None) -> None:

@@ -64,6 +64,8 @@ from pydantic import (
     TypeAdapter,
 )
 
+logger = logging.getLogger(__name__)
+
 # Korrekte Imports aus dem stabilen Vertrag
 from app.contracts.model_backend import (
     ChatMessage,
@@ -815,7 +817,8 @@ class ChatRepository(Protocol):
         metadata: Mapping[
             str,
             JsonValue,
-        ],
+        ] | None,
+        hierarchy_node_id: str | None = None,
     ) -> Awaitable[None] | None: ...
 
     def append_user_message(
@@ -899,13 +902,15 @@ class NullChatRepository:
         metadata: Mapping[
             str,
             JsonValue,
-        ],
+        ] | None,
+        hierarchy_node_id: str | None = None,
     ) -> None:
         del conversation_id
         del user_id
         del tenant_id
         del model_id
         del metadata
+        del hierarchy_node_id
 
     async def append_user_message(
         self,
@@ -2363,36 +2368,55 @@ class ChatService:
     ) -> None:
         try:
             if request.conversation_id is None:
-                await self._await_if_needed(
-                    self._repository.create_conversation(
-                        conversation_id=(conversation_id),
-                        user_id=(context.user_id),
-                        tenant_id=(context.tenant_id),
-                        model_id=model_id,
-                        metadata={
-                            **dict(
-                                request.metadata,
-                            ),
-                            "request_id": (context.request_id),
+                # Enforce service-level requirement: hierarchy_node_id must be present
+                if not request.hierarchy_node_id:
+                    raise ChatHierarchyNodeRequiredError(
+                        "Für einen sichtbaren Chat ist ein Hierarchieknoten erforderlich."
+                    )
+                # Structured diagnostic log for persistence context (no message content)
+                try:
+                    logger.info(
+                        "Preparing conversation persistence",
+                        extra={
+                            "conversation_id": conversation_id,
+                            "hierarchy_node_id": request.hierarchy_node_id,
+                            "request_id": context.request_id,
                         },
-                    ),
-                )
+                    )
+                except Exception:
+                    pass
 
-            await self._await_if_needed(
-                self._repository.append_user_message(
+                val: Awaitable[None] | None = self._repository.create_conversation(
                     conversation_id=(conversation_id),
-                    message_id=(user_message_id),
-                    parent_message_id=(request.parent_message_id),
-                    content=(request.message),
+                    user_id=(context.user_id),
+                    tenant_id=(context.tenant_id),
+                    model_id=model_id,
                     metadata={
                         **dict(
                             request.metadata,
                         ),
                         "request_id": (context.request_id),
                     },
-                    user_id=(context.user_id),
-                ),
+                    hierarchy_node_id=(request.hierarchy_node_id),
+                )
+
+                await self._await_if_needed(val)
+
+            val2: Awaitable[None] | None = self._repository.append_user_message(
+                conversation_id=(conversation_id),
+                message_id=(user_message_id),
+                parent_message_id=(request.parent_message_id),
+                content=(request.message),
+                metadata={
+                    **dict(
+                        request.metadata,
+                    ),
+                    "request_id": (context.request_id),
+                },
+                user_id=(context.user_id),
             )
+
+            await self._await_if_needed(val2)
 
         except ChatServiceError:
             raise
@@ -2415,18 +2439,18 @@ class ChatService:
         response: ChatResponse,
     ) -> None:
         try:
-            await self._await_if_needed(
-                self._repository.append_assistant_message(
-                    conversation_id=(response.conversation_id),
-                    message_id=(response.message_id),
-                    parent_message_id=(request.parent_message_id),
-                    model_id=(response.model_id),
-                    content=(response.content),
-                    finish_reason=(response.finish_reason),
-                    usage=response.usage,
-                    metadata=(response.metadata),
-                ),
+            val3: Awaitable[None] | None = self._repository.append_assistant_message(
+                conversation_id=(response.conversation_id),
+                message_id=(response.message_id),
+                parent_message_id=(request.parent_message_id),
+                model_id=(response.model_id),
+                content=(response.content),
+                finish_reason=(response.finish_reason),
+                usage=response.usage,
+                metadata=(response.metadata),
             )
+
+            await self._await_if_needed(val3)
 
         except Exception as exc:
             _log_exception(
@@ -2460,20 +2484,20 @@ class ChatService:
         error: ChatServiceError,
     ) -> None:
         try:
-            await self._await_if_needed(
-                self._repository.mark_assistant_message_failed(
-                    conversation_id=(conversation_id),
-                    message_id=message_id,
-                    error_code=error.code,
-                    error_message=(error.message),
-                    metadata={
-                        "request_id": (error.request_id),
-                        "details": dict(
-                            error.details,
-                        ),
-                    },
-                ),
+            val4: Awaitable[None] | None = self._repository.mark_assistant_message_failed(
+                conversation_id=(conversation_id),
+                message_id=message_id,
+                error_code=error.code,
+                error_message=(error.message),
+                metadata={
+                    "request_id": (error.request_id),
+                    "details": dict(
+                        error.details,
+                    ),
+                },
             )
+
+            await self._await_if_needed(val4)
 
         except Exception as exc:
             _log_exception(

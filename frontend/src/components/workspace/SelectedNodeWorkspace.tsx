@@ -113,7 +113,7 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
    * Chat
    * ---------------------------------------------------------- */
 
-  if (CHAT_NODE_TYPES.has(normalizedType)) {
+    if (CHAT_NODE_TYPES.has(normalizedType)) {
     return (
       <section
         className={[
@@ -125,7 +125,7 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
         ].join(' ')}
         aria-label={`Chat: ${node.name}`}
       >
-        <GenericChatView title={node.name} hierarchyNodeId={node.id} />
+        <GenericChatView title={node.name} hierarchyNodeId={node.id} hierarchyNodeType={normalizedType} />
       </section>
     );
   }

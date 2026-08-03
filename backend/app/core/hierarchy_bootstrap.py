@@ -14,11 +14,11 @@ async def ensure_system_root(repository: HierarchyRepository) -> HierarchyNodeMo
 
     if root is None:
         # Create a minimal system root node
-        data = {
+        data: dict[str, Any] = {
             "node_id": SYSTEM_ROOT_ID,
             "parent_id": None,
-            "type": "system_root",
-            "name": "System",
+            "type": "system",
+            "name": "System Root",
             "position": 0,
             "system_prompt": None,
             "tool_policy": {},
@@ -37,7 +37,7 @@ async def ensure_system_root(repository: HierarchyRepository) -> HierarchyNodeMo
         class _D:
             pass
 
-        d = _D()
+        d: Any = _D()
         for k, v in data.items():
             setattr(d, k if k != "node_id" else "node_id", v)
 

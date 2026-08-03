@@ -14,7 +14,7 @@ class PromptFragment(BaseModel):
     prompt: str
     enabled: bool = True
     priority: int = 0
-    mode: Literal["append", "prepend", "replace"] = "append"
+    mode: Literal["append", "prepend", "replace", "disabled"] = "append"
     hierarchy_depth: int = 0
 
     pass

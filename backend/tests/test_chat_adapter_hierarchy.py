@@ -44,7 +44,7 @@ def test_chat_adapter_hierarchy_behaviour() -> None:
                     user_id=None,
                     tenant_id=None,
                     model_id="m",
-                    metadata={},
+                    metadata=None,
                 )
                 raise AssertionError("Expected ChatHierarchyNodeRequiredError")
             except ChatHierarchyNodeRequiredError:
@@ -57,7 +57,8 @@ def test_chat_adapter_hierarchy_behaviour() -> None:
                     user_id=None,
                     tenant_id=None,
                     model_id="m",
-                    metadata={"hierarchy_node_id": "does-not-exist"},
+                    metadata=None,
+                    hierarchy_node_id="does-not-exist",
                 )
                 raise AssertionError("Expected ChatHierarchyNodeNotFoundError")
             except ChatHierarchyNodeNotFoundError:
@@ -75,7 +76,8 @@ def test_chat_adapter_hierarchy_behaviour() -> None:
                 user_id=None,
                 tenant_id=None,
                 model_id="m",
-                metadata={"hierarchy_node_id": "node-1"},
+                metadata=None,
+                hierarchy_node_id="node-1",
             )
 
             # verify chat exists and references node-1

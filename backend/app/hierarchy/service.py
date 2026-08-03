@@ -24,6 +24,11 @@ from app.hierarchy.repository import HierarchyRepository
 from app.hierarchy.serializer import HierarchySerializer
 
 
+class HierarchyChildTypeNotAllowedError(ValueError):
+    code = "HIERARCHY_CHILD_TYPE_NOT_ALLOWED"
+
+
+
 class HierarchyService:
     def __init__(
         self,
@@ -102,6 +107,11 @@ class HierarchyService:
         if data.parent_id is not None:
             parent = await self._require_node(data.parent_id)
 
+            # Chat nodes may not have children
+            if getattr(parent, "type", None) == "chat":
+                raise HierarchyChildTypeNotAllowedError(
+                    "Ein Chat-Knoten darf keine untergeordneten Hierarchieknoten enthalten."
+                )
             # Disallow non-admins creating children directly under the system root.
             if parent.id == "system-root" and not getattr(actor, "is_admin", False):
                 raise PermissionError(
@@ -170,6 +180,10 @@ class HierarchyService:
 
         if new_parent_id is not None:
             new_parent = await self._require_node(new_parent_id)
+            if getattr(new_parent, "type", None) == "chat":
+                raise HierarchyChildTypeNotAllowedError(
+                    "Ein Chat-Knoten darf keine untergeordneten Hierarchieknoten enthalten."
+                )
             self._permissions.require(
                 actor,
                 CREATE_CHILD_ACTION,
@@ -227,6 +241,10 @@ class HierarchyService:
 
             if new_parent_id is not None:
                 new_parent = await self._require_node(new_parent_id)
+                if getattr(new_parent, "type", None) == "chat":
+                    raise HierarchyChildTypeNotAllowedError(
+                        "Ein Chat-Knoten darf keine untergeordneten Hierarchieknoten enthalten."
+                    )
                 # require permission to create child under new parent
                 self._permissions.require(actor, CREATE_CHILD_ACTION, new_parent)
 

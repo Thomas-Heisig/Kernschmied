@@ -34,8 +34,8 @@ type GenericChatViewProps = {
    * Barrierefreiheit und Entwicklerprotokolle verwendet.
    */
   title: string;
-
   hierarchyNodeId: string;
+  hierarchyNodeType: string;
 };
 
 type ChatRole = 'user' | 'assistant' | 'system';
@@ -496,14 +496,14 @@ function getAccessibleRequestStatus(status: ChatRequestStatus): string {
  * Komponente
  * ============================================================ */
 
-export function GenericChatView({ title, hierarchyNodeId }: GenericChatViewProps) {
+export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: GenericChatViewProps) {
   const [input, setInput] = useState('');
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
 
   const [requestStatus, setRequestStatus] = useState<ChatRequestStatus>('idle');
 
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<any>(null);
 
   const [conversationId, setConversationId] = useState<string | null>(null);
 
@@ -982,6 +982,14 @@ export function GenericChatView({ title, hierarchyNodeId }: GenericChatViewProps
       return;
     }
 
+    // Ensure a valid hierarchy node id is present before attempting to send.
+    if (!hierarchyNodeId || !String(hierarchyNodeId).trim()) {
+      const msg = 'Bitte wählen oder erstellen Sie zuerst einen Chat.';
+      setError(msg);
+      logDeveloperStep('warn', 'submit-ignored-no-hierarchy-node', { hierarchyNodeId });
+      return;
+    }
+
     let prompt: string;
 
     try {
@@ -1039,6 +1047,34 @@ export function GenericChatView({ title, hierarchyNodeId }: GenericChatViewProps
         submitted_at: new Date(submittedAt).toISOString(),
       },
     };
+
+    // Ensure the selected node is a chat node before sending
+    if (!hierarchyNodeId || hierarchyNodeType !== 'chat') {
+      setError({
+        code: 'CHAT_NODE_REQUIRED',
+        message: 'Bitte wählen oder erstellen Sie zuerst einen Chat.',
+      });
+
+      logDeveloperStep('warn', 'chat-node-required', {
+        hierarchyNodeId,
+        hierarchyNodeType,
+      });
+
+      return;
+    }
+
+    // Development-only structured log immediately before the request
+    if (import.meta.env.DEV) {
+      try {
+        // Only log non-sensitive identifiers and counts
+        // Do NOT include any message contents
+        console.info('[Kernschmied][ChatRequest]', {
+          hierarchy_node_id: hierarchyNodeId,
+          hierarchy_node_type: hierarchyNodeType,
+          conversation_id: activeConversationId,
+        });
+      } catch {}
+    }
 
     try {
       validateChatRequest(requestPayload);
@@ -1470,7 +1506,7 @@ export function GenericChatView({ title, hierarchyNodeId }: GenericChatViewProps
               <button
                 type="submit"
                 className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-glow transition hover:bg-primary-hover hover:shadow-primary-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-primary-dark dark:hover:bg-primary-dark-hover dark:focus-visible:ring-offset-slate-900"
-                disabled={!input.trim()}
+                disabled={!input.trim() || !hierarchyNodeId || !String(hierarchyNodeId).trim()}
                 aria-label="Nachricht senden"
                 title="Nachricht senden"
               >

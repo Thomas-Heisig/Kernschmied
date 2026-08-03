@@ -326,6 +326,33 @@ class OllamaProvider(BaseModelBackend):
 
             client = await self._get_client()
 
+            # Development-friendly diagnostic: log payload shape (no contents)
+            try:
+                # `_create_chat_payload` returns `dict[str, object]`, so we
+                # can safely treat `payload` as a mapping here. Cast to a
+                # well-typed list to please static checkers (and make the
+                # element shape explicit).
+                messages = cast(list[dict[str, object]], payload.get("messages", []))
+
+                # Now `m` is `dict[str, object]` and `.get()` is known.
+                message_roles = [m.get("role") for m in messages]
+                message_lengths = [len(str(m.get("content", ""))) for m in messages]
+                system_message_count = sum(1 for m in messages if (m.get("role") == "system"))
+
+                logger.info(
+                    "Ollama chat payload prepared",
+                    extra={
+                        "model": payload.get("model"),
+                        "message_count": len(messages),
+                        "message_roles": message_roles,
+                        "message_lengths": message_lengths,
+                        "system_message_count": system_message_count,
+                    },
+                )
+            except Exception:
+                # Logging must never break runtime
+                pass
+
             async with client.stream(
                 "POST",
                 "/api/chat",

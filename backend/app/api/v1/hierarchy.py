@@ -31,6 +31,7 @@ from app.contracts.hierarchy import (
 from app.hierarchy.models import HierarchyActor
 from app.hierarchy.repository import HierarchyRepository
 from app.hierarchy.repository import HierarchyParentNotFoundError
+from app.hierarchy.service import HierarchyChildTypeNotAllowedError
 from app.services.hierarchy_service import create_hierarchy_service
 
 router = APIRouter()
@@ -529,6 +530,24 @@ async def hierarchy(
         # to the frontend-expected single `root` node shape.
         raw_tree = _map_backend_tree_to_frontend(raw_tree)
 
+        # Defensive: never return a non-user root for normal callers.
+        # Forbid returning certain technical/structural types as the visible
+        # root for non-admin callers.
+        forbidden_root_types = {"chat", "project", "workspace", "folder"}
+        if isinstance(raw_tree, dict):
+            rt = raw_tree.get("type")
+            if rt in forbidden_root_types and not getattr(actor, "is_admin", False):
+                # Do not silently fall back to arbitrary nodes — return a structured error.
+                raise structured_http_error(
+                    request=request,
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    code="HIERARCHY_USER_ROOT_NOT_FOUND",
+                    message=(
+                        "Für den angemeldeten Benutzer wurde kein gültiger Hierarchie-Root gefunden."
+                    ),
+                    details={"invalid_root_type": rt},
+                )
+
         # Projection: keep `system-root` internal by default. If the
         # backend returns the technical `system-root` as top-level node
         # we project it to a visible user root for normal callers.
@@ -675,6 +694,20 @@ async def create_hierarchy_node(
                 code="PERMISSION_DENIED",
                 message=str(exc),
             )
+        except HierarchyChildTypeNotAllowedError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                code=getattr(exc, "code", "HIERARCHY_CHILD_TYPE_NOT_ALLOWED"),
+                message=str(exc),
+            ) from exc
+        except ValueError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_400_BAD_REQUEST,
+                code="INVALID_HIERARCHY_NODE",
+                message=str(exc),
+            ) from exc
         except HierarchyParentNotFoundError as exc:
             raise structured_http_error(
                 request=request,

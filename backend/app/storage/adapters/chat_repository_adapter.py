@@ -31,33 +31,28 @@ class ChatRepositoryAdapter:
         user_id: str | None,
         tenant_id: str | None,
         model_id: str,
-        metadata: Mapping[str, Any],
+        metadata: Mapping[str, Any] | None = None,
+        hierarchy_node_id: str | None = None,
     ) -> None:
         async with self._session_factory() as session:
             chat_repo = StorageChatRepository(session)
             hierarchy_repo = StorageHierarchyRepository(session)
+            # Require an explicit hierarchy_node_id parameter (no metadata fallback).
+            node_id = hierarchy_node_id
 
-            # try to obtain a hierarchy node id from metadata
-            node_id = None
-
-            try:
-                node_id = metadata.get("hierarchy_node_id")
-            except Exception:
-                node_id = None
-
-            if node_id:
-                # validate that the provided hierarchy node exists
-                existing = await hierarchy_repo.get(node_id)
-                if existing is None:
-                    raise ChatHierarchyNodeNotFoundError(
-                        f"Der Hierarchieknoten '{node_id}' wurde nicht gefunden.",
-                    )
             if not node_id:
                 # Do not auto-create hierarchy nodes. A visible chat requires
                 # an explicit `hierarchy_node_id`. Fail early with a stable
                 # error so the API layer can return 422.
                 raise ChatHierarchyNodeRequiredError(
                     "Für einen sichtbaren Chat ist ein Hierarchieknoten erforderlich."
+                )
+
+            # validate that the provided hierarchy node exists
+            existing = await hierarchy_repo.get(node_id)
+            if existing is None:
+                raise ChatHierarchyNodeNotFoundError(
+                    f"Der Hierarchieknoten '{node_id}' wurde nicht gefunden.",
                 )
 
             chat = ChatModel(

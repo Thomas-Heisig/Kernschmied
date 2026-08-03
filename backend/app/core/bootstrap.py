@@ -490,22 +490,24 @@ async def bootstrap_application(
         if hierarchy_repository is None or hierarchy_service is None:
             raise BootstrapStepError(
                 step="hierarchy.initialize",
-                reason=(
-                    "Der Hierarchie-Service wurde nicht vollständig initialisiert."
-                ),
+                reason="Hierarchy initialization failed: repository or service is None",
             )
-
         # ====================================================
         # 3. Konfiguration
         # ====================================================
 
-        config_service = ConfigService(
-            session_factory,
-        )
+        async def initialize_config() -> None:
+            nonlocal config_service
+
+            assert session_factory is not None
+            # Create ConfigService and ensure defaults are seeded
+            cs = ConfigService(session_factory)
+            await cs.seed_defaults()
+            config_service = cs
 
         await _run_bootstrap_step(
-            step="configuration.seed_defaults",
-            operation=config_service.seed_defaults,
+            step="config.initialize",
+            operation=initialize_config,
         )
 
         # ====================================================
@@ -701,7 +703,10 @@ async def bootstrap_application(
                         "_ConfigPromptReader",
                         (),
                         {
-                            "get_system_prompt": staticmethod(lambda: (config_service.get_required("chat", "system_prompt"), getattr(config_service, "revision", None)))
+                            "get_system_prompt": staticmethod(lambda: (
+                                cast(Any, config_service).get_required("chat", "system_prompt"),
+                                getattr(cast(Any, config_service), "revision", None),
+                            ))
                         },
                     )()
                 ),

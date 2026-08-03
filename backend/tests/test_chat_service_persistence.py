@@ -78,7 +78,7 @@ def test_user_message_is_persisted_once() -> None:
     service = ChatService(model_service=model, repository=repo, default_model_id="m")
 
     context = ChatServiceContext(request_id="r1", access=ModelAccessContext(), user_id="u1")
-    req = ChatRequest(message="hello", stream=False)
+    req = ChatRequest(message="hello", stream=False, hierarchy_node_id="node-x")
 
     asyncio.run(service.generate(req, context=context))
 
@@ -96,7 +96,7 @@ def test_successful_stream_marks_message_complete() -> None:
     service = ChatService(model_service=model, repository=repo, default_model_id="m")
 
     context = ChatServiceContext(request_id="r2", access=ModelAccessContext(), user_id="u2")
-    req = ChatRequest(message="hi", stream=True)
+    req = ChatRequest(message="hi", stream=True, hierarchy_node_id="node-x")
 
     async def _collect() -> List[ChatStreamEvent]:
         events: List[ChatStreamEvent] = []
