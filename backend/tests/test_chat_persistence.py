@@ -7,7 +7,7 @@ from app.storage.models.base import Base
 from app.storage.models.chat import Chat, Message
 from app.storage.repositories.chat import ChatRepository
 from sqlalchemy import event
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 
 
 def test_append_and_list_messages() -> None:
@@ -28,7 +28,7 @@ def test_append_and_list_messages() -> None:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
 
-            session_factory = async_sessionmaker(engine, expire_on_commit=False)
+            session_factory = async_sessionmaker[AsyncSession](engine, expire_on_commit=False)
 
             async with session_factory() as session:
                 repo = ChatRepository(session)

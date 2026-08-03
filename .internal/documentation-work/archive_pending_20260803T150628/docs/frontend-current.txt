@@ -1,0 +1,4448 @@
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\package.json
+============================================================
+
+{
+  "name": "dynamic-chat-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "latest",
+    "lucide-react": "latest",
+    "react": "latest",
+    "react-dom": "latest"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "autoprefixer": "latest",
+    "postcss": "^8.5.23",
+    "tailwindcss": "latest",
+    "typescript": "latest",
+    "vite": "latest"
+  }
+}
+
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\vite.config.ts
+============================================================
+
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+export default defineConfig({ plugins: [react()] });
+
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\tsconfig.json
+============================================================
+
+{"compilerOptions":{"target":"ES2022","useDefineForClassFields":true,"lib":["ES2022","DOM","DOM.Iterable"],"allowJs":false,"skipLibCheck":true,"esModuleInterop":true,"allowSyntheticDefaultImports":true,"strict":true,"forceConsistentCasingInFileNames":true,"module":"ESNext","moduleResolution":"Bundler","resolveJsonModule":true,"isolatedModules":true,"noEmit":true,"jsx":"react-jsx"},"include":["src"],"references":[]}
+
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\tailwind.config.ts
+============================================================
+
+import type { Config } from "tailwindcss";
+export default { content:["./index.html","./src/**/*.{js,ts,jsx,tsx}"], theme:{extend:{}}, plugins:[] } satisfies Config;
+
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\App.tsx
+============================================================
+
+// F:\Kernschmied\frontend\src\App.tsx
+
+import { useEffect } from "react";
+
+import { GenericTree } from "./components/schema/GenericTree";
+import { useAppSchema } from "./hooks/useAppSchema";
+import {
+  selectExpandedNodeIds,
+  selectHierarchyRoot,
+  selectSelectedNode,
+  selectSelectedNodeId,
+  useAppStoreCommands,
+  useAppStoreState,
+} from "./store";
+
+export default function App() {
+  const {
+    schema: loadedSchema,
+    hierarchyTree: loadedHierarchyTree,
+    error: loadError,
+    isLoading,
+    reload,
+  } = useAppSchema();
+
+  const state = useAppStoreState();
+
+  const {
+    beginLoading,
+    setLoadedData,
+    setError,
+    selectHierarchyNode,
+    replaceExpandedNodeIds,
+  } = useAppStoreCommands();
+
+  useEffect(() => {
+    if (isLoading) {
+      beginLoading();
+    }
+  }, [beginLoading, isLoading]);
+
+  useEffect(() => {
+    if (loadedSchema && loadedHierarchyTree) {
+      setLoadedData(
+        loadedSchema,
+        loadedHierarchyTree,
+      );
+    }
+  }, [
+    loadedHierarchyTree,
+    loadedSchema,
+    setLoadedData,
+  ]);
+
+  useEffect(() => {
+    if (loadError) {
+      setError(loadError);
+    }
+  }, [loadError, setError]);
+
+  const root = selectHierarchyRoot(state);
+  const selectedNode =
+    selectSelectedNode(state);
+  const selectedNodeId =
+    selectSelectedNodeId(state);
+  const expandedNodeIds =
+    selectExpandedNodeIds(state);
+
+  if (
+    state.status === "idle" ||
+    state.status === "loading"
+  ) {
+    return <AppLoadingScreen />;
+  }
+
+  if (state.status === "error") {
+    return (
+      <AppErrorScreen
+        message={
+          state.error?.message ??
+          "Die Anwendung konnte nicht geladen werden."
+        }
+        requestId={state.error?.requestId}
+        onRetry={() => {
+          void reload();
+        }}
+      />
+    );
+  }
+
+  if (!state.schema || !root) {
+    return (
+      <AppErrorScreen
+        message="Das UI-Schema oder die Hierarchie ist nicht verfügbar."
+        onRetry={() => {
+          void reload();
+        }}
+      />
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-slate-100 text-slate-950">
+      <aside className="w-72 shrink-0 border-r border-slate-200 bg-white">
+        <header className="border-b border-slate-200 px-4 py-4">
+          <h1 className="text-lg font-semibold">
+            Kernschmied
+          </h1>
+
+          <p className="mt-1 text-xs text-slate-500">
+            Schema {state.schema.schema_version}
+          </p>
+        </header>
+
+        <nav
+          className="overflow-y-auto p-2"
+          aria-label="Anwendungshierarchie"
+        >
+          <GenericTree
+            root={root}
+            schema={state.schema}
+            selectedNodeId={selectedNodeId}
+            expandedNodeIds={expandedNodeIds}
+            onSelect={selectHierarchyNode}
+            onExpandedNodeIdsChange={
+              replaceExpandedNodeIds
+            }
+          />
+        </nav>
+      </aside>
+
+      <main className="min-w-0 flex-1">
+        <header className="border-b border-slate-200 bg-white px-6 py-4">
+          <h2 className="text-lg font-semibold">
+            {selectedNode?.name ??
+              "Keine Auswahl"}
+          </h2>
+
+          {selectedNode && (
+            <p className="mt-1 text-sm text-slate-500">
+              Knotentyp:{" "}
+              <code className="font-mono">
+                {selectedNode.type}
+              </code>
+            </p>
+          )}
+        </header>
+
+        <section className="p-6">
+          {selectedNode ? (
+            <SelectedNodePlaceholder
+              nodeName={selectedNode.name}
+              nodeType={selectedNode.type}
+            />
+          ) : (
+            <EmptySelection />
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+interface AppErrorScreenProps {
+  message: string;
+  requestId?: string;
+  onRetry: () => void;
+}
+
+function AppErrorScreen({
+  message,
+  requestId,
+  onRetry,
+}: AppErrorScreenProps) {
+  return (
+    <main className="flex min-h-screen items-center justify-center bg-slate-100 p-6">
+      <section
+        className="w-full max-w-lg rounded-lg border border-red-200 bg-white p-6 shadow-sm"
+        role="alert"
+      >
+        <h1 className="text-lg font-semibold text-red-800">
+          Anwendung konnte nicht geladen werden
+        </h1>
+
+        <p className="mt-3 text-sm text-slate-700">
+          {message}
+        </p>
+
+        {requestId && (
+          <p className="mt-3 text-xs text-slate-500">
+            Anfrage-ID:{" "}
+            <code className="font-mono">
+              {requestId}
+            </code>
+          </p>
+        )}
+
+        <button
+          type="button"
+          className="mt-5 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2"
+          onClick={onRetry}
+        >
+          Erneut versuchen
+        </button>
+      </section>
+    </main>
+  );
+}
+
+function AppLoadingScreen() {
+  return (
+    <main
+      className="flex min-h-screen items-center justify-center bg-slate-100"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <div className="rounded-lg border border-slate-200 bg-white px-6 py-5 shadow-sm">
+        <p className="text-sm font-medium text-slate-700">
+          Kernschmied wird geladen …
+        </p>
+      </div>
+    </main>
+  );
+}
+
+interface SelectedNodePlaceholderProps {
+  nodeName: string;
+  nodeType: string;
+}
+
+function SelectedNodePlaceholder({
+  nodeName,
+  nodeType,
+}: SelectedNodePlaceholderProps) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+      <h3 className="font-semibold">
+        {nodeName}
+      </h3>
+
+      <p className="mt-2 text-sm text-slate-600">
+        Für den Knotentyp{" "}
+        <code className="font-mono">
+          {nodeType}
+        </code>{" "}
+        kann hier später die passende schema-gesteuerte
+        Ansicht gerendert werden.
+      </p>
+    </div>
+  );
+}
+
+function EmptySelection() {
+  return (
+    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
+      Wähle einen Eintrag aus der Hierarchie aus.
+    </div>
+  );
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\main.tsx
+============================================================
+
+// F:\Kernschmied\frontend\src\main.tsx
+
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+
+import App from "./App";
+import { AppProviders } from "./app/AppProviders";
+
+import "./index.css";
+
+const ROOT_ELEMENT_ID = "root";
+
+function getRootElement(): HTMLElement {
+  const rootElement = document.getElementById(ROOT_ELEMENT_ID);
+
+  if (!rootElement) {
+    throw new Error(
+      `Das Root-Element mit der ID "${ROOT_ELEMENT_ID}" wurde nicht gefunden.`,
+    );
+  }
+
+  return rootElement;
+}
+
+createRoot(getRootElement()).render(
+  <StrictMode>
+    <AppProviders>
+      <App />
+    </AppProviders>
+  </StrictMode>,
+);
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\index.css
+============================================================
+
+@import "tailwindcss";
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: Inter, system-ui, sans-serif;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\api\client.ts
+============================================================
+
+// F:\Kernschmied\frontend\src\api\client.ts
+
+const DEFAULT_API_BASE_URL = "http://localhost:8000/api/v1";
+const DEFAULT_REQUEST_TIMEOUT_MS = 30_000;
+
+type QueryValue =
+  | string
+  | number
+  | boolean
+  | null
+  | undefined
+  | readonly (string | number | boolean)[];
+
+export type ApiQueryParams = Record<string, QueryValue>;
+
+export type ApiErrorResponse = {
+  code?: string;
+  message?: string;
+  details?: unknown;
+  request_id?: string;
+};
+
+export type ApiRequestOptions = {
+  /**
+   * URL-Queryparameter.
+   *
+   * Arrays werden als mehrfach vorhandene Parameter übertragen:
+   * ?status=open&status=closed
+   */
+  query?: ApiQueryParams;
+
+  /**
+   * Zusätzliche HTTP-Header.
+   */
+  headers?: HeadersInit;
+
+  /**
+   * Optionales Abbruchsignal, beispielsweise von AbortController.
+   */
+  signal?: AbortSignal;
+
+  /**
+   * Individuelles Timeout für diesen Request.
+   * Mit `null` wird das automatische Timeout deaktiviert.
+   */
+  timeoutMs?: number | null;
+
+  /**
+   * Standardmäßig werden Cookies für gleiche Ursprünge übertragen.
+   * Für spätere Session-Authentifizierung kann global oder je Request
+   * `include` verwendet werden.
+   */
+  credentials?: RequestCredentials;
+
+  /**
+   * Überschreibt den erwarteten Antworttyp.
+   * Standardmäßig wird er anhand des Content-Type bestimmt.
+   */
+  responseType?: "auto" | "json" | "text" | "blob" | "void";
+};
+
+export type ApiRequestWithBodyOptions<TBody> = ApiRequestOptions & {
+  body?: TBody;
+};
+
+export class ApiError extends Error {
+  readonly status: number;
+  readonly statusText: string;
+  readonly code: string;
+  readonly details: unknown;
+  readonly requestId?: string;
+  readonly url: string;
+
+  constructor(params: {
+    message: string;
+    status: number;
+    statusText: string;
+    code?: string;
+    details?: unknown;
+    requestId?: string;
+    url: string;
+    cause?: unknown;
+  }) {
+    super(params.message, {
+      cause: params.cause,
+    });
+
+    this.name = "ApiError";
+    this.status = params.status;
+    this.statusText = params.statusText;
+    this.code = params.code ?? "api_error";
+    this.details = params.details;
+    this.requestId = params.requestId;
+    this.url = params.url;
+  }
+}
+
+function normalizeBaseUrl(value: string | undefined): string {
+  const normalized = value?.trim() || DEFAULT_API_BASE_URL;
+
+  return normalized.replace(/\/+$/, "");
+}
+
+export const API_BASE_URL = normalizeBaseUrl(
+  import.meta.env.VITE_API_URL,
+);
+
+function normalizePath(path: string): string {
+  const trimmedPath = path.trim();
+
+  if (!trimmedPath) {
+    return "";
+  }
+
+  return trimmedPath.startsWith("/")
+    ? trimmedPath
+    : `/${trimmedPath}`;
+}
+
+function buildApiUrl(
+  path: string,
+  query?: ApiQueryParams,
+): string {
+  const url = new URL(
+    `${API_BASE_URL}${normalizePath(path)}`,
+  );
+
+  if (!query) {
+    return url.toString();
+  }
+
+  for (const [key, rawValue] of Object.entries(query)) {
+    if (rawValue === undefined || rawValue === null) {
+      continue;
+    }
+
+    const values = Array.isArray(rawValue)
+      ? rawValue
+      : [rawValue];
+
+    for (const value of values) {
+      url.searchParams.append(key, String(value));
+    }
+  }
+
+  return url.toString();
+}
+
+function isJsonContentType(contentType: string | null): boolean {
+  if (!contentType) {
+    return false;
+  }
+
+  return (
+    contentType.includes("application/json") ||
+    contentType.includes("+json")
+  );
+}
+
+function isBodyAllowed(method: string): boolean {
+  return method !== "GET" && method !== "HEAD";
+}
+
+function isFormData(value: unknown): value is FormData {
+  return typeof FormData !== "undefined" && value instanceof FormData;
+}
+
+function isBlob(value: unknown): value is Blob {
+  return typeof Blob !== "undefined" && value instanceof Blob;
+}
+
+function isUrlSearchParams(
+  value: unknown,
+): value is URLSearchParams {
+  return (
+    typeof URLSearchParams !== "undefined" &&
+    value instanceof URLSearchParams
+  );
+}
+
+function isRequestBody(value: unknown): value is BodyInit {
+  return (
+    typeof value === "string" ||
+    isFormData(value) ||
+    isBlob(value) ||
+    isUrlSearchParams(value) ||
+    value instanceof ArrayBuffer ||
+    ArrayBuffer.isView(value)
+  );
+}
+
+function serializeRequestBody(
+  body: unknown,
+  headers: Headers,
+): BodyInit | undefined {
+  if (body === undefined || body === null) {
+    return undefined;
+  }
+
+  if (isRequestBody(body)) {
+    return body;
+  }
+
+  if (!headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  return JSON.stringify(body);
+}
+
+function createCombinedAbortSignal(params: {
+  externalSignal?: AbortSignal;
+  timeoutMs: number | null;
+}): {
+  signal: AbortSignal;
+  cleanup: () => void;
+} {
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+  const abortFromExternalSignal = (): void => {
+    controller.abort(params.externalSignal?.reason);
+  };
+
+  if (params.externalSignal) {
+    if (params.externalSignal.aborted) {
+      abortFromExternalSignal();
+    } else {
+      params.externalSignal.addEventListener(
+        "abort",
+        abortFromExternalSignal,
+        { once: true },
+      );
+    }
+  }
+
+  if (
+    params.timeoutMs !== null &&
+    Number.isFinite(params.timeoutMs) &&
+    params.timeoutMs > 0
+  ) {
+    timeoutId = setTimeout(() => {
+      controller.abort(
+        new DOMException(
+          `API-Anfrage nach ${params.timeoutMs} ms abgebrochen.`,
+          "TimeoutError",
+        ),
+      );
+    }, params.timeoutMs);
+  }
+
+  return {
+    signal: controller.signal,
+    cleanup: () => {
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+      }
+
+      params.externalSignal?.removeEventListener(
+        "abort",
+        abortFromExternalSignal,
+      );
+    },
+  };
+}
+
+async function parseErrorResponse(
+  response: Response,
+): Promise<ApiErrorResponse> {
+  const contentType = response.headers.get("content-type");
+
+  if (isJsonContentType(contentType)) {
+    try {
+      const payload = (await response.json()) as unknown;
+
+      if (payload && typeof payload === "object") {
+        return payload as ApiErrorResponse;
+      }
+    } catch {
+      // Bei ungültigem JSON wird weiter unten eine generische
+      // Fehlerantwort erzeugt.
+    }
+  }
+
+  try {
+    const text = await response.text();
+
+    if (text.trim()) {
+      return {
+        message: text.trim(),
+      };
+    }
+  } catch {
+    // Die generische Fehlermeldung bleibt als Fallback erhalten.
+  }
+
+  return {};
+}
+
+async function parseSuccessResponse<T>(
+  response: Response,
+  responseType: ApiRequestOptions["responseType"],
+): Promise<T> {
+  if (
+    responseType === "void" ||
+    response.status === 204 ||
+    response.status === 205
+  ) {
+    return undefined as T;
+  }
+
+  if (responseType === "blob") {
+    return (await response.blob()) as T;
+  }
+
+  if (responseType === "text") {
+    return (await response.text()) as T;
+  }
+
+  if (responseType === "json") {
+    return (await response.json()) as T;
+  }
+
+  const contentType = response.headers.get("content-type");
+
+  if (isJsonContentType(contentType)) {
+    return (await response.json()) as T;
+  }
+
+  return (await response.text()) as T;
+}
+
+export async function apiRequest<TResponse, TBody = unknown>(
+  method: string,
+  path: string,
+  options: ApiRequestWithBodyOptions<TBody> = {},
+): Promise<TResponse> {
+  const normalizedMethod = method.trim().toUpperCase();
+  const url = buildApiUrl(path, options.query);
+  const headers = new Headers(options.headers);
+
+  if (!headers.has("Accept")) {
+    headers.set("Accept", "application/json");
+  }
+
+  const timeoutMs =
+    options.timeoutMs === undefined
+      ? DEFAULT_REQUEST_TIMEOUT_MS
+      : options.timeoutMs;
+
+  const { signal, cleanup } = createCombinedAbortSignal({
+    externalSignal: options.signal,
+    timeoutMs,
+  });
+
+  try {
+    const response = await fetch(url, {
+      method: normalizedMethod,
+      headers,
+      signal,
+      credentials: options.credentials ?? "same-origin",
+      body:
+        isBodyAllowed(normalizedMethod)
+          ? serializeRequestBody(options.body, headers)
+          : undefined,
+    });
+
+    if (!response.ok) {
+      const errorPayload = await parseErrorResponse(response);
+      const requestId =
+        errorPayload.request_id ??
+        response.headers.get("x-request-id") ??
+        undefined;
+
+      throw new ApiError({
+        message:
+          errorPayload.message ??
+          `API-Anfrage fehlgeschlagen: ${response.status} ${response.statusText}`,
+        status: response.status,
+        statusText: response.statusText,
+        code: errorPayload.code,
+        details: errorPayload.details,
+        requestId,
+        url,
+      });
+    }
+
+    return await parseSuccessResponse<TResponse>(
+      response,
+      options.responseType ?? "auto",
+    );
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    if (error instanceof DOMException && error.name === "AbortError") {
+      throw new ApiError({
+        message: "Die API-Anfrage wurde abgebrochen.",
+        status: 0,
+        statusText: "Request aborted",
+        code: "request_aborted",
+        details: {
+          reason: signal.reason,
+        },
+        url,
+        cause: error,
+      });
+    }
+
+    throw new ApiError({
+      message:
+        error instanceof Error
+          ? error.message
+          : "Die API ist nicht erreichbar.",
+      status: 0,
+      statusText: "Network error",
+      code: "network_error",
+      details: null,
+      url,
+      cause: error,
+    });
+  } finally {
+    cleanup();
+  }
+}
+
+export function apiGet<TResponse>(
+  path: string,
+  options?: ApiRequestOptions,
+): Promise<TResponse> {
+  return apiRequest<TResponse>("GET", path, options);
+}
+
+export function apiPost<TResponse, TBody = unknown>(
+  path: string,
+  body?: TBody,
+  options?: ApiRequestOptions,
+): Promise<TResponse> {
+  return apiRequest<TResponse, TBody>("POST", path, {
+    ...options,
+    body,
+  });
+}
+
+export function apiPut<TResponse, TBody = unknown>(
+  path: string,
+  body?: TBody,
+  options?: ApiRequestOptions,
+): Promise<TResponse> {
+  return apiRequest<TResponse, TBody>("PUT", path, {
+    ...options,
+    body,
+  });
+}
+
+export function apiPatch<TResponse, TBody = unknown>(
+  path: string,
+  body?: TBody,
+  options?: ApiRequestOptions,
+): Promise<TResponse> {
+  return apiRequest<TResponse, TBody>("PATCH", path, {
+    ...options,
+    body,
+  });
+}
+
+export function apiDelete<TResponse = void>(
+  path: string,
+  options?: ApiRequestOptions,
+): Promise<TResponse> {
+  return apiRequest<TResponse>("DELETE", path, options);
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\app\AppProviders.tsx
+============================================================
+
+// F:\Kernschmied\frontend\src\app\AppProviders.tsx
+
+import {
+  type ComponentType,
+  type PropsWithChildren,
+  type ReactNode,
+} from "react";
+
+import { AppStoreProvider } from "../store";
+
+export type ApplicationProvider =
+  ComponentType<PropsWithChildren>;
+
+const APPLICATION_PROVIDERS: readonly ApplicationProvider[] = [
+  AppStoreProvider,
+];
+
+function composeProviders(
+  providers: readonly ApplicationProvider[],
+  children: ReactNode,
+): ReactNode {
+  return providers.reduceRight<ReactNode>(
+    (currentChildren, Provider) => (
+      <Provider>{currentChildren}</Provider>
+    ),
+    children,
+  );
+}
+
+export function AppProviders({
+  children,
+}: PropsWithChildren) {
+  return (
+    <>
+      {composeProviders(
+        APPLICATION_PROVIDERS,
+        children,
+      )}
+    </>
+  );
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\app\index.ts
+============================================================
+
+// F:\Kernschmied\frontend\src\app\index.ts
+
+export {
+  AppProviders,
+  type ApplicationProvider,
+} from "./AppProviders";
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\components\chat\GenericChatView.tsx
+============================================================
+
+/// <reference types="react" />
+
+import React, {
+  FormEvent,
+  KeyboardEvent,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import { API_BASE_URL } from "../../api/client";
+
+type GenericChatViewProps = {
+  title: string;
+};
+
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant" | "system";
+  content: string;
+};
+
+type StreamTokenPayload = {
+  content?: unknown;
+};
+
+function createMessageId(): string {
+  return crypto.randomUUID();
+}
+
+function normalizeSseBuffer(value: string): string {
+  return value.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+}
+
+function parseSseEvent(chunk: string): {
+  event: string;
+  data: string;
+} | null {
+  let event = "message";
+  const dataLines: string[] = [];
+
+  for (const line of chunk.split("\n")) {
+    if (!line || line.startsWith(":")) {
+      continue;
+    }
+
+    const separatorIndex = line.indexOf(":");
+
+    let field: string;
+    let value: string;
+
+    if (separatorIndex === -1) {
+      field = line;
+      value = "";
+    } else {
+      field = line.slice(0, separatorIndex);
+      value = line.slice(separatorIndex + 1);
+
+      if (value.startsWith(" ")) {
+        value = value.slice(1);
+      }
+    }
+
+    if (field === "event") {
+      event = value;
+    }
+
+    if (field === "data") {
+      dataLines.push(value);
+    }
+  }
+
+  if (dataLines.length === 0) {
+    return null;
+  }
+
+  return {
+    event,
+    data: dataLines.join("\n"),
+  };
+}
+
+function extractTokenContent(data: string): string {
+  if (!data || data === "[DONE]") {
+    return "";
+  }
+
+  try {
+    const parsed = JSON.parse(data) as StreamTokenPayload;
+
+    return typeof parsed.content === "string" ? parsed.content : "";
+  } catch {
+    return data;
+  }
+}
+
+export function GenericChatView({
+  title,
+}: GenericChatViewProps): React.JSX.Element {
+  const [input, setInput] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "end",
+    });
+  }, [messages]);
+
+  useEffect(() => {
+    return () => {
+      abortControllerRef.current?.abort();
+    };
+  }, []);
+
+  function appendAssistantContent(
+    assistantMessageId: string,
+    content: string,
+  ): void {
+    if (!content) {
+      return;
+    }
+
+    setMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        message.id === assistantMessageId
+          ? {
+              ...message,
+              content: message.content + content,
+            }
+          : message,
+      ),
+    );
+  }
+
+  function replaceAssistantContent(
+    assistantMessageId: string,
+    content: string,
+  ): void {
+    setMessages((currentMessages) =>
+      currentMessages.map((message) =>
+        message.id === assistantMessageId
+          ? {
+              ...message,
+              content,
+            }
+          : message,
+      ),
+    );
+  }
+
+  async function processSseStream(
+    response: Response,
+    assistantMessageId: string,
+  ): Promise<void> {
+    if (!response.body) {
+      throw new Error("Der Server hat keinen lesbaren Datenstrom geliefert.");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder("utf-8");
+
+    let buffer = "";
+
+    async function processChunk(chunk: string): Promise<void> {
+      const parsedEvent = parseSseEvent(chunk);
+
+      if (!parsedEvent) {
+        return;
+      }
+
+      if (
+        parsedEvent.event === "done" ||
+        parsedEvent.data === "[DONE]"
+      ) {
+        return;
+      }
+
+      if (parsedEvent.event === "error") {
+        let message = "Beim Verarbeiten der Nachricht ist ein Fehler aufgetreten.";
+
+        try {
+          const parsed = JSON.parse(parsedEvent.data) as {
+            message?: unknown;
+            detail?: unknown;
+          };
+
+          if (typeof parsed.message === "string") {
+            message = parsed.message;
+          } else if (typeof parsed.detail === "string") {
+            message = parsed.detail;
+          }
+        } catch {
+          if (parsedEvent.data.trim()) {
+            message = parsedEvent.data.trim();
+          }
+        }
+
+        throw new Error(message);
+      }
+
+      if (
+        parsedEvent.event === "token" ||
+        parsedEvent.event === "message"
+      ) {
+        const content = extractTokenContent(parsedEvent.data);
+        appendAssistantContent(assistantMessageId, content);
+      }
+    }
+
+    while (true) {
+      const { value, done } = await reader.read();
+
+      if (done) {
+        buffer += decoder.decode();
+        break;
+      }
+
+      buffer += decoder.decode(value, {
+        stream: true,
+      });
+
+      buffer = normalizeSseBuffer(buffer);
+
+      const chunks = buffer.split("\n\n");
+      buffer = chunks.pop() ?? "";
+
+      for (const chunk of chunks) {
+        await processChunk(chunk);
+      }
+    }
+
+    const remainingChunk = normalizeSseBuffer(buffer).trim();
+
+    if (remainingChunk) {
+      await processChunk(remainingChunk);
+    }
+  }
+
+  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
+    event.preventDefault();
+
+    const prompt = input.trim();
+
+    if (!prompt || loading) {
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      id: createMessageId(),
+      role: "user",
+      content: prompt,
+    };
+
+    const assistantMessage: ChatMessage = {
+      id: createMessageId(),
+      role: "assistant",
+      content: "",
+    };
+
+    setMessages((currentMessages) => [
+      ...currentMessages,
+      userMessage,
+      assistantMessage,
+    ]);
+
+    setInput("");
+    setError(null);
+    setLoading(true);
+
+    const abortController = new AbortController();
+    abortControllerRef.current = abortController;
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/chat/stream`, {
+        method: "POST",
+        headers: {
+          Accept: "text/event-stream",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: prompt,
+        }),
+        signal: abortController.signal,
+      });
+
+      if (!response.ok) {
+        let message = `Die Anfrage ist fehlgeschlagen (${response.status}).`;
+
+        try {
+          const body = (await response.json()) as {
+            message?: unknown;
+            detail?: unknown;
+          };
+
+          if (typeof body.message === "string") {
+            message = body.message;
+          } else if (typeof body.detail === "string") {
+            message = body.detail;
+          }
+        } catch {
+          const responseText = await response.text();
+
+          if (responseText.trim()) {
+            message = responseText.trim();
+          }
+        }
+
+        throw new Error(message);
+      }
+
+      await processSseStream(response, assistantMessage.id);
+
+      setMessages((currentMessages) =>
+        currentMessages.map((message) => {
+          if (
+            message.id === assistantMessage.id &&
+            message.content.trim() === ""
+          ) {
+            return {
+              ...message,
+              content: "Der Server hat keine Antwort geliefert.",
+            };
+          }
+
+          return message;
+        }),
+      );
+    } catch (caughtError) {
+      if (
+        caughtError instanceof DOMException &&
+        caughtError.name === "AbortError"
+      ) {
+        replaceAssistantContent(
+          assistantMessage.id,
+          "Die Antwort wurde abgebrochen.",
+        );
+        return;
+      }
+
+      const message =
+        caughtError instanceof Error
+          ? caughtError.message
+          : "Die Nachricht konnte nicht gesendet werden.";
+
+      setError(message);
+      replaceAssistantContent(
+        assistantMessage.id,
+        `Fehler: ${message}`,
+      );
+    } finally {
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null;
+      }
+
+      setLoading(false);
+    }
+  }
+
+  function stopGeneration(): void {
+    abortControllerRef.current?.abort();
+  }
+
+  function handleInputKeyDown(
+    event: KeyboardEvent<HTMLInputElement>,
+  ): void {
+    if (event.key === "Escape" && loading) {
+      stopGeneration();
+    }
+  }
+
+  return (
+    <section
+      className="flex h-full min-h-0 flex-col bg-slate-50"
+      aria-label={`Chat: ${title}`}
+    >
+      <header className="shrink-0 border-b border-slate-200 bg-white px-5 py-3">
+        <h1 className="font-semibold text-slate-900">{title}</h1>
+      </header>
+
+      <div
+        className="min-h-0 flex-1 space-y-4 overflow-y-auto p-5"
+        aria-live="polite"
+        aria-busy={loading}
+      >
+        {messages.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="text-sm text-slate-500">
+              Noch keine Nachrichten.
+            </p>
+          </div>
+        ) : (
+          messages.map((message) => {
+            const isUser = message.role === "user";
+
+            return (
+              <article
+                key={message.id}
+                className={`flex ${
+                  isUser ? "justify-end" : "justify-start"
+                }`}
+              >
+                <div
+                  className={`max-w-[85%] rounded-xl px-4 py-3 shadow-sm ${
+                    isUser
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-200 bg-white text-slate-900"
+                  }`}
+                >
+                  <div className="mb-1 text-xs font-semibold opacity-70">
+                    {isUser ? "Du" : "Assistent"}
+                  </div>
+
+                  <p className="whitespace-pre-wrap wrap-break-words text-sm leading-6">
+                    {message.content ||
+                      (loading && message.role === "assistant"
+                        ? "Antwort wird erstellt …"
+                        : "")}
+                  </p>
+                </div>
+              </article>
+            );
+          })
+        )}
+
+        <div ref={messagesEndRef} />
+      </div>
+
+      {error ? (
+        <div
+          className="shrink-0 border-t border-red-200 bg-red-50 px-4 py-2 text-sm text-red-700"
+          role="alert"
+        >
+          {error}
+        </div>
+      ) : null}
+
+      <form
+        onSubmit={submit}
+        className="shrink-0 border-t border-slate-200 bg-white p-4"
+      >
+        <div className="flex gap-2">
+          <label htmlFor="chat-message-input" className="sr-only">
+            Nachricht
+          </label>
+
+          <input
+            id="chat-message-input"
+            className="min-w-0 flex-1 rounded-lg border border-slate-300 px-3 py-2 text-slate-900 outline-none transition focus:border-slate-500 focus:ring-2 focus:ring-slate-200 disabled:cursor-not-allowed disabled:bg-slate-100"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={handleInputKeyDown}
+            placeholder="Nachricht eingeben …"
+            autoComplete="off"
+            disabled={loading}
+          />
+
+          {loading ? (
+            <button
+              type="button"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 font-medium text-slate-700 transition hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-slate-300"
+              onClick={stopGeneration}
+            >
+              Stoppen
+            </button>
+          ) : (
+            <button
+              type="submit"
+              className="rounded-lg bg-slate-900 px-4 py-2 font-medium text-white transition hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={!input.trim()}
+            >
+              Senden
+            </button>
+          )}
+        </div>
+
+        <p className="mt-2 text-xs text-slate-500">
+          Enter zum Senden. Während der Antwort kann mit Escape abgebrochen
+          werden.
+        </p>
+      </form>
+    </section>
+  );
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\components\errors\UnsupportedSchema.tsx
+============================================================
+
+// F:\Kernschmied\frontend\src\components\errors\UnsupportedSchema.tsx
+
+import { memo } from "react";
+
+export interface UnsupportedSchemaProps {
+  /**
+   * Typ aus dem Backend-Schema.
+   * Beispiele:
+   *  - ui.form
+   *  - ui.table
+   *  - custom.my_component
+   */
+  kind: string;
+
+  /**
+   * Optionaler Anzeigename.
+   */
+  title?: string;
+
+  /**
+   * Optionaler zusätzlicher Hinweis.
+   */
+  message?: string;
+
+  /**
+   * Vollständiges Schema für Debugzwecke.
+   * Wird nur im Development angezeigt.
+   */
+  schema?: unknown;
+
+  /**
+   * Zusätzliche CSS-Klassen.
+   */
+  className?: string;
+}
+
+function UnsupportedSchemaComponent({
+  kind,
+  title = "Nicht unterstützte UI-Komponente",
+  message,
+  schema,
+  className,
+}: UnsupportedSchemaProps) {
+  const isDevelopment = import.meta.env.DEV;
+
+  return (
+    <section
+      className={[
+        "rounded-lg",
+        "border",
+        "border-amber-400",
+        "bg-amber-50",
+        "p-4",
+        "text-sm",
+        "text-amber-900",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      role="alert"
+      aria-live="polite"
+    >
+      <h3 className="mb-2 font-semibold">
+        {title}
+      </h3>
+
+      <p className="mb-2">
+        Für den vom Backend gelieferten Schema-Typ existiert
+        derzeit keine registrierte React-Komponente.
+      </p>
+
+      <div className="rounded bg-white/70 px-3 py-2">
+        <span className="font-medium">Schema-Typ:</span>{" "}
+        <code className="font-mono">{kind}</code>
+      </div>
+
+      {message && (
+        <p className="mt-3">
+          {message}
+        </p>
+      )}
+
+      {isDevelopment && schema !== undefined && (
+        <details className="mt-4">
+          <summary className="cursor-pointer font-medium">
+            Debug-Informationen
+          </summary>
+
+          <pre className="mt-2 overflow-auto rounded bg-slate-900 p-3 text-xs text-slate-100">
+            {JSON.stringify(schema, null, 2)}
+          </pre>
+        </details>
+      )}
+    </section>
+  );
+}
+
+export const UnsupportedSchema = memo(UnsupportedSchemaComponent);
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\components\schema\GenericTree.tsx
+============================================================
+
+// F:\Kernschmied\frontend\src\components\schema\GenericTree.tsx
+
+import {
+  memo,
+  useCallback,
+  useMemo,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react";
+
+import type { HierarchyNode } from "../../contracts/hierarchy";
+import type { UISchema } from "../../contracts/schema";
+import { isKnownActionKind } from "../../registry/actionRegistry";
+import { DynamicIcon } from "../../registry/iconRegistry";
+
+const DEFAULT_NODE_ICON = "Circle";
+const INDENT_SIZE_PX = 16;
+const BASE_INDENT_PX = 8;
+
+export interface GenericTreeProps {
+  root: HierarchyNode;
+  schema: UISchema;
+  onSelect: (node: HierarchyNode) => void;
+
+  /**
+   * Optional aktuell ausgewählter Knoten.
+   */
+  selectedNodeId?: string | null;
+
+  /**
+   * Wird aufgerufen, wenn eine bekannte Aktion angefordert wird.
+   *
+   * Die Komponente führt Aktionen niemals selbstständig aus.
+   * Autorisierung und tatsächliche Ausführung bleiben außerhalb
+   * der Baumdarstellung.
+   */
+  onAction?: (action: string, node: HierarchyNode) => void;
+
+  /**
+   * Optional kontrollierte Menge aufgeklappter Knoten.
+   *
+   * Wird dieser Wert nicht übergeben, verwaltet GenericTree
+   * den Aufklappzustand intern.
+   */
+  expandedNodeIds?: ReadonlySet<string>;
+
+  /**
+   * Callback bei Änderungen am Aufklappzustand.
+   */
+  onExpandedNodeIdsChange?: (
+    expandedNodeIds: ReadonlySet<string>,
+  ) => void;
+
+  /**
+   * Anzahl direkt sichtbarer Aktionen pro Knoten.
+   */
+  maxVisibleActions?: number;
+
+  /**
+   * Zusätzliche CSS-Klassen für den äußeren Baum.
+   */
+  className?: string;
+
+  /**
+   * Optionaler Renderer für Knotennamen.
+   */
+  renderLabel?: (node: HierarchyNode) => ReactNode;
+}
+
+interface TreeNodeProps {
+  node: HierarchyNode;
+  schema: UISchema;
+  depth: number;
+  selectedNodeId?: string | null;
+  expandedNodeIds: ReadonlySet<string>;
+  maxVisibleActions: number;
+  onSelect: (node: HierarchyNode) => void;
+  onAction?: (action: string, node: HierarchyNode) => void;
+  onToggleExpanded: (nodeId: string) => void;
+  renderLabel?: (node: HierarchyNode) => ReactNode;
+}
+
+function joinClassNames(
+  ...values: Array<string | false | null | undefined>
+): string {
+  return values.filter(Boolean).join(" ");
+}
+
+function hasChildren(node: HierarchyNode): boolean {
+  return Array.isArray(node.children) && node.children.length > 0;
+}
+
+function normalizeVisibleActionCount(value: number | undefined): number {
+  if (value === undefined) {
+    return 2;
+  }
+
+  if (!Number.isFinite(value)) {
+    return 2;
+  }
+
+  return Math.max(0, Math.floor(value));
+}
+
+function GenericTreeComponent({
+  root,
+  schema,
+  onSelect,
+  selectedNodeId = null,
+  onAction,
+  expandedNodeIds,
+  onExpandedNodeIdsChange,
+  maxVisibleActions,
+  className,
+  renderLabel,
+}: GenericTreeProps) {
+  const [internalExpandedNodeIds, setInternalExpandedNodeIds] = useState<
+    Set<string>
+  >(() => new Set([root.id]));
+
+  const isControlled = expandedNodeIds !== undefined;
+
+  const effectiveExpandedNodeIds =
+    expandedNodeIds ?? internalExpandedNodeIds;
+
+  const visibleActionCount = useMemo(
+    () => normalizeVisibleActionCount(maxVisibleActions),
+    [maxVisibleActions],
+  );
+
+  const handleToggleExpanded = useCallback(
+    (nodeId: string) => {
+      const nextExpandedNodeIds = new Set(effectiveExpandedNodeIds);
+
+      if (nextExpandedNodeIds.has(nodeId)) {
+        nextExpandedNodeIds.delete(nodeId);
+      } else {
+        nextExpandedNodeIds.add(nodeId);
+      }
+
+      if (!isControlled) {
+        setInternalExpandedNodeIds(nextExpandedNodeIds);
+      }
+
+      onExpandedNodeIdsChange?.(nextExpandedNodeIds);
+    },
+    [
+      effectiveExpandedNodeIds,
+      isControlled,
+      onExpandedNodeIdsChange,
+    ],
+  );
+
+  return (
+    <div
+      className={joinClassNames(
+        "min-w-0",
+        className,
+      )}
+      role="tree"
+      aria-label="Hierarchie"
+    >
+      <TreeNode
+        node={root}
+        schema={schema}
+        depth={0}
+        selectedNodeId={selectedNodeId}
+        expandedNodeIds={effectiveExpandedNodeIds}
+        maxVisibleActions={visibleActionCount}
+        onSelect={onSelect}
+        onAction={onAction}
+        onToggleExpanded={handleToggleExpanded}
+        renderLabel={renderLabel}
+      />
+    </div>
+  );
+}
+
+function TreeNodeComponent({
+  node,
+  schema,
+  depth,
+  selectedNodeId,
+  expandedNodeIds,
+  maxVisibleActions,
+  onSelect,
+  onAction,
+  onToggleExpanded,
+  renderLabel,
+}: TreeNodeProps) {
+  const nodeDefinition = schema.node_types[node.type];
+  const nodeHasChildren = hasChildren(node);
+  const isExpanded =
+    nodeHasChildren && expandedNodeIds.has(node.id);
+  const isSelected = selectedNodeId === node.id;
+
+  const knownActions = useMemo(
+    () =>
+      node.actions
+        .filter(isKnownActionKind)
+        .slice(0, maxVisibleActions),
+    [maxVisibleActions, node.actions],
+  );
+
+  const handleSelect = useCallback(() => {
+    onSelect(node);
+  }, [node, onSelect]);
+
+  const handleToggle = useCallback(() => {
+    if (nodeHasChildren) {
+      onToggleExpanded(node.id);
+    }
+  }, [
+    node.id,
+    nodeHasChildren,
+    onToggleExpanded,
+  ]);
+
+  const handleSelectKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLButtonElement>) => {
+      if (event.key === "ArrowRight") {
+        event.preventDefault();
+
+        if (nodeHasChildren && !isExpanded) {
+          onToggleExpanded(node.id);
+        }
+      }
+
+      if (event.key === "ArrowLeft") {
+        event.preventDefault();
+
+        if (nodeHasChildren && isExpanded) {
+          onToggleExpanded(node.id);
+        }
+      }
+    },
+    [
+      isExpanded,
+      node.id,
+      nodeHasChildren,
+      onToggleExpanded,
+    ],
+  );
+
+  return (
+    <div
+      role="treeitem"
+      aria-level={depth + 1}
+      aria-selected={isSelected}
+      aria-expanded={
+        nodeHasChildren
+          ? isExpanded
+          : undefined
+      }
+    >
+      <div
+        className={joinClassNames(
+          "group flex min-w-0 items-center gap-1 rounded-md",
+          "px-2 py-1",
+          "transition-colors",
+          isSelected
+            ? "bg-slate-200 text-slate-950"
+            : "text-slate-700 hover:bg-slate-100",
+        )}
+        style={{
+          paddingLeft:
+            BASE_INDENT_PX + depth * INDENT_SIZE_PX,
+        }}
+      >
+        <button
+          type="button"
+          className={joinClassNames(
+            "flex h-6 w-6 shrink-0 items-center justify-center",
+            "rounded text-slate-500",
+            nodeHasChildren
+              ? "hover:bg-slate-200 hover:text-slate-900"
+              : "cursor-default opacity-0",
+          )}
+          onClick={handleToggle}
+          tabIndex={nodeHasChildren ? 0 : -1}
+          aria-label={
+            nodeHasChildren
+              ? isExpanded
+                ? `${node.name} einklappen`
+                : `${node.name} ausklappen`
+              : undefined
+          }
+          aria-hidden={!nodeHasChildren}
+        >
+          <span
+            aria-hidden="true"
+            className={joinClassNames(
+              "text-xs transition-transform",
+              isExpanded && "rotate-90",
+            )}
+          >
+            ▶
+          </span>
+        </button>
+
+        <button
+          type="button"
+          className={joinClassNames(
+            "flex min-w-0 flex-1 items-center gap-2",
+            "rounded-sm text-left",
+            "focus-visible:outline-none",
+            "focus-visible:ring-2",
+            "focus-visible:ring-slate-500",
+            "focus-visible:ring-offset-1",
+          )}
+          onClick={handleSelect}
+          onKeyDown={handleSelectKeyDown}
+        >
+          <DynamicIcon
+            name={nodeDefinition?.icon ?? DEFAULT_NODE_ICON}
+            color={nodeDefinition?.color}
+          />
+
+          <span
+            className="min-w-0 flex-1 truncate"
+            title={node.name}
+          >
+            {renderLabel
+              ? renderLabel(node)
+              : node.name}
+          </span>
+        </button>
+
+        {knownActions.length > 0 && (
+          <div
+            className={joinClassNames(
+              "flex shrink-0 items-center gap-1",
+              "opacity-0 transition-opacity",
+              "group-hover:opacity-100",
+              "group-focus-within:opacity-100",
+            )}
+            aria-label={`Aktionen für ${node.name}`}
+          >
+            {knownActions.map((action) => (
+              <button
+                key={action}
+                type="button"
+                className={joinClassNames(
+                  "rounded px-1.5 py-1",
+                  "text-xs text-slate-500",
+                  "hover:bg-slate-200 hover:text-slate-950",
+                  "focus-visible:outline-none",
+                  "focus-visible:ring-2",
+                  "focus-visible:ring-slate-500",
+                )}
+                title={action}
+                aria-label={`${action}: ${node.name}`}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onAction?.(action, node);
+                }}
+                disabled={!onAction}
+              >
+                {action}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {nodeHasChildren && isExpanded && (
+        <div role="group">
+          {node.children?.map((child) => (
+            <TreeNode
+              key={child.id}
+              node={child}
+              schema={schema}
+              depth={depth + 1}
+              selectedNodeId={selectedNodeId}
+              expandedNodeIds={expandedNodeIds}
+              maxVisibleActions={maxVisibleActions}
+              onSelect={onSelect}
+              onAction={onAction}
+              onToggleExpanded={onToggleExpanded}
+              renderLabel={renderLabel}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const TreeNode = memo(TreeNodeComponent);
+
+export const GenericTree = memo(GenericTreeComponent);
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\contracts\hierarchy.ts
+============================================================
+
+// F:\Kernschmied\frontend\src\contracts\hierarchy.ts
+
+export type HierarchyNodeId = string;
+export type HierarchyNodeType = string;
+export type HierarchyActionKind = string;
+
+export interface HierarchyNodeMetadata {
+  [key: string]: unknown;
+}
+
+export interface HierarchyNode {
+  /**
+   * Stabile, innerhalb der Hierarchie eindeutige ID.
+   */
+  id: HierarchyNodeId;
+
+  /**
+   * Fachlicher Knotentyp.
+   */
+  type: HierarchyNodeType;
+
+  /**
+   * Anzeigename des Knotens.
+   */
+  name: string;
+
+  /**
+   * Vom Backend grundsätzlich angebotene Aktionen.
+   */
+  actions: HierarchyActionKind[];
+
+  /**
+   * Untergeordnete Knoten.
+   */
+  children: HierarchyNode[];
+
+  /**
+   * Optionale ID des übergeordneten Knotens.
+   */
+  parent_id?: HierarchyNodeId | null;
+
+  /**
+   * Optionaler Sortierwert innerhalb desselben Elternknotens.
+   */
+  sort_order?: number | null;
+
+  /**
+   * Gibt an, ob der Knoten auswählbar ist.
+   */
+  selectable?: boolean | null;
+
+  /**
+   * Gibt an, ob der Knoten deaktiviert dargestellt wird.
+   */
+  disabled?: boolean | null;
+
+  /**
+   * Optionaler maschinenlesbarer Status.
+   */
+  status?: string | null;
+
+  /**
+   * Freie, validierte Zusatzdaten.
+   */
+  metadata?: HierarchyNodeMetadata | null;
+
+  /**
+   * Optionale Versionskennung.
+   */
+  revision?: number | null;
+}
+
+export interface HierarchyTree {
+  /**
+   * Version des Datenvertrags.
+   */
+  schema_version: string;
+
+  /**
+   * Wurzelknoten.
+   */
+  root: HierarchyNode;
+
+  /**
+   * Globale Revision für Cache-Invalidierung.
+   */
+  revision?: number | null;
+}
+
+export function isHierarchyNode(value: unknown): value is HierarchyNode {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const {
+    id,
+    type,
+    name,
+    actions,
+    children,
+    parent_id,
+    sort_order,
+    selectable,
+    disabled,
+    status,
+    metadata,
+    revision,
+  } = value;
+
+  return (
+    isNonEmptyString(id) &&
+    isNonEmptyString(type) &&
+    typeof name === "string" &&
+    Array.isArray(actions) &&
+    actions.every((action) => typeof action === "string") &&
+    Array.isArray(children) &&
+    children.every(isHierarchyNode) &&
+    isOptionalNullableString(parent_id) &&
+    isOptionalNullableInteger(sort_order) &&
+    isOptionalNullableBoolean(selectable) &&
+    isOptionalNullableBoolean(disabled) &&
+    isOptionalNullableString(status) &&
+    (metadata === undefined ||
+      metadata === null ||
+      isRecord(metadata)) &&
+    isOptionalNullableNonNegativeInteger(revision)
+  );
+}
+
+export function isHierarchyTree(value: unknown): value is HierarchyTree {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const { schema_version, root, revision } = value;
+
+  return (
+    isNonEmptyString(schema_version) &&
+    isHierarchyNode(root) &&
+    isOptionalNullableNonNegativeInteger(revision)
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function isOptionalNullableString(
+  value: unknown,
+): value is string | null | undefined {
+  return (
+    value === undefined ||
+    value === null ||
+    typeof value === "string"
+  );
+}
+
+function isOptionalNullableBoolean(
+  value: unknown,
+): value is boolean | null | undefined {
+  return (
+    value === undefined ||
+    value === null ||
+    typeof value === "boolean"
+  );
+}
+
+function isOptionalNullableInteger(
+  value: unknown,
+): value is number | null | undefined {
+  return (
+    value === undefined ||
+    value === null ||
+    (typeof value === "number" &&
+      Number.isInteger(value))
+  );
+}
+
+function isOptionalNullableNonNegativeInteger(
+  value: unknown,
+): value is number | null | undefined {
+  return (
+    value === undefined ||
+    value === null ||
+    (typeof value === "number" &&
+      Number.isInteger(value) &&
+      value >= 0)
+  );
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\contracts\schema.ts
+============================================================
+
+// F:\Kernschmied\frontend\src\contracts\schema.ts
+
+export const KNOWN_COMPONENT_KINDS = [
+  "text",
+  "textarea",
+  "select",
+  "checkbox",
+  "toggle",
+  "tree",
+  "chat_view",
+  "message_list",
+  "chat_input",
+  "table",
+  "form",
+  "card",
+  "button_group",
+  "icon",
+  "prompt_editor",
+  "model_selector",
+  "file_upload",
+] as const;
+
+export type KnownComponentKind =
+  (typeof KNOWN_COMPONENT_KINDS)[number];
+
+export const KNOWN_ACTION_KINDS = [
+  "create_child",
+  "rename",
+  "delete",
+  "move",
+  "open_form",
+  "navigate",
+  "download",
+  "export",
+  "edit_prompt",
+  "toggle_tools",
+  "invoke_operation",
+] as const;
+
+export type KnownActionKind =
+  (typeof KNOWN_ACTION_KINDS)[number];
+
+/**
+ * Unbekannte Werte bleiben als String erhalten.
+ *
+ * Das erlaubt dem Frontend, neuere Backend-Schemata sicher zu lesen,
+ * ohne unbekannte Komponenten oder Aktionen automatisch freizugeben.
+ */
+export type ComponentKind = KnownComponentKind | (string & {});
+export type ActionKind = KnownActionKind | (string & {});
+export type NodeTypeKind = string;
+
+export interface NodeTypeDefinition {
+  /**
+   * Anzeigename des Knotentyps.
+   */
+  label: string;
+
+  /**
+   * Name eines Icons aus der festen Icon-Registry.
+   *
+   * Unbekannte Icons müssen durch ein sicheres Standard-Icon ersetzt werden.
+   */
+  icon: string;
+
+  /**
+   * Darstellungsfarbe.
+   *
+   * Das Frontend sollte nur bekannte Farbwerte oder validierte CSS-Farben
+   * verwenden.
+   */
+  color: string;
+
+  /**
+   * Vom Backend erlaubte direkte Kindtypen.
+   *
+   * Diese Angabe steuert die UI, ersetzt aber keine serverseitige Prüfung.
+   */
+  allowed_child_types: NodeTypeKind[];
+
+  /**
+   * Für diesen Knotentyp grundsätzlich angebotene Aktionen.
+   *
+   * Nur bekannte Aktionen aus der festen Action-Registry dürfen ausgeführt
+   * werden. Jede Aktion muss zusätzlich serverseitig autorisiert werden.
+   */
+  allowed_actions: ActionKind[];
+
+  /**
+   * Optionaler Beschreibungstext für Hilfen oder Tooltips.
+   */
+  description?: string | null;
+
+  /**
+   * Gibt an, ob dieser Knotentyp neue Instanzen erzeugen darf.
+   */
+  creatable?: boolean;
+
+  /**
+   * Gibt an, ob Knoten dieses Typs umbenannt werden dürfen.
+   */
+  renamable?: boolean;
+
+  /**
+   * Gibt an, ob Knoten dieses Typs gelöscht werden dürfen.
+   */
+  deletable?: boolean;
+
+  /**
+   * Optionaler Formularschlüssel für die Erstellung.
+   */
+  create_form?: string | null;
+
+  /**
+   * Optionaler Formularschlüssel für die Bearbeitung.
+   */
+  edit_form?: string | null;
+
+  /**
+   * Freie, schema-gebundene Zusatzinformationen.
+   */
+  metadata?: Record<string, unknown>;
+}
+
+export interface UISchemaComponentDefinition {
+  /**
+   * Eindeutige ID innerhalb des UI-Schemas.
+   */
+  id: string;
+
+  /**
+   * Komponententyp aus der festen Komponenten-Registry.
+   *
+   * Unbekannte Werte müssen mit UnsupportedSchema dargestellt werden.
+   */
+  kind: ComponentKind;
+
+  /**
+   * Optionale Überschrift oder Beschriftung.
+   */
+  label?: string | null;
+
+  /**
+   * Optionaler Hilfetext.
+   */
+  description?: string | null;
+
+  /**
+   * Sichtbarkeitszustand.
+   */
+  visible?: boolean;
+
+  /**
+   * Deaktivierungszustand.
+   *
+   * Dies ist ausschließlich eine Darstellungsinformation.
+   */
+  disabled?: boolean;
+
+  /**
+   * Komponentenabhängige Eigenschaften.
+   *
+   * Sie dürfen erst nach Prüfung des bekannten Komponententyps
+   * interpretiert werden.
+   */
+  props?: Record<string, unknown>;
+
+  /**
+   * Untergeordnete Komponenten.
+   */
+  children?: UISchemaComponentDefinition[];
+}
+
+export interface UISchemaActionDefinition {
+  /**
+   * Eindeutiger Name der Aktion.
+   */
+  kind: ActionKind;
+
+  /**
+   * Benutzerfreundliche Beschriftung.
+   */
+  label?: string | null;
+
+  /**
+   * Optionaler Iconname aus der festen Icon-Registry.
+   */
+  icon?: string | null;
+
+  /**
+   * Bestätigungsdialog vor der Ausführung.
+   */
+  confirmation_required?: boolean;
+
+  /**
+   * Kennzeichnet destruktive Aktionen für eine hervorgehobene Darstellung.
+   */
+  destructive?: boolean;
+
+  /**
+   * Optionale, schema-gebundene Parameter.
+   */
+  parameters?: Record<string, unknown>;
+}
+
+export interface UISchemaFormDefinition {
+  /**
+   * Eindeutige Formular-ID.
+   */
+  id: string;
+
+  /**
+   * Formularschema-Version.
+   */
+  schema_version?: string;
+
+  /**
+   * Optionale Formularüberschrift.
+   */
+  title?: string | null;
+
+  /**
+   * Optionaler Beschreibungstext.
+   */
+  description?: string | null;
+
+  /**
+   * Komponenten beziehungsweise Felder des Formulars.
+   */
+  components: UISchemaComponentDefinition[];
+
+  /**
+   * Aktion beim Absenden.
+   */
+  submit_action?: ActionKind | null;
+
+  /**
+   * Beschriftung der Absenden-Schaltfläche.
+   */
+  submit_label?: string | null;
+
+  /**
+   * Zusätzliche Formularmetadaten.
+   */
+  metadata?: Record<string, unknown>;
+}
+
+export interface UISchema {
+  /**
+   * Eindeutiger, stabiler Schemaname.
+   */
+  schema_name: string;
+
+  /**
+   * Version des gelieferten UI-Schemas.
+   */
+  schema_version: string;
+
+  /**
+   * Kleinste unterstützte Frontend-Version.
+   */
+  minimum_client_version: string;
+
+  /**
+   * Vom Schema verwendete Komponententypen.
+   *
+   * Diese Liste ist deklarativ. Das Frontend darf dadurch keine neuen
+   * Komponenten automatisch registrieren oder freigeben.
+   */
+  components: ComponentKind[];
+
+  /**
+   * Vom Schema verwendete Aktionstypen.
+   *
+   * Unbekannte Aktionen müssen ignoriert oder sichtbar als nicht
+   * unterstützt dargestellt werden.
+   */
+  actions: ActionKind[];
+
+  /**
+   * Definitionen aller fachlichen Knotentypen.
+   */
+  node_types: Record<NodeTypeKind, NodeTypeDefinition>;
+
+  /**
+   * Dynamische Formulardefinitionen.
+   */
+  forms: Record<string, UISchemaFormDefinition>;
+
+  /**
+   * Optionaler Einstiegspunkt für die Hauptansicht.
+   */
+  root_component?: UISchemaComponentDefinition | null;
+
+  /**
+   * Optionale strukturierte Aktionsdefinitionen.
+   *
+   * Dieses Feld ergänzt die einfache actions-Liste, ohne deren
+   * Rückwärtskompatibilität aufzuheben.
+   */
+  action_definitions?: Record<string, UISchemaActionDefinition>;
+
+  /**
+   * Globale Revision zur Cache-Invalidierung.
+   */
+  revision?: number;
+
+  /**
+   * Zusätzliche, versionierte Metadaten.
+   */
+  metadata?: Record<string, unknown>;
+}
+
+export function isKnownComponentKind(
+  value: unknown,
+): value is KnownComponentKind {
+  return (
+    typeof value === "string" &&
+    KNOWN_COMPONENT_KINDS.some((kind) => kind === value)
+  );
+}
+
+export function isKnownActionKind(
+  value: unknown,
+): value is KnownActionKind {
+  return (
+    typeof value === "string" &&
+    KNOWN_ACTION_KINDS.some((kind) => kind === value)
+  );
+}
+
+export function isNodeTypeDefinition(
+  value: unknown,
+): value is NodeTypeDefinition {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.label === "string" &&
+    value.label.length > 0 &&
+    typeof value.icon === "string" &&
+    value.icon.length > 0 &&
+    typeof value.color === "string" &&
+    Array.isArray(value.allowed_child_types) &&
+    value.allowed_child_types.every(
+      (childType) => typeof childType === "string",
+    ) &&
+    Array.isArray(value.allowed_actions) &&
+    value.allowed_actions.every(
+      (action) => typeof action === "string",
+    ) &&
+    isOptionalStringOrNull(value.description) &&
+    isOptionalBoolean(value.creatable) &&
+    isOptionalBoolean(value.renamable) &&
+    isOptionalBoolean(value.deletable) &&
+    isOptionalStringOrNull(value.create_form) &&
+    isOptionalStringOrNull(value.edit_form) &&
+    isOptionalRecord(value.metadata)
+  );
+}
+
+export function isUISchemaComponentDefinition(
+  value: unknown,
+): value is UISchemaComponentDefinition {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.id === "string" &&
+    value.id.length > 0 &&
+    typeof value.kind === "string" &&
+    value.kind.length > 0 &&
+    isOptionalStringOrNull(value.label) &&
+    isOptionalStringOrNull(value.description) &&
+    isOptionalBoolean(value.visible) &&
+    isOptionalBoolean(value.disabled) &&
+    isOptionalRecord(value.props) &&
+    (value.children === undefined ||
+      (Array.isArray(value.children) &&
+        value.children.every(isUISchemaComponentDefinition)))
+  );
+}
+
+export function isUISchemaActionDefinition(
+  value: unknown,
+): value is UISchemaActionDefinition {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.kind === "string" &&
+    value.kind.length > 0 &&
+    isOptionalStringOrNull(value.label) &&
+    isOptionalStringOrNull(value.icon) &&
+    isOptionalBoolean(value.confirmation_required) &&
+    isOptionalBoolean(value.destructive) &&
+    isOptionalRecord(value.parameters)
+  );
+}
+
+export function isUISchemaFormDefinition(
+  value: unknown,
+): value is UISchemaFormDefinition {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.id === "string" &&
+    value.id.length > 0 &&
+    isOptionalString(value.schema_version) &&
+    isOptionalStringOrNull(value.title) &&
+    isOptionalStringOrNull(value.description) &&
+    Array.isArray(value.components) &&
+    value.components.every(isUISchemaComponentDefinition) &&
+    isOptionalStringOrNull(value.submit_action) &&
+    isOptionalStringOrNull(value.submit_label) &&
+    isOptionalRecord(value.metadata)
+  );
+}
+
+export function isUISchema(value: unknown): value is UISchema {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.schema_name === "string" &&
+    value.schema_name.length > 0 &&
+    typeof value.schema_version === "string" &&
+    value.schema_version.length > 0 &&
+    typeof value.minimum_client_version === "string" &&
+    value.minimum_client_version.length > 0 &&
+    Array.isArray(value.components) &&
+    value.components.every(
+      (component) => typeof component === "string",
+    ) &&
+    Array.isArray(value.actions) &&
+    value.actions.every((action) => typeof action === "string") &&
+    isRecordOf(value.node_types, isNodeTypeDefinition) &&
+    isRecordOf(value.forms, isUISchemaFormDefinition) &&
+    (value.root_component === undefined ||
+      value.root_component === null ||
+      isUISchemaComponentDefinition(value.root_component)) &&
+    (value.action_definitions === undefined ||
+      isRecordOf(
+        value.action_definitions,
+        isUISchemaActionDefinition,
+      )) &&
+    (value.revision === undefined ||
+      (typeof value.revision === "number" &&
+        Number.isInteger(value.revision) &&
+        value.revision >= 0)) &&
+    isOptionalRecord(value.metadata)
+  );
+}
+
+function isRecord(
+  value: unknown,
+): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isRecordOf<T>(
+  value: unknown,
+  predicate: (entry: unknown) => entry is T,
+): value is Record<string, T> {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return Object.values(value).every(predicate);
+}
+
+function isOptionalBoolean(value: unknown): boolean {
+  return value === undefined || typeof value === "boolean";
+}
+
+function isOptionalString(value: unknown): boolean {
+  return value === undefined || typeof value === "string";
+}
+
+function isOptionalStringOrNull(value: unknown): boolean {
+  return (
+    value === undefined ||
+    value === null ||
+    typeof value === "string"
+  );
+}
+
+function isOptionalRecord(value: unknown): boolean {
+  return value === undefined || isRecord(value);
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\hooks\useAppSchema.ts
+============================================================
+
+// F:\Kernschmied\frontend\src\hooks\useAppSchema.ts
+
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  ApiError,
+  apiGet,
+} from "../api/client";
+
+import {
+  isHierarchyTree,
+  type HierarchyNode,
+  type HierarchyTree,
+} from "../contracts/hierarchy";
+
+import {
+  isUISchema,
+  type UISchema,
+} from "../contracts/schema";
+
+const UI_SCHEMA_ENDPOINT = "/ui/schema";
+const HIERARCHY_ENDPOINT = "/hierarchy";
+
+export type AppSchemaLoadStatus =
+  | "idle"
+  | "loading"
+  | "success"
+  | "error";
+
+export interface AppSchemaError {
+  code: string;
+  message: string;
+  details?: unknown;
+  requestId?: string;
+  status?: number;
+}
+
+export interface UseAppSchemaResult {
+  /**
+   * Geladenes und validiertes UI-Schema.
+   */
+  schema: UISchema | null;
+
+  /**
+   * Wurzelknoten der geladenen Hierarchie.
+   *
+   * Diese Eigenschaft bleibt mit bestehenden Aufrufern kompatibel.
+   */
+  hierarchy: HierarchyNode | null;
+
+  /**
+   * Vollständiger, versionierter Hierarchievertrag.
+   */
+  hierarchyTree: HierarchyTree | null;
+
+  /**
+   * Strukturierte Fehlerdaten.
+   */
+  error: AppSchemaError | null;
+
+  /**
+   * Einfache Fehlermeldung für bestehende UI-Komponenten.
+   */
+  errorMessage: string | null;
+
+  status: AppSchemaLoadStatus;
+  isLoading: boolean;
+  isReady: boolean;
+
+  /**
+   * Lädt UI-Schema und Hierarchie erneut.
+   */
+  reload: () => Promise<void>;
+}
+
+export function useAppSchema(): UseAppSchemaResult {
+  const [schema, setSchema] = useState<UISchema | null>(null);
+
+  const [hierarchyTree, setHierarchyTree] =
+    useState<HierarchyTree | null>(null);
+
+  const [error, setError] =
+    useState<AppSchemaError | null>(null);
+
+  const [status, setStatus] =
+    useState<AppSchemaLoadStatus>("idle");
+
+  const activeRequestControllerRef =
+    useRef<AbortController | null>(null);
+
+  const load = useCallback(async (): Promise<void> => {
+    /*
+     * Eine noch laufende Anfrage wird abgebrochen, bevor eine neue
+     * gestartet wird. Dadurch können ältere Antworten keinen neueren
+     * Zustand überschreiben.
+     */
+    activeRequestControllerRef.current?.abort();
+
+    const requestController = new AbortController();
+    activeRequestControllerRef.current = requestController;
+
+    setStatus("loading");
+    setError(null);
+
+    try {
+      const [rawSchemaResponse, rawHierarchyResponse] =
+        await Promise.all([
+          apiGet<unknown>(UI_SCHEMA_ENDPOINT, {
+            signal: requestController.signal,
+          }),
+
+          apiGet<unknown>(HIERARCHY_ENDPOINT, {
+            signal: requestController.signal,
+          }),
+        ]);
+
+      if (requestController.signal.aborted) {
+        return;
+      }
+
+      const normalizedSchema =
+        normalizeUISchemaResponse(rawSchemaResponse);
+
+      const normalizedHierarchy =
+        normalizeHierarchyResponse(rawHierarchyResponse);
+
+      if (requestController.signal.aborted) {
+        return;
+      }
+
+      setSchema(normalizedSchema);
+      setHierarchyTree(normalizedHierarchy);
+      setStatus("success");
+    } catch (caughtError) {
+      if (
+        requestController.signal.aborted ||
+        isAbortError(caughtError)
+      ) {
+        return;
+      }
+
+      const normalizedError =
+        normalizeAppSchemaError(caughtError);
+
+      logDevelopmentError(
+        "Schema oder Hierarchie konnten nicht geladen werden.",
+        normalizedError,
+      );
+
+      /*
+       * Vorhandene gültige Daten werden bei einem fehlgeschlagenen
+       * Reload bewusst nicht gelöscht.
+       */
+      setError(normalizedError);
+      setStatus("error");
+    } finally {
+      if (
+        activeRequestControllerRef.current ===
+        requestController
+      ) {
+        activeRequestControllerRef.current = null;
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+
+    return () => {
+      activeRequestControllerRef.current?.abort();
+      activeRequestControllerRef.current = null;
+    };
+  }, [load]);
+
+  return {
+    schema,
+    hierarchy: hierarchyTree?.root ?? null,
+    hierarchyTree,
+    error,
+    errorMessage: error?.message ?? null,
+    status,
+    isLoading: status === "loading",
+    isReady:
+      schema !== null &&
+      hierarchyTree !== null &&
+      status !== "idle",
+    reload: load,
+  };
+}
+
+function normalizeUISchemaResponse(
+  value: unknown,
+): UISchema {
+  const candidates = getResponseCandidates(value, [
+    "data",
+    "schema",
+    "ui_schema",
+    "result",
+  ]);
+
+  for (const candidate of candidates) {
+    if (isUISchema(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw createContractError(
+    "invalid_ui_schema",
+    "Das Backend hat ein ungültiges UI-Schema geliefert.",
+    createContractErrorDetails(value, candidates),
+  );
+}
+
+function normalizeHierarchyResponse(
+  value: unknown,
+): HierarchyTree {
+  const candidates = getResponseCandidates(value, [
+    "data",
+    "hierarchy",
+    "hierarchy_tree",
+    "tree",
+    "result",
+  ]);
+
+  for (const candidate of candidates) {
+    if (isHierarchyTree(candidate)) {
+      return candidate;
+    }
+  }
+
+  throw createContractError(
+    "invalid_hierarchy_schema",
+    "Das Backend hat eine ungültige Hierarchie geliefert.",
+    createContractErrorDetails(value, candidates),
+  );
+}
+
+/**
+ * Liefert die direkte Antwort sowie mögliche bekannte Wrapper-Inhalte.
+ *
+ * Die Wrapper-Namen sind fest definiert. Es wird nicht beliebig oder
+ * rekursiv durch unbekannte Antwortstrukturen gesucht.
+ */
+function getResponseCandidates(
+  value: unknown,
+  wrapperKeys: readonly string[],
+): unknown[] {
+  const candidates: unknown[] = [value];
+
+  if (!isRecord(value)) {
+    return candidates;
+  }
+
+  for (const key of wrapperKeys) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      candidates.push(value[key]);
+    }
+  }
+
+  return candidates;
+}
+
+function createContractErrorDetails(
+  rawValue: unknown,
+  candidates: readonly unknown[],
+): Record<string, unknown> {
+  return {
+    raw_response: rawValue,
+    tested_candidates: candidates,
+    received_type: describeValueType(rawValue),
+  };
+}
+
+function createContractError(
+  code: string,
+  message: string,
+  details?: unknown,
+): AppSchemaError {
+  return {
+    code,
+    message,
+    details,
+  };
+}
+
+function normalizeAppSchemaError(
+  error: unknown,
+): AppSchemaError {
+  if (isAppSchemaError(error)) {
+    return error;
+  }
+
+  if (error instanceof ApiError) {
+    return {
+      code: error.code,
+      message: error.message,
+      details: error.details,
+      requestId: error.requestId,
+      status: error.status,
+    };
+  }
+
+  if (error instanceof DOMException) {
+    if (error.name === "AbortError") {
+      return {
+        code: "request_aborted",
+        message: "Die Anfrage wurde abgebrochen.",
+      };
+    }
+
+    return {
+      code: "browser_request_failed",
+      message: error.message,
+      details: {
+        name: error.name,
+      },
+    };
+  }
+
+  if (error instanceof Error) {
+    return {
+      code: "app_schema_load_failed",
+      message: error.message,
+      details: {
+        name: error.name,
+      },
+    };
+  }
+
+  return {
+    code: "app_schema_load_failed",
+    message:
+      "Schema und Hierarchie konnten nicht geladen werden.",
+    details: error,
+  };
+}
+
+function isAppSchemaError(
+  value: unknown,
+): value is AppSchemaError {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  return (
+    typeof value.code === "string" &&
+    value.code.length > 0 &&
+    typeof value.message === "string" &&
+    value.message.length > 0 &&
+    (
+      value.requestId === undefined ||
+      typeof value.requestId === "string"
+    ) &&
+    (
+      value.status === undefined ||
+      (
+        typeof value.status === "number" &&
+        Number.isInteger(value.status)
+      )
+    )
+  );
+}
+
+function isAbortError(error: unknown): boolean {
+  if (
+    error instanceof DOMException &&
+    error.name === "AbortError"
+  ) {
+    return true;
+  }
+
+  return (
+    error instanceof ApiError &&
+    error.code === "request_aborted"
+  );
+}
+
+function isRecord(
+  value: unknown,
+): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function describeValueType(value: unknown): string {
+  if (value === null) {
+    return "null";
+  }
+
+  if (Array.isArray(value)) {
+    return "array";
+  }
+
+  return typeof value;
+}
+
+function logDevelopmentError(
+  message: string,
+  error: AppSchemaError,
+): void {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
+  console.error(message, {
+    code: error.code,
+    message: error.message,
+    status: error.status,
+    requestId: error.requestId,
+    details: error.details,
+  });
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\registry\actionRegistry.ts
+============================================================
+
+// F:\Kernschmied\frontend\src\registry\actionRegistry.ts
+
+import {
+  KNOWN_ACTION_KINDS,
+  type KnownActionKind,
+} from "../contracts/schema";
+
+/**
+ * Eine Aktion wird nur dann als unterstützt behandelt, wenn sie:
+ *
+ * 1. im stabilen Frontend-Vertrag bekannt ist und
+ * 2. explizit in dieser Registry eingetragen wurde.
+ *
+ * Ein vom Backend gelieferter Aktionsname registriert oder aktiviert
+ * niemals automatisch neue Frontend-Funktionalität.
+ */
+
+export interface ActionContext<TNode = unknown, TPayload = unknown> {
+  /**
+   * Der Knoten oder Datensatz, auf den sich die Aktion bezieht.
+   */
+  target?: TNode;
+
+  /**
+   * Optionaler, bereits validierter Aktions-Payload.
+   */
+  payload?: TPayload;
+
+  /**
+   * AbortSignal für abbrechbare Aktionen.
+   */
+  signal?: AbortSignal;
+}
+
+export interface ActionResult<TResult = unknown> {
+  /**
+   * Gibt an, ob die Aktion erfolgreich abgeschlossen wurde.
+   */
+  success: boolean;
+
+  /**
+   * Optionales Ergebnis der Aktion.
+   */
+  data?: TResult;
+
+  /**
+   * Optionaler maschinenlesbarer Ergebnis- oder Fehlercode.
+   */
+  code?: string;
+
+  /**
+   * Optionale Meldung für die Benutzeroberfläche.
+   */
+  message?: string;
+}
+
+export type ActionHandler<
+  TNode = unknown,
+  TPayload = unknown,
+  TResult = unknown,
+> = (
+  context: ActionContext<TNode, TPayload>,
+) => Promise<ActionResult<TResult>> | ActionResult<TResult>;
+
+export interface ActionDefinition {
+  /**
+   * Stabiler Aktionsname aus dem versionierten Frontend-Vertrag.
+   */
+  kind: KnownActionKind;
+
+  /**
+   * Benutzerfreundliche Standardbeschriftung.
+   */
+  label: string;
+
+  /**
+   * Optionaler Iconname aus der festen Icon-Registry.
+   */
+  icon?: string;
+
+  /**
+   * Kennzeichnet eine potenziell destruktive Aktion.
+   */
+  destructive?: boolean;
+
+  /**
+   * Verlangt vor der Ausführung eine ausdrückliche Bestätigung.
+   */
+  confirmationRequired?: boolean;
+
+  /**
+   * Gibt an, ob die Aktion derzeit im Frontend sichtbar angeboten
+   * werden darf.
+   *
+   * Dies ersetzt keine serverseitige Autorisierung.
+   */
+  enabled?: boolean;
+
+  /**
+   * Optional registrierter Handler.
+   *
+   * Aktionen ohne Handler können dargestellt, aber nicht ausgeführt werden.
+   */
+  handler?: ActionHandler;
+}
+
+export type ActionRegistry = ReadonlyMap<
+  KnownActionKind,
+  Readonly<ActionDefinition>
+>;
+
+const actionDefinitions = [
+  {
+    kind: "create_child",
+    label: "Unterelement erstellen",
+    icon: "Plus",
+    enabled: true,
+  },
+  {
+    kind: "rename",
+    label: "Umbenennen",
+    icon: "Pencil",
+    enabled: true,
+  },
+  {
+    kind: "delete",
+    label: "Löschen",
+    icon: "Trash2",
+    destructive: true,
+    confirmationRequired: true,
+    enabled: true,
+  },
+  {
+    kind: "move",
+    label: "Verschieben",
+    icon: "Move",
+    enabled: true,
+  },
+  {
+    kind: "open_form",
+    label: "Formular öffnen",
+    icon: "PanelTopOpen",
+    enabled: true,
+  },
+  {
+    kind: "navigate",
+    label: "Öffnen",
+    icon: "ArrowRight",
+    enabled: true,
+  },
+  {
+    kind: "download",
+    label: "Herunterladen",
+    icon: "Download",
+    enabled: true,
+  },
+  {
+    kind: "export",
+    label: "Exportieren",
+    icon: "FileOutput",
+    enabled: true,
+  },
+  {
+    kind: "edit_prompt",
+    label: "Prompt bearbeiten",
+    icon: "FilePenLine",
+    enabled: true,
+  },
+  {
+    kind: "toggle_tools",
+    label: "Werkzeuge umschalten",
+    icon: "Wrench",
+    enabled: true,
+  },
+  {
+    kind: "invoke_operation",
+    label: "Aktion ausführen",
+    icon: "Play",
+    enabled: true,
+  },
+] satisfies readonly ActionDefinition[];
+
+function createActionRegistry(
+  definitions: readonly ActionDefinition[],
+): ActionRegistry {
+  const registry = new Map<
+    KnownActionKind,
+    Readonly<ActionDefinition>
+  >();
+
+  for (const definition of definitions) {
+    if (registry.has(definition.kind)) {
+      throw new Error(
+        `Die Aktion "${definition.kind}" wurde mehrfach registriert.`,
+      );
+    }
+
+    registry.set(
+      definition.kind,
+      Object.freeze({
+        ...definition,
+      }),
+    );
+  }
+
+  assertRegistryCompleteness(registry);
+
+  return registry;
+}
+
+function assertRegistryCompleteness(
+  registry: ReadonlyMap<KnownActionKind, Readonly<ActionDefinition>>,
+): void {
+  const missingActions = KNOWN_ACTION_KINDS.filter(
+    (kind) => !registry.has(kind),
+  );
+
+  if (missingActions.length > 0) {
+    throw new Error(
+      `Für folgende bekannte Aktionen fehlt ein Registry-Eintrag: ${missingActions.join(
+        ", ",
+      )}`,
+    );
+  }
+}
+
+export const actionRegistry: ActionRegistry =
+  createActionRegistry(actionDefinitions);
+
+/**
+ * Prüft ausschließlich, ob ein Wert Bestandteil des stabilen
+ * Frontend-Vertrags ist.
+ *
+ * Diese Prüfung sagt nicht aus, ob ein Handler vorhanden ist oder ob
+ * der aktuelle Benutzer die Aktion ausführen darf.
+ */
+export function isKnownActionKind(
+  value: unknown,
+): value is KnownActionKind {
+  return (
+    typeof value === "string" &&
+    actionRegistry.has(value as KnownActionKind)
+  );
+}
+
+/**
+ * Gibt die Registry-Definition einer bekannten Aktion zurück.
+ */
+export function getActionDefinition(
+  kind: string,
+): Readonly<ActionDefinition> | undefined {
+  if (!isKnownActionKind(kind)) {
+    return undefined;
+  }
+
+  return actionRegistry.get(kind);
+}
+
+/**
+ * Prüft, ob eine bekannte Aktion im Frontend aktiviert ist.
+ *
+ * Die tatsächliche Berechtigung muss weiterhin serverseitig geprüft werden.
+ */
+export function isActionEnabled(
+  kind: string,
+): kind is KnownActionKind {
+  const definition = getActionDefinition(kind);
+
+  return definition?.enabled !== false;
+}
+
+/**
+ * Prüft, ob für die Aktion ein ausführbarer Frontend-Handler vorhanden ist.
+ */
+export function hasActionHandler(
+  kind: string,
+): kind is KnownActionKind {
+  const definition = getActionDefinition(kind);
+
+  return typeof definition?.handler === "function";
+}
+
+/**
+ * Liefert nur Aktionen zurück, die:
+ *
+ * - dem Frontend bekannt sind,
+ * - in der Registry registriert sind und
+ * - nicht explizit deaktiviert wurden.
+ *
+ * Unbekannte Backend-Aktionen werden sicher verworfen.
+ */
+export function filterSupportedActionKinds(
+  values: readonly string[],
+): KnownActionKind[] {
+  return values.filter(isActionEnabled);
+}
+
+/**
+ * Führt eine lokal registrierte Aktion aus.
+ *
+ * Diese Funktion ist nicht für direkte Backend-Mutationen gedacht.
+ * Serverseitige Aktionen sollten über einen zentralen API-Dienst laufen,
+ * der Authentifizierung, Autorisierung, Fehlerbehandlung und Auditierung
+ * übernimmt.
+ */
+export async function executeRegisteredAction<
+  TNode = unknown,
+  TPayload = unknown,
+  TResult = unknown,
+>(
+  kind: string,
+  context: ActionContext<TNode, TPayload>,
+): Promise<ActionResult<TResult>> {
+  const definition = getActionDefinition(kind);
+
+  if (!definition) {
+    return {
+      success: false,
+      code: "unsupported_action",
+      message: `Die Aktion "${kind}" wird vom Frontend nicht unterstützt.`,
+    };
+  }
+
+  if (definition.enabled === false) {
+    return {
+      success: false,
+      code: "action_disabled",
+      message: `Die Aktion "${kind}" ist derzeit deaktiviert.`,
+    };
+  }
+
+  if (!definition.handler) {
+    return {
+      success: false,
+      code: "action_handler_missing",
+      message: `Für die Aktion "${kind}" ist kein Frontend-Handler registriert.`,
+    };
+  }
+
+  if (context.signal?.aborted) {
+    return {
+      success: false,
+      code: "action_aborted",
+      message: "Die Aktion wurde abgebrochen.",
+    };
+  }
+
+  try {
+    return (await definition.handler(
+      context,
+    )) as ActionResult<TResult>;
+  } catch (error) {
+    return {
+      success: false,
+      code: "action_execution_failed",
+      message:
+        error instanceof Error
+          ? error.message
+          : "Die Aktion konnte nicht ausgeführt werden.",
+    };
+  }
+}
+
+/**
+ * Alle registrierten Aktionsdefinitionen als unveränderliche Liste.
+ *
+ * Geeignet für Menüs, Toolbars oder Diagnoseansichten.
+ */
+export function listActionDefinitions(): readonly Readonly<ActionDefinition>[] {
+  return Array.from(actionRegistry.values());
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\registry\iconRegistry.tsx
+============================================================
+
+// F:\Kernschmied\frontend\src\registry\iconRegistry.tsx
+
+import type { CSSProperties, ComponentType } from "react";
+import {
+  Building2,
+  Circle,
+  Download,
+  FileOutput,
+  FilePenLine,
+  FolderKanban,
+  MessageSquare,
+  Move,
+  PanelTopOpen,
+  Pencil,
+  Play,
+  Plus,
+  Trash2,
+  UserCircle,
+  Wrench,
+  ArrowRight,
+} from "lucide-react";
+
+export const DEFAULT_ICON_NAME = "Circle";
+
+export const ICON_REGISTRY = {
+  ArrowRight,
+  Building2,
+  Circle,
+  Download,
+  FileOutput,
+  FilePenLine,
+  FolderKanban,
+  MessageSquare,
+  Move,
+  PanelTopOpen,
+  Pencil,
+  Play,
+  Plus,
+  Trash2,
+  UserCircle,
+  Wrench,
+} as const;
+
+export type KnownIconName = keyof typeof ICON_REGISTRY;
+
+export interface DynamicIconProps {
+  /**
+   * Iconname aus der festen Registry.
+   */
+  name?: string | null;
+
+  /**
+   * Optionale Farbe.
+   */
+  color?: string;
+
+  /**
+   * Standardgröße 18 Pixel.
+   */
+  size?: number;
+
+  /**
+   * Zusätzliche CSS-Klasse.
+   */
+  className?: string;
+
+  /**
+   * Optionaler Titel.
+   */
+  title?: string;
+}
+
+function isSafeColor(value: string | undefined): boolean {
+  if (!value) {
+    return false;
+  }
+
+  // Hex
+  if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value)) {
+    return true;
+  }
+
+  // rgb(...)
+  if (/^rgb(a?)\(/i.test(value)) {
+    return true;
+  }
+
+  // CSS-Variable
+  if (/^var\(--/.test(value)) {
+    return true;
+  }
+
+  // Tailwind-/Designfarben wie slate, blue usw.
+  if (/^[a-z][a-z0-9-]*$/i.test(value)) {
+    return true;
+  }
+
+  return false;
+}
+
+export function isKnownIconName(
+  value: unknown,
+): value is KnownIconName {
+  return (
+    typeof value === "string" &&
+    value in ICON_REGISTRY
+  );
+}
+
+export function getIconComponent(
+  name: string | null | undefined,
+): ComponentType<{
+  size?: number;
+  className?: string;
+  style?: CSSProperties;
+  title?: string;
+}> {
+  if (name && isKnownIconName(name)) {
+    return ICON_REGISTRY[name];
+  }
+
+  return ICON_REGISTRY[DEFAULT_ICON_NAME];
+}
+
+export function listKnownIcons(): readonly KnownIconName[] {
+  return Object.keys(
+    ICON_REGISTRY,
+  ) as KnownIconName[];
+}
+
+export function DynamicIcon({
+  name,
+  color,
+  size = 18,
+  className,
+  title,
+}: DynamicIconProps) {
+  const Icon = getIconComponent(name);
+
+  return (
+    <Icon
+      size={size}
+      className={className}
+      title={title}
+      aria-hidden={title ? undefined : true}
+      style={
+        isSafeColor(color)
+          ? { color }
+          : undefined
+      }
+    />
+  );
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\store\AppStore.tsx
+============================================================
+
+// F:\Kernschmied\frontend\src\store\AppStore.tsx
+
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useReducer,
+  type Dispatch,
+  type PropsWithChildren,
+} from "react";
+
+import type {
+  HierarchyNode,
+  HierarchyTree,
+} from "../contracts/hierarchy";
+import type { UISchema } from "../contracts/schema";
+
+export type AppStoreStatus =
+  | "idle"
+  | "loading"
+  | "ready"
+  | "error";
+
+export interface AppStoreError {
+  code: string;
+  message: string;
+  details?: unknown;
+  requestId?: string;
+  status?: number;
+}
+
+export interface AppStoreState {
+  /**
+   * Aktuell geladenes UI-Schema.
+   */
+  schema: UISchema | null;
+
+  /**
+   * Vollständiger, versionierter Hierarchiebaum.
+   */
+  hierarchyTree: HierarchyTree | null;
+
+  /**
+   * Aktuell ausgewählter Hierarchieknoten.
+   */
+  selectedNodeId: string | null;
+
+  /**
+   * Aufgeklappte Knoten im generischen Baum.
+   */
+  expandedNodeIds: ReadonlySet<string>;
+
+  /**
+   * Globaler Ladezustand des initialen App-Kontexts.
+   */
+  status: AppStoreStatus;
+
+  /**
+   * Strukturierter Lade- oder Vertragsfehler.
+   */
+  error: AppStoreError | null;
+
+  /**
+   * Gibt an, ob die linke Navigation sichtbar ist.
+   */
+  isNavigationOpen: boolean;
+
+  /**
+   * Gibt an, ob eine optionale rechte Seitenleiste sichtbar ist.
+   */
+  isDetailsPanelOpen: boolean;
+}
+
+export type AppStoreAction =
+  | {
+      type: "app/load_started";
+    }
+  | {
+      type: "app/load_succeeded";
+      payload: {
+        schema: UISchema;
+        hierarchyTree: HierarchyTree;
+      };
+    }
+  | {
+      type: "app/load_failed";
+      payload: AppStoreError;
+    }
+  | {
+      type: "app/error_cleared";
+    }
+  | {
+      type: "schema/replaced";
+      payload: UISchema;
+    }
+  | {
+      type: "hierarchy/replaced";
+      payload: HierarchyTree;
+    }
+  | {
+      type: "hierarchy/node_selected";
+      payload: {
+        nodeId: string | null;
+      };
+    }
+  | {
+      type: "hierarchy/node_expansion_toggled";
+      payload: {
+        nodeId: string;
+      };
+    }
+  | {
+      type: "hierarchy/expanded_nodes_replaced";
+      payload: {
+        nodeIds: ReadonlySet<string>;
+      };
+    }
+  | {
+      type: "hierarchy/all_nodes_collapsed";
+    }
+  | {
+      type: "ui/navigation_visibility_changed";
+      payload: {
+        open: boolean;
+      };
+    }
+  | {
+      type: "ui/details_panel_visibility_changed";
+      payload: {
+        open: boolean;
+      };
+    }
+  | {
+      type: "app/reset";
+    };
+
+export interface AppStoreCommands {
+  beginLoading: () => void;
+
+  setLoadedData: (
+    schema: UISchema,
+    hierarchyTree: HierarchyTree,
+  ) => void;
+
+  setError: (error: AppStoreError) => void;
+  clearError: () => void;
+
+  replaceSchema: (schema: UISchema) => void;
+  replaceHierarchy: (hierarchyTree: HierarchyTree) => void;
+
+  selectNode: (nodeId: string | null) => void;
+  selectHierarchyNode: (node: HierarchyNode | null) => void;
+
+  toggleNodeExpanded: (nodeId: string) => void;
+  replaceExpandedNodeIds: (
+    nodeIds: ReadonlySet<string>,
+  ) => void;
+  collapseAllNodes: () => void;
+
+  setNavigationOpen: (open: boolean) => void;
+  setDetailsPanelOpen: (open: boolean) => void;
+
+  reset: () => void;
+}
+
+export interface AppStoreValue {
+  state: AppStoreState;
+  dispatch: Dispatch<AppStoreAction>;
+  commands: AppStoreCommands;
+}
+
+const INITIAL_STATE: AppStoreState = {
+  schema: null,
+  hierarchyTree: null,
+  selectedNodeId: null,
+  expandedNodeIds: new Set<string>(),
+  status: "idle",
+  error: null,
+  isNavigationOpen: true,
+  isDetailsPanelOpen: true,
+};
+
+const AppStoreContext =
+  createContext<AppStoreValue | null>(null);
+
+export interface AppStoreProviderProps {
+  initialState?: Partial<AppStoreState>;
+}
+
+export function AppStoreProvider({
+  children,
+  initialState,
+}: PropsWithChildren<AppStoreProviderProps>) {
+  const [state, dispatch] = useReducer(
+    appStoreReducer,
+    initialState,
+    createInitialState,
+  );
+
+  const beginLoading = useCallback(() => {
+    dispatch({
+      type: "app/load_started",
+    });
+  }, []);
+
+  const setLoadedData = useCallback(
+    (
+      schema: UISchema,
+      hierarchyTree: HierarchyTree,
+    ) => {
+      dispatch({
+        type: "app/load_succeeded",
+        payload: {
+          schema,
+          hierarchyTree,
+        },
+      });
+    },
+    [],
+  );
+
+  const setError = useCallback(
+    (error: AppStoreError) => {
+      dispatch({
+        type: "app/load_failed",
+        payload: error,
+      });
+    },
+    [],
+  );
+
+  const clearError = useCallback(() => {
+    dispatch({
+      type: "app/error_cleared",
+    });
+  }, []);
+
+  const replaceSchema = useCallback(
+    (schema: UISchema) => {
+      dispatch({
+        type: "schema/replaced",
+        payload: schema,
+      });
+    },
+    [],
+  );
+
+  const replaceHierarchy = useCallback(
+    (hierarchyTree: HierarchyTree) => {
+      dispatch({
+        type: "hierarchy/replaced",
+        payload: hierarchyTree,
+      });
+    },
+    [],
+  );
+
+  const selectNode = useCallback(
+    (nodeId: string | null) => {
+      dispatch({
+        type: "hierarchy/node_selected",
+        payload: {
+          nodeId,
+        },
+      });
+    },
+    [],
+  );
+
+  const selectHierarchyNode = useCallback(
+    (node: HierarchyNode | null) => {
+      dispatch({
+        type: "hierarchy/node_selected",
+        payload: {
+          nodeId: node?.id ?? null,
+        },
+      });
+    },
+    [],
+  );
+
+  const toggleNodeExpanded = useCallback(
+    (nodeId: string) => {
+      dispatch({
+        type: "hierarchy/node_expansion_toggled",
+        payload: {
+          nodeId,
+        },
+      });
+    },
+    [],
+  );
+
+  const replaceExpandedNodeIds = useCallback(
+    (nodeIds: ReadonlySet<string>) => {
+      dispatch({
+        type: "hierarchy/expanded_nodes_replaced",
+        payload: {
+          nodeIds,
+        },
+      });
+    },
+    [],
+  );
+
+  const collapseAllNodes = useCallback(() => {
+    dispatch({
+      type: "hierarchy/all_nodes_collapsed",
+    });
+  }, []);
+
+  const setNavigationOpen = useCallback(
+    (open: boolean) => {
+      dispatch({
+        type: "ui/navigation_visibility_changed",
+        payload: {
+          open,
+        },
+      });
+    },
+    [],
+  );
+
+  const setDetailsPanelOpen = useCallback(
+    (open: boolean) => {
+      dispatch({
+        type: "ui/details_panel_visibility_changed",
+        payload: {
+          open,
+        },
+      });
+    },
+    [],
+  );
+
+  const reset = useCallback(() => {
+    dispatch({
+      type: "app/reset",
+    });
+  }, []);
+
+  const commands = useMemo<AppStoreCommands>(
+    () => ({
+      beginLoading,
+      setLoadedData,
+      setError,
+      clearError,
+      replaceSchema,
+      replaceHierarchy,
+      selectNode,
+      selectHierarchyNode,
+      toggleNodeExpanded,
+      replaceExpandedNodeIds,
+      collapseAllNodes,
+      setNavigationOpen,
+      setDetailsPanelOpen,
+      reset,
+    }),
+    [
+      beginLoading,
+      setLoadedData,
+      setError,
+      clearError,
+      replaceSchema,
+      replaceHierarchy,
+      selectNode,
+      selectHierarchyNode,
+      toggleNodeExpanded,
+      replaceExpandedNodeIds,
+      collapseAllNodes,
+      setNavigationOpen,
+      setDetailsPanelOpen,
+      reset,
+    ],
+  );
+
+  const value = useMemo<AppStoreValue>(
+    () => ({
+      state,
+      dispatch,
+      commands,
+    }),
+    [commands, state],
+  );
+
+  return (
+    <AppStoreContext.Provider value={value}>
+      {children}
+    </AppStoreContext.Provider>
+  );
+}
+
+export function useAppStore(): AppStoreValue {
+  const store = useContext(AppStoreContext);
+
+  if (!store) {
+    throw new Error(
+      "useAppStore muss innerhalb eines AppStoreProvider verwendet werden.",
+    );
+  }
+
+  return store;
+}
+
+export function useAppStoreState(): AppStoreState {
+  return useAppStore().state;
+}
+
+export function useAppStoreCommands(): AppStoreCommands {
+  return useAppStore().commands;
+}
+
+export function appStoreReducer(
+  state: AppStoreState,
+  action: AppStoreAction,
+): AppStoreState {
+  switch (action.type) {
+    case "app/load_started":
+      return {
+        ...state,
+        status: "loading",
+        error: null,
+      };
+
+    case "app/load_succeeded": {
+      const { schema, hierarchyTree } = action.payload;
+      const rootNodeId = hierarchyTree.root.id;
+
+      return {
+        ...state,
+        schema,
+        hierarchyTree,
+        selectedNodeId: resolveSelectedNodeId(
+          hierarchyTree,
+          state.selectedNodeId,
+        ),
+        expandedNodeIds:
+          state.expandedNodeIds.size > 0
+            ? removeUnknownExpandedNodeIds(
+                hierarchyTree,
+                state.expandedNodeIds,
+              )
+            : new Set([rootNodeId]),
+        status: "ready",
+        error: null,
+      };
+    }
+
+    case "app/load_failed":
+      return {
+        ...state,
+        status: "error",
+        error: action.payload,
+      };
+
+    case "app/error_cleared":
+      return {
+        ...state,
+        error: null,
+        status:
+          state.schema && state.hierarchyTree
+            ? "ready"
+            : "idle",
+      };
+
+    case "schema/replaced":
+      return {
+        ...state,
+        schema: action.payload,
+      };
+
+    case "hierarchy/replaced":
+      return {
+        ...state,
+        hierarchyTree: action.payload,
+        selectedNodeId: resolveSelectedNodeId(
+          action.payload,
+          state.selectedNodeId,
+        ),
+        expandedNodeIds: removeUnknownExpandedNodeIds(
+          action.payload,
+          state.expandedNodeIds,
+        ),
+      };
+
+    case "hierarchy/node_selected":
+      return {
+        ...state,
+        selectedNodeId: action.payload.nodeId,
+      };
+
+    case "hierarchy/node_expansion_toggled": {
+      const nextExpandedNodeIds = new Set(
+        state.expandedNodeIds,
+      );
+
+      if (nextExpandedNodeIds.has(action.payload.nodeId)) {
+        nextExpandedNodeIds.delete(action.payload.nodeId);
+      } else {
+        nextExpandedNodeIds.add(action.payload.nodeId);
+      }
+
+      return {
+        ...state,
+        expandedNodeIds: nextExpandedNodeIds,
+      };
+    }
+
+    case "hierarchy/expanded_nodes_replaced":
+      return {
+        ...state,
+        expandedNodeIds: new Set(action.payload.nodeIds),
+      };
+
+    case "hierarchy/all_nodes_collapsed":
+      return {
+        ...state,
+        expandedNodeIds: new Set<string>(),
+      };
+
+    case "ui/navigation_visibility_changed":
+      return {
+        ...state,
+        isNavigationOpen: action.payload.open,
+      };
+
+    case "ui/details_panel_visibility_changed":
+      return {
+        ...state,
+        isDetailsPanelOpen: action.payload.open,
+      };
+
+    case "app/reset":
+      return createInitialState();
+
+    default:
+      return assertNever(action);
+  }
+}
+
+function createInitialState(
+  initialState?: Partial<AppStoreState>,
+): AppStoreState {
+  return {
+    ...INITIAL_STATE,
+    ...initialState,
+    expandedNodeIds: new Set(
+      initialState?.expandedNodeIds ??
+        INITIAL_STATE.expandedNodeIds,
+    ),
+  };
+}
+
+function resolveSelectedNodeId(
+  hierarchyTree: HierarchyTree,
+  selectedNodeId: string | null,
+): string | null {
+  if (
+    selectedNodeId &&
+    containsNodeId(hierarchyTree.root, selectedNodeId)
+  ) {
+    return selectedNodeId;
+  }
+
+  return hierarchyTree.root.id;
+}
+
+function removeUnknownExpandedNodeIds(
+  hierarchyTree: HierarchyTree,
+  expandedNodeIds: ReadonlySet<string>,
+): ReadonlySet<string> {
+  const existingNodeIds = collectNodeIds(
+    hierarchyTree.root,
+  );
+
+  return new Set(
+    [...expandedNodeIds].filter((nodeId) =>
+      existingNodeIds.has(nodeId),
+    ),
+  );
+}
+
+function collectNodeIds(
+  root: HierarchyNode,
+): Set<string> {
+  const nodeIds = new Set<string>();
+  const stack: HierarchyNode[] = [root];
+
+  while (stack.length > 0) {
+    const node = stack.pop();
+
+    if (!node || nodeIds.has(node.id)) {
+      continue;
+    }
+
+    nodeIds.add(node.id);
+
+    for (const child of node.children) {
+      stack.push(child);
+    }
+  }
+
+  return nodeIds;
+}
+
+function containsNodeId(
+  root: HierarchyNode,
+  nodeId: string,
+): boolean {
+  const stack: HierarchyNode[] = [root];
+  const visitedNodeIds = new Set<string>();
+
+  while (stack.length > 0) {
+    const node = stack.pop();
+
+    if (!node || visitedNodeIds.has(node.id)) {
+      continue;
+    }
+
+    if (node.id === nodeId) {
+      return true;
+    }
+
+    visitedNodeIds.add(node.id);
+
+    for (const child of node.children) {
+      stack.push(child);
+    }
+  }
+
+  return false;
+}
+
+function assertNever(value: never): never {
+  throw new Error(
+    `Unbekannte Store-Aktion: ${JSON.stringify(value)}`,
+  );
+}
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\store\index.ts
+============================================================
+
+// F:\Kernschmied\frontend\src\store\index.ts
+
+export {
+  AppStoreProvider,
+  appStoreReducer,
+  useAppStore,
+  useAppStoreCommands,
+  useAppStoreState,
+  type AppStoreAction,
+  type AppStoreCommands,
+  type AppStoreError,
+  type AppStoreProviderProps,
+  type AppStoreState,
+  type AppStoreStatus,
+  type AppStoreValue,
+} from "./AppStore";
+
+export {
+  findHierarchyNode,
+  findHierarchyPath,
+  selectAppIsLoading,
+  selectAppIsReady,
+  selectExpandedNodeIds,
+  selectHierarchyRevision,
+  selectHierarchyRoot,
+  selectHierarchyTree,
+  selectSchema,
+  selectSchemaRevision,
+  selectSelectedNode,
+  selectSelectedNodeId,
+  selectSelectedNodeTypeDefinition,
+} from "./selectors";
+
+
+============================================================
+DATEI: F:\Kernschmied\frontend\src\store\selectors.ts
+============================================================
+
+// F:\Kernschmied\frontend\src\store\selectors.ts
+
+import type { HierarchyNode } from "../contracts/hierarchy";
+import type { NodeTypeDefinition } from "../contracts/schema";
+import type { AppStoreState } from "./AppStore";
+
+export function selectSchema(
+  state: AppStoreState,
+) {
+  return state.schema;
+}
+
+export function selectHierarchyTree(
+  state: AppStoreState,
+) {
+  return state.hierarchyTree;
+}
+
+export function selectHierarchyRoot(
+  state: AppStoreState,
+): HierarchyNode | null {
+  return state.hierarchyTree?.root ?? null;
+}
+
+export function selectSelectedNodeId(
+  state: AppStoreState,
+): string | null {
+  return state.selectedNodeId;
+}
+
+export function selectSelectedNode(
+  state: AppStoreState,
+): HierarchyNode | null {
+  const root = selectHierarchyRoot(state);
+
+  if (!root || !state.selectedNodeId) {
+    return null;
+  }
+
+  return findHierarchyNode(
+    root,
+    state.selectedNodeId,
+  );
+}
+
+export function selectSelectedNodeTypeDefinition(
+  state: AppStoreState,
+): NodeTypeDefinition | null {
+  const schema = state.schema;
+  const node = selectSelectedNode(state);
+
+  if (!schema || !node) {
+    return null;
+  }
+
+  return schema.node_types[node.type] ?? null;
+}
+
+export function selectExpandedNodeIds(
+  state: AppStoreState,
+): ReadonlySet<string> {
+  return state.expandedNodeIds;
+}
+
+export function selectAppIsReady(
+  state: AppStoreState,
+): boolean {
+  return (
+    state.status === "ready" &&
+    state.schema !== null &&
+    state.hierarchyTree !== null
+  );
+}
+
+export function selectAppIsLoading(
+  state: AppStoreState,
+): boolean {
+  return state.status === "loading";
+}
+
+export function selectSchemaRevision(
+  state: AppStoreState,
+): number | null {
+  return state.schema?.revision ?? null;
+}
+
+export function selectHierarchyRevision(
+  state: AppStoreState,
+): number | null {
+  return state.hierarchyTree?.revision ?? null;
+}
+
+export function findHierarchyNode(
+  root: HierarchyNode,
+  nodeId: string,
+): HierarchyNode | null {
+  const stack: HierarchyNode[] = [root];
+  const visitedNodeIds = new Set<string>();
+
+  while (stack.length > 0) {
+    const node = stack.pop();
+
+    if (!node || visitedNodeIds.has(node.id)) {
+      continue;
+    }
+
+    if (node.id === nodeId) {
+      return node;
+    }
+
+    visitedNodeIds.add(node.id);
+
+    for (
+      let index = node.children.length - 1;
+      index >= 0;
+      index -= 1
+    ) {
+      const child = node.children[index];
+
+      if (child) {
+        stack.push(child);
+      }
+    }
+  }
+
+  return null;
+}
+
+export function findHierarchyPath(
+  root: HierarchyNode,
+  nodeId: string,
+): HierarchyNode[] {
+  const stack: Array<{
+    node: HierarchyNode;
+    path: HierarchyNode[];
+  }> = [
+    {
+      node: root,
+      path: [],
+    },
+  ];
+
+  const visitedNodeIds = new Set<string>();
+
+  while (stack.length > 0) {
+    const entry = stack.pop();
+
+    if (
+      !entry ||
+      visitedNodeIds.has(entry.node.id)
+    ) {
+      continue;
+    }
+
+    const currentPath = [
+      ...entry.path,
+      entry.node,
+    ];
+
+    if (entry.node.id === nodeId) {
+      return currentPath;
+    }
+
+    visitedNodeIds.add(entry.node.id);
+
+    for (
+      let index = entry.node.children.length - 1;
+      index >= 0;
+      index -= 1
+    ) {
+      const child = entry.node.children[index];
+
+      if (child) {
+        stack.push({
+          node: child,
+          path: currentPath,
+        });
+      }
+    }
+  }
+
+  return [];
+}

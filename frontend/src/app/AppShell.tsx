@@ -162,6 +162,83 @@ function AppShellContent() {
     }
   };
 
+  const handleCreatePublicWorkspace = async () => {
+    setIsMutating(true);
+    try {
+      const name = 'Public';
+      await createHierarchyNode?.({
+        type: 'workspace',
+        name,
+        parent_id: root.id ?? null,
+        metadata: { access: 'public', owner: 'Thomas Heisig' },
+      } as any);
+      push('success', `Public-Bereich '${name}' erstellt.`);
+    } catch (err: unknown) {
+      push('error', err instanceof Error ? err.message : 'Fehler beim Erstellen des Public-Bereichs');
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleCreateInternWorkspace = async () => {
+    setIsMutating(true);
+    try {
+      const name = 'Intern';
+      await createHierarchyNode?.({
+        type: 'workspace',
+        name,
+        parent_id: root.id ?? null,
+        metadata: { access: 'intern', owner: 'Thomas Heisig' },
+      } as any);
+      push('success', `Interner Bereich '${name}' erstellt.`);
+    } catch (err: unknown) {
+      push('error', err instanceof Error ? err.message : 'Fehler beim Erstellen des internen Bereichs');
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  const handleCreateUser = async () => {
+    setIsMutating(true);
+    try {
+      const name = 'Neuer Benutzer';
+      await createHierarchyNode?.({
+        type: 'user',
+        name,
+        // Users should be created at the top level (no parent)
+        parent_id: null,
+        metadata: {},
+      } as any);
+      push('success', `Benutzer '${name}' erstellt.`);
+    } catch (err: unknown) {
+      push('error', err instanceof Error ? err.message : 'Fehler beim Erstellen des Benutzers');
+    } finally {
+      setIsMutating(false);
+    }
+  };
+
+  function chooseChildTypeForParent(parentType: string | undefined) {
+    const t = parentType ? String(parentType).trim().toLowerCase() : '';
+
+    // Map common parent types to preferred child types
+    const mapping: Record<string, { type: string; defaultName: string }> = {
+      // Benutzer / user -> Bereich / workspace
+      benutzer: { type: 'workspace', defaultName: 'Neuer Bereich' },
+      user: { type: 'workspace', defaultName: 'Neuer Bereich' },
+
+      // Bereich / workspace / area -> Projekt
+      bereich: { type: 'project', defaultName: 'Neues Projekt' },
+      workspace: { type: 'project', defaultName: 'Neues Projekt' },
+      area: { type: 'project', defaultName: 'Neues Projekt' },
+
+      // Projekt / project -> chat
+      projekt: { type: 'chat', defaultName: 'Neuer Chat' },
+      project: { type: 'chat', defaultName: 'Neuer Chat' },
+    };
+
+    return mapping[t] ?? { type: 'chat', defaultName: 'Neues Unterelement' };
+  }
+
   function moveNodeInTree(
     hierarchy: HierarchyTree,
     nodeId: string,
@@ -240,7 +317,8 @@ function AppShellContent() {
       <AppWorkspace
         schema={schema}
         root={root}
-        selectedNode={selectedNode}
+          selectedHierarchyNode={selectedHierarchyNode}
+          selectedNode={selectedNode}
         selectedNodeId={selectSelectedNodeId(state)}
         expandedNodeIds={selectExpandedNodeIds(state)}
         theme={theme}
@@ -249,6 +327,9 @@ function AppShellContent() {
         onSelectNode={selectHierarchyNode}
         onExpandedNodeIdsChange={replaceExpandedNodeIds}
         onCreateHierarchyNode={createHierarchyNode}
+        onCreatePublicWorkspace={handleCreatePublicWorkspace}
+        onCreateInternWorkspace={handleCreateInternWorkspace}
+        onCreateUser={handleCreateUser}
         onMoveHierarchyNode={handleMoveHierarchyNode}
         isHierarchyBusy={isMutating}
         recentlyMovedNodeId={recentlyMovedNodeId}
@@ -274,18 +355,32 @@ function AppShellContent() {
           setIsMutating(true);
           try {
             switch (modalKind) {
-              case 'create_chat': {
-                const name = value ?? 'Neuer Chat';
+              case 'create_child':
+              case 'create_child':
+                case 'create_chat': {
+                // Determine the child type and default name based on parent type
+                const chosen = chooseChildTypeForParent((modalNode as any)?.type);
+                const childType = modalKind === 'create_chat' ? 'chat' : chosen.type;
+                const defaultName = modalKind === 'create_chat' ? 'Neuer Chat' : chosen.defaultName;
+                const name = value ?? defaultName;
+
+                // inherit access/owner from parent when creating children
+                const inheritedMetadata = {
+                  ...(modalNode.metadata ?? {}),
+                } as Record<string, unknown>;
+
                 await createHierarchyNode?.({
-                  type: 'chat',
+                  type: childType,
                   name,
                   parent_id: modalNode.id ?? null,
-                  actions: [],
+                  system_prompt:
+                    (modalNode as any)?.system_prompt ?? (modalNode as any)?.metadata?.prompt ??
+                    undefined,
                   tool_policy: {},
                   config_overrides: {},
-                  metadata: {},
+                  metadata: inheritedMetadata,
                 } as any);
-                push('success', `Chat '${name}' erstellt.`);
+                push('success', `${childType === 'chat' ? 'Chat' : 'Unterelement'} '${name}' erstellt.`);
                 break;
               }
               case 'rename': {

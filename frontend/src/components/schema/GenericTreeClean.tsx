@@ -48,6 +48,8 @@ export interface GenericTreeProps {
   ) => void;
   isBusy?: boolean;
   recentlyMovedNodeId?: string | null;
+  filterText?: string | null;
+  showArchived?: boolean;
 }
 
 function joinClassNames(...values: Array<string | false | null | undefined>) {
@@ -65,6 +67,22 @@ function normalizeVisibleActionCount(value: number | undefined): number {
   return Math.max(0, Math.floor(value));
 }
 
+function nodeMatchesFilter(node: HierarchyNode, filterText?: string | null): boolean {
+  if (!filterText) return true;
+  const q = String(filterText).trim().toLowerCase();
+  if (!q) return true;
+
+  if ((node.name ?? '').toLowerCase().includes(q)) return true;
+
+  if (node.children && Array.isArray(node.children)) {
+    for (const c of node.children) {
+      if (nodeMatchesFilter(c, q)) return true;
+    }
+  }
+
+  return false;
+}
+
 function GenericTreeComponent({
   root,
   schema,
@@ -80,6 +98,7 @@ function GenericTreeComponent({
   onNodeDrop,
   isBusy = false,
   recentlyMovedNodeId = null,
+  filterText,
 }: GenericTreeProps) {
   const [internalExpanded, setInternalExpanded] = useState<Set<string>>(() => new Set([root.id]));
   const isControlled = expandedNodeIds !== undefined;
@@ -125,6 +144,7 @@ function GenericTreeComponent({
         onNodeDrop={onNodeDrop}
         isBusy={isBusy}
         recentlyMovedNodeId={recentlyMovedNodeId}
+        filterText={filterText}
       />
     </div>
   );
@@ -146,6 +166,8 @@ function TreeNode(props: any) {
     onNodeDrop,
     isBusy,
     recentlyMovedNodeId,
+    filterText,
+    showArchived = false,
   } = props;
   const nodeDef = isPlainObject(schema.node_types?.[node.type])
     ? schema.node_types[node.type]
@@ -225,6 +247,11 @@ function TreeNode(props: any) {
     [node.id, onNodeDrop],
   );
 
+  // Hide archived nodes unless explicitly requested
+  if (!showArchived && node.metadata?.archived) {
+    return null;
+  }
+
   return (
     <div
       role="treeitem"
@@ -236,30 +263,40 @@ function TreeNode(props: any) {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
+      {/* If a filter is active and neither this node nor any descendant matches, hide */}
+      {filterText && !nodeMatchesFilter(node, filterText) ? null : (
       <div
         className={joinClassNames(
-          'flex items-center gap-2 px-2 py-1 rounded',
+          'flex items-center gap-2 px-2 py-1 rounded min-w-0',
           isSelected ? 'bg-primary-soft' : '',
         )}
         style={{ paddingLeft: BASE_INDENT_PX + depth * INDENT_SIZE_PX }}
       >
         <button
           type="button"
-          onClick={() => hasChildren && onToggleExpanded(node.id)}
-          className={joinClassNames(hasChildren ? '' : 'opacity-0')}
-        >
-          {hasChildren ? '▶' : null}
-        </button>
-        <button
-          type="button"
-          onClick={() => onSelect(node)}
-          onKeyDown={(e) => {
-            if ((e as KeyboardEvent).key === 'Enter') onSelect(node);
+          onClick={() => {
+            onSelect(node);
+            if (hasChildren) onToggleExpanded(node.id);
           }}
-          className="flex-1 text-left"
+          onKeyDown={(e) => {
+            if ((e as KeyboardEvent).key === 'Enter') {
+              onSelect(node);
+              if (hasChildren) onToggleExpanded(node.id);
+            }
+          }}
+          className="flex-1 text-left min-w-0"
         >
-          <DynamicIcon name={iconName ?? DEFAULT_NODE_ICON} />{' '}
-          <span className="ml-2 truncate">{renderLabel ? renderLabel(node) : node.name}</span>
+          <DynamicIcon name={iconName ?? DEFAULT_NODE_ICON} />
+          <span
+            className={joinClassNames(
+              'ml-2 truncate whitespace-nowrap overflow-hidden max-w-30',
+              node.metadata?.archived ? 'opacity-60 italic' : '',
+            )}
+            title={String(node.name ?? '')}
+            aria-label={String(node.name ?? '')}
+          >
+            {renderLabel ? renderLabel(node) : node.name}
+          </span>
         </button>
 
         <div className="relative ml-2" ref={menuRef}>
@@ -287,10 +324,27 @@ function TreeNode(props: any) {
                 {effective
                   .filter((a) => !(getActionDefinition(a)?.destructive ?? false))
                   .map((action: string) => {
-                    const def = getActionDefinition(action)!;
+                    const def = getActionDefinition(action);
                     const disabled = !hasActionHandler(action) && !onAction;
+
+                    // Defensive: skip unknown action definitions but keep UI stable
+                    if (!def) {
+                      return (
+                        <button
+                          type="button"
+                          draggable={false}
+                          key={action}
+                          disabled
+                          className={joinClassNames('w-full text-left px-3 py-2 flex items-center gap-2', 'opacity-50')}
+                        >
+                          <span className="ml-1">{action}</span>
+                        </button>
+                      );
+                    }
+
                     return (
                       <button
+                        type="button"
                         draggable={false}
                         key={action}
                         disabled={disabled}
@@ -325,10 +379,26 @@ function TreeNode(props: any) {
                 {effective
                   .filter((a) => getActionDefinition(a)?.destructive)
                   .map((action: string) => {
-                    const def = getActionDefinition(action)!;
+                    const def = getActionDefinition(action);
                     const disabled = !hasActionHandler(action) && !onAction;
+
+                    if (!def) {
+                      return (
+                        <button
+                          type="button"
+                          draggable={false}
+                          key={action}
+                          disabled
+                          className={joinClassNames('w-full text-left px-3 py-2 flex items-center gap-2', 'opacity-50 text-slate-400')}
+                        >
+                          <span className="ml-1">{action}</span>
+                        </button>
+                      );
+                    }
+
                     return (
                       <button
+                        type="button"
                         draggable={false}
                         key={action}
                         disabled={disabled}
@@ -360,6 +430,7 @@ function TreeNode(props: any) {
           ) : null}
         </div>
       </div>
+      )}
 
       {hasChildren && isExpanded ? (
         <div role="group">

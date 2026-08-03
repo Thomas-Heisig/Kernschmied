@@ -5,8 +5,10 @@ from typing import Any
 
 from app.storage.models.chat import Chat as ChatModel
 from app.storage.models.chat import Message as MessageModel
-from app.database.models.hierarchy_node import HierarchyNodeModel
-from app.services.chat_service import ChatHierarchyNodeNotFoundError
+from app.services.chat_service import (
+    ChatHierarchyNodeNotFoundError,
+    ChatHierarchyNodeRequiredError,
+)
 from app.storage.repositories.chat import ChatRepository as StorageChatRepository
 from app.storage.repositories.hierarchy import (
     HierarchyRepository as StorageHierarchyRepository,
@@ -51,18 +53,12 @@ class ChatRepositoryAdapter:
                         f"Der Hierarchieknoten '{node_id}' wurde nicht gefunden.",
                     )
             if not node_id:
-                # create a dedicated hierarchy node for this chat
-                node = HierarchyNodeModel(
-                    type="chat",
-                    name=f"Conversation {conversation_id}",
-                    system_prompt=None,
-                    tool_policy={},
-                    config_overrides=dict(metadata or {}),
-                    node_metadata={},
+                # Do not auto-create hierarchy nodes. A visible chat requires
+                # an explicit `hierarchy_node_id`. Fail early with a stable
+                # error so the API layer can return 422.
+                raise ChatHierarchyNodeRequiredError(
+                    "Für einen sichtbaren Chat ist ein Hierarchieknoten erforderlich."
                 )
-
-                await hierarchy_repo.add(node)
-                node_id = node.id
 
             chat = ChatModel(
                 id=conversation_id,

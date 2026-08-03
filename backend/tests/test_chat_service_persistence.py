@@ -1,6 +1,6 @@
 from typing import Any, AsyncGenerator, Dict, List, cast
 
-import pytest
+import asyncio
 
 from app.services.chat_service import (
     ChatService,
@@ -72,8 +72,7 @@ class FakeModelService:
         yield StreamEvent(type=StreamEventType.COMPLETE, content=None, usage=Usage(1, 1))
 
 
-@pytest.mark.asyncio
-async def test_user_message_is_persisted_once() -> None:
+def test_user_message_is_persisted_once() -> None:
     repo = FakeRepo()
     model = cast(ModelService, FakeModelService(content="persisted text"))
     service = ChatService(model_service=model, repository=repo, default_model_id="m")
@@ -81,7 +80,7 @@ async def test_user_message_is_persisted_once() -> None:
     context = ChatServiceContext(request_id="r1", access=ModelAccessContext(), user_id="u1")
     req = ChatRequest(message="hello", stream=False)
 
-    await service.generate(req, context=context)
+    asyncio.run(service.generate(req, context=context))
 
     # user message persisted once
     assert len(repo.user_calls) == 1
@@ -91,8 +90,7 @@ async def test_user_message_is_persisted_once() -> None:
     assert repo.assistant_calls[0]["content"] == "persisted text"
 
 
-@pytest.mark.asyncio
-async def test_successful_stream_marks_message_complete() -> None:
+def test_successful_stream_marks_message_complete() -> None:
     repo = FakeRepo()
     model = cast(ModelService, FakeModelService(content="streamed full"))
     service = ChatService(model_service=model, repository=repo, default_model_id="m")
@@ -100,9 +98,13 @@ async def test_successful_stream_marks_message_complete() -> None:
     context = ChatServiceContext(request_id="r2", access=ModelAccessContext(), user_id="u2")
     req = ChatRequest(message="hi", stream=True)
 
-    events: List[ChatStreamEvent] = []
-    async for e in service.stream(req, context=context):
-        events.append(e)
+    async def _collect() -> List[ChatStreamEvent]:
+        events: List[ChatStreamEvent] = []
+        async for e in service.stream(req, context=context):
+            events.append(e)
+        return events
+
+    events = asyncio.run(_collect())
 
     # ensure we saw a COMPLETE event
     assert any(e.event == ChatEventType.COMPLETE for e in events)

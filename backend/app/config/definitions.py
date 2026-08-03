@@ -2953,6 +2953,41 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "limits",
         },
     ),
+    # Global system-level chat system prompt
+    config_definition(
+        group="chat",
+        key="system_prompt",
+        display_name="Globaler Systemprompt",
+        description=(
+            "Globaler systemweiter Prompt, der bei jeder Modellanfrage "
+            "sofern gesetzt als erste Promptquelle verwendet wird. "
+            "Leere oder nur Whitespace enthaltende Werte werden ignoriert."
+        ),
+        value_schema={
+            "type": "string",
+            "maxLength": 10000,
+        },
+        default_value="",
+        allowed_scopes={
+            ConfigScope.SYSTEM,
+        },
+        value_type=ConfigValueType.STRING,
+        is_secret=False,
+        runtime_editable=True,
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.TEXTAREA,
+            category="Chat",
+            section="Prompt",
+            order=30,
+            placeholder="",
+            help_text="Globaler systemweiter Prompt (z. B. system messages)",
+        ),
+        tags={
+            "chat",
+            "system",
+            "prompts",
+        },
+    ),
     # ============================================================
     # Prompt-Vererbung
     # ============================================================

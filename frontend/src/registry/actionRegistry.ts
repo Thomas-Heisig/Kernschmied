@@ -203,7 +203,28 @@ const actionDefinitions = [
   },
   {
     kind: 'archive_chat',
-    ...unsupportedAction('Chat archivieren', 'Archive'),
+    label: 'Archiv umschalten',
+    icon: 'Archive',
+    enabled: true,
+    handler: async (context) => {
+      try {
+        const target: any = context.target as any;
+        if (!target || !target.id) {
+          return { success: false, code: 'invalid_target', message: 'Kein gültiges Ziel angegeben.' };
+        }
+
+        const { updateHierarchyNode } = await import('../api/hierarchy');
+
+        const currentlyArchived = Boolean(target.metadata?.archived === true);
+        const metadata = { ...(target.metadata ?? {}), archived: !currentlyArchived };
+
+        await updateHierarchyNode(target.id, { metadata } as any);
+
+        return { success: true, data: { archived: !currentlyArchived } };
+      } catch (err: unknown) {
+        return { success: false, message: err instanceof Error ? err.message : 'Fehler beim Umschalten des Archivs' };
+      }
+    },
   },
   {
     kind: 'export_chat',

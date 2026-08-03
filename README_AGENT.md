@@ -17,4 +17,4 @@ Agent guidelines:
 - Do not attempt destructive operations on remotes without human approval
   (e.g. force-push history rewrites).
 
-If you need more context, open `docs/PROJECT_PROMPT.md` or the `.github` prompt.
+If you need more context, open `documentation/PROJECT_PROMPT.md` or the `.github` prompt.

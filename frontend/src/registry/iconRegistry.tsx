@@ -18,6 +18,7 @@ import {
   UserCircle,
   Wrench,
   ArrowRight,
+  Archive,
 } from 'lucide-react';
 
 export const DEFAULT_ICON_NAME = 'Circle';
@@ -39,6 +40,7 @@ export const ICON_REGISTRY = {
   Trash2,
   UserCircle,
   Wrench,
+  Archive,
 } as const;
 
 export type KnownIconName = keyof typeof ICON_REGISTRY;

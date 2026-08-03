@@ -89,7 +89,7 @@ Verwende nach Möglichkeit kurze, aussagekräftige Branchnamen:
 feature/bootstrap-store
 fix/hierarchy-openapi
 refactor/model-registry
- docs/sse-contract
+ documentation/sse-contract
 ```
 
 Empfohlene Commit-Präfixe:
@@ -217,7 +217,7 @@ Kleine, thematisch geschlossene Pull Requests sind leichter prüfbar als große 
 Aktualisiere bei relevanten Änderungen mindestens:
 
 - `README.md`,
-- `docs/todo.md`,
+- `documentation/todo.md`,
 - API- und Vertragsdokumentation,
 - `CHANGELOG.md`.
 

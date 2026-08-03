@@ -458,6 +458,19 @@ async def bootstrap_application(
             hierarchy_service = PersistentHierarchyService(sf)
             hierarchy_repository = sf
 
+            # Ensure system root exists in the persistent repository before
+            # seeding development data. This bootstrap step is idempotent.
+            try:
+                from app.core.hierarchy_bootstrap import ensure_system_root
+                from app.hierarchy.repository import HierarchyRepository
+
+                async with sf() as session:
+                    repo = HierarchyRepository(session)
+                    await ensure_system_root(repo)
+            except Exception:
+                # Let bootstrap step wrapper transform this into a BootstrapStepError
+                raise
+
             # run development seed only in development environment
             try:
                 from app.core.dev_seed import seed_development_hierarchy
@@ -681,6 +694,17 @@ async def bootstrap_application(
                 default_model_id=DEFAULT_MODEL_ID,
                 repository=chat_repo_adapter,
                 history_provider=chat_history_provider,
+                hierarchy_session_factory=session_factory,
+                prompt_config_reader=(
+                    # small adapter to expose get_system_prompt() used by ChatService
+                    type(
+                        "_ConfigPromptReader",
+                        (),
+                        {
+                            "get_system_prompt": staticmethod(lambda: (config_service.get_required("chat", "system_prompt"), getattr(config_service, "revision", None)))
+                        },
+                    )()
+                ),
             )
 
         await _run_bootstrap_step(

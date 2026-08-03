@@ -30,6 +30,7 @@ from app.contracts.hierarchy import (
 )
 from app.hierarchy.models import HierarchyActor
 from app.hierarchy.repository import HierarchyRepository
+from app.hierarchy.repository import HierarchyParentNotFoundError
 from app.services.hierarchy_service import create_hierarchy_service
 
 router = APIRouter()
@@ -291,7 +292,7 @@ def normalize_hierarchy(
     return normalized
 
 
-def _map_backend_tree_to_frontend(value: object) -> object:
+def _map_backend_tree_to_frontend(value: JSONDict | List[Any]) -> JSONDict | List[Any]:
     """Map backend HierarchyTree (config_revision + roots) to frontend root shape.
 
     The serializer/service may return a model or dict with
@@ -502,21 +503,90 @@ async def hierarchy(
         le=32,
         description="Optionale maximale Rekursionstiefe.",
     ),
+    include_system_nodes: bool = Query(
+        default=False,
+        description="Wenn true und der Aufrufer Admin ist, werden system-interne Knoten (z.B. system-root) im Ergebnis belassen.",
+    ),
 ) -> HierarchyTreeResponse:
     service = get_hierarchy_service(request)
 
     actor = build_actor_from_request(request)
 
     try:
-        raw_tree = await service.get_tree(
+        raw_tree_any = await service.get_tree(
                 actor=actor,
                 root_id=root_id,
                 max_depth=max_depth,
             )
 
+        # Type: service implementations may return pydantic/ORM models or
+        # plain dicts. Cast to a JSON-shaped dict or list for downstream
+        # processing so the type checker can reason about `.get()` and
+        # indexing operations.
+        raw_tree = cast(JSONDict | List[Any], raw_tree_any)
+
         # Map internal backend tree shape (config_revision + roots)
         # to the frontend-expected single `root` node shape.
         raw_tree = _map_backend_tree_to_frontend(raw_tree)
+
+        # Projection: keep `system-root` internal by default. If the
+        # backend returns the technical `system-root` as top-level node
+        # we project it to a visible user root for normal callers.
+        if isinstance(raw_tree, dict):
+            raw_tree_dict: JSONDict = raw_tree
+
+            if raw_tree_dict.get("id") == "system-root":
+                # Admins may request the system nodes explicitly
+                if include_system_nodes:
+                    if not getattr(actor, "is_admin", False):
+                        raise PermissionError("Nur Administratoren dürfen system-interne Knoten anfordern.")
+                    # leave system-root as-is for admins
+                else:
+                    # Try to pick the caller's user node if available
+                    selected: JSONDict | None = None
+                    children_any = raw_tree_dict.get("children", [])
+                    if not isinstance(children_any, list):
+                        children: List[Any] = []
+                    else:
+                        children = cast(List[Any], children_any)
+
+                    if getattr(actor, "user_id", None) is not None:
+                        for c in children:
+                            if isinstance(c, dict):
+                                c_dict = cast(JSONDict, c)
+                                if c_dict.get("id") == actor.user_id:
+                                    selected = c_dict
+                                    break
+
+                    # Fallback: first child of type 'user'
+                    if selected is None:
+                        for c in children:
+                            if isinstance(c, dict):
+                                c_dict = cast(JSONDict, c)
+                                if c_dict.get("type") == "user":
+                                    selected = c_dict
+                                    break
+
+                    # Final fallback: pick the first non-chat child (never project a chat node)
+                    if selected is None and children:
+                        for c in children:
+                            if isinstance(c, dict):
+                                c_dict = cast(JSONDict, c)
+                                if c_dict.get("type") != "chat":
+                                    selected = c_dict
+                                    break
+
+                    # If still not found, return a structured error instead of silently
+                    # projecting a technical chat node.
+                    if selected is None:
+                        raise structured_http_error(
+                            request=request,
+                            status_code=status.HTTP_404_NOT_FOUND,
+                            code="HIERARCHY_USER_ROOT_NOT_FOUND",
+                            message="Kein benutzerbezogener Root-Knoten gefunden.",
+                        )
+
+                    raw_tree = selected
 
         # Ensure node fields match the public contract (rename actions,
         # enforce arrays for children/actions, recurse).
@@ -604,6 +674,14 @@ async def create_hierarchy_node(
                 status_code=status.HTTP_403_FORBIDDEN,
                 code="PERMISSION_DENIED",
                 message=str(exc),
+            )
+        except HierarchyParentNotFoundError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                code="HIERARCHY_PARENT_REQUIRED",
+                message="Für den neuen Hierarchieknoten ist ein übergeordneter Knoten erforderlich.",
+                details={"node_type": payload.type if hasattr(payload, "type") else "unknown"},
             )
 
 

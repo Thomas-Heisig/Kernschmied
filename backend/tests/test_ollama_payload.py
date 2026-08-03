@@ -1,3 +1,5 @@
+from typing import Any, cast
+
 from app.models.providers.ollama import OllamaProvider
 from app.contracts.model_backend import ChatMessage, GenerationRequest, MessageRole
 
@@ -20,7 +22,7 @@ def test_ollama_payload_contains_full_conversation_history() -> None:
         ],
     )
 
-    payload = provider._create_chat_payload(request)
+    payload = cast(Any, provider)._create_chat_payload(request)
 
     assert payload["messages"] == [
         {"role": "user", "content": "Mein Name ist Thomas Heisig."},

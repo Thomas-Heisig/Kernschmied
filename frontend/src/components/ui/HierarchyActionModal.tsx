@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { HierarchyNode } from '../../contracts/hierarchy';
 import { Modal } from './Modal';
 
-type ActionKind = 'create_chat' | 'rename' | 'move' | 'delete' | 'edit_prompt';
+type ActionKind = 'create_child' | 'create_chat' | 'rename' | 'move' | 'delete' | 'edit_prompt';
 
 export function HierarchyActionModal({
   isOpen,
@@ -56,6 +56,8 @@ export function HierarchyActionModal({
 
   const title = useMemo(() => {
     switch (kind) {
+      case 'create_child':
+        return `Neues Unterelement in ${node?.name ?? '...'} erstellen`;
       case 'create_chat':
         return `Neuen Chat in ${node?.name ?? '...'} erstellen`;
       case 'rename':
@@ -73,6 +75,8 @@ export function HierarchyActionModal({
 
   const confirmLabel = useMemo(() => {
     switch (kind) {
+      case 'create_child':
+        return 'Erstellen';
       case 'create_chat':
         return 'Erstellen';
       case 'rename':

@@ -2725,6 +2725,64 @@ try {
     }
 
     # ========================================================
+    # Documentation: run repository-provided helper scripts
+    # These are lightweight checks that are expected to be idempotent
+    # and safe to run as part of the testsuite. They respect the
+    # -SkipDocumentation flag.
+    # ========================================================
+
+    if (-not $SkipDocumentation) {
+        Invoke-TestsuiteStep `
+            -Name "Validate Documentation (script)" `
+            -Action {
+                $r = Invoke-External `
+                    -Command "python" `
+                    -Arguments @("scripts/documentation/validate_documentation.py") `
+                    -AllowedExitCodes @(0)
+
+                if ($r.ExitCode -ne 0) {
+                    throw "validate_documentation.py returned non-zero exit code: $($r.ExitCode)"
+                }
+
+                return New-StepResult -Status "Passed"
+            } |
+            Out-Null
+
+        Invoke-TestsuiteStep `
+            -Name "Check Documentation Links (script)" `
+            -Action {
+                # allow link-checker to report problems as warnings instead of failing the whole suite
+                $r = Invoke-External `
+                    -Command "python" `
+                    -Arguments @("scripts/documentation/check_documentation_links.py") `
+                    -AllowedExitCodes @(0,1)
+
+                if ($r.ExitCode -eq 1) {
+                    return New-StepResult -Status "Warning" -Message "Linkprüfung meldete Probleme; siehe Schrittausgabe."
+                }
+
+                return New-StepResult -Status "Passed"
+            } |
+            Out-Null
+
+        Invoke-TestsuiteStep `
+            -Name "Export GitHub Wiki" `
+            -Action {
+                $r = Invoke-External `
+                    -Command "python" `
+                    -Arguments @("scripts/documentation/export_github_wiki.py") `
+                    -AllowedExitCodes @(0)
+
+                if ($r.ExitCode -ne 0) {
+                    throw "export_github_wiki.py returned non-zero exit code: $($r.ExitCode)"
+                }
+
+                return New-StepResult -Status "Passed"
+            } |
+            Out-Null
+    }
+
+    # ========================================================
     # JSON
     # ========================================================
 

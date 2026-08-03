@@ -1,0 +1,10 @@
+Projektübersicht
+================
+
+.env.example                 Bootstrap- und Sicherheitswerte
+PROJECT_PROMPT.md            Ausführlicher Entwicklungs-Systemprompt
+README.md                    Installation und Architekturhinweise
+start.ps1 / stop.ps1         Gemeinsamer Windows-Start und Stopp
+config/                      Seed- und Bootstrap-Beispiele
+backend/                     FastAPI, SQLAlchemy, Registries, SSE
+frontend/                    React, TypeScript, Vite, Tailwind

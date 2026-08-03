@@ -90,10 +90,23 @@ class HierarchyService:
         *,
         actor: HierarchyActor,
     ) -> HierarchyNode:
-        parent = None
+        # Only the `system-root` may be created without a parent. All other
+        # nodes must specify a parent_id. This enforces a single canonical root.
+        if data.parent_id is None:
+            if data.node_id != "system-root":
+                raise ValueError(
+                    "Nur der Systemknoten darf ohne übergeordneten Knoten existieren."
+                )
 
+        parent = None
         if data.parent_id is not None:
             parent = await self._require_node(data.parent_id)
+
+            # Disallow non-admins creating children directly under the system root.
+            if parent.id == "system-root" and not getattr(actor, "is_admin", False):
+                raise PermissionError(
+                    "Das Anlegen von Knoten direkt unter dem Systemknoten ist nicht erlaubt."
+                )
 
         self._permissions.require(actor, CREATE_CHILD_ACTION, parent)
 
@@ -142,6 +155,12 @@ class HierarchyService:
         actor: HierarchyActor,
     ) -> HierarchyNode:
         node = await self._require_node(node_id)
+        # Protect immovable/system nodes
+        if getattr(node, "is_system", False) or not getattr(node, "is_movable", True):
+            raise PermissionError(
+                "Dieser Hierarchieknoten darf nicht verschoben werden."
+            )
+
         self._permissions.require(actor, MOVE_ACTION, node)
 
         if new_parent_id == node.id:
@@ -195,6 +214,11 @@ class HierarchyService:
         # Load all nodes to move and verify existence
         for node_id, new_parent_id, _ in moves:
             node = await self._require_node(node_id)
+            # Protect immovable/system nodes from being reordered under a different parent
+            if getattr(node, "is_system", False) or not getattr(node, "is_movable", True):
+                raise PermissionError(
+                    "Dieser Hierarchieknoten darf nicht verschoben/neu angeordnet werden."
+                )
             # require permission to move
             self._permissions.require(actor, MOVE_ACTION, node)
 
@@ -229,6 +253,12 @@ class HierarchyService:
         actor: HierarchyActor,
     ) -> None:
         node = await self._require_node(node_id)
+        # Protect system and non-deletable nodes
+        if getattr(node, "is_system", False) or not getattr(node, "is_deletable", True):
+            raise PermissionError(
+                "Dieser Hierarchieknoten darf nicht gelöscht werden."
+            )
+
         self._permissions.require(actor, DELETE_ACTION, node)
 
         try:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
+from typing import Optional, Any
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -8,6 +9,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.contracts.hierarchy import HierarchyNodeCreate, HierarchyNodeUpdate
 from app.database.models.hierarchy_node import HierarchyNodeModel
 from uuid import uuid4
+from app.prompts.errors import (
+    PromptHierarchyNodeNotFoundError,
+    BrokenPromptHierarchyError,
+    PromptHierarchyCycleError,
+    PromptHierarchyDepthError,
+    InactivePromptHierarchyNodeError,
+)
+
+MAX_HIERARCHY_DEPTH = 64
 
 
 class HierarchyParentNotFoundError(LookupError):
@@ -40,7 +50,7 @@ class HierarchyRepository:
         result = await self._session.scalars(statement)
         return result.all()
 
-    async def get_node(self, node_id: str) -> HierarchyNodeModel | None:
+    async def get_node(self, node_id: str) -> Optional[HierarchyNodeModel]:
         return await self._session.get(HierarchyNodeModel, node_id)
 
     async def list_children(
@@ -194,11 +204,22 @@ class HierarchyRepository:
     ) -> list[HierarchyNodeModel]:
         chain: list[HierarchyNodeModel] = []
         visited: set[str] = set()
-        current = await self.get_node(node_id)
 
-        while current is not None:
+        maybe_current: Any = await self.get_node(node_id)
+        if maybe_current is None:
+            raise PromptHierarchyNodeNotFoundError(f"Node '{node_id}' not found")
+        current: HierarchyNodeModel = maybe_current
+
+        depth = 0
+        while True:
             if current.id in visited:
-                raise RuntimeError("Zyklische Hierarchie erkannt.")
+                raise PromptHierarchyCycleError("Zyklische Hierarchie erkannt.")
+
+            if depth > MAX_HIERARCHY_DEPTH:
+                raise PromptHierarchyDepthError("Maximale Hierarchietiefe überschritten.")
+
+            if not current.is_active:
+                raise InactivePromptHierarchyNodeError(f"Node '{current.id}' is inactive")
 
             visited.add(current.id)
             chain.append(current)
@@ -206,7 +227,14 @@ class HierarchyRepository:
             if current.parent_id is None:
                 break
 
-            current = await self.get_node(current.parent_id)
+            maybe_parent: Any = await self.get_node(current.parent_id)
+            if maybe_parent is None:
+                raise BrokenPromptHierarchyError(f"Parent '{current.parent_id}' not found for node '{current.id}'")
+
+            parent: HierarchyNodeModel = maybe_parent
+
+            current = parent
+            depth += 1
 
         chain.reverse()
         return chain
@@ -217,10 +245,11 @@ class HierarchyRepository:
         node_id: str,
         possible_ancestor_id: str,
     ) -> bool:
-        current = await self.get_node(node_id)
+        maybe_current: Any = await self.get_node(node_id)
+        current: HierarchyNodeModel = maybe_current
         visited: set[str] = set()
 
-        while current is not None:
+        while True:
             if current.id in visited:
                 raise RuntimeError("Zyklische Hierarchie erkannt.")
 
@@ -231,7 +260,8 @@ class HierarchyRepository:
             if current.parent_id is None:
                 return False
 
-            current = await self.get_node(current.parent_id)
+            maybe_current = await self.get_node(current.parent_id)
+            current = maybe_current
 
         return False
 

@@ -12,6 +12,8 @@ type LayoutProps = ComponentProps<typeof AppLayout>;
 interface AppWorkspaceProps {
   schema: HierarchySidebarProps['schema'];
   root: HierarchySidebarProps['root'];
+  // full hierarchy node (may include metadata) when available
+  selectedHierarchyNode?: any | null;
   selectedNode: ContextSidebarProps['node'];
   selectedNodeId: HierarchySidebarProps['selectedNodeId'];
   expandedNodeIds: HierarchySidebarProps['expandedNodeIds'];
@@ -29,6 +31,9 @@ interface AppWorkspaceProps {
   onOpenDocumentation: () => void;
   onCloseDocumentation: () => void;
   onOpenCalendar?: () => void;
+  onCreatePublicWorkspace?: () => void;
+  onCreateInternWorkspace?: () => void;
+  onCreateUser?: () => void;
   onCreateHierarchyNode?: (parentId: string) => Promise<void>;
   onMoveHierarchyNode?: (
     id: string,
@@ -45,6 +50,7 @@ interface AppWorkspaceProps {
 export function AppWorkspace({
   schema,
   root,
+  selectedHierarchyNode,
   selectedNode,
   selectedNodeId,
   expandedNodeIds,
@@ -63,6 +69,9 @@ export function AppWorkspace({
   onCloseDocumentation,
   onOpenCalendar,
   onCreateHierarchyNode,
+  onCreatePublicWorkspace,
+  onCreateInternWorkspace,
+  onCreateUser,
   onMoveHierarchyNode,
   onUpdateHierarchyNode,
   onDeleteHierarchyNode,
@@ -82,6 +91,8 @@ export function AppWorkspace({
         onOpenSettings={onOpenSettings}
         onOpenDocumentation={onOpenDocumentation}
         onOpenCalendar={onOpenCalendar}
+      onCreatePublicWorkspace={onCreatePublicWorkspace}
+      onCreateInternWorkspace={onCreateInternWorkspace}
         hierarchySidebar={
           <AppHierarchySidebar
             root={root}
@@ -107,13 +118,20 @@ export function AppWorkspace({
             isBusy={isHierarchyBusy}
             onAction={onAction}
             recentlyMovedNodeId={recentlyMovedNodeId}
+            onCreatePublicWorkspace={onCreatePublicWorkspace}
+            onCreateInternWorkspace={onCreateInternWorkspace}
+            onCreateUser={onCreateUser}
           />
         }
         contextSidebar={
           <AppContextSidebar node={selectedNode} schemaVersion={schema.schema_version} />
         }
       >
-        <SelectedNodeWorkspace node={selectedNode} schema={schema} />
+        <SelectedNodeWorkspace
+          node={selectedHierarchyNode ?? selectedNode}
+          schema={schema}
+          onUpdateHierarchyNode={onUpdateHierarchyNode}
+        />
       </AppLayout>
       <SettingsDialog isOpen={isSettingsOpen} onClose={onCloseSettings} />
       <DocumentationDialog isOpen={isDocumentationOpen} onClose={onCloseDocumentation} />

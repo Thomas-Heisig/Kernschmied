@@ -35,6 +35,8 @@ from pydantic import (
 
 from app.models.errors import ModelError
 from app.models.service import ModelAccessContext
+from app.hierarchy.actor_factory import hierarchy_actor_from_user_context
+from app.hierarchy.models import HierarchyActor
 from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 from app.services.chat_service import (
     ChatRequest as ServiceChatRequest,
@@ -249,6 +251,14 @@ class StreamContext(BaseModel):
     client_request_id: str | None = None
     requested_conversation_id: str | None = None
     user_id: str | None = None
+    # Include role/permission hints from the authentication middleware so
+    # downstream services can construct a typed HierarchyActor.
+    roles: tuple[str, ...] = ()
+    permissions: tuple[str, ...] = ()
+    # Strongly-typed actor created at the API boundary from the authenticated
+    # UserContext. This MUST be used by downstream services instead of
+    # reconstructing an actor from raw strings.
+    hierarchy_actor: HierarchyActor = Field(default_factory=HierarchyActor)
 
 
 class StreamEnvelope(BaseModel):
@@ -410,6 +420,9 @@ def create_stream_context(
         client_request_id=get_client_request_id(request),
         requested_conversation_id=payload.conversation_id,
         user_id=get_current_user_id(request),
+        roles=tuple(getattr(getattr(request.state, "user", None), "roles", ()) or ()),
+        permissions=tuple(getattr(getattr(request.state, "user", None), "permissions", ()) or ()),
+        hierarchy_actor=hierarchy_actor_from_user_context(getattr(request.state, "user", None)),
     )
 
     _log_info(
@@ -1017,6 +1030,13 @@ def create_service_request(
     legt die Unterhaltung über das Repository an.
     """
 
+    md = dict(payload.metadata)
+    # keep metadata but do not use it as primary source for hierarchy_node_id
+    md.update({
+        "requested_tool_ids": list(payload.tool_ids),
+        "request_schema_version": payload.schema_version,
+    })
+
     return ServiceChatRequest(
         message=payload.message,
         model_id=payload.model_id,
@@ -1028,20 +1048,17 @@ def create_service_request(
         max_output_tokens=None,
         stream=True,
         tools=(),
-        metadata={
-            **dict(payload.metadata),
-            "hierarchy_node_id": (payload.hierarchy_node_id),
-            "requested_tool_ids": list(
-                payload.tool_ids,
-            ),
-            "request_schema_version": (payload.schema_version),
-        },
+        metadata=md,
+        hierarchy_node_id=payload.hierarchy_node_id,
     )
 
 
 def create_service_context(
     context: StreamContext,
 ) -> ChatServiceContext:
+    # Build the ChatServiceContext using the strongly-typed actor created at
+    # the API boundary. Keep raw hints for compatibility but prefer
+    # `hierarchy_actor` downstream.
     return ChatServiceContext(
         request_id=context.request_id,
         access=ModelAccessContext(
@@ -1055,6 +1072,9 @@ def create_service_context(
                 context.stream_id,
             ),
         },
+        hierarchy_actor=(context.hierarchy_actor),
+        auth_roles=tuple(context.roles),
+        auth_permissions=tuple(context.permissions),
     )
 
 

@@ -1,4 +1,5 @@
-import sqlite3, json, sys
+import sqlite3
+import sys
 from pathlib import Path
 
 p = Path(__file__).resolve().parents[1] / 'data' / 'kernschmied.db'

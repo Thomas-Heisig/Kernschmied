@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any, cast
+
 from app.api.v1 import configs
 from app.api.v1.configs_schema import ConfigUpdateRequest
 
@@ -23,22 +25,21 @@ def test_normalize_config_value_basic():
     assert configs.normalize_config_value(2) == 2
     assert configs.normalize_config_value(2.5) == 2.5
     assert configs.normalize_config_value("s") == "s"
-    m = {"a": 1, "b": {"c": 2}}
+    m: dict[str, Any] = {"a": 1, "b": {"c": 2}}
     res = configs.normalize_config_value(m)
-    assert res["a"] == 1
-    assert res["b"]["c"] == 2
+    res_dict = cast(dict[str, Any], res)
+    assert res_dict["a"] == 1
+    assert cast(dict[str, Any], res_dict["b"]) ["c"] == 2
 
 
 def test_build_config_set_kwargs_signatures():
     payload = ConfigUpdateRequest(value="x", expected_revision=5, reason="r")
 
-    def s1(group, key, value, expected_revision=None, actor_id=None, request_id=None, reason=None):
+    def s1(group: str, key: str, value: Any, expected_revision: int | None = None, actor_id: str | None = None, request_id: str | None = None, reason: str | None = None) -> None:
         pass
-
-    def s2(group, key, value):
+    def s2(group: str, key: str, value: Any) -> None:
         pass
-
-    def s3(group, key, value, **kwargs):
+    def s3(group: str, key: str, value: Any, **kwargs: Any) -> None:
         pass
 
     k1 = configs.build_config_set_kwargs(setter=s1, payload=payload, actor_id="a", request_id="r")
@@ -62,7 +63,7 @@ def test_build_config_set_kwargs_signatures():
 
 
 def test_add_normalized_entry_and_identifier_helpers():
-    target = {}
+    target: dict[tuple[str, str], Any] = {}
     configs.add_normalized_entry(target=target, group=" G ", key=" K ", value=1)
     assert ("g", "k") in target
     assert target[("g", "k")] == 1

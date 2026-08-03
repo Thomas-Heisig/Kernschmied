@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Globe2, Plus } from 'lucide-react';
+import { DynamicIcon } from '../../registry/iconRegistry';
 
 import { GenericChatView } from '../chat';
 import { SettingsDialog } from '../settings';
@@ -16,11 +17,17 @@ export interface SelectedWorkspaceNode {
   id: string;
   name: string;
   type: string;
+  // optionally include metadata/prompt fields when the full HierarchyNode is passed
+  metadata?: Record<string, unknown> | null;
+  system_prompt?: string | null;
+  effective_prompt?: string | null;
 }
 
 interface SelectedNodeWorkspaceProps {
-  node: SelectedWorkspaceNode | null;
+  // the caller may pass either a minimal node or the full HierarchyNode
+  node: SelectedWorkspaceNode | (SelectedWorkspaceNode & Record<string, any>) | null;
   schema?: any;
+  onUpdateHierarchyNode?: (id: string, payload: unknown) => Promise<void>;
 }
 
 const SETTINGS_NODE_TYPES = new Set<string>([
@@ -50,7 +57,7 @@ const WEBSITE_NODE_TYPES = new Set<string>([
  * Hauptkomponente
  * ============================================================ */
 
-export function SelectedNodeWorkspace({ node, schema }: SelectedNodeWorkspaceProps) {
+export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: SelectedNodeWorkspaceProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const normalizedType = node ? normalizeNodeType(node.type) : null;
@@ -124,6 +131,37 @@ export function SelectedNodeWorkspace({ node, schema }: SelectedNodeWorkspacePro
   }
 
   /* ----------------------------------------------------------
+   * Workspace / Bereich - spezielle Einstellungen
+   * ---------------------------------------------------------- */
+  if (normalizedType === 'workspace' || normalizedType === 'bereich') {
+    return (
+      <section
+        className={['flex min-h-0 min-w-0', 'w-full flex-1', 'overflow-auto', 'bg-white', 'dark:bg-slate-950',].join(' ')}
+        aria-label={`Workspace: ${node.name}`}
+      >
+        <div className="mx-auto w-full max-w-4xl p-6">
+          <h2 className="text-lg font-semibold">Bereich: {node.name}</h2>
+          <p className="text-sm text-slate-600 dark:text-slate-400">Spezielle Einstellungen für diesen Bereich.</p>
+
+          <WorkspaceSettingsPanel node={node} onUpdateHierarchyNode={onUpdateHierarchyNode} />
+
+          <div className="mt-6">
+            {/* Prompt editor, falls vorhanden */}
+            <div className="rounded-lg border bg-white p-3">
+              <h3 className="text-xs font-semibold text-slate-500">Prompt</h3>
+              <PromptEditor
+                node={node}
+                resolvedPrompt={(node as any)?.metadata?.prompt ?? (node as any)?.system_prompt}
+                onUpdateHierarchyNode={onUpdateHierarchyNode}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  /* ----------------------------------------------------------
    * Webseiten-Sammlung
    * ---------------------------------------------------------- */
 
@@ -152,6 +190,39 @@ export function SelectedNodeWorkspace({ node, schema }: SelectedNodeWorkspacePro
 
   // If the schema provides a node definition for this type, render the SchemaRenderer
   if (schema && schema.node_types && schema.node_types[normalizedType]) {
+    const nodeDef = schema.node_types[normalizedType];
+
+    // If the node type definition looks like a UI component (has `.type`),
+    // render it via the SchemaRenderer. Otherwise treat it as a simple
+    // node-type descriptor (label/icon/allowed_actions) and render a
+    // friendly card view.
+    if (nodeDef && typeof nodeDef.type === 'string') {
+      return (
+        <section
+          className={[
+            'flex min-h-0 min-w-0',
+            'w-full flex-1',
+            'overflow-auto',
+            'bg-slate-50 p-6',
+            'dark:bg-slate-950/30',
+            'sm:p-8',
+          ].join(' ')}
+          aria-label={`Schema view: ${node.name}`}
+        >
+          <div className="mx-auto w-full max-w-6xl">
+            <SchemaRenderer schema={nodeDef} context={{ nodeId: node.id }} />
+          </div>
+        </section>
+      );
+    }
+
+    // Node-type descriptor (legacy/simple shape) -> render card
+    const def: any = nodeDef;
+    // Prefer prompt stored on the node instance; fall back to the node-type definition
+    const instancePrompt = (node as any)?.system_prompt ?? (node as any)?.effective_prompt ??
+      (node as any)?.metadata?.prompt;
+    const resolvedPrompt =
+      instancePrompt ?? def.system_prompt ?? def.effective_prompt ?? def.metadata?.prompt;
     return (
       <section
         className={[
@@ -162,19 +233,290 @@ export function SelectedNodeWorkspace({ node, schema }: SelectedNodeWorkspacePro
           'dark:bg-slate-950/30',
           'sm:p-8',
         ].join(' ')}
-        aria-label={`Schema view: ${node.name}`}
+        aria-label={`Node type: ${node.name}`}
       >
-        <div className="mx-auto w-full max-w-6xl">
-          <SchemaRenderer
-            schema={schema.node_types?.[normalizedType]}
-            context={{ nodeId: node.id }}
-          />
+        <div className="mx-auto w-full max-w-4xl">
+          <div className="flex items-center gap-4">
+            <div
+              className={[
+                'flex h-14 w-14 items-center justify-center rounded-lg border',
+                'bg-white text-2xl',
+              ].join(' ')}
+              style={def.color ? { backgroundColor: def.color } : undefined}
+            >
+              {/* Icon name may be provided */}
+              {def.icon ? <DynamicIcon name={def.icon} size={28} /> : <span />}
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold">{def.label ?? node.type}</h2>
+              {def.description ? (
+                <p className="text-sm text-slate-600 dark:text-slate-400">{def.description}</p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            <div className="rounded-lg border bg-white p-3">
+              <h3 className="text-xs font-semibold text-slate-500">Erlaubte Aktionen</h3>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(Array.isArray(def.allowed_actions) ? def.allowed_actions : []).map(
+                  (a: string) => (
+                    <span key={a} className="rounded bg-slate-100 px-2 py-0.5 text-xs">
+                      {a}
+                    </span>
+                  ),
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-lg border bg-white p-3">
+              <h3 className="text-xs font-semibold text-slate-500">Erlaubte Kindtypen</h3>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {(Array.isArray(def.allowed_child_types) ? def.allowed_child_types : []).map(
+                  (t: string) => (
+                    <span key={t} className="rounded bg-slate-100 px-2 py-0.5 text-xs">
+                      {t}
+                    </span>
+                  ),
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid gap-4">
+                    <div className="rounded-lg border bg-white p-3">
+                      <h3 className="text-xs font-semibold text-slate-500">Prompt</h3>
+                      <PromptEditor
+                        node={node}
+                        resolvedPrompt={resolvedPrompt}
+                        onUpdateHierarchyNode={onUpdateHierarchyNode}
+                      />
+                    </div>
+
+            <div className="rounded-lg border bg-white p-3">
+              <h3 className="text-xs font-semibold text-slate-500">Rohdefinition</h3>
+              <div className="mt-2 max-h-48 overflow-auto rounded bg-slate-50 p-2 text-xs text-slate-800 whitespace-pre-wrap wrap-break-word">
+                {JSON.stringify(def ?? {}, null, 2)}
+              </div>
+            </div>
+          </div>
         </div>
       </section>
     );
   }
 
   return <NodePlaceholder node={node} schema={schema} />;
+}
+// Inline prompt editor component
+function PromptEditor({
+  node,
+  resolvedPrompt,
+  onUpdateHierarchyNode,
+}: {
+  node: SelectedWorkspaceNode | null | undefined;
+  resolvedPrompt: string | null | undefined;
+  onUpdateHierarchyNode?: (id: string, payload: unknown) => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(resolvedPrompt ?? '');
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setValue(resolvedPrompt ?? '');
+  }, [resolvedPrompt, node?.id]);
+
+  if (!node) return <div className="text-xs text-slate-400">Kein Prompt definiert.</div>;
+
+  async function save() {
+    if (!onUpdateHierarchyNode) return setEditing(false);
+    setIsSaving(true);
+    try {
+      const metadata = { ...(node as any).metadata ?? {}, prompt: value || null };
+      await onUpdateHierarchyNode((node as any).id, { metadata });
+      setEditing(false);
+    } catch (err) {
+      // ignore — the toast flow in parent will handle errors
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-2 text-sm text-slate-700">
+      {!editing ? (
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            {value ? (
+              <div className="max-h-48 overflow-auto rounded bg-slate-50 p-2 text-xs text-slate-800 whitespace-pre-wrap wrap-break-word">
+                {String(value)}
+              </div>
+            ) : (
+              <div className="text-xs text-slate-400">Kein Prompt definiert.</div>
+            )}
+          </div>
+
+          <div className="ml-4 flex shrink-0 flex-col gap-2">
+            <button
+              type="button"
+              className="inline-flex items-center rounded bg-primary px-2 py-1 text-xs text-white"
+              onClick={() => setEditing(true)}
+            >
+              Bearbeiten
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div onMouseDown={(e) => e.stopPropagation()}>
+          <textarea
+            rows={6}
+            className="w-full rounded border border-border px-2 py-1 text-sm"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+          />
+
+          <div className="mt-2 flex gap-2">
+            <button
+              type="button"
+              className="inline-flex items-center rounded bg-primary px-3 py-1 text-sm text-white"
+              onClick={() => void save()}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Speichern…' : 'Speichern'}
+            </button>
+
+            <button
+              type="button"
+              className="inline-flex items-center rounded border px-3 py-1 text-sm"
+              onClick={() => {
+                setEditing(false);
+                setValue(resolvedPrompt ?? '');
+              }}
+              disabled={isSaving}
+            >
+              Abbrechen
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WorkspaceSettingsPanel({
+  node,
+  onUpdateHierarchyNode,
+}: {
+  node: SelectedWorkspaceNode | null | undefined;
+  onUpdateHierarchyNode?: (id: string, payload: unknown) => Promise<void>;
+}) {
+  const [access, setAccess] = useState<string | null>(
+    (node as any)?.metadata?.access ?? null,
+  );
+  const [channelUrl, setChannelUrl] = useState<string | null>(
+    (node as any)?.metadata?.channel_url ?? null,
+  );
+  const [inviteList, setInviteList] = useState<string | null>(
+    Array.isArray((node as any)?.metadata?.invite_list)
+      ? ((node as any).metadata.invite_list as string[]).join(', ')
+      : (node as any)?.metadata?.invite_list ?? null,
+  );
+  const [owner, setOwner] = useState<string | null>((node as any)?.metadata?.owner ?? null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    setAccess((node as any)?.metadata?.access ?? null);
+    setChannelUrl((node as any)?.metadata?.channel_url ?? null);
+    setInviteList(
+      Array.isArray((node as any)?.metadata?.invite_list)
+        ? ((node as any).metadata.invite_list as string[]).join(', ')
+        : (node as any)?.metadata?.invite_list ?? null,
+    );
+    setOwner((node as any)?.metadata?.owner ?? null);
+  }, [node?.id]);
+
+  async function save() {
+    if (!node || !onUpdateHierarchyNode) return;
+    setIsSaving(true);
+    try {
+      const metadata = {
+        ...(node as any).metadata ?? {},
+        access: access ?? undefined,
+        channel_url: channelUrl ?? undefined,
+        invite_list: inviteList ? inviteList.split(',').map((s) => s.trim()).filter(Boolean) : [],
+        owner: owner ?? undefined,
+      } as Record<string, unknown>;
+
+      await onUpdateHierarchyNode((node as any).id, { metadata });
+    } catch (err) {
+      // parent toasts handle errors
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
+  if (!node) return null;
+
+  return (
+    <div className="mt-4 grid gap-4">
+      <div className="rounded-lg border bg-white p-4">
+        <label className="block text-xs font-semibold text-slate-500">Zugriff</label>
+        <select
+          className="mt-2 w-full rounded border px-2 py-1"
+          value={access ?? ''}
+          onChange={(e) => setAccess(e.target.value || null)}
+        >
+          <option value="">(nicht gesetzt)</option>
+          <option value="public">Public (Website-Kanal)</option>
+          <option value="intern">Intern (angemeldete Nutzer / eingeladene)</option>
+          <option value="private">Privat (Nur Owner)</option>
+        </select>
+      </div>
+
+      <div className="rounded-lg border bg-white p-4">
+        <label className="block text-xs font-semibold text-slate-500">Channel-URL (optional)</label>
+        <input
+          type="text"
+          className="mt-2 w-full rounded border px-2 py-1"
+          value={channelUrl ?? ''}
+          onChange={(e) => setChannelUrl(e.target.value || null)}
+          placeholder="https://example.com/…"
+        />
+      </div>
+
+      <div className="rounded-lg border bg-white p-4">
+        <label className="block text-xs font-semibold text-slate-500">Eingeladene (Komma-getrennt)</label>
+        <textarea
+          rows={3}
+          className="mt-2 w-full rounded border px-2 py-1"
+          value={inviteList ?? ''}
+          onChange={(e) => setInviteList(e.target.value || null)}
+          placeholder="user1@example.com, user2@example.com"
+        />
+      </div>
+
+      <div className="rounded-lg border bg-white p-4">
+        <label className="block text-xs font-semibold text-slate-500">Owner</label>
+        <input
+          type="text"
+          className="mt-2 w-full rounded border px-2 py-1"
+          value={owner ?? ''}
+          onChange={(e) => setOwner(e.target.value || null)}
+        />
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className="inline-flex items-center rounded bg-primary px-3 py-1 text-sm text-white"
+          onClick={() => void save()}
+          disabled={isSaving}
+        >
+          {isSaving ? 'Speichern…' : 'Speichern'}
+        </button>
+      </div>
+    </div>
+  );
 }
 function NodePlaceholder({ node, schema }: NodePlaceholderProps & { schema?: any }) {
   const titleId = createElementId('workspace-node-title', node.id);

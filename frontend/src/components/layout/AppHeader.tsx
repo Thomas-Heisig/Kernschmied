@@ -3,6 +3,7 @@
 import {
   BookOpen,
   CircleUserRound,
+  Globe2,
   Moon,
   Settings,
   ShieldCheck,
@@ -22,6 +23,8 @@ interface AppHeaderProps {
   onOpenSettings: () => void;
   onOpenDocumentation: () => void;
   onOpenCalendar?: () => void;
+  onCreatePublicWorkspace?: () => void;
+  onCreateInternWorkspace?: () => void;
 }
 
 export function AppHeader({
@@ -34,6 +37,8 @@ export function AppHeader({
   onOpenSettings,
   onOpenDocumentation,
   onOpenCalendar,
+  onCreatePublicWorkspace,
+  onCreateInternWorkspace,
 }: AppHeaderProps) {
   const userInitials = createInitials(userName);
   const normalizedEnvironment = environment.trim().toLowerCase();
@@ -96,7 +101,26 @@ export function AppHeader({
           </div>
         </div>
 
-        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="hidden items-center gap-1.5 sm:flex">
+            <button
+              type="button"
+              onClick={onCreatePublicWorkspace}
+              className={actionButtonClassName}
+              title="Public-Bereich erstellen"
+            >
+              <Globe2 size={16} aria-hidden="true" />
+            </button>
+
+            <button
+              type="button"
+              onClick={onCreateInternWorkspace}
+              className={actionButtonClassName}
+              title="Interner Bereich erstellen"
+            >
+              <ShieldCheck size={16} aria-hidden="true" />
+            </button>
+          </div>
           <div
             className="hidden items-center gap-1.5 rounded-lg border border-border-soft bg-surface-muted/80 px-2.5 py-1.5 text-xs font-medium text-text-soft dark:border-white/10 dark:bg-slate-800/70 dark:text-gray-300 md:flex"
             title={`Betriebsprofil: ${environmentLabel}`}

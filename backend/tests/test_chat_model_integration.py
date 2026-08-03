@@ -1,6 +1,5 @@
 # pyright: reportPrivateUsage=false
-import asyncio
-from typing import Any
+from typing import Any, AsyncIterator, List, cast
 
 import pytest
 from app.services.chat_service import ChatService, ChatRequest, ChatServiceContext
@@ -8,7 +7,8 @@ from app.storage.adapters.chat_repository_adapter import ChatRepositoryAdapter
 from app.storage.adapters.chat_history_provider import ChatHistoryProviderAdapter
 from app.models.service import ModelAccessContext
 from app.contracts.model_backend import GenerationRequest, StreamEvent, StreamEventType
-from sqlalchemy.ext.asyncio import async_sessionmaker
+from app.models.service import ModelService
+from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
 import os
 from pathlib import Path
 from app.storage import database as _database_module
@@ -17,7 +17,7 @@ from app.core.settings import reload_settings
 
 
 @pytest.fixture(scope="module")
-async def session_factory() -> async_sessionmaker:
+async def session_factory() -> async_sessionmaker[AsyncSession]:
     # Prevent init_database from attempting to run Alembic here
     os.environ["DATABASE_MIGRATION_MODE"] = "disabled"
     backend_dir = Path(__file__).resolve().parents[1]
@@ -43,12 +43,19 @@ async def session_factory() -> async_sessionmaker:
     return sf
 
 
-class RecordingModelService:
+class RecordingModelService(ModelService):
     def __init__(self) -> None:
         self.requests: list[GenerationRequest] = []
         self.first_response = "Antwort vom Modell"
 
-    async def stream(self, *, request: GenerationRequest, model_id: str, idle_timeout_seconds: float | None = None, access_context: Any | None = None):
+    async def stream(
+        self,
+        request: GenerationRequest,
+        model_id: str | None = None,
+        *,
+        idle_timeout_seconds: float | None = None,
+        access_context: Any | None = None,
+    ) -> AsyncIterator[StreamEvent]:
         # record the request
         self.requests.append(request)
 
@@ -57,15 +64,15 @@ class RecordingModelService:
         yield StreamEvent.create(type=StreamEventType.COMPLETE)
 
 
-async def collect_stream(it):
-    events = []
+async def collect_stream(it: AsyncIterator[Any]) -> List[Any]:
+    events: List[Any] = []
     async for e in it:
         events.append(e)
     return events
 
 
 @pytest.mark.asyncio
-async def test_second_request_contains_previous_conversation_history(session_factory: async_sessionmaker) -> None:
+async def test_second_request_contains_previous_conversation_history(session_factory: async_sessionmaker[AsyncSession]) -> None:
     # prepare adapters using real session factory
     repo_adapter = ChatRepositoryAdapter(session_factory)
     history_provider = ChatHistoryProviderAdapter(session_factory)
@@ -73,8 +80,8 @@ async def test_second_request_contains_previous_conversation_history(session_fac
     # recording model service
     model_service = RecordingModelService()
 
-    # create service
-    service = ChatService(model_service=model_service, default_model_id="m", repository=repo_adapter, history_provider=history_provider)
+    # create service (cast recording service to ModelService for the test)
+    service = ChatService(model_service=cast(ModelService, model_service), default_model_id="m", repository=repo_adapter, history_provider=history_provider)
 
     # first user message: let the service create the conversation id
     req1 = ChatRequest(message="Mein Name ist Thomas Heisig.", conversation_id=None, history=(), system_prompt=None)

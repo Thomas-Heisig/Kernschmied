@@ -17,7 +17,7 @@
     "MD041": false,
   },
 
-  "globs": ["wiki/**/*.md", "README.md"],
+  "globs": ["documentation/**/*.md", "README.md"],
 
   "ignores": ["**/node_modules/**", "**/.venv/**", "**/dist/**", "**/build/**"],
 }

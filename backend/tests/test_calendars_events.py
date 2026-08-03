@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Protocol, cast
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
 
 # Ensure backend package is importable when tests run from repo root
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,7 +48,7 @@ def test_calendar_and_event_crud() -> None:
         async with engine.begin() as conn:
             await conn.run_sync(StorageBase.metadata.create_all)
 
-        session_factory = async_sessionmaker(engine, expire_on_commit=False)
+        session_factory = async_sessionmaker[AsyncSession](engine, expire_on_commit=False)
 
         async with session_factory() as session:
             # Dummy request with user in state

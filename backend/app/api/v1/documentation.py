@@ -11,7 +11,7 @@ router = APIRouter()
 
 SCHEMA_VERSION = "1.0"
 PROJECT_ROOT = Path(__file__).resolve().parents[4]
-WIKI_ROOT = PROJECT_ROOT / "wiki"
+WIKI_ROOT = PROJECT_ROOT / "documentation"
 MAX_DOCUMENT_SIZE_BYTES = 2_000_000
 
 
@@ -27,12 +27,12 @@ class DocumentationPageDefinition:
 
 
 def _scan_wiki_pages() -> list[DocumentationPageDefinition]:
-    """Dynamically scan the `wiki/` folder and construct documentation page definitions.
+    """Dynamically scan the `documentation/` folder and construct documentation page definitions.
 
     Rules:
     - Ignore files or directories starting with an underscore (`_`).
     - Use the first H1 in the file as the page title; fall back to filename stem.
-    - Files directly under `wiki/` are grouped into the `project` section.
+    - Files directly under `documentation/` are grouped into the `project` section.
     - Section id/title are derived from the immediate parent folder name.
     - Page id is the relative path with slashes replaced by '-' and lowercased (without .md).
     """

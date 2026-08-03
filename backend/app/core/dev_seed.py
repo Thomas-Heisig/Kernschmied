@@ -40,6 +40,15 @@ async def seed_development_hierarchy(session_factory: async_sessionmaker[AsyncSe
                             metadata={},
                         )
                     )
+                else:
+                    # repair existing node attributes to canonical values
+                    if root.type != "user":
+                        root.type = "user"
+                    if root.name != "Thomas Heisig":
+                        root.name = "Thomas Heisig"
+                    # ensure parent is system-root
+                    if root.parent_id is not None:
+                        await repo.move_node(root, new_parent_id=None)
 
                 # workspace-1
                 ws = await repo.get_node("workspace-1")
@@ -56,6 +65,13 @@ async def seed_development_hierarchy(session_factory: async_sessionmaker[AsyncSe
                             metadata={},
                         )
                     )
+                else:
+                    if ws.type != "workspace":
+                        ws.type = "workspace"
+                    if ws.name != "Heisig Naturstein":
+                        ws.name = "Heisig Naturstein"
+                    if ws.parent_id != "root":
+                        await repo.move_node(ws, new_parent_id="root")
 
                 # project-1
                 proj = await repo.get_node("project-1")
@@ -72,6 +88,13 @@ async def seed_development_hierarchy(session_factory: async_sessionmaker[AsyncSe
                             metadata={},
                         )
                     )
+                else:
+                    if proj.type != "project":
+                        proj.type = "project"
+                    if proj.name != "Angebote":
+                        proj.name = "Angebote"
+                    if proj.parent_id != "workspace-1":
+                        await repo.move_node(proj, new_parent_id="workspace-1")
 
                 # chat-1
                 chat = await repo.get_node("chat-1")
@@ -88,6 +111,13 @@ async def seed_development_hierarchy(session_factory: async_sessionmaker[AsyncSe
                             metadata={},
                         )
                     )
+                else:
+                    if chat.type != "chat":
+                        chat.type = "chat"
+                    if chat.name != "Angebot Müller":
+                        chat.name = "Angebot Müller"
+                    if chat.parent_id != "project-1":
+                        await repo.move_node(chat, new_parent_id="project-1")
 
                 logger.info("Development hierarchy seed applied (idempotent)")
             except Exception:

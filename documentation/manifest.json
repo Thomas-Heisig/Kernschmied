@@ -1,0 +1,522 @@
+{
+  "sections": [
+    {
+      "title": "Home",
+      "pages": [
+        {
+          "file": "_Footer.md",
+          "title": "_Footer"
+        },
+        {
+          "file": "_Sidebar.md",
+          "title": "_Sidebar"
+        },
+        {
+          "file": "CHANGELOG.md",
+          "title": "CHANGELOG"
+        },
+        {
+          "file": "CONTRIBUTING.md",
+          "title": "CONTRIBUTING"
+        },
+        {
+          "file": "Home.md",
+          "title": "Home"
+        },
+        {
+          "file": "SECURITY.md",
+          "title": "SECURITY"
+        },
+        {
+          "file": "SUPPORT.md",
+          "title": "SUPPORT"
+        }
+      ]
+    },
+    {
+      "title": "api",
+      "pages": [
+        {
+          "file": "api/bootstrap.md",
+          "title": "bootstrap"
+        },
+        {
+          "file": "api/chat.md",
+          "title": "chat"
+        },
+        {
+          "file": "api/configuration.md",
+          "title": "configuration"
+        },
+        {
+          "file": "api/errors.md",
+          "title": "errors"
+        },
+        {
+          "file": "api/hierarchy.md",
+          "title": "hierarchy"
+        },
+        {
+          "file": "api/models.md",
+          "title": "models"
+        },
+        {
+          "file": "api/sse.md",
+          "title": "sse"
+        },
+        {
+          "file": "api/tools.md",
+          "title": "tools"
+        },
+        {
+          "file": "api/ui-schema.md",
+          "title": "ui-schema"
+        }
+      ]
+    },
+    {
+      "title": "architecture",
+      "pages": [
+        {
+          "file": "architecture/architecture-decision-index.md",
+          "title": "architecture-decision-index"
+        },
+        {
+          "file": "architecture/bootstrap-lifecycle.md",
+          "title": "bootstrap-lifecycle"
+        },
+        {
+          "file": "architecture/c4-container.md",
+          "title": "c4-container"
+        },
+        {
+          "file": "architecture/configuration-architecture.md",
+          "title": "configuration-architecture"
+        },
+        {
+          "file": "architecture/contract-versioning.md",
+          "title": "contract-versioning"
+        },
+        {
+          "file": "architecture/deployment-architecture.md",
+          "title": "deployment-architecture"
+        },
+        {
+          "file": "architecture/extension-points.md",
+          "title": "extension-points"
+        },
+        {
+          "file": "architecture/hierarchy-architecture.md",
+          "title": "hierarchy-architecture"
+        },
+        {
+          "file": "architecture/manifest-system.md",
+          "title": "manifest-system"
+        },
+        {
+          "file": "architecture/prompt-inheritance.md",
+          "title": "prompt-inheritance"
+        },
+        {
+          "file": "architecture/registry-architecture.md",
+          "title": "registry-architecture"
+        },
+        {
+          "file": "architecture/repository-structure.md",
+          "title": "repository-structure"
+        },
+        {
+          "file": "architecture/request-lifecycle.md",
+          "title": "request-lifecycle"
+        },
+        {
+          "file": "architecture/Security-Architecture.md",
+          "title": "Security-Architecture"
+        },
+        {
+          "file": "architecture/Settings-Catalog.md",
+          "title": "Settings-Catalog"
+        },
+        {
+          "file": "architecture/ui-schema-pipeline.md",
+          "title": "ui-schema-pipeline"
+        }
+      ]
+    },
+    {
+      "title": "generated",
+      "pages": [
+        {
+          "file": "generated/audit-hinweise.md",
+          "title": "audit-hinweise"
+        }
+      ]
+    },
+    {
+      "title": "getting-started",
+      "pages": [
+        {
+          "file": "getting-started/Installation.md",
+          "title": "Installation"
+        }
+      ]
+    },
+    {
+      "title": "internal-work",
+      "pages": [
+        {
+          "file": "internal-work/fehlerbehebung_der_chat_pipelien.md",
+          "title": "fehlerbehebung_der_chat_pipelien"
+        },
+        {
+          "file": "internal-work/PROJECT_PROMPT.md",
+          "title": "PROJECT_PROMPT"
+        },
+        {
+          "file": "internal-work/readme-patch.md",
+          "title": "readme-patch"
+        },
+        {
+          "file": "internal-work/settings-patch-integration.md",
+          "title": "settings-patch-integration"
+        },
+        {
+          "file": "internal-work/änderungen.md",
+          "title": "änderungen"
+        }
+      ]
+    },
+    {
+      "title": "repository-entry",
+      "pages": [
+        {
+          "file": "repository-entry/_footer.md",
+          "title": "_footer"
+        },
+        {
+          "file": "repository-entry/_sidebar.md",
+          "title": "_sidebar"
+        },
+        {
+          "file": "repository-entry/home.md",
+          "title": "home"
+        },
+        {
+          "file": "repository-entry/installation.md",
+          "title": "installation"
+        },
+        {
+          "file": "repository-entry/readme.md",
+          "title": "readme"
+        }
+      ]
+    },
+    {
+      "title": "security",
+      "pages": [
+        {
+          "file": "security/security.md",
+          "title": "security"
+        }
+      ]
+    },
+    {
+      "title": "unknown",
+      "pages": [
+        {
+          "file": "unknown/_footer.md",
+          "title": "_footer"
+        },
+        {
+          "file": "unknown/_sidebar.md",
+          "title": "_sidebar"
+        },
+        {
+          "file": "unknown/action-registry.md",
+          "title": "action-registry"
+        },
+        {
+          "file": "unknown/adr-0001-schema-driven-ui.md",
+          "title": "adr-0001-schema-driven-ui"
+        },
+        {
+          "file": "unknown/adr-0002-bootstrap.md",
+          "title": "adr-0002-bootstrap"
+        },
+        {
+          "file": "unknown/adr-0003-registries.md",
+          "title": "adr-0003-registries"
+        },
+        {
+          "file": "unknown/adr-0004-security-profiles.md",
+          "title": "adr-0004-security-profiles"
+        },
+        {
+          "file": "unknown/adr-0005-versioned-contracts.md",
+          "title": "adr-0005-versioned-contracts"
+        },
+        {
+          "file": "unknown/adr-0006-api-contracts-and-versioning.md",
+          "title": "adr-0006-api-contracts-and-versioning"
+        },
+        {
+          "file": "unknown/adr-0007-database-and-storage-architecture.md",
+          "title": "adr-0007-database-and-storage-architecture"
+        },
+        {
+          "file": "unknown/adr-0008-tool-architecture.md",
+          "title": "adr-0008-tool-architecture"
+        },
+        {
+          "file": "unknown/adr-0009-authentication-and-authorization.md",
+          "title": "adr-0009-authentication-and-authorization"
+        },
+        {
+          "file": "unknown/adr-0010-configuration-management.md",
+          "title": "adr-0010-configuration-management"
+        },
+        {
+          "file": "unknown/adr-0011-hierarchy-and-prompt-inheritance.md",
+          "title": "adr-0011-hierarchy-and-prompt-inheritance"
+        },
+        {
+          "file": "unknown/adr-0012-frontend-architecture.md",
+          "title": "adr-0012-frontend-architecture"
+        },
+        {
+          "file": "unknown/adr-0013-error-handling-and-logging.md",
+          "title": "adr-0013-error-handling-and-logging"
+        },
+        {
+          "file": "unknown/adr-0014-deployment-profiles.md",
+          "title": "adr-0014-deployment-profiles"
+        },
+        {
+          "file": "unknown/adr-0015-llm-provider-architecture.md",
+          "title": "adr-0015-llm-provider-architecture"
+        },
+        {
+          "file": "unknown/api-client.md",
+          "title": "api-client"
+        },
+        {
+          "file": "unknown/api-todo.md",
+          "title": "api-todo"
+        },
+        {
+          "file": "unknown/architecture.md",
+          "title": "architecture"
+        },
+        {
+          "file": "unknown/backend-overview.md",
+          "title": "backend-overview"
+        },
+        {
+          "file": "unknown/bootstrap.md",
+          "title": "bootstrap"
+        },
+        {
+          "file": "unknown/calendar.md",
+          "title": "calendar"
+        },
+        {
+          "file": "unknown/chat.md",
+          "title": "chat"
+        },
+        {
+          "file": "unknown/coding-guidelines.md",
+          "title": "coding-guidelines"
+        },
+        {
+          "file": "unknown/component-registry.md",
+          "title": "component-registry"
+        },
+        {
+          "file": "unknown/configuration-revisions.md",
+          "title": "configuration-revisions"
+        },
+        {
+          "file": "unknown/configuration.md",
+          "title": "configuration"
+        },
+        {
+          "file": "unknown/contracts.md",
+          "title": "contracts"
+        },
+        {
+          "file": "unknown/database.md",
+          "title": "database"
+        },
+        {
+          "file": "unknown/dependency-injection.md",
+          "title": "dependency-injection"
+        },
+        {
+          "file": "unknown/development.md",
+          "title": "development"
+        },
+        {
+          "file": "unknown/dynamic-ui.md",
+          "title": "dynamic-ui"
+        },
+        {
+          "file": "unknown/error-handling.md",
+          "title": "error-handling"
+        },
+        {
+          "file": "unknown/faq.md",
+          "title": "faq"
+        },
+        {
+          "file": "unknown/forms.md",
+          "title": "forms"
+        },
+        {
+          "file": "unknown/frontend-overview.md",
+          "title": "frontend-overview"
+        },
+        {
+          "file": "unknown/generic-tree.md",
+          "title": "generic-tree"
+        },
+        {
+          "file": "unknown/getting-started.md",
+          "title": "getting-started"
+        },
+        {
+          "file": "unknown/glossary.md",
+          "title": "glossary"
+        },
+        {
+          "file": "unknown/hierarchy.md",
+          "title": "hierarchy"
+        },
+        {
+          "file": "unknown/history_rewrite.md",
+          "title": "history_rewrite"
+        },
+        {
+          "file": "unknown/home.md",
+          "title": "home"
+        },
+        {
+          "file": "unknown/installation.md",
+          "title": "installation"
+        },
+        {
+          "file": "unknown/internet.md",
+          "title": "internet"
+        },
+        {
+          "file": "unknown/intranet.md",
+          "title": "intranet"
+        },
+        {
+          "file": "unknown/model-registry.md",
+          "title": "model-registry"
+        },
+        {
+          "file": "unknown/plugin-system.md",
+          "title": "plugin-system"
+        },
+        {
+          "file": "unknown/project-principles.md",
+          "title": "project-principles"
+        },
+        {
+          "file": "unknown/project_prompt.agent.md",
+          "title": "project_prompt.agent"
+        },
+        {
+          "file": "unknown/PROJECT_PROMPT.md",
+          "title": "PROJECT_PROMPT"
+        },
+        {
+          "file": "unknown/prompt-inheritance.md",
+          "title": "prompt-inheritance"
+        },
+        {
+          "file": "unknown/pull_request_template.md",
+          "title": "pull_request_template"
+        },
+        {
+          "file": "unknown/release-process.md",
+          "title": "release-process"
+        },
+        {
+          "file": "unknown/roadmap.md",
+          "title": "roadmap"
+        },
+        {
+          "file": "unknown/routing.md",
+          "title": "routing"
+        },
+        {
+          "file": "unknown/runtime-configuration.md",
+          "title": "runtime-configuration"
+        },
+        {
+          "file": "unknown/schema-renderer.md",
+          "title": "schema-renderer"
+        },
+        {
+          "file": "unknown/schema-versioning.md",
+          "title": "schema-versioning"
+        },
+        {
+          "file": "unknown/state-management.md",
+          "title": "state-management"
+        },
+        {
+          "file": "unknown/streaming.md",
+          "title": "streaming"
+        },
+        {
+          "file": "unknown/testing.md",
+          "title": "testing"
+        },
+        {
+          "file": "unknown/todo.md",
+          "title": "todo"
+        },
+        {
+          "file": "unknown/tool-registry.md",
+          "title": "tool-registry"
+        },
+        {
+          "file": "unknown/ui-schema.md",
+          "title": "ui-schema"
+        }
+      ]
+    },
+    {
+      "title": "user-guide",
+      "pages": [
+        {
+          "file": "user-guide/Chat.md",
+          "title": "Chat"
+        },
+        {
+          "file": "user-guide/hierarchy.md",
+          "title": "hierarchy"
+        },
+        {
+          "file": "user-guide/index.md",
+          "title": "index"
+        },
+        {
+          "file": "user-guide/overview.md",
+          "title": "overview"
+        },
+        {
+          "file": "user-guide/settings.md",
+          "title": "settings"
+        },
+        {
+          "file": "user-guide/troubleshooting.md",
+          "title": "troubleshooting"
+        }
+      ]
+    }
+  ]
+}

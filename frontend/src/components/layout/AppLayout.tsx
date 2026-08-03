@@ -16,6 +16,8 @@ interface AppLayoutProps {
   onOpenSettings: () => void;
   onOpenDocumentation: () => void;
   onOpenCalendar?: () => void;
+  onCreatePublicWorkspace?: () => void;
+  onCreateInternWorkspace?: () => void;
 }
 
 export function AppLayout({
@@ -31,6 +33,8 @@ export function AppLayout({
   onOpenSettings,
   onOpenDocumentation,
   onOpenCalendar,
+  onCreatePublicWorkspace,
+  onCreateInternWorkspace,
 }: AppLayoutProps) {
   return (
     <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-surface-muted text-text dark:bg-slate-950 dark:text-white">
@@ -44,6 +48,8 @@ export function AppLayout({
         onOpenSettings={onOpenSettings}
         onOpenDocumentation={onOpenDocumentation}
         onOpenCalendar={onOpenCalendar}
+        onCreatePublicWorkspace={onCreatePublicWorkspace}
+        onCreateInternWorkspace={onCreateInternWorkspace}
       />
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {hierarchySidebar}

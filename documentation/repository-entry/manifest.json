@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "documentation_version": "0.1.0",
+  "default_language": "de",
+  "home_page": "Home",
+  "assets_base_path": "assets",
+  "sections": [
+    {
+      "id": "getting-started",
+      "title": "Erste Schritte",
+      "order": 10,
+      "pages": [
+        {
+          "id": "installation",
+          "title": "Installation",
+          "file": "getting-started/Installation.md",
+          "audience": ["user", "administrator", "developer"],
+          "status": "published",
+          "order": 10
+        }
+      ]
+    },
+    {
+      "id": "user-guide",
+      "title": "Benutzerhandbuch",
+      "order": 20,
+      "pages": [
+        {
+          "id": "chat",
+          "title": "Chat verwenden",
+          "file": "user-guide/Chat.md",
+          "audience": ["user"],
+          "status": "published",
+          "order": 10
+        }
+      ]
+    }
+  ]
+}

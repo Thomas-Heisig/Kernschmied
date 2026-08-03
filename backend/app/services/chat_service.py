@@ -31,6 +31,7 @@ Abwärtskompatibilität erhalten.
 
 from __future__ import annotations
 
+
 import asyncio
 import inspect
 import json
@@ -43,6 +44,7 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import (
@@ -51,7 +53,11 @@ from typing import (
     TypeAlias,
     runtime_checkable,
 )
+from typing import Any, Awaitable, Optional, cast, Tuple
+
+from app.prompts.resolver import PromptResolver
 from uuid import uuid4
+from app.hierarchy.models import HierarchyActor
 
 from pydantic import (
     JsonValue,
@@ -365,6 +371,17 @@ class ChatHierarchyNodeNotFoundError(
     status_code = 404
 
 
+class ChatHierarchyNodeRequiredError(
+    ChatServiceError,
+):
+    """
+    Fehler, wenn eine Operation einen Hierarchieknoten erfordert, dieser
+    jedoch nicht angegeben wurde.
+    """
+    code = "CHAT_HIERARCHY_NODE_REQUIRED"
+    status_code = 422
+
+
 class ChatGenerationError(
     ChatServiceError,
 ):
@@ -427,6 +444,8 @@ class ChatRequest:
     parent_message_id: str | None = None
 
     system_prompt: str | None = None
+
+    hierarchy_node_id: str | None = None
 
     history: tuple[
         ChatMessage,
@@ -511,6 +530,10 @@ class ChatRequest:
             self.parent_message_id.strip() if self.parent_message_id else None
         )
 
+        normalized_hierarchy_node_id = (
+            self.hierarchy_node_id.strip() if self.hierarchy_node_id else None
+        )
+
         normalized_system_prompt = (
             self.system_prompt.strip() if self.system_prompt else None
         )
@@ -537,6 +560,12 @@ class ChatRequest:
             self,
             "parent_message_id",
             normalized_parent_message_id,
+        )
+
+        object.__setattr__(
+            self,
+            "hierarchy_node_id",
+            normalized_hierarchy_node_id,
         )
 
         object.__setattr__(
@@ -736,6 +765,13 @@ class ChatServiceContext:
     ] = field(
         default_factory=(_create_empty_json_object),
     )
+    # Strongly-typed actor propagated from the API layer.
+    hierarchy_actor: HierarchyActor = field(default_factory=HierarchyActor)
+
+    # Authentication hints propagated from the API layer (kept for
+    # backward compatibility and logging). Prefer `hierarchy_actor`.
+    auth_roles: tuple[str, ...] = field(default_factory=tuple)
+    auth_permissions: tuple[str, ...] = field(default_factory=tuple)
 
     def __post_init__(self) -> None:
         normalized_request_id = self.request_id.strip()
@@ -974,6 +1010,8 @@ class ChatService:
         default_max_output_tokens: int = (DEFAULT_CHAT_MAX_OUTPUT_TOKENS),
         stream_idle_timeout_seconds: float = (DEFAULT_CHAT_STREAM_IDLE_TIMEOUT_SECONDS),
         generation_timeout_seconds: float = (DEFAULT_CHAT_GENERATION_TIMEOUT_SECONDS),
+        hierarchy_session_factory: async_sessionmaker[AsyncSession] | None = None,
+        prompt_config_reader: object | None = None,
     ) -> None:
         if not (0.0 <= default_temperature <= 2.0):
             raise ValueError(
@@ -1041,6 +1079,11 @@ class ChatService:
         self._stream_idle_timeout_seconds = stream_idle_timeout_seconds
 
         self._generation_timeout_seconds = generation_timeout_seconds
+
+        # Optional factory to obtain DB sessions for hierarchy resolution
+        self._hierarchy_session_factory = hierarchy_session_factory
+        # Optional config reader used to fetch system prompt and revision
+        self._prompt_config_reader = prompt_config_reader
 
     # ========================================================
     # Nicht streamende Generierung
@@ -1274,17 +1317,23 @@ class ChatService:
         )
 
         # Log compact summary of the prepared GenerationRequest (no contents)
+        import contextlib
+
         try:
+            message_roles = [getattr(m.role, "value", str(m.role)) for m in generation_request.messages]
+            message_lengths = [len(getattr(m, "content", "") or "") for m in generation_request.messages]
+
             _log_info(
                 "Chat generation request prepared",
                 conversation_id=conversation_id,
                 message_count=len(generation_request.messages),
-                message_roles=[getattr(m.role, "value", str(m.role)) for m in generation_request.messages],
-                message_lengths=[len(getattr(m, "content", "") or "") for m in generation_request.messages],
+                message_roles=message_roles,
+                message_lengths=message_lengths,
             )
         except Exception:
             # Logging must never break the stream; swallow errors here.
-            pass
+            with contextlib.suppress(Exception):
+                pass
 
         yield ChatStreamEvent(
             event=ChatEventType.START,
@@ -1300,13 +1349,13 @@ class ChatService:
         )
 
         # Also log a simple plain-text start event for visibility in basic logs
-        try:
+        import contextlib as _contextlib
+
+        with _contextlib.suppress(Exception):
             logger.info(
                 "Chat stream start event: effective_conversation_id=%s",
                 conversation_id,
             )
-        except Exception:
-            pass
 
         sequence += 1
 
@@ -1376,16 +1425,17 @@ class ChatService:
                         },
                     )
 
-                _log_info(
+                # Detailed model event logging is debug-level to avoid log flooding
+                logger.debug(
                     "Model stream event received",
-                    chat_event="model-stream-event-received",
-                    request_id=context.request_id,
-                    conversation_id=conversation_id,
-                    message_id=assistant_message_id,
-                    model_id=model_id,
-                    model_event_type=model_event_type,
-                    payload_keys=list(
-                        payload.keys(),
+                    extra=_log_context(
+                        chat_event="model-stream-event-received",
+                        request_id=context.request_id,
+                        conversation_id=conversation_id,
+                        message_id=assistant_message_id,
+                        model_id=model_id,
+                        model_event_type=model_event_type,
+                        payload_keys=list(payload.keys()),
                     ),
                 )
 
@@ -1675,15 +1725,133 @@ class ChatService:
     ) -> GenerationRequest:
         messages: list[ChatMessage] = []
 
-        system_prompt = request.system_prompt or self._default_system_prompt
+        # Resolve system prompt deterministically from settings and hierarchy when available.
+        system_prompt: str | None = None
+        config_revision: int | None = None
+
+        # fetch settings-level system prompt via injected reader when present
+        if self._prompt_config_reader is not None:
+            try:
+                maybe: Any = cast(Any, self._prompt_config_reader).get_system_prompt()
+                if inspect.isawaitable(maybe):
+                    settings_result: Any = await maybe
+                else:
+                    settings_result = maybe
+
+                if isinstance(settings_result, tuple):
+                    sr = cast(Tuple[Any, ...], settings_result)
+                    system_prompt = cast(Optional[str], sr[0]) if len(sr) >= 1 else None
+                    config_revision = cast(Optional[int], sr[1]) if len(sr) > 1 else None
+                else:
+                    system_prompt = cast(Optional[str], settings_result)
+            except Exception:
+                # Don't fail hard on config read; fallback to default
+                system_prompt = self._default_system_prompt
+
+        # Use the typed hierarchy_node_id field from the service-level ChatRequest
+        hierarchy_node_id = request.hierarchy_node_id
+
+        if hierarchy_node_id and self._hierarchy_session_factory is not None:
+            # perform hierarchical resolution using a DB session and PromptResolver
+            session_factory = self._hierarchy_session_factory
+
+            async with session_factory() as session:
+                from app.hierarchy.repository import HierarchyRepository
+                from app.hierarchy.permissions import HierarchyPermissionService    
+                            
+                repo = HierarchyRepository(session)
+                permission_service = HierarchyPermissionService()
+                resolver = PromptResolver(permission_service=permission_service)
+
+                # Use the strongly-typed HierarchyActor provided in the
+                # ChatServiceContext. The actor MUST be created at the API
+                # boundary via `hierarchy_actor_from_user_context()` and
+                # propagated through StreamContext -> ChatServiceContext.
+                actor = getattr(context, "hierarchy_actor", None)
+
+                if actor is None:
+                    raise ChatServiceError(
+                        "Missing hierarchy actor in ChatServiceContext",
+                        request_id=(context.request_id),
+                        details={"hint": "hierarchy_actor is required"},
+                    )
+
+                _log_info(
+                    "Prompt resolution started",
+                    chat_step=("resolve-hierarchy-start"),
+                    request_id=(context.request_id),
+                    hierarchy_node_id=hierarchy_node_id,
+                    actor_user_id=(actor.user_id),
+                    actor_roles=list(actor.roles),
+                    actor_permission_count=len(actor.permissions),
+                )
+
+                try:
+                    resolved = await resolver.resolve(
+                        hierarchy_node_id,
+                        repository=repo,
+                        actor=actor,
+                        settings_system_prompt=system_prompt,
+                    )
+
+                    if resolved and resolved.system_prompt:
+                        system_prompt = resolved.system_prompt
+
+                    # carry config revision into resolved prompt when available
+                    if config_revision is not None:
+                        import contextlib as _contextlib2
+
+                        with _contextlib2.suppress(Exception):
+                            resolved.config_revision = config_revision
+
+                    _log_info(
+                        "Resolved system prompt from hierarchy",
+                        chat_step=("resolve-hierarchy"),
+                        request_id=(context.request_id),
+                        hierarchy_node_id=hierarchy_node_id,
+                        fragment_count=(len(resolved.fragments) if resolved and getattr(resolved, "fragments", None) is not None else 0),
+                    )
+
+                except LookupError:
+                    raise ChatHierarchyNodeNotFoundError(
+                        f"Hierarchieknoten '{hierarchy_node_id}' nicht gefunden."
+                    )
+                except PermissionError:
+                    _log_warning(
+                        "Prompt resolution denied",
+                        chat_step=("resolve-hierarchy-denied"),
+                        request_id=(context.request_id),
+                        hierarchy_node_id=hierarchy_node_id,
+                        actor_user_id=(actor.user_id),
+                        actor_roles=list(actor.roles),
+                        actor_permission_count=len(actor.permissions),
+                    )
+                    raise ChatGenerationError(
+                        "Keine Leseberechtigung für den angeforderten Hierarchieknoten.",
+                        request_id=(context.request_id),
+                        details={"hierarchy_node_id": hierarchy_node_id},
+                    )
+        else:
+            # no hierarchy node: still apply settings-level prompt if present
+            if system_prompt is None:
+                system_prompt = self._default_system_prompt
+            # if a settings prompt exists, resolve a ResolvedPrompt from it alone
+            if system_prompt and self._hierarchy_session_factory is None:
+                resolver = PromptResolver()
+                resolved = resolver.resolve_from_chain(chain=(), settings_system_prompt=system_prompt)
+                # attach config revision
+                if config_revision is not None:
+                    import contextlib as _contextlib3
+
+                    with _contextlib3.suppress(Exception):
+                        resolved.config_revision = config_revision
+
+        # fallback to explicit request-level or service default system prompt
+        if system_prompt is None:
+            system_prompt = request.system_prompt or self._default_system_prompt
 
         if system_prompt:
-            messages.append(
-                ChatMessage(
-                    role=(MessageRole.SYSTEM),
-                    content=system_prompt,
-                ),
-            )
+            messages.insert(0, ChatMessage(role=MessageRole.SYSTEM, content=system_prompt))
 
         # Load persisted history when we have an effective conversation id.
         # Use the service-side `conversation_id` (which may be generated by
@@ -1740,6 +1908,22 @@ class ChatService:
                     filtered.append(pm)
                 persisted_history = tuple(filtered)
 
+            # Remove any existing system messages from persisted history to
+            # guarantee exactly one system message (the resolved one).
+            cleaned: list[ChatMessage] = []
+            for pm in persisted_history:
+                try:
+                    role_val = getattr(pm.role, "value", str(pm.role)).lower()
+                except Exception:
+                    role_val = str(getattr(pm, "role", "")).lower()
+
+                if role_val == str(MessageRole.SYSTEM.value).lower() or role_val == "system":
+                    # skip persisted system messages
+                    continue
+                cleaned.append(pm)
+
+            persisted_history = tuple(cleaned)
+
             messages.extend(persisted_history)
 
         messages.extend(
@@ -1771,6 +1955,12 @@ class ChatService:
             "user_id": context.user_id,
             "session_id": (context.session_id),
         }
+
+        # Final invariants check
+        try:
+            self._assert_generation_message_invariants(messages)
+        except ChatServiceError:
+            raise
 
         return GenerationRequest(
             model=model_id,
@@ -2013,6 +2203,22 @@ class ChatService:
         )
 
         return ()
+
+    @staticmethod
+    def _assert_generation_message_invariants(messages: Sequence[ChatMessage]) -> None:
+        # At most one system message
+        system_indexes = [i for i, m in enumerate(messages) if getattr(m.role, "value", str(m.role)).lower() == "system" or getattr(m, "role", None) == "system"]
+        if len(system_indexes) > 1:
+            raise ChatServiceError("Mehr als eine Systemnachricht in den Generation-Messages gefunden.")
+
+        if system_indexes:
+            if system_indexes[0] != 0:
+                raise ChatServiceError("Systemnachricht muss an Index 0 stehen.")
+
+            first_system = messages[0]
+            if not getattr(first_system, "content", "") or not str(getattr(first_system, "content", "")).strip():
+                raise ChatServiceError("Leere Systemnachricht ist nicht zulässig.")
+
 
     @staticmethod
     def _stream_event_payload(

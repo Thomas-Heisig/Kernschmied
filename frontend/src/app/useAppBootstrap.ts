@@ -27,8 +27,9 @@ export function useAppBootstrap() {
           type: 'chat',
           name: 'Neuer Knoten',
           parent_id: payloadOrParentId || null,
-          actions: [],
-          children: [],
+          // default empty policy/config
+          tool_policy: {},
+          config_overrides: {},
           metadata: {},
         } as unknown as HierarchyNodeCreate;
       } else {
