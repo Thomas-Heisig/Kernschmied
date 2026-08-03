@@ -1,28 +1,28 @@
 {
-	"openapi": "3.1.0",
-	"info": {
-		"title": "Kernschmied",
-		"description": "Modulare, schema-gesteuerte Chat-Anwendung mit versionierten API-Verträgen.",
-		"version": "0.1.0"
-	},
-	"paths": {
-		"/api/v1/health": {
-			"get": {
-				"tags": ["System / Health"],
-				"summary": "Health Check",
-				"operationId": "health_api_v1_health_get",
-				"responses": {
-					"200": {
-						"description": "Successful Response",
-						"content": {
-							"application/json": {
-								"schema": { "$ref": "#/components/schemas/HealthResponse" }
-							}
-						}
-					}
-				}
-			}
-		},
-		"...": "(truncated)"
-	}
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kernschmied",
+    "description": "Modulare, schema-gesteuerte Chat-Anwendung mit versionierten API-Verträgen.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": ["System / Health"],
+        "summary": "Health Check",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HealthResponse" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "...": "(truncated)"
+  }
 }

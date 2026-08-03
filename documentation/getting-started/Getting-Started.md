@@ -51,27 +51,27 @@ These principles allow the platform to evolve without requiring architectural re
 ## Architecture at a Glance
 
 ```text
-		  +-----------------------+
-		  |      React UI         |
-		  | Generic Components    |
-		  +-----------+-----------+
-				|
-			REST / SSE
-				|
-		  +-----------v-----------+
-		  |      FastAPI API      |
-		  | Contracts & Services  |
-		  +-----------+-----------+
-				|
-		  +-----------v-----------+
-		  | Business Services     |
-		  | Registries            |
-		  | Configuration         |
-		  +-----------+-----------+
-				|
-		  +-----------v-----------+
-		  | SQLite / PostgreSQL   |
-		  +-----------------------+
+    +-----------------------+
+    |      React UI         |
+    | Generic Components    |
+    +-----------+-----------+
+    |
+   REST / SSE
+    |
+    +-----------v-----------+
+    |      FastAPI API      |
+    | Contracts & Services  |
+    +-----------+-----------+
+    |
+    +-----------v-----------+
+    | Business Services     |
+    | Registries            |
+    | Configuration         |
+    +-----------+-----------+
+    |
+    +-----------v-----------+
+    | SQLite / PostgreSQL   |
+    +-----------------------+
 
 ```
 

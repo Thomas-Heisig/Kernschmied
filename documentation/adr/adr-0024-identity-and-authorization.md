@@ -10,7 +10,7 @@ Authors: Kernschmied Architecture Team
 
 This ADR defines the Identity & Authorization architecture for Kernschmied. It establishes the canonical models, runtime flow, registries, contracts, APIs, and operational requirements for an enterprise-grade Identity and Access Management (IAM) layer suitable for a multi-tenant, hierarchical platform.
 
-This document intentionally scopes *authentication*, *identity management*, *authorization (decisioning)*, *auditing* and the *runtime effective security context*. Transport-level security and deployment hardening remain in ADR-0004.
+This document intentionally scopes _authentication_, _identity management_, _authorization (decisioning)_, _auditing_ and the _runtime effective security context_. Transport-level security and deployment hardening remain in ADR-0004.
 
 ## Motivation / Problem
 
@@ -324,7 +324,7 @@ Diagram (ASCII):
 Client -> Ingress Auth Middleware -> Identity Registry
                                -> Build ESC -> PermissionEvaluator -> Decision
                                                       -> Policy Engine, Role Lookup, Group Lookup
-``` 
+```
 
 ## Permission Evaluation Engine
 
@@ -434,14 +434,14 @@ Admin UI must provide safe policy authoring with test harness, role and permissi
 
 ## Appendix: Example Workflows
 
-1) Resource delete request (high level):
+1. Resource delete request (high level):
 
 - Authenticate -> AuthenticationResult
 - Build ESC for `project:proj-456`
 - Evaluate `resource.delete` -> Decision {allowed: false, reason: "policy:protect-resources"}
 - Return 403 and write audit entry
 
-2) Policy rollout:
+1. Policy rollout:
 
 - Author policy in Admin UI
 - Run tests against sample ESCs
@@ -451,4 +451,3 @@ Admin UI must provide safe policy authoring with test harness, role and permissi
 ---
 
 This ADR is intentionally prescriptive: roles are permission-bundles only, policies and permissions are the source of dynamic behavior, and all decisions are audited and versioned. The next step is to convert this ADR into a concrete implementation plan with DB schemas, API OpenAPI fragments, and a minimal PermissionEvaluator reference implementation.
-

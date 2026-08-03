@@ -15,22 +15,22 @@ Ziel ist ein maximal vorbereiteter, aber zunächst nur minimal implementierter V
 
 Die Architektur soll langfristig folgende Fähigkeiten tragen:
 
-* generische Hierarchie
-* Chat als Intentions- und Kommunikationszentrum
-* serverseitige Kontextauflösung
-* Prompt-Vererbung
-* dynamische Ressourcentypen
-* dynamische Knotentypen
-* dynamisch konfigurierte Widgets
-* generische Aktionen
-* semantische Konzepte und sprachliche Aliase
-* geführte Workflows
-* Mandantenfähigkeit
-* Berechtigungen
-* Datenschutzprofile
-* Revisionen und Cache-Invalidierung
-* System- und Integrationsereignisse
-* sichere Erweiterung im laufenden Betrieb
+- generische Hierarchie
+- Chat als Intentions- und Kommunikationszentrum
+- serverseitige Kontextauflösung
+- Prompt-Vererbung
+- dynamische Ressourcentypen
+- dynamische Knotentypen
+- dynamisch konfigurierte Widgets
+- generische Aktionen
+- semantische Konzepte und sprachliche Aliase
+- geführte Workflows
+- Mandantenfähigkeit
+- Berechtigungen
+- Datenschutzprofile
+- Revisionen und Cache-Invalidierung
+- System- und Integrationsereignisse
+- sichere Erweiterung im laufenden Betrieb
 
 Dabei gilt:
 
@@ -44,10 +44,10 @@ Der Vertragsrahmen soll die langfristigen Erweiterungspunkte bereits strukturell
 
 Kernschmied ist:
 
-* dynamisch konfigurierbar
-* dynamisch strukturierbar
-* dynamisch erweiterbar
-* aber nicht unkontrolliert dynamisch ausführbar
+- dynamisch konfigurierbar
+- dynamisch strukturierbar
+- dynamisch erweiterbar
+- aber nicht unkontrolliert dynamisch ausführbar
 
 Die wichtigste Sicherheitsgrenze lautet:
 
@@ -81,12 +81,12 @@ Statisch oder kontrolliert registriert:
 
 Kernschmied lädt niemals beliebigen ausführbaren Python-, JavaScript- oder React-Code aus:
 
-* Datenbankfeldern
-* Konfigurationsdateien
-* Manifestwerten
-* Benutzerinhalten
-* externen URLs
-* nicht kontrollierten Verzeichnissen
+- Datenbankfeldern
+- Konfigurationsdateien
+- Manifestwerten
+- Benutzerinhalten
+- externen URLs
+- nicht kontrollierten Verzeichnissen
 
 ---
 
@@ -96,29 +96,29 @@ Der technische Kern kennt keine fest eingebauten Fachrichtungen.
 
 Nicht fest im Kern verankert werden:
 
-* Firma
-* Handwerk
-* Schule
-* Verein
-* Familie
-* Kundenverwaltung
-* Angebote
-* Baustellen
-* Mannschaften
-* Softwareentwicklung
+- Firma
+- Handwerk
+- Schule
+- Verein
+- Familie
+- Kundenverwaltung
+- Angebote
+- Baustellen
+- Mannschaften
+- Softwareentwicklung
 
 Diese Bedeutungen entstehen durch:
 
-* Prompts
-* dynamische Ressourcenschemas
-* semantische Konzepte
-* Aliase
-* Vorlagenpakete
-* Widget-Konfigurationen
-* Hierarchiestrukturen
-* Beziehungen
-* Daten
-* Berechtigungen
+- Prompts
+- dynamische Ressourcenschemas
+- semantische Konzepte
+- Aliase
+- Vorlagenpakete
+- Widget-Konfigurationen
+- Hierarchiestrukturen
+- Beziehungen
+- Daten
+- Berechtigungen
 
 Beispiel:
 
@@ -155,17 +155,17 @@ Der Chat bleibt das Intentions- und Kommunikationszentrum.
 
 Der Chat ist zuständig für:
 
-* Nutzerabsicht
-* natürliche Sprache
-* Kommunikation
-* Interpretation
-* Zusammenfassung
-* Aktionsvorschläge
-* Bestätigungen
-* Fehlerdarstellung
-* Ergebnisprotokoll
-* Nachvollziehbarkeit
-* Austausch mit anderen Teilnehmern
+- Nutzerabsicht
+- natürliche Sprache
+- Kommunikation
+- Interpretation
+- Zusammenfassung
+- Aktionsvorschläge
+- Bestätigungen
+- Fehlerdarstellung
+- Ergebnisprotokoll
+- Nachvollziehbarkeit
+- Austausch mit anderen Teilnehmern
 
 Widgets bleiben ergänzende strukturierte Arbeitsflächen.
 
@@ -182,17 +182,17 @@ Darf die Aktion ausgeführt werden und wie wird sie korrekt verarbeitet?
 
 Widgets dürfen:
 
-* Daten anzeigen
-* Aktionen auslösen
-* strukturierte Bearbeitung ermöglichen
+- Daten anzeigen
+- Aktionen auslösen
+- strukturierte Bearbeitung ermöglichen
 
 Widgets dürfen jedoch niemals:
 
-* Autorisierung umgehen
-* unregistrierte Aktionen ausführen
-* freie URLs aufrufen
-* eigene Geschäftslogik aus Backenddaten laden
-* beliebigen Code ausführen
+- Autorisierung umgehen
+- unregistrierte Aktionen ausführen
+- freie URLs aufrufen
+- eigene Geschäftslogik aus Backenddaten laden
+- beliebigen Code ausführen
 
 ---
 
@@ -202,11 +202,11 @@ Widgets dürfen jedoch niemals:
 
 Öffentliche Verträge werden:
 
-* explizit benannt
-* versioniert
-* getestet
-* dokumentiert
-* nur bewusst inkompatibel geändert
+- explizit benannt
+- versioniert
+- getestet
+- dokumentiert
+- nur bewusst inkompatibel geändert
 
 ## 5.2 Backend als öffentliche Vertragsquelle
 
@@ -220,12 +220,12 @@ TypeScript-Typen allein reichen nicht aus.
 
 Alle Daten aus:
 
-* REST
-* SSE
-* Bootstrap
-* dynamischen Definitionen
-* Registry-Endpunkten
-* UI-Schemas
+- REST
+- SSE
+- Bootstrap
+- dynamischen Definitionen
+- Registry-Endpunkten
+- UI-Schemas
 
 werden als `unknown` behandelt und vor der Übernahme validiert.
 
@@ -233,19 +233,19 @@ werden als `unknown` behandelt und vor der Übernahme validiert.
 
 Das Frontend:
 
-* rendert bekannte Komponenten
-* validiert Transportdaten
-* verwaltet lokalen UI-Zustand
-* sendet registrierte Aktionen
+- rendert bekannte Komponenten
+- validiert Transportdaten
+- verwaltet lokalen UI-Zustand
+- sendet registrierte Aktionen
 
 Das Frontend entscheidet nicht über:
 
-* Berechtigungen
-* fachliche Gültigkeit
-* Sicherheitsklassen
-* Mandantenzugehörigkeit
-* Toolfreigabe
-* Actionfreigabe
+- Berechtigungen
+- fachliche Gültigkeit
+- Sicherheitsklassen
+- Mandantenzugehörigkeit
+- Toolfreigabe
+- Actionfreigabe
 
 ## 5.5 Eine Laufzeitwahrheit
 
@@ -253,10 +253,10 @@ Für jede Domäne darf es nur eine verbindliche Laufzeitquelle geben.
 
 Insbesondere:
 
-* keine parallele In-Memory- und SQL-Hierarchie als Wahrheitsquelle
-* keine voneinander abweichenden Frontend- und Backend-Knotentypregeln
-* keine doppelt gepflegten Promptauflösungen
-* keine getrennten Actiondefinitionen ohne Revision und Herkunft
+- keine parallele In-Memory- und SQL-Hierarchie als Wahrheitsquelle
+- keine voneinander abweichenden Frontend- und Backend-Knotentypregeln
+- keine doppelt gepflegten Promptauflösungen
+- keine getrennten Actiondefinitionen ohne Revision und Herkunft
 
 ---
 
@@ -359,8 +359,8 @@ wäre unklar.
 
 Daher gilt:
 
-* `status` beschreibt den Lifecycle.
-* `enabled` beschreibt eine zusätzliche betriebliche Sperre nur dort, wo dies wirklich erforderlich ist.
+- `status` beschreibt den Lifecycle.
+- `enabled` beschreibt eine zusätzliche betriebliche Sperre nur dort, wo dies wirklich erforderlich ist.
 
 Für allgemeine Registry-Einträge sollte bevorzugt ausschließlich `status` verwendet werden.
 
@@ -438,10 +438,10 @@ ist für Backend-Pydantic-Modelle nicht optimal.
 
 Empfehlung:
 
-* öffentliche Mutationsanfragen: `extra="forbid"`
-* öffentliche Antwortmodelle: ebenfalls `extra="forbid"`
-* interne Datenbank- oder Adaptermodelle: separat behandeln
-* Frontend-Antwortvalidatoren: kontrolliert vorwärtskompatibel
+- öffentliche Mutationsanfragen: `extra="forbid"`
+- öffentliche Antwortmodelle: ebenfalls `extra="forbid"`
+- interne Datenbank- oder Adaptermodelle: separat behandeln
+- Frontend-Antwortvalidatoren: kontrolliert vorwärtskompatibel
 
 Das Backend sollte nicht versehentlich zusätzliche interne Felder serialisieren.
 
@@ -453,9 +453,9 @@ Vorwärtskompatibilität wird im Frontend dadurch erreicht, dass Antwortvalidato
 
 Im Frontend gilt:
 
-* Request-Schemas: `.strict()`
-* Response-Schemas: bekannte Felder prüfen, zusätzliche Felder kontrolliert akzeptieren
-* diskriminierte Typen: unbekannte Varianten nicht unkontrolliert übernehmen
+- Request-Schemas: `.strict()`
+- Response-Schemas: bekannte Felder prüfen, zusätzliche Felder kontrolliert akzeptieren
+- diskriminierte Typen: unbekannte Varianten nicht unkontrolliert übernehmen
 
 Beispiel:
 
@@ -515,10 +515,10 @@ capabilities: list[str] = Field(default_factory=list)
 
 Das gilt für:
 
-* Listen
-* Dictionaries
-* verschachtelte Modelle
-* Standardkonfigurationen
+- Listen
+- Dictionaries
+- verschachtelte Modelle
+- Standardkonfigurationen
 
 ---
 
@@ -588,11 +588,11 @@ Bestehende Vertragsdateien werden nicht blind ersetzt.
 
 Vor jeder Verschiebung wird geprüft:
 
-* Welche Router importieren den Typ?
-* Welche Services verwenden ihn?
-* Welche Tests hängen davon ab?
-* Ist er bereits in OpenAPI sichtbar?
-* Besteht ein öffentlich genutzter Name?
+- Welche Router importieren den Typ?
+- Welche Services verwenden ihn?
+- Welche Tests hängen davon ab?
+- Ist er bereits in OpenAPI sichtbar?
+- Besteht ein öffentlich genutzter Name?
 
 Bei Verschiebungen werden vorübergehend kompatible Re-Exports verwendet.
 
@@ -722,37 +722,37 @@ Erstmals persistiertes Objekt: Revision 1
 
 Beschreiben HTTP und SSE:
 
-* Requests
-* Responses
-* Pagination
-* Fehler
-* Event-Envelope
-* Request-ID
-* Revisionen
+- Requests
+- Responses
+- Pagination
+- Fehler
+- Event-Envelope
+- Request-ID
+- Revisionen
 
 ## 11.2 Domainverträge
 
 Beschreiben fachneutrale Kernobjekte:
 
-* Hierarchieknoten
-* Chat
-* Nachricht
-* Ressource
-* Widget-Instanz
-* Action-Definition
-* Promptzuordnung
-* Registry-Eintrag
+- Hierarchieknoten
+- Chat
+- Nachricht
+- Ressource
+- Widget-Instanz
+- Action-Definition
+- Promptzuordnung
+- Registry-Eintrag
 
 ## 11.3 UI-Verträge
 
 Beschreiben Darstellung:
 
-* Komponenten
-* Felder
-* Layout
-* Widget-Präsentation
-* Action-Präsentation
-* Formulare
+- Komponenten
+- Felder
+- Layout
+- Widget-Präsentation
+- Action-Präsentation
+- Formulare
 
 Ein Domainobjekt enthält keine React-spezifischen Eigenschaften.
 
@@ -776,12 +776,12 @@ System
 
 Dabei gilt:
 
-* Tenant ist eine Sicherheits- und Isolationsgrenze.
-* Tenant ist nicht der Hierarchie-Root.
-* Der Hierarchie-Root ist nicht auswählbar.
-* Der Benutzerknoten ist ein fachlicher Kontextknoten.
-* Ein Benutzer kann mehreren Tenants angehören.
-* Die Beziehung wird über Membership modelliert.
+- Tenant ist eine Sicherheits- und Isolationsgrenze.
+- Tenant ist nicht der Hierarchie-Root.
+- Der Hierarchie-Root ist nicht auswählbar.
+- Der Benutzerknoten ist ein fachlicher Kontextknoten.
+- Ein Benutzer kann mehreren Tenants angehören.
+- Die Beziehung wird über Membership modelliert.
 
 ```text
 User
@@ -833,15 +833,8 @@ Beispiel:
   "node_type": "collection",
   "definition_version": "1.0",
   "label": "Sammlung",
-  "allowed_parent_types": [
-    "workspace",
-    "project",
-    "chat"
-  ],
-  "allowed_child_types": [
-    "collection",
-    "chat"
-  ],
+  "allowed_parent_types": ["workspace", "project", "chat"],
+  "allowed_child_types": ["collection", "chat"],
   "selectable": true,
   "prompt_capable": true,
   "widget_capable": true,
@@ -855,10 +848,10 @@ Beispiel:
 
 Die Definition darf nur bekannte:
 
-* Icons
-* Komponenten
-* Aktionen
-* Fähigkeiten
+- Icons
+- Komponenten
+- Aktionen
+- Fähigkeiten
 
 referenzieren.
 
@@ -887,15 +880,15 @@ updated_at
 
 ## 13.4 Regeln
 
-* Der Root kann nicht normal erstellt oder verschoben werden.
-* Ein Knoten kann nicht unter sich selbst verschoben werden.
-* Zyklen sind verboten.
-* Parent- und Child-Typ müssen laut aktiver Definition kompatibel sein.
-* Tenant-Grenzen dürfen nicht überschritten werden.
-* Chats dürfen Chats als Kinder besitzen.
-* `node_type` wird nach Erstellung nicht frei geändert.
-* Verschieben erfolgt über eine eigene Mutation.
-* Reorder und Move müssen getrennt oder eindeutig dokumentiert sein.
+- Der Root kann nicht normal erstellt oder verschoben werden.
+- Ein Knoten kann nicht unter sich selbst verschoben werden.
+- Zyklen sind verboten.
+- Parent- und Child-Typ müssen laut aktiver Definition kompatibel sein.
+- Tenant-Grenzen dürfen nicht überschritten werden.
+- Chats dürfen Chats als Kinder besitzen.
+- `node_type` wird nach Erstellung nicht frei geändert.
+- Verschieben erfolgt über eine eigene Mutation.
+- Reorder und Move müssen getrennt oder eindeutig dokumentiert sein.
 
 ---
 
@@ -923,10 +916,10 @@ Die IDs dürfen trotzdem nicht stillschweigend gleichgesetzt werden.
 
 Dies hält spätere Möglichkeiten offen:
 
-* temporäre Conversations
-* mehrere Kommunikationskanäle
-* archivierte Conversation-Versionen
-* Chatcontainer mit mehreren Threads
+- temporäre Conversations
+- mehrere Kommunikationskanäle
+- archivierte Conversation-Versionen
+- Chatcontainer mit mehreren Threads
 
 ---
 
@@ -967,12 +960,12 @@ capabilities
 
 Nicht ausgegeben werden:
 
-* vollständige Sicherheitsprompts
-* interne Policytexte
-* Secretreferenzen
-* ungefilterte Rollenauflösung
-* interne Modellrouting-Regeln
-* nicht öffentliche Toolkonfigurationen
+- vollständige Sicherheitsprompts
+- interne Policytexte
+- Secretreferenzen
+- ungefilterte Rollenauflösung
+- interne Modellrouting-Regeln
+- nicht öffentliche Toolkonfigurationen
 
 ---
 
@@ -984,10 +977,10 @@ Veränderbare Objekte besitzen eine monotone Revision.
 
 Verwendung:
 
-* Optimistic Locking
-* Konflikterkennung
-* Cache-Invalidierung
-* Auditbezug
+- Optimistic Locking
+- Konflikterkennung
+- Cache-Invalidierung
+- Auditbezug
 
 ## 16.2 Registry-Revisionen
 
@@ -1087,17 +1080,17 @@ rejected
 
 Prompts dürfen:
 
-* Verhalten erklären
-* fachlichen Kontext geben
-* Sprache und Arbeitsweise beeinflussen
+- Verhalten erklären
+- fachlichen Kontext geben
+- Sprache und Arbeitsweise beeinflussen
 
 Prompts dürfen nicht:
 
-* Berechtigungen vergeben
-* Sicherheitsregeln entfernen
-* Toolfreigaben erzwingen
-* Datenschutzprofile überschreiben
-* unbekannte Aktionen registrieren
+- Berechtigungen vergeben
+- Sicherheitsregeln entfernen
+- Toolfreigaben erzwingen
+- Datenschutzprofile überschreiben
+- unbekannte Aktionen registrieren
 
 ---
 
@@ -1294,15 +1287,15 @@ class DefinitionActivationResult(PublicResponseModel):
 
 Aktivierung erfordert:
 
-* gültige Definition
-* passende Berechtigung
-* aktuelle Revision
-* erfüllte Abhängigkeiten
-* keine Sicherheitsverletzung
-* Audit-Eintrag
-* Registry-Revisionssteigerung
-* Cache-Invalidierung
-* Ereignis
+- gültige Definition
+- passende Berechtigung
+- aktuelle Revision
+- erfüllte Abhängigkeiten
+- keine Sicherheitsverletzung
+- Audit-Eintrag
+- Registry-Revisionssteigerung
+- Cache-Invalidierung
+- Ereignis
 
 ---
 
@@ -1319,10 +1312,7 @@ Beispiel:
   "display_name": "Notiz",
   "data_schema": {
     "type": "object",
-    "required": [
-      "title",
-      "content"
-    ],
+    "required": ["title", "content"],
     "properties": {
       "title": {
         "type": "string",
@@ -1366,12 +1356,12 @@ resource.unlink
 
 Jede Mutation validiert gegen:
 
-* aktive Definition
-* konkrete Definitionversion
-* Tenant
-* Berechtigung
-* Datenklassifikation
-* aktuelle Ressourcenrevision
+- aktive Definition
+- konkrete Definitionversion
+- Tenant
+- Berechtigung
+- Datenklassifikation
+- aktuelle Ressourcenrevision
 
 ---
 
@@ -1391,10 +1381,10 @@ Bestehende Ressourcen werden durch eine neue Definition nicht automatisch verän
 
 Beispiele:
 
-* optionales Feld ergänzt
-* zusätzliche Anzeigeinformation
-* neuer Alias
-* neue Sortieroption
+- optionales Feld ergänzt
+- zusätzliche Anzeigeinformation
+- neuer Alias
+- neue Sortieroption
 
 Kann eine neue Registry-Revision derselben Definitionversion sein.
 
@@ -1402,17 +1392,17 @@ Kann eine neue Registry-Revision derselben Definitionversion sein.
 
 Beispiele:
 
-* Feldtyp geändert
-* Pflichtfeld ergänzt
-* Feld entfernt
-* Semantik verändert
+- Feldtyp geändert
+- Pflichtfeld ergänzt
+- Feld entfernt
+- Semantik verändert
 
 Erfordert:
 
-* neue Definitionversion
-* Migrationsstrategie
-* Prüfung bestehender Instanzen
-* gegebenenfalls parallele Unterstützung mehrerer Versionen
+- neue Definitionversion
+- Migrationsstrategie
+- Prüfung bestehender Instanzen
+- gegebenenfalls parallele Unterstützung mehrerer Versionen
 
 ---
 
@@ -1473,22 +1463,22 @@ Instanz verlangt: structured_edit
 
 Dynamisch:
 
-* Filter
-* Spalten
-* Sortierung
-* Titel
-* Layout
-* Datenquelle
-* Zuordnung
-* bekannte Aktionen
+- Filter
+- Spalten
+- Sortierung
+- Titel
+- Layout
+- Datenquelle
+- Zuordnung
+- bekannte Aktionen
 
 Nicht dynamisch:
 
-* React-Komponente
-* JavaScript
-* Renderfunktion
-* freies HTML
-* beliebige API-Ziele
+- React-Komponente
+- JavaScript
+- Renderfunktion
+- freies HTML
+- beliebige API-Ziele
 
 ---
 
@@ -1570,20 +1560,16 @@ Ein Konzept übersetzt Nutzersprache in eine generische Action.
   "defaults": {
     "classification": "internal"
   },
-  "aliases": [
-    "Notiz erstellen",
-    "neue Notiz",
-    "/notiz"
-  ]
+  "aliases": ["Notiz erstellen", "neue Notiz", "/notiz"]
 }
 ```
 
 Aliase können entstehen durch:
 
-* Administration
-* berechtigte Benutzer
-* Vorlagenpakete
-* bestätigte Lernvorschläge
+- Administration
+- berechtigte Benutzer
+- Vorlagenpakete
+- bestätigte Lernvorschläge
 
 Automatisch erkannte Aliase werden niemals ungefragt aktiviert.
 
@@ -1609,12 +1595,12 @@ cancel
 
 Nicht zulässig:
 
-* Python-Code
-* JavaScript-Code
-* `eval`
-* Shell-Kommandos
-* freie Funktionsnamen
-* nicht registrierte Action-Handler
+- Python-Code
+- JavaScript-Code
+- `eval`
+- Shell-Kommandos
+- freie Funktionsnamen
+- nicht registrierte Action-Handler
 
 Workflowdefinitionen benötigen:
 
@@ -1632,9 +1618,9 @@ revision
 
 Schleifen müssen:
 
-* explizit erlaubt
-* begrenzt
-* validiert
+- explizit erlaubt
+- begrenzt
+- validiert
 
 sein.
 
@@ -1712,11 +1698,11 @@ Secrets werden ausschließlich über sichere Referenzen eingebunden.
 
 Secrets dürfen nicht enthalten sein in:
 
-* Registry-Definition
-* Prompt
-* Widget-Konfiguration
-* Auditdetails
-* Frontend-Antworten
+- Registry-Definition
+- Prompt
+- Widget-Konfiguration
+- Auditdetails
+- Frontend-Antworten
 
 ---
 
@@ -1758,10 +1744,10 @@ GET /api/v1/concepts
 
 Ein vollständig generischer Registry-Endpunkt ist flexibel, aber schwerer:
 
-* in OpenAPI abzubilden
-* im Frontend zu validieren
-* verständlich zu dokumentieren
-* granular zu autorisieren
+- in OpenAPI abzubilden
+- im Frontend zu validieren
+- verständlich zu dokumentieren
+- granular zu autorisieren
 
 Daher gilt:
 
@@ -1773,11 +1759,11 @@ Für Lifecycle, Speicherung, Revision und Aktivierung.
 
 Für:
 
-* NodeTypeDefinition
-* ResourceTypeDefinition
-* ConceptDefinition
-* WorkflowDefinition
-* PromptDefinition
+- NodeTypeDefinition
+- ResourceTypeDefinition
+- ConceptDefinition
+- WorkflowDefinition
+- PromptDefinition
 
 ## Optionale typisierte API-Fassaden
 
@@ -1791,11 +1777,11 @@ Dadurch wird kein untypisierter „Alles-Endpunkt“ zur einzigen öffentlichen 
 
 Bootstrap liefert nur:
 
-* aktivierte Fähigkeiten
-* Versionen
-* Featurekennungen
-* Registry-Revisionen
-* Endpointschlüssel
+- aktivierte Fähigkeiten
+- Versionen
+- Featurekennungen
+- Registry-Revisionen
+- Endpointschlüssel
 
 Beispiel:
 
@@ -1805,11 +1791,7 @@ Beispiel:
     "dynamic_resource_types": {
       "enabled": true,
       "version": "1.0",
-      "features": [
-        "draft",
-        "validate",
-        "activate"
-      ]
+      "features": ["draft", "validate", "activate"]
     },
     "dynamic_workflows": {
       "enabled": false,
@@ -1921,16 +1903,16 @@ Keine globalen Singleton-Caches ohne Invalidierungsweg.
 
 MVP:
 
-* Registry-Revision in der Datenbank
-* lokale Cache-Schlüssel enthalten Revision
-* kontrollierte Revisionsprüfung
-* kein stiller dauerhafter Cache
+- Registry-Revision in der Datenbank
+- lokale Cache-Schlüssel enthalten Revision
+- kontrollierte Revisionsprüfung
+- kein stiller dauerhafter Cache
 
 Später:
 
-* PostgreSQL `LISTEN/NOTIFY`
-* Redis Pub/Sub
-* anderer verteilter Invalidierungsmechanismus
+- PostgreSQL `LISTEN/NOTIFY`
+- Redis Pub/Sub
+- anderer verteilter Invalidierungsmechanismus
 
 Die Verträge dürfen nicht von einer konkreten Cache-Technologie abhängen.
 
@@ -1978,9 +1960,9 @@ Das Frontend verarbeitet nur bekannte Ereignisse aktiv.
 
 Unbekannte Ereignisse:
 
-* zerstören den Stream nicht
-* werden optional protokolliert
-* lösen keine unbekannte Aktion aus
+- zerstören den Stream nicht
+- werden optional protokolliert
+- lösen keine unbekannte Aktion aus
 
 ---
 
@@ -2004,10 +1986,7 @@ Das Backend kann konfigurieren:
   "widget_type": "resource_table",
   "config": {
     "resource_type": "note",
-    "columns": [
-      "title",
-      "updated_at"
-    ]
+    "columns": ["title", "updated_at"]
   }
 }
 ```
@@ -2028,19 +2007,19 @@ Unbekannte Typen werden sichtbar als nicht unterstützt dargestellt.
 
 Mindestens folgende Response-Verträge benötigen Validatoren:
 
-* Bootstrap
-* Hierarchieknoten
-* Knotentypdefinition
-* Effective Context
-* Registry-Eintrag
-* DefinitionValidationResult
-* ResourceTypeDefinition
-* ResourceRead
-* WidgetInstance
-* ActionDefinition
-* ConceptDefinition
-* EventEnvelope
-* ApiErrorResponse
+- Bootstrap
+- Hierarchieknoten
+- Knotentypdefinition
+- Effective Context
+- Registry-Eintrag
+- DefinitionValidationResult
+- ResourceTypeDefinition
+- ResourceRead
+- WidgetInstance
+- ActionDefinition
+- ConceptDefinition
+- EventEnvelope
+- ApiErrorResponse
 
 Keine ungeprüften Daten werden in den Store übernommen.
 
@@ -2048,11 +2027,11 @@ Keine ungeprüften Daten werden in den Store übernommen.
 
 Jeder Ladeprozess muss berücksichtigen:
 
-* AbortSignal
-* Request-ID
-* Revision
-* aktuelle Auswahl
-* Reihenfolge asynchroner Antworten
+- AbortSignal
+- Request-ID
+- Revision
+- aktuelle Auswahl
+- Reihenfolge asynchroner Antworten
 
 ---
 
@@ -2124,12 +2103,12 @@ activated_at
 
 Wichtige Constraints:
 
-* eindeutige aktive Definition pro Tenant, Typ, Schlüssel und Version
-* Revision nicht negativ
-* Tenant-Grenzen
-* Statuswerte begrenzt
-* JSON-Inhalt validiert vor Aktivierung
-* keine Secrets in `definition_json`
+- eindeutige aktive Definition pro Tenant, Typ, Schlüssel und Version
+- Revision nicht negativ
+- Tenant-Grenzen
+- Statuswerte begrenzt
+- JSON-Inhalt validiert vor Aktivierung
+- keine Secrets in `definition_json`
 
 ---
 
@@ -2137,36 +2116,36 @@ Wichtige Constraints:
 
 Immer auditieren:
 
-* Definition erstellt
-* Definition aktualisiert
-* Validierung ausgeführt
-* Aktivierung
-* Deaktivierung
-* Deprecation
-* Archivierung
-* fehlgeschlagene Aktivierung
-* Berechtigungsfehler
-* Paketimport
+- Definition erstellt
+- Definition aktualisiert
+- Validierung ausgeführt
+- Aktivierung
+- Deaktivierung
+- Deprecation
+- Archivierung
+- fehlgeschlagene Aktivierung
+- Berechtigungsfehler
+- Paketimport
 
 Auditdaten enthalten:
 
-* Akteur
-* Tenant
-* Registry-Typ
-* Eintrags-ID
-* alte Revision
-* neue Revision
-* Statuswechsel
-* Request-ID
-* Zeitstempel
-* Grund
+- Akteur
+- Tenant
+- Registry-Typ
+- Eintrags-ID
+- alte Revision
+- neue Revision
+- Statuswechsel
+- Request-ID
+- Zeitstempel
+- Grund
 
 Auditdaten enthalten nicht ungeprüft:
 
-* vollständige Prompts
-* Secrets
-* personenbezogene Inhalte
-* komplette große Definitionen
+- vollständige Prompts
+- Secrets
+- personenbezogene Inhalte
+- komplette große Definitionen
 
 Stattdessen können Hash, Diff-Metadaten oder sichere Referenzen verwendet werden.
 
@@ -2227,13 +2206,13 @@ Folgende Regeln sind unveränderlich:
 
 ## Phase 0 – Bestandsaufnahme
 
-* bestehende Backend-Verträge inventarisieren
-* Router-lokale Modelle erfassen
-* bestehende Frontend-Typen erfassen
-* SSE-Verträge dokumentieren
-* OpenAPI prüfen
-* Importabhängigkeiten erfassen
-* doppelte Typen identifizieren
+- bestehende Backend-Verträge inventarisieren
+- Router-lokale Modelle erfassen
+- bestehende Frontend-Typen erfassen
+- SSE-Verträge dokumentieren
+- OpenAPI prüfen
+- Importabhängigkeiten erfassen
+- doppelte Typen identifizieren
 
 Ergebnis:
 
@@ -2245,16 +2224,16 @@ documentation/architecture/contracts-inventory.md
 
 ## Phase 1 – Gemeinsame Basistypen
 
-* `base.py`
-* `common.py`
-* `errors.py`
-* `revisions.py`
-* stabile ConfigDict-Policies
-* JSON-Wert
-* IDs
-* Revision
-* Zeitstempel
-* Request-ID
+- `base.py`
+- `common.py`
+- `errors.py`
+- `revisions.py`
+- stabile ConfigDict-Policies
+- JSON-Wert
+- IDs
+- Revision
+- Zeitstempel
+- Request-ID
 
 Noch keine Laufzeitfunktion ändern.
 
@@ -2280,17 +2259,17 @@ Bestehende öffentliche Namen über Re-Exports kompatibel halten.
 
 Anlegen:
 
-* context
-* registry
-* registry_validation
-* resources
-* widgets
-* actions
-* concepts
-* workflows
-* capabilities
-* tenancy
-* packages
+- context
+- registry
+- registry_validation
+- resources
+- widgets
+- actions
+- concepts
+- workflows
+- capabilities
+- tenancy
+- packages
 
 Noch keine vollständige Laufzeitimplementierung.
 
@@ -2298,12 +2277,12 @@ Noch keine vollständige Laufzeitimplementierung.
 
 ## Phase 4 – Frontend-Spiegelung
 
-* TypeScript-Verträge
-* Zod-Validatoren
-* API-Parsing
-* Fehlerbehandlung
-* unbekannte Typen
-* Revisionsprüfung
+- TypeScript-Verträge
+- Zod-Validatoren
+- API-Parsing
+- Fehlerbehandlung
+- unbekannte Typen
+- Revisionsprüfung
 
 ---
 
@@ -2311,16 +2290,16 @@ Noch keine vollständige Laufzeitimplementierung.
 
 Minimal implementieren:
 
-* systemseitige Registry-Definition
-* Status `active`
-* Resource-Type-Revision
-* Registry-Leseendpunkt
-* ResourceCreate
-* ResourceRead
-* Schema-Validierung
-* generische `resource.create`-Action
-* Audit
-* Tests
+- systemseitige Registry-Definition
+- Status `active`
+- Resource-Type-Revision
+- Registry-Leseendpunkt
+- ResourceCreate
+- ResourceRead
+- Schema-Validierung
+- generische `resource.create`-Action
+- Audit
+- Tests
 
 ---
 
@@ -2346,16 +2325,16 @@ HierarchyNode
 
 Erst nach erfolgreichem Walking Skeleton:
 
-* Entwurf erstellen
-* aktualisieren
-* validieren
-* aktivieren
-* deaktivieren
-* archivieren
-* Statusübergänge
-* Berechtigungen
-* Audit
-* Revisionskonflikte
+- Entwurf erstellen
+- aktualisieren
+- validieren
+- aktivieren
+- deaktivieren
+- archivieren
+- Statusübergänge
+- Berechtigungen
+- Audit
+- Revisionskonflikte
 
 ---
 
@@ -2405,52 +2384,52 @@ Mindestens:
 
 ## Basistypen
 
-* ungültige Schema-Version
-* negative Revision
-* ungültige ID
-* zusätzliche Request-Felder
-* veränderliche Defaults ausgeschlossen
+- ungültige Schema-Version
+- negative Revision
+- ungültige ID
+- zusätzliche Request-Felder
+- veränderliche Defaults ausgeschlossen
 
 ## Registry
 
-* gültiger Registry-Eintrag
-* unbekannter Registry-Typ
-* ungültige Definition
-* Entwurf nicht produktiv auflösbar
-* validierter Eintrag noch nicht aktiv
-* Aktivierung mit falscher Revision
-* ungültiger Statusübergang
-* Aktivierung erhöht Revision
-* Registry-Gesamtrevision steigt
-* Audit wird geschrieben
-* anderer Tenant erhält keinen Zugriff
+- gültiger Registry-Eintrag
+- unbekannter Registry-Typ
+- ungültige Definition
+- Entwurf nicht produktiv auflösbar
+- validierter Eintrag noch nicht aktiv
+- Aktivierung mit falscher Revision
+- ungültiger Statusübergang
+- Aktivierung erhöht Revision
+- Registry-Gesamtrevision steigt
+- Audit wird geschrieben
+- anderer Tenant erhält keinen Zugriff
 
 ## Ressourcen
 
-* aktiven `note`-Typ auflösen
-* Ressource gültig
-* Pflichtfeld fehlt
-* zusätzliches Feld verboten
-* falsche Definitionversion
-* deaktivierter Typ
-* Revision-Konflikt
+- aktiven `note`-Typ auflösen
+- Ressource gültig
+- Pflichtfeld fehlt
+- zusätzliches Feld verboten
+- falsche Definitionversion
+- deaktivierter Typ
+- Revision-Konflikt
 
 ## Aktionen
 
-* unbekannte Action
-* fehlende Berechtigung
-* Risikoklasse nicht absenkbar
-* Action-Parameter ungültig
-* Idempotency-Key doppelt
+- unbekannte Action
+- fehlende Berechtigung
+- Risikoklasse nicht absenkbar
+- Action-Parameter ungültig
+- Idempotency-Key doppelt
 
 ## SSE
 
-* `resource.created`
-* `widget.invalidated`
-* Registry-Ereignis
-* unbekannter Eventtyp stört Stream nicht
-* Request-ID
-* genau ein Abschlussereignis
+- `resource.created`
+- `widget.invalidated`
+- Registry-Ereignis
+- unbekannter Eventtyp stört Stream nicht
+- Request-ID
+- genau ein Abschlussereignis
 
 ---
 
@@ -2458,18 +2437,18 @@ Mindestens:
 
 Mindestens:
 
-* gültiger Registry-Eintrag
-* ungültiger Registry-Eintrag
-* unbekannter Registry-Typ
-* gültige Ressourcentypdefinition
-* unbekannte UI-Komponente
-* Widget-Typ nicht registriert
-* Effective Context mit Registry-Revisionen
-* alte Antwort überschreibt keine neuere Revision
-* Registry-Änderung lädt nur betroffene Definitionen neu
-* unbekanntes SSE-Ereignis wird sicher ignoriert
-* strukturierter Fehler wird korrekt angezeigt
-* keine ungeprüften Daten im Store
+- gültiger Registry-Eintrag
+- ungültiger Registry-Eintrag
+- unbekannter Registry-Typ
+- gültige Ressourcentypdefinition
+- unbekannte UI-Komponente
+- Widget-Typ nicht registriert
+- Effective Context mit Registry-Revisionen
+- alte Antwort überschreibt keine neuere Revision
+- Registry-Änderung lädt nur betroffene Definitionen neu
+- unbekanntes SSE-Ereignis wird sicher ignoriert
+- strukturierter Fehler wird korrekt angezeigt
+- keine ungeprüften Daten im Store
 
 ---
 
@@ -2477,8 +2456,8 @@ Mindestens:
 
 Neue Verträge erscheinen nur dann zuverlässig in OpenAPI, wenn sie:
 
-* von öffentlichen Endpunkten verwendet werden oder
-* bewusst über ein OpenAPI-Schema eingebunden werden
+- von öffentlichen Endpunkten verwendet werden oder
+- bewusst über ein OpenAPI-Schema eingebunden werden
 
 Es ist nicht notwendig, jeden Zukunftsvertrag sofort künstlich in OpenAPI aufzunehmen.
 
@@ -2492,29 +2471,29 @@ OpenAPI soll nur tatsächlich erreichbare öffentliche Laufzeitverträge verspre
 
 ## Additive Änderung
 
-* optionales Feld
-* neuer Endpoint
-* neue Capability
-* neue Eventart
+- optionales Feld
+- neuer Endpoint
+- neue Capability
+- neue Eventart
 
 Kann innerhalb derselben Hauptversion möglich sein.
 
 ## Inkompatible Änderung
 
-* Feld entfernt
-* Feldtyp geändert
-* Bedeutung geändert
-* Pflichtfeld ergänzt
-* Eventstruktur geändert
+- Feld entfernt
+- Feldtyp geändert
+- Bedeutung geändert
+- Pflichtfeld ergänzt
+- Eventstruktur geändert
 
 Erfordert:
 
-* neue Vertragsversion
-* Migrationsphase
-* parallele Unterstützung oder klaren Mindestclient
-* Dokumentation
-* Tests
-* OpenAPI-Diff
+- neue Vertragsversion
+- Migrationsphase
+- parallele Unterstützung oder klaren Mindestclient
+- Dokumentation
+- Tests
+- OpenAPI-Diff
 
 ---
 
@@ -2533,10 +2512,10 @@ Re-Exports sind Übergangslösungen.
 
 Für jeden Re-Export wird dokumentiert:
 
-* alter Pfad
-* neuer Pfad
-* Einführungsdatum
-* geplantes Entfernungsrelease
+- alter Pfad
+- neuer Pfad
+- Einführungsdatum
+- geplantes Entfernungsrelease
 
 Keine unbegrenzten Aliasstrukturen.
 
@@ -2546,17 +2525,17 @@ Keine unbegrenzten Aliasstrukturen.
 
 Nicht Bestandteil des ersten Vertragsrefactorings:
 
-* vollständige Adminoberfläche für alle Registries
-* beliebiges Plugin-Loading
-* Remote-Python-Plugins
-* automatische Migration aller Ressourcentypen
-* vollständige Workflow-Engine
-* vollständiges RAG
-* Multi-Agenten-System
-* komplexe Policy Engine
-* produktiver Multi-Tenant-Wechsel
-* PostgreSQL-Optimierung
-* öffentliche Paketplattform
+- vollständige Adminoberfläche für alle Registries
+- beliebiges Plugin-Loading
+- Remote-Python-Plugins
+- automatische Migration aller Ressourcentypen
+- vollständige Workflow-Engine
+- vollständiges RAG
+- Multi-Agenten-System
+- komplexe Policy Engine
+- produktiver Multi-Tenant-Wechsel
+- PostgreSQL-Optimierung
+- öffentliche Paketplattform
 
 Diese Bereiche werden vertraglich vorbereitet, aber nicht vollständig implementiert.
 
@@ -2566,26 +2545,26 @@ Diese Bereiche werden vertraglich vorbereitet, aber nicht vollständig implement
 
 Das Refactoring gilt als erfolgreich, wenn:
 
-* öffentliche Backend-Verträge zentral liegen
-* Router keine großen eigenen Vertragsmodelle mehr definieren
-* Backend-Anfragen unbekannte Felder ablehnen
-* Frontend-Antworten laufzeitvalidiert werden
-* Hierarchie- und Chatverträge kompatibel weiterlaufen
-* Effective Context definiert ist
-* Registry-Lifecycle definiert ist
-* Registry-Revisionen definiert sind
-* dynamische Definitionen keinen Code laden können
-* `note` als dynamischer Ressourcentyp abbildbar ist
-* Action-Risikoklassen vertraglich vorhanden sind
-* Widget-Typ und Widget-Instanz getrennt sind
-* unbekannte Komponenten sicher behandelt werden
-* bestehende SSE-Ereignisse kompatibel bleiben
-* neue Registry- und Ressourcenereignisse vorbereitet sind
-* Backendtests bestehen
-* Frontendtests bestehen
-* Produktionsbuild besteht
-* OpenAPI dem tatsächlichen Laufzeitstand entspricht
-* Dokumentation und Code dieselben Begriffe verwenden
+- öffentliche Backend-Verträge zentral liegen
+- Router keine großen eigenen Vertragsmodelle mehr definieren
+- Backend-Anfragen unbekannte Felder ablehnen
+- Frontend-Antworten laufzeitvalidiert werden
+- Hierarchie- und Chatverträge kompatibel weiterlaufen
+- Effective Context definiert ist
+- Registry-Lifecycle definiert ist
+- Registry-Revisionen definiert sind
+- dynamische Definitionen keinen Code laden können
+- `note` als dynamischer Ressourcentyp abbildbar ist
+- Action-Risikoklassen vertraglich vorhanden sind
+- Widget-Typ und Widget-Instanz getrennt sind
+- unbekannte Komponenten sicher behandelt werden
+- bestehende SSE-Ereignisse kompatibel bleiben
+- neue Registry- und Ressourcenereignisse vorbereitet sind
+- Backendtests bestehen
+- Frontendtests bestehen
+- Produktionsbuild besteht
+- OpenAPI dem tatsächlichen Laufzeitstand entspricht
+- Dokumentation und Code dieselben Begriffe verwenden
 
 ---
 

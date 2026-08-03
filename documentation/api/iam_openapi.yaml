@@ -27,7 +27,7 @@ paths:
                 context:
                   type: object
       responses:
-        '200':
+        "200":
           description: Decision result
           content:
             application/json:
@@ -45,7 +45,7 @@ paths:
     get:
       summary: List configured Identity Providers
       responses:
-        '200':
+        "200":
           description: OK
 
   /api/v1/roles:

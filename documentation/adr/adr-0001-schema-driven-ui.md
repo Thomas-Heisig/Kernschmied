@@ -1,18 +1,18 @@
 # ADR-0001: Schema-gesteuerte Benutzeroberfläche einführen
 
-* **Status:** Angenommen – konsolidiert
-* **Datum der ursprünglichen Entscheidung:** 2026-07-27
-* **Letzte Überarbeitung:** 2026-08-03
-* **Entscheidungsträger:** Kernschmied-Architekturteam
-* **Ersetzt:** Keine
-* **Ersetzt durch:** Keine
-* **Verwandte Dokumente:**
+- **Status:** Angenommen – konsolidiert
+- **Datum der ursprünglichen Entscheidung:** 2026-07-27
+- **Letzte Überarbeitung:** 2026-08-03
+- **Entscheidungsträger:** Kernschmied-Architekturteam
+- **Ersetzt:** Keine
+- **Ersetzt durch:** Keine
+- **Verwandte Dokumente:**
 
-  * `documentation/leitkonzept.md`
-  * `documentation/architecture/contracts.md`
-  * `documentation/architecture/contract-refactoring.md`
-  * `documentation/architecture/effective-context.md`
-  * `documentation/architecture/dynamic-definitions.md`
+  - `documentation/leitkonzept.md`
+  - `documentation/architecture/contracts.md`
+  - `documentation/architecture/contract-refactoring.md`
+  - `documentation/architecture/effective-context.md`
+  - `documentation/architecture/dynamic-definitions.md`
 
 ---
 
@@ -22,26 +22,26 @@ Kernschmied verwendet eine **schema-gesteuerte Benutzeroberfläche**.
 
 Das Backend stellt versionierte, validierte und autorisierte Definitionen für:
 
-* Ansichten
-* Layouts
-* Formulare
-* Felder
-* Widgets
-* Aktionen
-* Sichtbarkeit
-* Datenbindungen
-* Navigation
-* unterstützte Knotendarstellungen
+- Ansichten
+- Layouts
+- Formulare
+- Felder
+- Widgets
+- Aktionen
+- Sichtbarkeit
+- Datenbindungen
+- Navigation
+- unterstützte Knotendarstellungen
 
 bereit.
 
 Das Frontend rendert diese Definitionen ausschließlich mit:
 
-* bekannten Komponenten,
-* einer festen Komponenten-Registry,
-* einer festen Action-Registry,
-* validierten Laufzeitverträgen,
-* kontrollierten API-Endpunkten.
+- bekannten Komponenten,
+- einer festen Komponenten-Registry,
+- einer festen Action-Registry,
+- validierten Laufzeitverträgen,
+- kontrollierten API-Endpunkten.
 
 Das Backend darf keine beliebigen React-Komponenten, JavaScript-Funktionen, Importpfade oder ausführbaren Codestrukturen an das Frontend übertragen.
 
@@ -60,48 +60,48 @@ Das System soll langfristig unterschiedliche Nutzungskontexte unterstützen, ohn
 
 Dazu gehören unter anderem:
 
-* unterschiedliche Betriebsprofile,
-* konfigurierbare Hierarchien,
-* dynamische Ressourcentypen,
-* konfigurierbare Prompts,
-* registrierte Modelle,
-* registrierte Tools,
-* dynamische Widgets,
-* registrierte Aktionen,
-* geführte Workflows,
-* Vorlagenpakete,
-* Integrationen,
-* spätere Plugin- und Erweiterungspunkte,
-* Laufzeitkonfiguration,
-* mehrmandantenfähige Strukturen,
-* langfristige Wartbarkeit.
+- unterschiedliche Betriebsprofile,
+- konfigurierbare Hierarchien,
+- dynamische Ressourcentypen,
+- konfigurierbare Prompts,
+- registrierte Modelle,
+- registrierte Tools,
+- dynamische Widgets,
+- registrierte Aktionen,
+- geführte Workflows,
+- Vorlagenpakete,
+- Integrationen,
+- spätere Plugin- und Erweiterungspunkte,
+- Laufzeitkonfiguration,
+- mehrmandantenfähige Strukturen,
+- langfristige Wartbarkeit.
 
 Die fachliche Bedeutung eines Bereichs entsteht nicht durch eine spezielle React-Komponente.
 
 Beispiele wie:
 
-* Firma,
-* Schule,
-* Verein,
-* Familie,
-* Handwerk,
-* Projektarbeit,
-* Dokumentenverwaltung
+- Firma,
+- Schule,
+- Verein,
+- Familie,
+- Handwerk,
+- Projektarbeit,
+- Dokumentenverwaltung
 
 werden nicht als fest programmierte Frontendmodule behandelt.
 
 Ihre Bedeutung entsteht durch:
 
-* Prompts,
-* Schemas,
-* Ressourcen,
-* Aliase,
-* Konzepte,
-* Widgets,
-* Vorlagen,
-* Berechtigungen,
-* Teilnehmer,
-* Beziehungen.
+- Prompts,
+- Schemas,
+- Ressourcen,
+- Aliase,
+- Konzepte,
+- Widgets,
+- Vorlagen,
+- Berechtigungen,
+- Teilnehmer,
+- Beziehungen.
 
 ---
 
@@ -144,45 +144,45 @@ if (resource.type === "offer") {
 
 Dadurch entsteht:
 
-* doppelte Logik in Backend und Frontend,
-* uneinheitliche Validierung,
-* schwer nachvollziehbare Berechtigungslogik,
-* erhöhte Kopplung,
-* wachsender Testaufwand.
+- doppelte Logik in Backend und Frontend,
+- uneinheitliche Validierung,
+- schwer nachvollziehbare Berechtigungslogik,
+- erhöhte Kopplung,
+- wachsender Testaufwand.
 
 ## 3.2 Enge Kopplung
 
 Eine Frontendfreigabe würde erforderlich, sobald:
 
-* neue fachliche Typen eingeführt werden,
-* Formulare verändert werden,
-* Felder hinzukommen,
-* Layouts geändert werden,
-* Ressourcen neu kombiniert werden,
-* neue Aktionen angeboten werden,
-* Sichtbarkeitsregeln verändert werden.
+- neue fachliche Typen eingeführt werden,
+- Formulare verändert werden,
+- Felder hinzukommen,
+- Layouts geändert werden,
+- Ressourcen neu kombiniert werden,
+- neue Aktionen angeboten werden,
+- Sichtbarkeitsregeln verändert werden.
 
 ## 3.3 Schlechte Erweiterbarkeit
 
 Jede neue Nutzungsausrichtung würde typischerweise benötigen:
 
-* neue Seiten,
-* neue React-Komponenten,
-* neue Routen,
-* neue Formulare,
-* neue Validierungen,
-* neue Tests,
-* neue Zustandslogik.
+- neue Seiten,
+- neue React-Komponenten,
+- neue Routen,
+- neue Formulare,
+- neue Validierungen,
+- neue Tests,
+- neue Zustandslogik.
 
 ## 3.4 Hohe Wartungskosten
 
 Mit zunehmender Größe entstehen:
 
-* duplizierte Komponenten,
-* unterschiedliche Fehlerbehandlung,
-* uneinheitliche Darstellung,
-* wachsende Frontendkomplexität,
-* schwer kontrollierbare Abhängigkeiten.
+- duplizierte Komponenten,
+- unterschiedliche Fehlerbehandlung,
+- uneinheitliche Darstellung,
+- wachsende Frontendkomplexität,
+- schwer kontrollierbare Abhängigkeiten.
 
 ## 3.5 Ungeeignete Grundlage für dynamische Erweiterungen
 
@@ -218,13 +218,13 @@ Der Chat ist das Intentions- und Kommunikationszentrum.
 
 Widgets und schema-gesteuerte Ansichten unterstützen den Nutzer bei Aufgaben, für die strukturierte Oberflächen sinnvoller sind, beispielsweise:
 
-* Tabellen,
-* Formulare,
-* Listen,
-* Kalender,
-* Dateiansichten,
-* Massenbearbeitung,
-* Hierarchiebearbeitung.
+- Tabellen,
+- Formulare,
+- Listen,
+- Kalender,
+- Dateiansichten,
+- Massenbearbeitung,
+- Hierarchiebearbeitung.
 
 ---
 
@@ -234,41 +234,41 @@ Zum Zeitpunkt dieser Überarbeitung verfügt Kernschmied bereits über Teile ein
 
 ## 5.1 Bereits vorhanden
 
-* ein UI-Schema-Endpunkt,
-* eine generische rekursive Hierarchiedarstellung,
-* Grundlagen einer Komponenten-Registry,
-* Grundlagen einer Action-Registry,
-* ein teilweise implementierter `SchemaRenderer`,
-* ein `UnsupportedSchema`- beziehungsweise Fallback-Konzept,
-* zentrale API-Grundlagen,
-* versionierte Bootstrap- und UI-Verträge,
-* dynamische Konfigurationsdefinitionen,
-* UI-Metadaten für Einstellungen,
-* ein generischer Chatbereich,
-* feste Modell- und Tool-Registries.
+- ein UI-Schema-Endpunkt,
+- eine generische rekursive Hierarchiedarstellung,
+- Grundlagen einer Komponenten-Registry,
+- Grundlagen einer Action-Registry,
+- ein teilweise implementierter `SchemaRenderer`,
+- ein `UnsupportedSchema`- beziehungsweise Fallback-Konzept,
+- zentrale API-Grundlagen,
+- versionierte Bootstrap- und UI-Verträge,
+- dynamische Konfigurationsdefinitionen,
+- UI-Metadaten für Einstellungen,
+- ein generischer Chatbereich,
+- feste Modell- und Tool-Registries.
 
 ## 5.2 Teilweise implementiert
 
-* Schema-Normalisierung,
-* Komponentenauflösung,
-* dynamische Formularfelder,
-* Sichtbarkeitsregeln,
-* Action-Ausführung,
-* Fehlergrenzen,
-* dynamische Datenbindungen,
-* schema-gesteuerte Knotenansichten,
-* Laufzeitvalidierung im Frontend.
+- Schema-Normalisierung,
+- Komponentenauflösung,
+- dynamische Formularfelder,
+- Sichtbarkeitsregeln,
+- Action-Ausführung,
+- Fehlergrenzen,
+- dynamische Datenbindungen,
+- schema-gesteuerte Knotenansichten,
+- Laufzeitvalidierung im Frontend.
 
 ## 5.3 Derzeitige Inkonsistenzen
 
-* einzelne Frontendbereiche enthalten noch spezialisierte oder direkte Darstellungslogik,
-* der `SchemaRenderer` deckt noch nicht alle vorgesehenen Typen ab,
-* manche API-Daten werden noch nicht konsequent zur Laufzeit validiert,
-* UI-Schema, Widget-System und fachliche Ressourcenverträge sind noch nicht vollständig getrennt,
-* Actiondefinitionen enthalten noch nicht alle Risikoklassen und Ausführungsregeln,
-* dynamische Definitionen und technische Implementierungsregistries sind noch nicht vollständig voneinander getrennt,
-* bestehende Verträge befinden sich teilweise noch direkt in Routerdateien,
-* unbekannte Typen werden noch nicht in allen Pfaden einheitlich behandelt.
+- einzelne Frontendbereiche enthalten noch spezialisierte oder direkte Darstellungslogik,
+- der `SchemaRenderer` deckt noch nicht alle vorgesehenen Typen ab,
+- manche API-Daten werden noch nicht konsequent zur Laufzeit validiert,
+- UI-Schema, Widget-System und fachliche Ressourcenverträge sind noch nicht vollständig getrennt,
+- Actiondefinitionen enthalten noch nicht alle Risikoklassen und Ausführungsregeln,
+- dynamische Definitionen und technische Implementierungsregistries sind noch nicht vollständig voneinander getrennt,
+- bestehende Verträge befinden sich teilweise noch direkt in Routerdateien,
+- unbekannte Typen werden noch nicht in allen Pfaden einheitlich behandelt.
 
 ---
 
@@ -280,18 +280,18 @@ Kernschmied soll einen stabilen, versionierten und fachneutralen UI-Vertragsrahm
 
 Das Backend kann Ansichten beschreiben durch:
 
-* Layoutdefinitionen,
-* Sektionen,
-* Felder,
-* Tabellen,
-* Baumansichten,
-* Detailansichten,
-* Widgets,
-* Aktionen,
-* Sichtbarkeitsbedingungen,
-* Aktivierungsbedingungen,
-* Datenquellen,
-* Metadaten.
+- Layoutdefinitionen,
+- Sektionen,
+- Felder,
+- Tabellen,
+- Baumansichten,
+- Detailansichten,
+- Widgets,
+- Aktionen,
+- Sichtbarkeitsbedingungen,
+- Aktivierungsbedingungen,
+- Datenquellen,
+- Metadaten.
 
 ## 6.2 Feste technische Registries
 
@@ -313,26 +313,26 @@ Neue Konfigurationen dürfen nur bekannte Registry-Einträge referenzieren.
 
 Zur Laufzeit dürfen ergänzt werden:
 
-* UI-Schemas,
-* Ressourcenschemas,
-* Widget-Instanzen,
-* Widget-Zuordnungen,
-* Layouts,
-* Promptdefinitionen,
-* Aliase,
-* Konzepte,
-* Knotentypdefinitionen,
-* Workflows aus bekannten Schritten,
-* Vorlagenpakete.
+- UI-Schemas,
+- Ressourcenschemas,
+- Widget-Instanzen,
+- Widget-Zuordnungen,
+- Layouts,
+- Promptdefinitionen,
+- Aliase,
+- Konzepte,
+- Knotentypdefinitionen,
+- Workflows aus bekannten Schritten,
+- Vorlagenpakete.
 
 Zur Laufzeit dürfen nicht ergänzt werden:
 
-* neue React-Komponenten,
-* neue JavaScript-Funktionen,
-* neue Python-Handler,
-* unbekannte Action-Implementierungen,
-* freie API-Ziele,
-* beliebige Imports.
+- neue React-Komponenten,
+- neue JavaScript-Funktionen,
+- neue Python-Handler,
+- unbekannte Action-Implementierungen,
+- freie API-Ziele,
+- beliebige Imports.
 
 ## 6.4 Laufzeitvalidierung
 
@@ -340,10 +340,10 @@ Jede öffentliche Backendantwort wird vor der Nutzung im Frontend validiert.
 
 Ungültige Daten werden:
 
-* nicht in den Store übernommen,
-* als strukturierter Fehler behandelt,
-* im Development-Profil diagnostizierbar gemacht,
-* niemals stillschweigend ausgeführt.
+- nicht in den Store übernommen,
+- als strukturierter Fehler behandelt,
+- im Development-Profil diagnostizierbar gemacht,
+- niemals stillschweigend ausgeführt.
 
 ## 6.5 Sichere unbekannte Typen
 
@@ -360,12 +360,12 @@ Version: 2.0
 
 Dies gilt für:
 
-* Komponenten,
-* Widgets,
-* Aktionen,
-* Events,
-* Knotentypdarstellungen,
-* Workflow-Schritte.
+- Komponenten,
+- Widgets,
+- Aktionen,
+- Events,
+- Knotentypdarstellungen,
+- Workflow-Schritte.
 
 ---
 
@@ -379,54 +379,54 @@ Die Entscheidung besteht aus mehreren verbindlichen Teilen.
 
 Das Backend stellt bereit:
 
-* Schema,
-* Datenbindung,
-* erlaubte Aktionen,
-* Sichtbarkeit,
-* Berechtigungsanforderungen,
-* Validierungsinformationen,
-* Capability-Informationen.
+- Schema,
+- Datenbindung,
+- erlaubte Aktionen,
+- Sichtbarkeit,
+- Berechtigungsanforderungen,
+- Validierungsinformationen,
+- Capability-Informationen.
 
 ## 7.2 Das Frontend kontrolliert die technische Darstellung
 
 Das Frontend entscheidet:
 
-* welche Komponenten implementiert sind,
-* welche Props akzeptiert werden,
-* welche Aktionen technisch unterstützt werden,
-* welche unbekannten Typen abgelehnt werden,
-* wie Fehler dargestellt werden,
-* wie responsive Darstellung erfolgt,
-* wie Barrierefreiheit umgesetzt wird.
+- welche Komponenten implementiert sind,
+- welche Props akzeptiert werden,
+- welche Aktionen technisch unterstützt werden,
+- welche unbekannten Typen abgelehnt werden,
+- wie Fehler dargestellt werden,
+- wie responsive Darstellung erfolgt,
+- wie Barrierefreiheit umgesetzt wird.
 
 ## 7.3 Das Backend bleibt Autorität für Fachlichkeit und Sicherheit
 
 Das Backend bleibt verantwortlich für:
 
-* Berechtigungen,
-* Autorisierung,
-* Validierung,
-* Fachregeln,
-* Persistenz,
-* Workflows,
-* Mandantenisolation,
-* Datenschutzprofile,
-* Toolfreigaben,
-* Aktionsrisiken,
-* Auditierung.
+- Berechtigungen,
+- Autorisierung,
+- Validierung,
+- Fachregeln,
+- Persistenz,
+- Workflows,
+- Mandantenisolation,
+- Datenschutzprofile,
+- Toolfreigaben,
+- Aktionsrisiken,
+- Auditierung.
 
 ## 7.4 Das Frontend bleibt Autorität für sichere Darstellung
 
 Das Frontend bleibt verantwortlich für:
 
-* Rendern bekannter Komponenten,
-* lokale Eingabevalidierung,
-* verständliche Fehlerdarstellung,
-* Tastaturbedienung,
-* Fokusmanagement,
-* Responsive Design,
-* Barrierefreiheit,
-* kontrollierten UI-Zustand.
+- Rendern bekannter Komponenten,
+- lokale Eingabevalidierung,
+- verständliche Fehlerdarstellung,
+- Tastaturbedienung,
+- Fokusmanagement,
+- Responsive Design,
+- Barrierefreiheit,
+- kontrollierten UI-Zustand.
 
 ---
 
@@ -502,37 +502,37 @@ Das UI-Schema beschreibt ausschließlich Darstellung und Interaktionsabsicht.
 
 Es darf enthalten:
 
-* `schema_version`,
-* `id`,
-* `component_type`,
-* `layout`,
-* `children`,
-* `bindings`,
-* `visibility`,
-* `enabled`,
-* `actions`,
-* `metadata`.
+- `schema_version`,
+- `id`,
+- `component_type`,
+- `layout`,
+- `children`,
+- `bindings`,
+- `visibility`,
+- `enabled`,
+- `actions`,
+- `metadata`.
 
 Es darf nicht enthalten:
 
-* ausführbaren Code,
-* freie JavaScript-Ausdrücke,
-* freie Python-Ausdrücke,
-* Importpfade,
-* Shell-Kommandos,
-* unkontrollierte HTML-Fragmente.
+- ausführbaren Code,
+- freie JavaScript-Ausdrücke,
+- freie Python-Ausdrücke,
+- Importpfade,
+- Shell-Kommandos,
+- unkontrollierte HTML-Fragmente.
 
 ## 10.2 Schema Renderer
 
 Der Schema Renderer:
 
-* validiert beziehungsweise erhält validierte Schemas,
-* löst bekannte Komponenten auf,
-* rendert rekursiv,
-* kontrolliert Rekursionstiefe,
-* verwaltet Fehlergrenzen,
-* stellt unbekannte Typen sicher dar,
-* enthält keine Fachlogik.
+- validiert beziehungsweise erhält validierte Schemas,
+- löst bekannte Komponenten auf,
+- rendert rekursiv,
+- kontrolliert Rekursionstiefe,
+- verwaltet Fehlergrenzen,
+- stellt unbekannte Typen sicher dar,
+- enthält keine Fachlogik.
 
 ## 10.3 Component Registry
 
@@ -586,13 +586,13 @@ Technisch registrierte React-Komponente.
 
 Dynamische Konfiguration:
 
-* Titel,
-* Datenquelle,
-* Filter,
-* Sortierung,
-* Layout,
-* Zuordnung,
-* unterstützte Aktionen.
+- Titel,
+- Datenquelle,
+- Filter,
+- Sortierung,
+- Layout,
+- Zuordnung,
+- unterstützte Aktionen.
 
 ## 10.6 Ressourcen-Schema
 
@@ -600,10 +600,10 @@ Ein dynamischer Ressourcentyp kann ein Formular- und Darstellungsschema liefern.
 
 Das Frontend verwendet generische Komponenten, um daraus:
 
-* Formulare,
-* Tabellen,
-* Detailansichten,
-* Suchfilter
+- Formulare,
+- Tabellen,
+- Detailansichten,
+- Suchfilter
 
 zu erstellen.
 
@@ -619,10 +619,10 @@ Nur Darstellung.
 
 Beispiele:
 
-* Status,
-* Statistik,
-* Vorschau,
-* Zusammenfassung.
+- Status,
+- Statistik,
+- Vorschau,
+- Zusammenfassung.
 
 ## 11.2 `trigger_only`
 
@@ -630,9 +630,9 @@ Interaktionen lösen registrierte Aktionen aus.
 
 Beispiele:
 
-* Ressource öffnen,
-* Export starten,
-* Unterchat erstellen.
+- Ressource öffnen,
+- Export starten,
+- Unterchat erstellen.
 
 ## 11.3 `structured_edit`
 
@@ -640,17 +640,17 @@ Das Widget erlaubt strukturierte Bearbeitung.
 
 Beispiele:
 
-* Tabellenbearbeitung,
-* Formularbearbeitung,
-* Mehrfachauswahl,
-* Drag-and-drop-Reihenfolge.
+- Tabellenbearbeitung,
+- Formularbearbeitung,
+- Mehrfachauswahl,
+- Drag-and-drop-Reihenfolge.
 
 Auch `structured_edit` arbeitet ausschließlich über:
 
-* bekannte Mutationsverträge,
-* Backendvalidierung,
-* Backendautorisierung,
-* Revisionsprüfung.
+- bekannte Mutationsverträge,
+- Backendvalidierung,
+- Backendautorisierung,
+- Revisionsprüfung.
 
 ---
 
@@ -664,9 +664,9 @@ Lokal und reversibel.
 
 Beispiele:
 
-* Widget verschieben,
-* Filter ändern,
-* Favorit setzen.
+- Widget verschieben,
+- Filter ändern,
+- Favorit setzen.
 
 ## Klasse B
 
@@ -674,9 +674,9 @@ Fachlich relevant, aber reversibel.
 
 Beispiele:
 
-* Ressource bearbeiten,
-* Chat verschieben,
-* Zuordnung ändern.
+- Ressource bearbeiten,
+- Chat verschieben,
+- Zuordnung ändern.
 
 ## Klasse C
 
@@ -684,9 +684,9 @@ Extern wirksam oder schwer reversibel.
 
 Beispiele:
 
-* Nachricht versenden,
-* Dokument extern freigeben,
-* Ressource löschen.
+- Nachricht versenden,
+- Dokument extern freigeben,
+- Ressource löschen.
 
 ## Klasse D
 
@@ -694,9 +694,9 @@ Sicherheitskritisch.
 
 Beispiele:
 
-* Rollen ändern,
-* Sicherheitsrichtlinie ändern,
-* Mandantenzugriff verändern.
+- Rollen ändern,
+- Sicherheitsrichtlinie ändern,
+- Mandantenzugriff verändern.
 
 Das Frontend zeigt die erforderliche Bestätigung an.
 
@@ -710,28 +710,28 @@ Das Backend entscheidet abschließend, ob die Aktion ausgeführt werden darf.
 
 Zur Laufzeit ergänzbar:
 
-* Knotentypdefinitionen,
-* Ressourcentypdefinitionen,
-* Promptdefinitionen,
-* Widget-Instanzen,
-* Widget-Zuordnungen,
-* Konzepte,
-* Aliase,
-* Workflows,
-* UI-Schemas,
-* Vorlagenpakete.
+- Knotentypdefinitionen,
+- Ressourcentypdefinitionen,
+- Promptdefinitionen,
+- Widget-Instanzen,
+- Widget-Zuordnungen,
+- Konzepte,
+- Aliase,
+- Workflows,
+- UI-Schemas,
+- Vorlagenpakete.
 
 ## 13.2 Nicht dynamisch ausführbar
 
 Nicht aus Backenddaten ladbar:
 
-* React-Komponenten,
-* JavaScript-Code,
-* Python-Code,
-* Action-Handler,
-* Tool-Handler,
-* Workflow-Schrittimplementierungen,
-* Integrations-Transporte.
+- React-Komponenten,
+- JavaScript-Code,
+- Python-Code,
+- Action-Handler,
+- Tool-Handler,
+- Workflow-Schrittimplementierungen,
+- Integrations-Transporte.
 
 ## 13.3 Aktivierung
 
@@ -783,12 +783,12 @@ Erstellung oder Discovery bedeutet nicht Aktivierung.
 
 Das Frontend prüft:
 
-* Ist `form` bekannt?
-* Ist `single_column` bekannt?
-* Sind `text` und `textarea` bekannt?
-* Ist `resource.create` registriert?
-* Sind Bindings und Props gültig?
-* Darf die Aktion im aktuellen Kontext angeboten werden?
+- Ist `form` bekannt?
+- Ist `single_column` bekannt?
+- Sind `text` und `textarea` bekannt?
+- Ist `resource.create` registriert?
+- Sind Bindings und Props gültig?
+- Darf die Aktion im aktuellen Kontext angeboten werden?
 
 ---
 
@@ -800,28 +800,28 @@ Jeder öffentliche UI-Vertrag besitzt eine `schema_version`.
 
 Beispiele:
 
-* optionales Feld,
-* neue Metadaten,
-* zusätzliche bekannte Action,
-* zusätzliche optionale Komponente.
+- optionales Feld,
+- neue Metadaten,
+- zusätzliche bekannte Action,
+- zusätzliche optionale Komponente.
 
 ## Inkompatible Änderung
 
 Beispiele:
 
-* Feld entfernt,
-* Feldtyp geändert,
-* Semantik verändert,
-* Pflichtfeld ergänzt,
-* Komponentenstruktur grundlegend geändert.
+- Feld entfernt,
+- Feldtyp geändert,
+- Semantik verändert,
+- Pflichtfeld ergänzt,
+- Komponentenstruktur grundlegend geändert.
 
 Inkompatible Änderungen benötigen:
 
-* neue Schemaversion,
-* Migrationsweg,
-* Tests,
-* Dokumentation,
-* gegebenenfalls Mindestclientversion.
+- neue Schemaversion,
+- Migrationsweg,
+- Tests,
+- Dokumentation,
+- gegebenenfalls Mindestclientversion.
 
 ---
 
@@ -864,26 +864,26 @@ Das Frontend darf nicht aus dem Vorhandensein eines Vertrags schließen, dass di
 
 Das Backend validiert:
 
-* UI-Schema-Struktur,
-* bekannte technische Referenzen,
-* Berechtigungen,
-* Datenbindungen,
-* Ressourcenschemas,
-* Action-IDs,
-* Versionskompatibilität.
+- UI-Schema-Struktur,
+- bekannte technische Referenzen,
+- Berechtigungen,
+- Datenbindungen,
+- Ressourcenschemas,
+- Action-IDs,
+- Versionskompatibilität.
 
 ## Frontend
 
 Das Frontend validiert:
 
-* Transportstruktur,
-* Schemaversion,
-* Komponenten-IDs,
-* Property-Typen,
-* Action-Referenzen,
-* Layoutstruktur,
-* maximale Rekursion,
-* unbekannte Typen.
+- Transportstruktur,
+- Schemaversion,
+- Komponenten-IDs,
+- Property-Typen,
+- Action-Referenzen,
+- Layoutstruktur,
+- maximale Rekursion,
+- unbekannte Typen.
 
 ## Mutationsanfragen
 
@@ -922,11 +922,11 @@ Neue fachliche Bedeutungen können über Konfiguration entstehen.
 
 Viele Änderungen an:
 
-* Formularen,
-* Layouts,
-* Widgets,
-* Feldern,
-* Ressourcenschemas
+- Formularen,
+- Layouts,
+- Widgets,
+- Feldern,
+- Ressourcenschemas
 
 benötigen keine neue spezialisierte React-Seite.
 
@@ -970,11 +970,11 @@ Komponenten dürfen nicht durch zu viele Sonderfälle zu versteckten Fachanwendu
 
 Das Backend muss:
 
-* valide Schemas,
-* verlässliche Metadaten,
-* Actiondefinitionen,
-* Berechtigungen,
-* Datenbindungen
+- valide Schemas,
+- verlässliche Metadaten,
+- Actiondefinitionen,
+- Berechtigungen,
+- Datenbindungen
 
 bereitstellen.
 
@@ -982,13 +982,13 @@ bereitstellen.
 
 Fehler können entstehen in:
 
-* Definition,
-* Backendvalidierung,
-* Transport,
-* Frontendvalidierung,
-* Registry-Auflösung,
-* Renderer,
-* Komponente.
+- Definition,
+- Backendvalidierung,
+- Transport,
+- Frontendvalidierung,
+- Registry-Auflösung,
+- Renderer,
+- Komponente.
 
 Deshalb sind strukturierte Diagnosen erforderlich.
 
@@ -1006,17 +1006,17 @@ Dies ist erlaubt, solange sie als fester technischer Registry-Eintrag eingeführ
 
 ### Vorteile
 
-* vertrautes Entwicklungsmodell,
-* schnelle Umsetzung einzelner Masken,
-* direktes Debugging.
+- vertrautes Entwicklungsmodell,
+- schnelle Umsetzung einzelner Masken,
+- direktes Debugging.
 
 ### Nachteile
 
-* enge Kopplung,
-* geringe Laufzeitflexibilität,
-* duplizierte Fachlogik,
-* hoher Wartungsaufwand,
-* widerspricht der Fachneutralität.
+- enge Kopplung,
+- geringe Laufzeitflexibilität,
+- duplizierte Fachlogik,
+- hoher Wartungsaufwand,
+- widerspricht der Fachneutralität.
 
 **Entscheidung:** Verworfen als grundlegende Architektur.
 
@@ -1028,16 +1028,16 @@ Spezialisierte technische Komponenten bleiben nur für begründete, registrierte
 
 ### Vorteile
 
-* visuelle Erstellung,
-* schnelle Oberflächenkonfiguration.
+- visuelle Erstellung,
+- schnelle Oberflächenkonfiguration.
 
 ### Nachteile
 
-* hoher Eigenentwicklungsaufwand,
-* Gefahr eines zweiten Produkts innerhalb des Produkts,
-* unklare Sicherheitsgrenzen,
-* komplexe Migrationen,
-* potenzieller Vendor Lock-in bei Fremdlösungen.
+- hoher Eigenentwicklungsaufwand,
+- Gefahr eines zweiten Produkts innerhalb des Produkts,
+- unklare Sicherheitsgrenzen,
+- komplexe Migrationen,
+- potenzieller Vendor Lock-in bei Fremdlösungen.
 
 **Entscheidung:** Verworfen.
 
@@ -1051,17 +1051,17 @@ Das Backend liefert JavaScript zur Erzeugung von Oberflächen oder Verhalten.
 
 ### Vorteile
 
-* maximale Flexibilität,
-* keine Frontendfreigabe für neue Logik.
+- maximale Flexibilität,
+- keine Frontendfreigabe für neue Logik.
 
 ### Nachteile
 
-* Remote-Code-Ausführung,
-* erhebliche Sicherheitsrisiken,
-* schwer prüfbar,
-* schlechte Wartbarkeit,
-* unkontrollierbare Abhängigkeiten,
-* widerspricht den Sicherheitsprinzipien.
+- Remote-Code-Ausführung,
+- erhebliche Sicherheitsrisiken,
+- schwer prüfbar,
+- schlechte Wartbarkeit,
+- unkontrollierbare Abhängigkeiten,
+- widerspricht den Sicherheitsprinzipien.
 
 **Entscheidung:** Vollständig verworfen.
 
@@ -1073,14 +1073,14 @@ Komponentenpfade werden vom Backend geliefert.
 
 ### Vorteile
 
-* scheinbar flexible Erweiterung.
+- scheinbar flexible Erweiterung.
 
 ### Nachteile
 
-* Backenddaten kontrollieren ausführbaren Frontendcode,
-* Build- und Laufzeitprobleme,
-* unklare Vertrauensgrenzen,
-* schlechte Fehlerisolierung.
+- Backenddaten kontrollieren ausführbaren Frontendcode,
+- Build- und Laufzeitprobleme,
+- unklare Vertrauensgrenzen,
+- schlechte Fehlerisolierung.
 
 **Entscheidung:** Vollständig verworfen.
 
@@ -1090,15 +1090,15 @@ Komponentenpfade werden vom Backend geliefert.
 
 ### Vorteile
 
-* sehr einheitliche Bedienung,
-* geringe Anzahl klassischer Seiten.
+- sehr einheitliche Bedienung,
+- geringe Anzahl klassischer Seiten.
 
 ### Nachteile
 
-* ineffizient bei Tabellen,
-* ungeeignet für Massenbearbeitung,
-* ungeeignet für komplexe Formulare,
-* schlechte Übersicht bei großen Datenmengen.
+- ineffizient bei Tabellen,
+- ungeeignet für Massenbearbeitung,
+- ungeeignet für komplexe Formulare,
+- schlechte Übersicht bei großen Datenmengen.
 
 **Entscheidung:** Verworfen.
 
@@ -1110,16 +1110,16 @@ Der Chat bleibt Zentrum. Widgets und schema-gesteuerte Ansichten ergänzen ihn.
 
 ### Vorteile
 
-* einfache Darstellung im Browser,
-* Backend kontrolliert das Layout.
+- einfache Darstellung im Browser,
+- Backend kontrolliert das Layout.
 
 ### Nachteile
 
-* XSS-Risiken,
-* schwache React-Integration,
-* schlechter State-Abgleich,
-* eingeschränkte Interaktivität,
-* unklare Verantwortlichkeiten.
+- XSS-Risiken,
+- schwache React-Integration,
+- schlechter State-Abgleich,
+- eingeschränkte Interaktivität,
+- unklare Verantwortlichkeiten.
 
 **Entscheidung:** Verworfen.
 
@@ -1129,71 +1129,71 @@ Der Chat bleibt Zentrum. Widgets und schema-gesteuerte Ansichten ergänzen ihn.
 
 ## Phase 1 – Verträge inventarisieren
 
-* bestehende UI-Schema-Verträge erfassen,
-* Router-lokale Modelle identifizieren,
-* Frontendtypen erfassen,
-* bekannte Komponenten katalogisieren,
-* bekannte Aktionen katalogisieren.
+- bestehende UI-Schema-Verträge erfassen,
+- Router-lokale Modelle identifizieren,
+- Frontendtypen erfassen,
+- bekannte Komponenten katalogisieren,
+- bekannte Aktionen katalogisieren.
 
 ## Phase 2 – Öffentliche UI-Verträge zentralisieren
 
-* Pydantic-Verträge in `backend/app/contracts/`,
-* TypeScript-Verträge in `frontend/src/contracts/`,
-* kompatible Re-Exports,
-* OpenAPI prüfen.
+- Pydantic-Verträge in `backend/app/contracts/`,
+- TypeScript-Verträge in `frontend/src/contracts/`,
+- kompatible Re-Exports,
+- OpenAPI prüfen.
 
 ## Phase 3 – Laufzeitvalidierung
 
-* Bootstrap,
-* UI-Schema,
-* Hierarchie,
-* Actions,
-* Widgets,
-* Events
+- Bootstrap,
+- UI-Schema,
+- Hierarchie,
+- Actions,
+- Widgets,
+- Events
 
 vor Store-Übernahme validieren.
 
 ## Phase 4 – Component Registry finalisieren
 
-* bekannte Typen explizit registrieren,
-* Props validieren,
-* unbekannte Typen sichtbar ablehnen,
-* keine dynamischen Imports.
+- bekannte Typen explizit registrieren,
+- Props validieren,
+- unbekannte Typen sichtbar ablehnen,
+- keine dynamischen Imports.
 
 ## Phase 5 – Schema Renderer vervollständigen
 
-* rekursive Darstellung,
-* Sichtbarkeit,
-* Aktivierungszustände,
-* Datenbindungen,
-* Fehlergrenzen,
-* maximale Tiefe,
-* kontrollierte Formzustände.
+- rekursive Darstellung,
+- Sichtbarkeit,
+- Aktivierungszustände,
+- Datenbindungen,
+- Fehlergrenzen,
+- maximale Tiefe,
+- kontrollierte Formzustände.
 
 ## Phase 6 – Action Registry anbinden
 
-* Action-ID,
-* Risikoklasse,
-* Bestätigungsregeln,
-* API-Auflösung,
-* Backendautorisierung,
-* Fehlerdarstellung.
+- Action-ID,
+- Risikoklasse,
+- Bestätigungsregeln,
+- API-Auflösung,
+- Backendautorisierung,
+- Fehlerdarstellung.
 
 ## Phase 7 – Widget-System trennen
 
-* Widget-Typ,
-* Widget-Instanz,
-* Widget-Zuordnung,
-* Widget-Layout,
-* Interaktionsklasse.
+- Widget-Typ,
+- Widget-Instanz,
+- Widget-Zuordnung,
+- Widget-Layout,
+- Interaktionsklasse.
 
 ## Phase 8 – Dynamische Ressourcenschemas
 
-* erster Typ `note`,
-* generisches Formular,
-* generische Liste,
-* generische Action,
-* SSE-Invalidierung.
+- erster Typ `note`,
+- generisches Formular,
+- generische Liste,
+- generische Action,
+- SSE-Invalidierung.
 
 ## Phase 9 – Weitere Knotendarstellungen migrieren
 
@@ -1212,21 +1212,21 @@ Der Chat selbst bleibt eine kontrollierte Kernkomponente und wird nicht vollstä
 
 Die Entscheidung gilt als technisch umgesetzt, wenn:
 
-* ein stabiler öffentlicher UI-Schema-Vertrag existiert,
-* Backend und Frontend dieselbe Versionierungssemantik verwenden,
-* jede Backendantwort vor Store-Übernahme validiert wird,
-* unbekannte Komponenten sichtbar und sicher behandelt werden,
-* unbekannte Aktionen nicht ausgeführt werden,
-* keine dynamischen React-Imports existieren,
-* keine fachlich spezialisierten Kernkomponenten erforderlich sind,
-* der Schema Renderer rekursive bekannte Komponenten darstellen kann,
-* Action Registry und zentraler API-Client angebunden sind,
-* Widget-Typ und Widget-Instanz getrennt sind,
-* dynamische Ressourcenschemas bekannte Komponenten verwenden,
-* jede Mutation serverseitig autorisiert wird,
-* UI-Schemas keine Secrets enthalten,
-* Tests für bekannte und unbekannte Typen vorhanden sind,
-* OpenAPI dem tatsächlichen Laufzeitvertrag entspricht.
+- ein stabiler öffentlicher UI-Schema-Vertrag existiert,
+- Backend und Frontend dieselbe Versionierungssemantik verwenden,
+- jede Backendantwort vor Store-Übernahme validiert wird,
+- unbekannte Komponenten sichtbar und sicher behandelt werden,
+- unbekannte Aktionen nicht ausgeführt werden,
+- keine dynamischen React-Imports existieren,
+- keine fachlich spezialisierten Kernkomponenten erforderlich sind,
+- der Schema Renderer rekursive bekannte Komponenten darstellen kann,
+- Action Registry und zentraler API-Client angebunden sind,
+- Widget-Typ und Widget-Instanz getrennt sind,
+- dynamische Ressourcenschemas bekannte Komponenten verwenden,
+- jede Mutation serverseitig autorisiert wird,
+- UI-Schemas keine Secrets enthalten,
+- Tests für bekannte und unbekannte Typen vorhanden sind,
+- OpenAPI dem tatsächlichen Laufzeitvertrag entspricht.
 
 ---
 

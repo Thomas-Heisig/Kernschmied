@@ -1,20 +1,20 @@
 # ADR-0004: Sicherheitsprofile und Betriebsmodi
 
-* **Status:** Angenommen – konsolidiert
-* **Datum der ursprünglichen Entscheidung:** 2026-07-27
-* **Letzte Überarbeitung:** 2026-08-03
-* **Entscheidungsträger:** Kernschmied-Architekturteam
-* **Ersetzt:** Keine
-* **Ersetzt durch:** Keine
-* **Verwandte Dokumente:**
+- **Status:** Angenommen – konsolidiert
+- **Datum der ursprünglichen Entscheidung:** 2026-07-27
+- **Letzte Überarbeitung:** 2026-08-03
+- **Entscheidungsträger:** Kernschmied-Architekturteam
+- **Ersetzt:** Keine
+- **Ersetzt durch:** Keine
+- **Verwandte Dokumente:**
 
-  * `documentation/leitkonzept.md`
-  * `documentation/architecture/contracts.md`
-  * `documentation/architecture/contract-refactoring.md`
-  * `documentation/architecture/bootstrap.md`
-  * `documentation/architecture/security.md`
-  * `documentation/architecture/decisions/ADR-0002-configuration-architecture-and-runtime-initialization.md`
-  * `documentation/architecture/decisions/ADR-0003-registry-based-extension-architecture.md`
+  - `documentation/leitkonzept.md`
+  - `documentation/architecture/contracts.md`
+  - `documentation/architecture/contract-refactoring.md`
+  - `documentation/architecture/bootstrap.md`
+  - `documentation/architecture/security.md`
+  - `documentation/architecture/decisions/ADR-0002-configuration-architecture-and-runtime-initialization.md`
+  - `documentation/architecture/decisions/ADR-0003-registry-based-extension-architecture.md`
 
 ---
 
@@ -26,24 +26,24 @@ Die Anwendung bleibt funktional identisch, während ausschließlich die Sicherhe
 
 Die drei unterstützten Betriebsprofile sind:
 
-* **development**
-* **intranet**
-* **internet**
+- **development**
+- **intranet**
+- **internet**
 
 Die Auswahl des Profils erfolgt ausschließlich über die Bootstrap-Konfiguration.
 
 Das aktive Profil bestimmt unter anderem:
 
-* Authentifizierung,
-* Autorisierung,
-* Transportverschlüsselung,
-* Sessionverwaltung,
-* Sicherheitsrichtlinien,
-* Logging,
-* Auditierung,
-* Rate Limiting,
-* verfügbare Debugfunktionen,
-* Standardkonfigurationen.
+- Authentifizierung,
+- Autorisierung,
+- Transportverschlüsselung,
+- Sessionverwaltung,
+- Sicherheitsrichtlinien,
+- Logging,
+- Auditierung,
+- Rate Limiting,
+- verfügbare Debugfunktionen,
+- Standardkonfigurationen.
 
 Geschäftslogik und Fachkonfiguration gehören ausdrücklich **nicht** zum Sicherheitsprofil.
 
@@ -55,29 +55,29 @@ Kernschmied soll über viele Jahre in unterschiedlichen Umgebungen betrieben wer
 
 Die gleiche Anwendung kann eingesetzt werden:
 
-* lokal auf einem Entwicklerrechner,
-* in einem geschützten Unternehmensnetz,
-* als interne Unternehmensplattform,
-* in einer DMZ,
-* als Internetanwendung,
-* später auch mandantenfähig.
+- lokal auf einem Entwicklerrechner,
+- in einem geschützten Unternehmensnetz,
+- als interne Unternehmensplattform,
+- in einer DMZ,
+- als Internetanwendung,
+- später auch mandantenfähig.
 
 Diese Umgebungen unterscheiden sich erheblich hinsichtlich:
 
-* Bedrohungslage,
-* Benutzeranzahl,
-* Compliance-Anforderungen,
-* Administrationsaufwand,
-* Infrastruktur,
-* Verfügbarkeit.
+- Bedrohungslage,
+- Benutzeranzahl,
+- Compliance-Anforderungen,
+- Administrationsaufwand,
+- Infrastruktur,
+- Verfügbarkeit.
 
 Ein einziges Sicherheitsmodell würde entweder:
 
-* lokale Entwicklung unnötig erschweren,
+- lokale Entwicklung unnötig erschweren,
 
 oder
 
-* produktive Systeme unzureichend absichern.
+- produktive Systeme unzureichend absichern.
 
 ---
 
@@ -116,10 +116,10 @@ Mit der Zeit entstehen widersprüchliche Regeln.
 
 Beispiele:
 
-* Modellauswahl
-* Firmenname
-* Branding
-* Workflowdefinitionen
+- Modellauswahl
+- Firmenname
+- Branding
+- Workflowdefinitionen
 
 werden über `.env` gesteuert, obwohl sie eigentlich Laufzeitkonfiguration darstellen.
 
@@ -131,9 +131,9 @@ Jede Installation entwickelt eigene Sonderfälle.
 
 Dadurch entstehen:
 
-* schwer reproduzierbare Fehler,
-* unterschiedliche Sicherheitsniveaus,
-* hoher Supportaufwand.
+- schwer reproduzierbare Fehler,
+- unterschiedliche Sicherheitsniveaus,
+- hoher Supportaufwand.
 
 ---
 
@@ -143,11 +143,11 @@ Ohne verbindliche Profile können sicherheitskritische Funktionen versehentlich 
 
 Beispiele:
 
-* HTTPS
-* Sessionverwaltung
-* CSRF-Schutz
-* Rate Limiting
-* Auditierung
+- HTTPS
+- Sessionverwaltung
+- CSRF-Schutz
+- Rate Limiting
+- Auditierung
 
 ---
 
@@ -157,42 +157,42 @@ Kernschmied besitzt bereits die grundlegende Trennung zwischen Bootstrap- und La
 
 ## 4.1 Bereits vorhanden
 
-* Bootstrap-Konfiguration
-* Runtime-Konfiguration
-* Development-Profil
-* Capability-System
-* zentrale Konfigurationsverwaltung
-* serverseitige Autorisierung
-* strukturierte Fehlerantworten
-* SSE-Kommunikation
-* revisionsbasierte Konfiguration
+- Bootstrap-Konfiguration
+- Runtime-Konfiguration
+- Development-Profil
+- Capability-System
+- zentrale Konfigurationsverwaltung
+- serverseitige Autorisierung
+- strukturierte Fehlerantworten
+- SSE-Kommunikation
+- revisionsbasierte Konfiguration
 
 ---
 
 ## 4.2 Teilweise implementiert
 
-* DevelopmentIdentityMiddleware
-* Authentifizierungsstrategie je Profil
-* Health- und Readiness-Prüfungen
-* Audit-Logging
-* Rate Limiting
-* Sessionverwaltung
-* Sicherheitsheader
-* HTTPS-Zwang
-* CSRF-Schutz
-* Rollenmodell
+- DevelopmentIdentityMiddleware
+- Authentifizierungsstrategie je Profil
+- Health- und Readiness-Prüfungen
+- Audit-Logging
+- Rate Limiting
+- Sessionverwaltung
+- Sicherheitsheader
+- HTTPS-Zwang
+- CSRF-Schutz
+- Rollenmodell
 
 ---
 
 ## 4.3 Noch nicht vollständig umgesetzt
 
-* vollständige Profilvalidierung
-* automatische Mindestanforderungen
-* Sicherheitsdiagnose
-* Compliance-Prüfung
-* Profilmigration
-* Security Self Check
-* zentrale Security Policy Engine
+- vollständige Profilvalidierung
+- automatische Mindestanforderungen
+- Sicherheitsdiagnose
+- Compliance-Prüfung
+- Profilmigration
+- Security Self Check
+- zentrale Security Policy Engine
 
 ---
 
@@ -242,23 +242,23 @@ Lokale Entwicklung.
 
 Ziel:
 
-* maximale Entwicklerproduktivität
-* einfache Inbetriebnahme
-* reproduzierbare Tests
+- maximale Entwicklerproduktivität
+- einfache Inbetriebnahme
+- reproduzierbare Tests
 
 ---
 
 ### Eigenschaften
 
-* lokale Identität möglich
-* vereinfachte Anmeldung
-* HTTP erlaubt
-* reduzierte Sicherheitsmechanismen
-* Debugfunktionen verfügbar
-* detaillierte Fehlermeldungen
-* lokale Datenbank zulässig
-* Hot Reload
-* vereinfachte Zertifikate
+- lokale Identität möglich
+- vereinfachte Anmeldung
+- HTTP erlaubt
+- reduzierte Sicherheitsmechanismen
+- Debugfunktionen verfügbar
+- detaillierte Fehlermeldungen
+- lokale Datenbank zulässig
+- Hot Reload
+- vereinfachte Zertifikate
 
 ---
 
@@ -266,13 +266,13 @@ Ziel:
 
 Auch im Development gelten weiterhin:
 
-* serverseitige Autorisierung
-* Vertragsvalidierung
-* strukturierte Fehler
-* Registry-Validierung
-* Manifestvalidierung
-* keine dynamische Codeausführung
-* keine Umgehung technischer Sicherheitsgrenzen
+- serverseitige Autorisierung
+- Vertragsvalidierung
+- strukturierte Fehler
+- Registry-Validierung
+- Manifestvalidierung
+- keine dynamische Codeausführung
+- keine Umgehung technischer Sicherheitsgrenzen
 
 ---
 
@@ -282,32 +282,32 @@ Geschützter Unternehmensbetrieb.
 
 Ziel:
 
-* komfortable Nutzung
-* Unternehmenssicherheit
-* zentrale Verwaltung
+- komfortable Nutzung
+- Unternehmenssicherheit
+- zentrale Verwaltung
 
 ---
 
 ### Eigenschaften
 
-* verpflichtende Authentifizierung
-* Rollenmodell
-* Auditierung
-* Unternehmensidentitäten
-* Sessionverwaltung
-* TLS innerhalb der Infrastruktur
-* Backupstrategie
-* zentrale Konfiguration
+- verpflichtende Authentifizierung
+- Rollenmodell
+- Auditierung
+- Unternehmensidentitäten
+- Sessionverwaltung
+- TLS innerhalb der Infrastruktur
+- Backupstrategie
+- zentrale Konfiguration
 
 ---
 
 ### Typische Identitätsquellen
 
-* Active Directory
-* LDAP
-* OpenID Connect
-* Unternehmens-SSO
-* zukünftige Authentifizierungsprovider
+- Active Directory
+- LDAP
+- OpenID Connect
+- Unternehmens-SSO
+- zukünftige Authentifizierungsprovider
 
 ---
 
@@ -317,24 +317,24 @@ Ziel:
 
 Ziel:
 
-* maximale Sicherheit
-* minimale Angriffsfläche
-* vollständige Nachvollziehbarkeit
+- maximale Sicherheit
+- minimale Angriffsfläche
+- vollständige Nachvollziehbarkeit
 
 ---
 
 ### Eigenschaften
 
-* HTTPS verpflichtend
-* sichere Sessions
-* Rate Limiting
-* CSRF-Schutz
-* Security Header
-* vollständiges Audit
-* Härtung
-* sichere Cookies
-* verschlüsselte Kommunikation
-* restriktive CORS-Regeln
+- HTTPS verpflichtend
+- sichere Sessions
+- Rate Limiting
+- CSRF-Schutz
+- Security Header
+- vollständiges Audit
+- Härtung
+- sichere Cookies
+- verschlüsselte Kommunikation
+- restriktive CORS-Regeln
 
 ---
 
@@ -371,18 +371,18 @@ Eine Änderung des Profils erfordert einen Neustart der Anwendung.
 
 Folgende Bereiche gehören ausdrücklich zur Runtime-Konfiguration:
 
-* Modelle
-* Tools
-* Promptdefinitionen
-* Ressourcen
-* Widgets
-* Workflows
-* Branding
-* Firmeninformationen
-* Hierarchien
-* Knotentypen
-* Ressourcentypen
-* Benutzeroberfläche
+- Modelle
+- Tools
+- Promptdefinitionen
+- Ressourcen
+- Widgets
+- Workflows
+- Branding
+- Firmeninformationen
+- Hierarchien
+- Knotentypen
+- Ressourcentypen
+- Benutzeroberfläche
 
 Diese Informationen werden nicht über `.env` gesteuert.
 
@@ -394,18 +394,18 @@ Das Profil aktiviert definierte Sicherheitsrichtlinien.
 
 Beispiele:
 
-* Authentifizierung
-* Sessionverwaltung
-* Passwortregeln
-* HTTPS
-* TLS
-* CORS
-* CSP
-* HSTS
-* Auditierung
-* Logging
-* Tokenverwaltung
-* Cookie-Richtlinien
+- Authentifizierung
+- Sessionverwaltung
+- Passwortregeln
+- HTTPS
+- TLS
+- CORS
+- CSP
+- HSTS
+- Auditierung
+- Logging
+- Tokenverwaltung
+- Cookie-Richtlinien
 
 ---
 
@@ -438,12 +438,12 @@ Alle Benutzeraktionen werden serverseitig geprüft.
 
 Beispiele:
 
-* Toolaufrufe
-* Ressourcenänderungen
-* Hierarchieänderungen
-* Modellauswahl
-* Workflowausführung
-* Registryverwaltung
+- Toolaufrufe
+- Ressourcenänderungen
+- Hierarchieänderungen
+- Modellauswahl
+- Workflowausführung
+- Registryverwaltung
 
 Development reduziert niemals die serverseitige Berechtigungsprüfung.
 
@@ -479,20 +479,20 @@ Unsichere Verbindungen werden abgelehnt.
 
 Development:
 
-* vereinfachte Sessions möglich.
+- vereinfachte Sessions möglich.
 
 Intranet:
 
-* sichere Unternehmenssessions.
+- sichere Unternehmenssessions.
 
 Internet:
 
-* sichere Cookies,
-* HttpOnly,
-* SameSite,
-* Sessionrotation,
-* Timeout,
-* Logout-Invalidierung.
+- sichere Cookies,
+- HttpOnly,
+- SameSite,
+- Sessionrotation,
+- Timeout,
+- Logout-Invalidierung.
 
 ---
 
@@ -500,20 +500,20 @@ Internet:
 
 Development:
 
-* ausführliche Logs,
-* Debugausgaben,
-* Stacktraces.
+- ausführliche Logs,
+- Debugausgaben,
+- Stacktraces.
 
 Intranet:
 
-* strukturierte Logs,
-* Benutzerbezug.
+- strukturierte Logs,
+- Benutzerbezug.
 
 Internet:
 
-* sicherheitsorientierte Logs,
-* Datenschutz,
-* keine sensitiven Informationen.
+- sicherheitsorientierte Logs,
+- Datenschutz,
+- keine sensitiven Informationen.
 
 ---
 
@@ -533,11 +533,11 @@ vollständige Auditierung sicherheitsrelevanter Aktionen.
 
 Audit umfasst unter anderem:
 
-* Konfigurationsänderungen,
-* Registryänderungen,
-* Rollenänderungen,
-* Ressourcenänderungen,
-* Workflowänderungen.
+- Konfigurationsänderungen,
+- Registryänderungen,
+- Rollenänderungen,
+- Ressourcenänderungen,
+- Workflowänderungen.
 
 ---
 
@@ -561,12 +561,12 @@ verpflichtend.
 
 Internet aktiviert standardmäßig:
 
-* CSP
-* HSTS
-* X-Content-Type-Options
-* Referrer Policy
-* Permissions Policy
-* Frame Options
+- CSP
+- HSTS
+- X-Content-Type-Options
+- Referrer Policy
+- Permissions Policy
+- Frame Options
 
 Development kann diese lockern.
 
@@ -578,19 +578,19 @@ Secrets gehören ausschließlich zur Bootstrap-Konfiguration.
 
 Beispiele:
 
-* API-Schlüssel
-* Datenbankkennwörter
-* Signaturschlüssel
-* Zertifikate
-* OAuth-Secrets
+- API-Schlüssel
+- Datenbankkennwörter
+- Signaturschlüssel
+- Zertifikate
+- OAuth-Secrets
 
 Secrets werden niemals:
 
-* in Runtime-Konfigurationen,
-* Registrydefinitionen,
-* Ressourcen,
-* Promptdefinitionen,
-* Widgets
+- in Runtime-Konfigurationen,
+- Registrydefinitionen,
+- Ressourcen,
+- Promptdefinitionen,
+- Widgets
 
 gespeichert.
 
@@ -602,19 +602,19 @@ Health- und Readiness-Endpunkte dürfen den Sicherheitszustand anzeigen.
 
 Beispiele:
 
-* aktives Profil
-* HTTPS aktiv
-* Datenbank erreichbar
-* Registries initialisiert
-* Konfigurationsrevision
-* erforderliche Dienste verfügbar
+- aktives Profil
+- HTTPS aktiv
+- Datenbank erreichbar
+- Registries initialisiert
+- Konfigurationsrevision
+- erforderliche Dienste verfügbar
 
 Nicht ausgegeben werden:
 
-* Passwörter
-* Tokens
-* API-Schlüssel
-* Zertifikatsinhalte
+- Passwörter
+- Tokens
+- API-Schlüssel
+- Zertifikatsinhalte
 
 ---
 
@@ -644,9 +644,9 @@ Registries bleiben profilunabhängig.
 
 Das Profil entscheidet lediglich,
 
-* welche Registries aktiviert werden,
-* welche Provider zulässig sind,
-* welche Integrationen verwendet werden dürfen.
+- welche Registries aktiviert werden,
+- welche Provider zulässig sind,
+- welche Integrationen verwendet werden dürfen.
 
 ---
 
@@ -656,10 +656,10 @@ Der Effective Context enthält keine sicherheitskritischen Bootstrap-Geheimnisse
 
 Er kann jedoch Informationen enthalten wie:
 
-* aktives Deploymentprofil,
-* verfügbare Capabilities,
-* Sicherheitsstufe,
-* erlaubte Aktionen.
+- aktives Deploymentprofil,
+- verfügbare Capabilities,
+- Sicherheitsstufe,
+- erlaubte Aktionen.
 
 ---
 
@@ -729,12 +729,12 @@ Jedes Profil benötigt klare Betriebsrichtlinien.
 
 ### Vorteile
 
-* einfach.
+- einfach.
 
 ### Nachteile
 
-* unflexibel,
-* ungeeignet für unterschiedliche Einsatzszenarien.
+- unflexibel,
+- ungeeignet für unterschiedliche Einsatzszenarien.
 
 **Entscheidung:** Verworfen.
 
@@ -744,13 +744,13 @@ Jedes Profil benötigt klare Betriebsrichtlinien.
 
 ### Vorteile
 
-* maximale Flexibilität.
+- maximale Flexibilität.
 
 ### Nachteile
 
-* inkonsistente Installationen,
-* schwer prüfbar,
-* erhöhte Fehlerrisiken.
+- inkonsistente Installationen,
+- schwer prüfbar,
+- erhöhte Fehlerrisiken.
 
 **Entscheidung:** Verworfen.
 
@@ -760,13 +760,13 @@ Jedes Profil benötigt klare Betriebsrichtlinien.
 
 ### Vorteile
 
-* schnell umzusetzen.
+- schnell umzusetzen.
 
 ### Nachteile
 
-* unübersichtlich,
-* fehleranfällig,
-* keine klaren Mindeststandards.
+- unübersichtlich,
+- fehleranfällig,
+- keine klaren Mindeststandards.
 
 **Entscheidung:** Verworfen.
 
@@ -804,16 +804,16 @@ Internet-Härtung vervollständigen.
 
 Die Entscheidung gilt als umgesetzt, wenn:
 
-* genau drei unterstützte Betriebsprofile existieren,
-* Bootstrap und Runtime vollständig getrennt sind,
-* Geschäftslogik profilunabhängig bleibt,
-* Sicherheitsrichtlinien zentral verwaltet werden,
-* HTTPS im Internetprofil verpflichtend ist,
-* serverseitige Autorisierung immer aktiv bleibt,
-* Secrets ausschließlich in der Bootstrap-Konfiguration liegen,
-* Auditierung und Logging profilgerecht arbeiten,
-* Sicherheitsdiagnosen verfügbar sind,
-* neue Sicherheitsprovider über Registries integriert werden können.
+- genau drei unterstützte Betriebsprofile existieren,
+- Bootstrap und Runtime vollständig getrennt sind,
+- Geschäftslogik profilunabhängig bleibt,
+- Sicherheitsrichtlinien zentral verwaltet werden,
+- HTTPS im Internetprofil verpflichtend ist,
+- serverseitige Autorisierung immer aktiv bleibt,
+- Secrets ausschließlich in der Bootstrap-Konfiguration liegen,
+- Auditierung und Logging profilgerecht arbeiten,
+- Sicherheitsdiagnosen verfügbar sind,
+- neue Sicherheitsprovider über Registries integriert werden können.
 
 ---
 

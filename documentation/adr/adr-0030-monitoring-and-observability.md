@@ -116,7 +116,7 @@ Metrics        Structured Logs
                ▼
 
       Monitoring Systems
-````
+```
 
 ---
 
@@ -126,16 +126,16 @@ Every subsystem exposes operational metrics.
 
 Typical metrics include:
 
-* request count
-* request duration
-* error count
-* throughput
-* queue length
-* cache usage
-* token usage
-* model latency
-* workflow duration
-* scheduler activity
+- request count
+- request duration
+- error count
+- throughput
+- queue length
+- cache usage
+- token usage
+- model latency
+- workflow duration
+- scheduler activity
 
 Metrics are collected continuously.
 
@@ -147,14 +147,14 @@ Every component produces structured logs.
 
 Typical log information includes:
 
-* timestamp
-* request identifier
-* correlation identifier
-* component
-* severity
-* event type
-* message
-* context
+- timestamp
+- request identifier
+- correlation identifier
+- component
+- severity
+- event type
+- message
+- context
 
 Logs never depend on free-text parsing.
 
@@ -166,13 +166,13 @@ Platform operations are correlated through trace identifiers.
 
 Typical trace spans include:
 
-* HTTP requests
-* database operations
-* model execution
-* tool execution
-* workflow execution
-* scheduler jobs
-* external integrations
+- HTTP requests
+- database operations
+- model execution
+- tool execution
+- workflow execution
+- scheduler jobs
+- external integrations
 
 Tracing enables end-to-end diagnostics.
 
@@ -184,11 +184,11 @@ Every service exposes standardized health information.
 
 Typical health categories include:
 
-* startup
-* readiness
-* liveness
-* dependency status
-* provider availability
+- startup
+- readiness
+- liveness
+- dependency status
+- provider availability
 
 Health information supports orchestration and monitoring systems.
 
@@ -200,13 +200,13 @@ Model execution publishes operational metrics.
 
 Typical information includes:
 
-* request count
-* latency
-* token usage
-* streaming duration
-* provider availability
-* fallback usage
-* error rate
+- request count
+- latency
+- token usage
+- streaming duration
+- provider availability
+- fallback usage
+- error rate
 
 Monitoring follows ADR-0028.
 
@@ -218,12 +218,12 @@ Tool execution is monitored independently.
 
 Typical metrics include:
 
-* execution count
-* execution duration
-* timeout count
-* failure count
-* provider availability
-* quota usage
+- execution count
+- execution duration
+- timeout count
+- failure count
+- provider availability
+- quota usage
 
 Monitoring follows ADR-0029.
 
@@ -235,11 +235,11 @@ Workflow execution publishes operational information.
 
 Typical metrics include:
 
-* active workflows
-* completed workflows
-* failed workflows
-* retry count
-* execution duration
+- active workflows
+- completed workflows
+- failed workflows
+- retry count
+- execution duration
 
 Workflow monitoring follows ADR-0026.
 
@@ -251,12 +251,12 @@ The scheduler exposes operational metrics.
 
 Typical information includes:
 
-* queued jobs
-* running jobs
-* completed jobs
-* failed jobs
-* retry count
-* queue latency
+- queued jobs
+- running jobs
+- completed jobs
+- failed jobs
+- retry count
+- queue latency
 
 Scheduler monitoring follows ADR-0027.
 
@@ -268,11 +268,11 @@ Runtime registries expose operational information.
 
 Typical metrics include:
 
-* active entries
-* validation failures
-* activation count
-* revision changes
-* synchronization status
+- active entries
+- validation failures
+- activation count
+- revision changes
+- synchronization status
 
 Registry monitoring follows ADR-0009.
 
@@ -284,10 +284,10 @@ Configuration changes are observable.
 
 Typical events include:
 
-* configuration updated
-* configuration activated
-* configuration rollback
-* revision change
+- configuration updated
+- configuration activated
+- configuration rollback
+- revision change
 
 Configuration monitoring follows ADR-0014.
 
@@ -299,13 +299,13 @@ Platform errors are categorized consistently.
 
 Typical categories include:
 
-* validation failure
-* authorization failure
-* timeout
-* provider failure
-* infrastructure failure
-* configuration error
-* workflow error
+- validation failure
+- authorization failure
+- timeout
+- provider failure
+- infrastructure failure
+- configuration error
+- workflow error
 
 Errors are correlated through request identifiers.
 
@@ -329,13 +329,13 @@ Operational metrics may trigger alerts.
 
 Typical alert conditions include:
 
-* high error rate
-* unavailable provider
-* excessive latency
-* failed workflows
-* scheduler backlog
-* storage failures
-* authentication failures
+- high error rate
+- unavailable provider
+- excessive latency
+- failed workflows
+- scheduler backlog
+- storage failures
+- authentication failures
 
 Alert thresholds remain configurable.
 
@@ -347,11 +347,11 @@ Monitoring behaviour is configurable.
 
 Examples include:
 
-* log level
-* metric retention
-* trace sampling
-* health intervals
-* alert thresholds
+- log level
+- metric retention
+- trace sampling
+- health intervals
+- alert thresholds
 
 Configuration follows ADR-0014.
 
@@ -361,10 +361,10 @@ Configuration follows ADR-0014.
 
 Monitoring data must never expose:
 
-* secrets
-* credentials
-* private keys
-* unrestricted personal information
+- secrets
+- credentials
+- private keys
+- unrestricted personal information
 
 Sensitive values are redacted before publication.
 
@@ -394,13 +394,13 @@ All contracts follow ADR-0005.
 
 Future APIs may include:
 
-* Metrics
-* Health
-* Readiness
-* Liveness
-* Trace Information
-* Runtime Statistics
-* Monitoring Configuration
+- Metrics
+- Health
+- Readiness
+- Liveness
+- Trace Information
+- Runtime Statistics
+- Monitoring Configuration
 
 All contracts are versioned.
 
@@ -478,15 +478,15 @@ Alert rules require continuous tuning.
 
 ### Advantages
 
-* Simple implementation
-* Low initial effort
+- Simple implementation
+- Low initial effort
 
 ### Disadvantages
 
-* Poor diagnostics
-* No metrics
-* No tracing
-* Limited visibility
+- Poor diagnostics
+- No metrics
+- No tracing
+- Limited visibility
 
 Rejected.
 
@@ -496,14 +496,14 @@ Rejected.
 
 ### Advantages
 
-* Existing tooling
-* Minimal application changes
+- Existing tooling
+- Minimal application changes
 
 ### Disadvantages
 
-* No application insight
-* Limited troubleshooting
-* Missing business telemetry
+- No application insight
+- Limited troubleshooting
+- Missing business telemetry
 
 Rejected.
 
@@ -513,14 +513,14 @@ Rejected.
 
 ### Advantages
 
-* Rich ecosystem
-* Advanced dashboards
+- Rich ecosystem
+- Advanced dashboards
 
 ### Disadvantages
 
-* Vendor lock-in
-* Limited portability
-* Reduced flexibility
+- Vendor lock-in
+- Limited portability
+- Reduced flexibility
 
 Rejected.
 
@@ -528,18 +528,18 @@ Rejected.
 
 # Related ADRs
 
-* ADR-0005 — Versioned Contracts and Schema Evolution
-* ADR-0009 — Runtime Registry Architecture
-* ADR-0013 — Event Architecture
-* ADR-0014 — Runtime Configuration Architecture
-* ADR-0019 — Audit and Revision Architecture
-* ADR-0022 — Integration Architecture
-* ADR-0026 — Workflow Engine
-* ADR-0027 — Scheduling and Automation Architecture
-* ADR-0028 — AI Model Architecture
-* ADR-0029 — Tool Execution Architecture
-* ADR-0031 — Performance and Caching
-* ADR-0032 — Backup and Disaster Recovery
+- ADR-0005 — Versioned Contracts and Schema Evolution
+- ADR-0009 — Runtime Registry Architecture
+- ADR-0013 — Event Architecture
+- ADR-0014 — Runtime Configuration Architecture
+- ADR-0019 — Audit and Revision Architecture
+- ADR-0022 — Integration Architecture
+- ADR-0026 — Workflow Engine
+- ADR-0027 — Scheduling and Automation Architecture
+- ADR-0028 — AI Model Architecture
+- ADR-0029 — Tool Execution Architecture
+- ADR-0031 — Performance and Caching
+- ADR-0032 — Backup and Disaster Recovery
 
 ---
 
@@ -549,3 +549,4 @@ The MVP initially provides structured logging, standardized health endpoints, ba
 
 ```
 
+```

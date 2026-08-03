@@ -718,4 +718,7 @@ In particular:
 - unknown future capabilities shall be ignored safely
 - conversation contracts shall remain backward compatible whenever possible
 - breaking changes shall require new schema versions
+
+```
+
 ```

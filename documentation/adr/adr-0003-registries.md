@@ -1,20 +1,20 @@
 # ADR-0003: Registry-basierte Erweiterungsarchitektur
 
-* **Status:** Angenommen – konsolidiert
-* **Datum der ursprünglichen Entscheidung:** 2026-07-27
-* **Letzte Überarbeitung:** 2026-08-03
-* **Entscheidungsträger:** Kernschmied-Architekturteam
-* **Ersetzt:** Keine
-* **Ersetzt durch:** Keine
-* **Verwandte Dokumente:**
+- **Status:** Angenommen – konsolidiert
+- **Datum der ursprünglichen Entscheidung:** 2026-07-27
+- **Letzte Überarbeitung:** 2026-08-03
+- **Entscheidungsträger:** Kernschmied-Architekturteam
+- **Ersetzt:** Keine
+- **Ersetzt durch:** Keine
+- **Verwandte Dokumente:**
 
-  * `documentation/leitkonzept.md`
-  * `documentation/architecture/contracts.md`
-  * `documentation/architecture/contract-refactoring.md`
-  * `documentation/architecture/dynamic-definitions.md`
-  * `documentation/architecture/effective-context.md`
-  * `documentation/architecture/decisions/ADR-0001-schema-driven-user-interface.md`
-  * `documentation/architecture/decisions/ADR-0002-configuration-architecture-and-runtime-initialization.md`
+  - `documentation/leitkonzept.md`
+  - `documentation/architecture/contracts.md`
+  - `documentation/architecture/contract-refactoring.md`
+  - `documentation/architecture/dynamic-definitions.md`
+  - `documentation/architecture/effective-context.md`
+  - `documentation/architecture/decisions/ADR-0001-schema-driven-user-interface.md`
+  - `documentation/architecture/decisions/ADR-0002-configuration-architecture-and-runtime-initialization.md`
 
 ---
 
@@ -49,44 +49,44 @@ Die Plattform soll im Laufe ihrer Entwicklung neue Fähigkeiten aufnehmen könne
 
 Mögliche Erweiterungspunkte sind:
 
-* Modellprovider,
-* Modelle,
-* Tools,
-* Frontend-Komponenten,
-* Widgets,
-* Frontend-Aktionen,
-* Hierarchieknotentypen,
-* Promptdefinitionen,
-* Ressourcentypen,
-* Workflow-Schritte,
-* Workflowdefinitionen,
-* Authentifizierungsprovider,
-* Speicherprovider,
-* Import- und Exportformate,
-* Integrationen,
-* Vorlagenpakete,
-* spätere Plugins.
+- Modellprovider,
+- Modelle,
+- Tools,
+- Frontend-Komponenten,
+- Widgets,
+- Frontend-Aktionen,
+- Hierarchieknotentypen,
+- Promptdefinitionen,
+- Ressourcentypen,
+- Workflow-Schritte,
+- Workflowdefinitionen,
+- Authentifizierungsprovider,
+- Speicherprovider,
+- Import- und Exportformate,
+- Integrationen,
+- Vorlagenpakete,
+- spätere Plugins.
 
 Diese Erweiterungspunkte müssen:
 
-* vorhersehbar,
-* sicher,
-* testbar,
-* versioniert,
-* wartbar,
-* auffindbar,
-* revisionsfähig,
-* auditierbar
+- vorhersehbar,
+- sicher,
+- testbar,
+- versioniert,
+- wartbar,
+- auffindbar,
+- revisionsfähig,
+- auditierbar
 
 bleiben.
 
 Gleichzeitig darf dynamische Erweiterbarkeit nicht dazu führen, dass beliebiger Code aus:
 
-* Datenbanken,
-* Manifesten,
-* Benutzerkonfigurationen,
-* externen URLs,
-* nicht kontrollierten Verzeichnissen
+- Datenbanken,
+- Manifesten,
+- Benutzerkonfigurationen,
+- externen URLs,
+- nicht kontrollierten Verzeichnissen
 
 geladen und ausgeführt wird.
 
@@ -133,11 +133,11 @@ Jede neue Implementierung erfordert zusätzliche Bedingungen.
 
 Mit zunehmender Anzahl wachsen:
 
-* Verschachtelung,
-* Abhängigkeiten,
-* Seiteneffekte,
-* Testaufwand,
-* Risiko unbeabsichtigter Änderungen.
+- Verschachtelung,
+- Abhängigkeiten,
+- Seiteneffekte,
+- Testaufwand,
+- Risiko unbeabsichtigter Änderungen.
 
 ## 3.2 Direkte Kopplung
 
@@ -160,15 +160,15 @@ Dadurch wird der Kern bei jeder Erweiterung verändert.
 
 Eine neue Implementierung kann Änderungen erfordern in:
 
-* Initialisierung,
-* Konfiguration,
-* Auswahl,
-* API,
-* UI,
-* Health-Check,
-* Tests,
-* Shutdown,
-* Dokumentation.
+- Initialisierung,
+- Konfiguration,
+- Auswahl,
+- API,
+- UI,
+- Health-Check,
+- Tests,
+- Shutdown,
+- Dokumentation.
 
 ## 3.4 Schlechte Fehlerisolation
 
@@ -178,11 +178,11 @@ Ein fehlerhafter Provider, ein ungültiges Tool oder eine unbekannte Komponente 
 
 Ohne Registry-Lifecycle ist unklar:
 
-* ob eine Implementierung nur entdeckt wurde,
-* ob sie valide ist,
-* ob sie freigegeben wurde,
-* ob sie aktiv ist,
-* ob sie betriebsbereit ist.
+- ob eine Implementierung nur entdeckt wurde,
+- ob sie valide ist,
+- ob sie freigegeben wurde,
+- ob sie aktiv ist,
+- ob sie betriebsbereit ist.
 
 ## 3.6 Verletzung des Open/Closed-Prinzips
 
@@ -194,11 +194,11 @@ Ein unkontrolliertes Plugin-System könnte Manifestwerte oder Datenbankfelder al
 
 Dadurch entstünden Risiken wie:
 
-* beliebige Codeausführung,
-* unkontrollierte Abhängigkeiten,
-* schwer prüfbare Lebenszyklen,
-* fehlende Vertrauensgrenzen,
-* unsichere Updates.
+- beliebige Codeausführung,
+- unkontrollierte Abhängigkeiten,
+- schwer prüfbare Lebenszyklen,
+- fehlende Vertrauensgrenzen,
+- unsichere Updates.
 
 ---
 
@@ -212,22 +212,22 @@ Verwaltet tatsächlich ausführbare Implementierungen.
 
 Beispiele:
 
-* Modellprovider,
-* Tool-Handler,
-* Action-Handler,
-* Widget-Komponenten,
-* UI-Komponenten,
-* Workflow-Schrittimplementierungen,
-* Integrationstransporte,
-* Speicherprovider,
-* Authentifizierungsprovider.
+- Modellprovider,
+- Tool-Handler,
+- Action-Handler,
+- Widget-Komponenten,
+- UI-Komponenten,
+- Workflow-Schrittimplementierungen,
+- Integrationstransporte,
+- Speicherprovider,
+- Authentifizierungsprovider.
 
 Diese Implementierungen stammen aus:
 
-* kontrolliertem Anwendungscode,
-* vertrauenswürdigen lokalen Modulen,
-* explizit freigegebenen Paketpfaden,
-* beim Build oder Start bekannten Registrierungen.
+- kontrolliertem Anwendungscode,
+- vertrauenswürdigen lokalen Modulen,
+- explizit freigegebenen Paketpfaden,
+- beim Build oder Start bekannten Registrierungen.
 
 ## 4.2 Dynamische Runtime-Registry
 
@@ -235,15 +235,15 @@ Verwaltet Definitionen und Konfigurationen.
 
 Beispiele:
 
-* Ressourcentypen,
-* zusätzliche Knotentypen,
-* Promptdefinitionen,
-* Widget-Instanzen,
-* Konzepte,
-* Aliase,
-* Workflowdefinitionen,
-* Vorlagenpakete,
-* Integrationskonfigurationen.
+- Ressourcentypen,
+- zusätzliche Knotentypen,
+- Promptdefinitionen,
+- Widget-Instanzen,
+- Konzepte,
+- Aliase,
+- Workflowdefinitionen,
+- Vorlagenpakete,
+- Integrationskonfigurationen.
 
 Diese Einträge dürfen zur Laufzeit aus der Datenbank geladen werden.
 
@@ -257,45 +257,45 @@ Zum Zeitpunkt dieser Überarbeitung besitzt Kernschmied bereits mehrere Registry
 
 ## 5.1 Bereits vorhanden
 
-* ModelProviderRegistry,
-* Modell-Registry,
-* Tool-Registry,
-* feste Frontend-Komponenten-Registry als Architekturprinzip,
-* feste Action-Registry als Architekturprinzip,
-* Icon-Registry,
-* Modell- und Toolmanifeste,
-* isolierte Providerinitialisierung,
-* Modell- und Toollisten-Endpunkte,
-* Capability-Grundlagen im Bootstrap,
-* kontrollierte Providerauflösung,
-* keine beliebigen Importpfade aus Modellmanifesten,
-* teilweise isolierte Fehlerbehandlung.
+- ModelProviderRegistry,
+- Modell-Registry,
+- Tool-Registry,
+- feste Frontend-Komponenten-Registry als Architekturprinzip,
+- feste Action-Registry als Architekturprinzip,
+- Icon-Registry,
+- Modell- und Toolmanifeste,
+- isolierte Providerinitialisierung,
+- Modell- und Toollisten-Endpunkte,
+- Capability-Grundlagen im Bootstrap,
+- kontrollierte Providerauflösung,
+- keine beliebigen Importpfade aus Modellmanifesten,
+- teilweise isolierte Fehlerbehandlung.
 
 ## 5.2 Teilweise implementiert
 
-* vollständige Manifestvalidierung,
-* Registry-Revisionen,
-* Health-Status pro Eintrag,
-* Aktivierungsstatus,
-* zentrale Diagnose,
-* Lifecycle-Management,
-* Shutdown,
-* Frontend-Registry-Validierung,
-* dynamische Runtime-Registries,
-* Action-Risikoklassen,
-* Registry-Auditierung,
-* Registry-basierte Cache-Invalidierung.
+- vollständige Manifestvalidierung,
+- Registry-Revisionen,
+- Health-Status pro Eintrag,
+- Aktivierungsstatus,
+- zentrale Diagnose,
+- Lifecycle-Management,
+- Shutdown,
+- Frontend-Registry-Validierung,
+- dynamische Runtime-Registries,
+- Action-Risikoklassen,
+- Registry-Auditierung,
+- Registry-basierte Cache-Invalidierung.
 
 ## 5.3 Derzeitige Inkonsistenzen
 
-* einzelne Fallunterscheidungen können noch außerhalb der Registries bestehen,
-* Registry-Verträge sind noch nicht vollständig vereinheitlicht,
-* Modell-, Tool-, Komponenten- und Action-Registries verwenden noch nicht zwingend denselben Lifecycle,
-* Discovery, Validierung, Freigabe und Aktivierung sind noch nicht überall getrennt,
-* Registry-Revisionsstände sind noch nicht vollständig im Effective Context enthalten,
-* dynamische Definitionen und technische Implementierungen sind noch nicht durchgängig getrennt,
-* nicht alle Registryfehler besitzen stabile Fehlercodes,
-* Diagnose- und Health-Informationen sind noch nicht einheitlich.
+- einzelne Fallunterscheidungen können noch außerhalb der Registries bestehen,
+- Registry-Verträge sind noch nicht vollständig vereinheitlicht,
+- Modell-, Tool-, Komponenten- und Action-Registries verwenden noch nicht zwingend denselben Lifecycle,
+- Discovery, Validierung, Freigabe und Aktivierung sind noch nicht überall getrennt,
+- Registry-Revisionsstände sind noch nicht vollständig im Effective Context enthalten,
+- dynamische Definitionen und technische Implementierungen sind noch nicht durchgängig getrennt,
+- nicht alle Registryfehler besitzen stabile Fehlercodes,
+- Diagnose- und Health-Informationen sind noch nicht einheitlich.
 
 ---
 
@@ -395,15 +395,15 @@ Gefundene Implementierungen oder Definitionen werden zunächst nur als Kandidate
 
 Registries prüfen mindestens:
 
-* eindeutige ID,
-* bekannte Version,
-* gültigen Vertrag,
-* erlaubte Herkunft,
-* notwendige Capabilities,
-* Abhängigkeiten,
-* Status,
-* Tenant-Scope,
-* Freigabe.
+- eindeutige ID,
+- bekannte Version,
+- gültigen Vertrag,
+- erlaubte Herkunft,
+- notwendige Capabilities,
+- Abhängigkeiten,
+- Status,
+- Tenant-Scope,
+- Freigabe.
 
 ## 7.5 Fehler werden isoliert
 
@@ -485,14 +485,14 @@ Für Runtime-Definitionen:
 
 Verwaltet Providerimplementierungen wie:
 
-* Ollama,
-* OpenAI-kompatible APIs,
-* Azure OpenAI,
-* Anthropic,
-* Google Gemini,
-* llama.cpp,
-* Transformers,
-* lokale HTTP-Provider.
+- Ollama,
+- OpenAI-kompatible APIs,
+- Azure OpenAI,
+- Anthropic,
+- Google Gemini,
+- llama.cpp,
+- Transformers,
+- lokale HTTP-Provider.
 
 ## 10.2 Modell-Registry
 
@@ -596,10 +596,10 @@ registry.register(
 
 Das Vorhandensein einer Datei bedeutet nicht:
 
-* gültig,
-* freigegeben,
-* aktiv,
-* verwendbar.
+- gültig,
+- freigegeben,
+- aktiv,
+- verwendbar.
 
 ## 12.3 Keine freien Importpfade
 
@@ -696,10 +696,10 @@ dynamic_form
 
 IDs müssen:
 
-* eindeutig,
-* normalisiert,
-* versionierbar,
-* nicht lokalisierungsabhängig
+- eindeutig,
+- normalisiert,
+- versionierbar,
+- nicht lokalisierungsabhängig
 
 sein.
 
@@ -746,12 +746,12 @@ Beispiel:
 
 Die Registry-Revision steigt bei relevanten Änderungen wie:
 
-* Registrierung,
-* Aktivierung,
-* Deaktivierung,
-* Entfernung,
-* Statusänderung,
-* Capability-Änderung.
+- Registrierung,
+- Aktivierung,
+- Deaktivierung,
+- Entfernung,
+- Statusänderung,
+- Capability-Änderung.
 
 ---
 
@@ -771,13 +771,13 @@ model.json
 
 Kann beschreiben:
 
-* logische Modell-ID,
-* Provider-Typ,
-* providerinternen Modellnamen,
-* Capabilities,
-* Limits,
-* Konfigurationsschema,
-* Aktivierungsstatus.
+- logische Modell-ID,
+- Provider-Typ,
+- providerinternen Modellnamen,
+- Capabilities,
+- Limits,
+- Konfigurationsschema,
+- Aktivierungsstatus.
 
 ## 16.2 Toolmanifest
 
@@ -789,24 +789,24 @@ tool.json
 
 Kann beschreiben:
 
-* Tool-ID,
-* Name,
-* Version,
-* Eingabeschema,
-* Ausgabeschema,
-* Berechtigungen,
-* Bestätigungspflicht,
-* Capability-Metadaten.
+- Tool-ID,
+- Name,
+- Version,
+- Eingabeschema,
+- Ausgabeschema,
+- Berechtigungen,
+- Bestätigungspflicht,
+- Capability-Metadaten.
 
 ## 16.3 Sicherheitsgrenze
 
 Ein Manifest bestimmt nicht:
 
-* Python-Importpfad,
-* Shell-Befehl,
-* React-Komponente,
-* JavaScript-Funktion,
-* freie Netzwerkziele.
+- Python-Importpfad,
+- Shell-Befehl,
+- React-Komponente,
+- JavaScript-Funktion,
+- freie Netzwerkziele.
 
 ---
 
@@ -884,10 +884,10 @@ Provider und Tools sollen nach Möglichkeit erst bei tatsächlicher Nutzung init
 
 Vorteile:
 
-* schnellerer Start,
-* geringerer Ressourcenverbrauch,
-* bessere Fehlerisolation,
-* optionale Erweiterungen blockieren den Start nicht.
+- schnellerer Start,
+- geringerer Ressourcenverbrauch,
+- bessere Fehlerisolation,
+- optionale Erweiterungen blockieren den Start nicht.
 
 ## 18.2 Shutdown
 
@@ -922,9 +922,9 @@ Andere Einträge bleiben nutzbar.
 
 Ausnahmen:
 
-* verpflichtende Datenbank,
-* verpflichtende Sicherheitskomponente,
-* unverzichtbare Kernregistry.
+- verpflichtende Datenbank,
+- verpflichtende Sicherheitskomponente,
+- unverzichtbare Kernregistry.
 
 Diese können die Readiness verhindern.
 
@@ -936,23 +936,23 @@ Jede Registry kann Diagnoseinformationen liefern.
 
 Beispiele:
 
-* registrierte Einträge,
-* aktive Einträge,
-* deaktivierte Einträge,
-* fehlerhafte Einträge,
-* Registry-Revision,
-* letzter Health-Check,
-* Capability-Übersicht.
+- registrierte Einträge,
+- aktive Einträge,
+- deaktivierte Einträge,
+- fehlerhafte Einträge,
+- Registry-Revision,
+- letzter Health-Check,
+- Capability-Übersicht.
 
 Sensitive Informationen dürfen nicht ausgegeben werden.
 
 Nicht ausgeben:
 
-* API-Schlüssel,
-* Tokens,
-* vollständige Providerkonfigurationen,
-* interne Stacktraces,
-* Secrets.
+- API-Schlüssel,
+- Tokens,
+- vollständige Providerkonfigurationen,
+- interne Stacktraces,
+- Secrets.
 
 ---
 
@@ -976,17 +976,17 @@ Sie dürfen nur kontrolliert erweitert werden.
 
 Mögliche Wege:
 
-* direkter Codeeintrag,
-* vertrauenswürdiges lokales Paket,
-* später signiertes Pluginpaket,
-* statische Importliste.
+- direkter Codeeintrag,
+- vertrauenswürdiges lokales Paket,
+- später signiertes Pluginpaket,
+- statische Importliste.
 
 Nicht erlaubt:
 
-* beliebige Datenbankpfade,
-* freie Modulnamen,
-* unkontrollierte Dateisystemsuche,
-* Remote-Code-Download.
+- beliebige Datenbankpfade,
+- freie Modulnamen,
+- unkontrollierte Dateisystemsuche,
+- Remote-Code-Download.
 
 ---
 
@@ -1009,12 +1009,12 @@ integration_definitions
 
 Diese Definitionen können im Betrieb:
 
-* erstellt,
-* validiert,
-* aktiviert,
-* deaktiviert,
-* revisioniert,
-* archiviert
+- erstellt,
+- validiert,
+- aktiviert,
+- deaktiviert,
+- revisioniert,
+- archiviert
 
 werden.
 
@@ -1167,10 +1167,10 @@ Toolmanifest und Toolimplementierung bleiben getrennt.
 
 Discovery eines Toolmanifests bedeutet nicht:
 
-* Freigabe,
-* Aktivierung,
-* Benutzerberechtigung,
-* automatische Nutzung.
+- Freigabe,
+- Aktivierung,
+- Benutzerberechtigung,
+- automatische Nutzung.
 
 Jeder Toolaufruf wird zusätzlich serverseitig autorisiert.
 
@@ -1182,28 +1182,28 @@ Ein zukünftiges Plugin-System baut auf Registries auf.
 
 Ein Plugin kann kontrolliert bereitstellen:
 
-* technische Implementierungen,
-* Manifeste,
-* UI-Registry-Einträge,
-* Action-Handler,
-* Workflow-Schritte,
-* Dokumentation.
+- technische Implementierungen,
+- Manifeste,
+- UI-Registry-Einträge,
+- Action-Handler,
+- Workflow-Schritte,
+- Dokumentation.
 
 Für das MVP gilt weiterhin:
 
-* kein Remote-Plugin-Loading,
-* keine beliebigen Importpfade,
-* keine unkontrollierte Codeausführung,
-* keine automatische Aktivierung.
+- kein Remote-Plugin-Loading,
+- keine beliebigen Importpfade,
+- keine unkontrollierte Codeausführung,
+- keine automatische Aktivierung.
 
 Spätere Pluginpakete benötigen möglicherweise:
 
-* Signaturen,
-* Vertrauensstufen,
-* Versionierung,
-* Abhängigkeitsprüfung,
-* Installationsfreigabe,
-* Isolation.
+- Signaturen,
+- Vertrauensstufen,
+- Versionierung,
+- Abhängigkeitsprüfung,
+- Installationsfreigabe,
+- Isolation.
 
 ---
 
@@ -1305,11 +1305,11 @@ def get_model_service(
 
 Vorteile:
 
-* testbar,
-* austauschbar,
-* explizite Abhängigkeiten,
-* kontrollierter Lifecycle,
-* mehrere Instanzen möglich.
+- testbar,
+- austauschbar,
+- explizite Abhängigkeiten,
+- kontrollierter Lifecycle,
+- mehrere Instanzen möglich.
 
 ---
 
@@ -1390,14 +1390,14 @@ Implementierung, Manifest, Vertrag und Definition können unterschiedliche Versi
 
 Fehler können entstehen in:
 
-* Discovery,
-* Registrierung,
-* Manifestvalidierung,
-* Initialisierung,
-* Capability-Auflösung,
-* Runtime-Definition,
-* Berechtigung,
-* konkreter Implementierung.
+- Discovery,
+- Registrierung,
+- Manifestvalidierung,
+- Initialisierung,
+- Capability-Auflösung,
+- Runtime-Definition,
+- Berechtigung,
+- konkreter Implementierung.
 
 ## 35.5 Gefahr übergenerischer Registries
 
@@ -1413,15 +1413,15 @@ Daher bleiben typspezifische Registries und Validatoren notwendig.
 
 ### Vorteile
 
-* einfach für wenige Varianten,
-* keine zusätzliche Abstraktion.
+- einfach für wenige Varianten,
+- keine zusätzliche Abstraktion.
 
 ### Nachteile
 
-* starke Kopplung,
-* ständig wachsende Kernmodule,
-* schlechte Erweiterbarkeit,
-* hohe Änderungsrisiken.
+- starke Kopplung,
+- ständig wachsende Kernmodule,
+- schlechte Erweiterbarkeit,
+- hohe Änderungsrisiken.
 
 **Entscheidung:** Als grundlegendes Erweiterungsmodell verworfen.
 
@@ -1435,16 +1435,16 @@ Alle Module eines Verzeichnisses werden automatisch importiert.
 
 ### Vorteile
 
-* geringe manuelle Registrierung,
-* scheinbar einfache Erweiterung.
+- geringe manuelle Registrierung,
+- scheinbar einfache Erweiterung.
 
 ### Nachteile
 
-* unkontrollierte Codeausführung,
-* unklare Reihenfolge,
-* schwer prüfbare Fehler,
-* Discovery wird mit Aktivierung vermischt,
-* unsichere Dateisystemabhängigkeit.
+- unkontrollierte Codeausführung,
+- unklare Reihenfolge,
+- schwer prüfbare Fehler,
+- Discovery wird mit Aktivierung vermischt,
+- unsichere Dateisystemabhängigkeit.
 
 **Entscheidung:** Verworfen.
 
@@ -1454,14 +1454,14 @@ Alle Module eines Verzeichnisses werden automatisch importiert.
 
 ### Vorteile
 
-* flexible Zuordnung zwischen Manifest und Implementierung.
+- flexible Zuordnung zwischen Manifest und Implementierung.
 
 ### Nachteile
 
-* Manifest kontrolliert Codeausführung,
-* Sicherheitsrisiko,
-* schwer auditierbar,
-* unklare Vertrauensgrenzen.
+- Manifest kontrolliert Codeausführung,
+- Sicherheitsrisiko,
+- schwer auditierbar,
+- unklare Vertrauensgrenzen.
 
 **Entscheidung:** Vollständig verworfen.
 
@@ -1471,16 +1471,16 @@ Alle Module eines Verzeichnisses werden automatisch importiert.
 
 ### Vorteile
 
-* einheitliche Oberfläche,
-* wenig Registryklassen.
+- einheitliche Oberfläche,
+- wenig Registryklassen.
 
 ### Nachteile
 
-* schwache Typisierung,
-* unklare Lifecycle-Regeln,
-* vermischte Sicherheitsgrenzen,
-* komplizierte Validierung,
-* schwer verständliche API.
+- schwache Typisierung,
+- unklare Lifecycle-Regeln,
+- vermischte Sicherheitsgrenzen,
+- komplizierte Validierung,
+- schwer verständliche API.
 
 **Entscheidung:** Verworfen.
 
@@ -1492,15 +1492,15 @@ Gemeinsame Basisverträge sind erlaubt, konkrete Registries bleiben typspezifisc
 
 ### Vorteile
 
-* einfacher globaler Zugriff,
-* wenig Dependency-Injection-Code.
+- einfacher globaler Zugriff,
+- wenig Dependency-Injection-Code.
 
 ### Nachteile
 
-* versteckte Abhängigkeiten,
-* schwer testbar,
-* unklarer Lifecycle,
-* problematisch für Multi-Tenancy und Multi-Worker.
+- versteckte Abhängigkeiten,
+- schwer testbar,
+- unklarer Lifecycle,
+- problematisch für Multi-Tenancy und Multi-Worker.
 
 **Entscheidung:** Verworfen.
 
@@ -1510,15 +1510,15 @@ Gemeinsame Basisverträge sind erlaubt, konkrete Registries bleiben typspezifisc
 
 ### Vorteile
 
-* maximale Erweiterbarkeit,
-* schnelle Installation.
+- maximale Erweiterbarkeit,
+- schnelle Installation.
 
 ### Nachteile
 
-* erhebliche Supply-Chain-Risiken,
-* Remote-Code-Ausführung,
-* schwierige Isolation,
-* komplexe Update- und Vertrauensmodelle.
+- erhebliche Supply-Chain-Risiken,
+- Remote-Code-Ausführung,
+- schwierige Isolation,
+- komplexe Update- und Vertrauensmodelle.
 
 **Entscheidung:** Nicht Teil des MVP.
 
@@ -1528,78 +1528,78 @@ Gemeinsame Basisverträge sind erlaubt, konkrete Registries bleiben typspezifisc
 
 ## Phase 1 – Registry-Bestand inventarisieren
 
-* vorhandene Registries erfassen,
-* direkte Implementierungsabhängigkeiten suchen,
-* verteilte Fallunterscheidungen dokumentieren,
-* Manifestpfade prüfen,
-* Registry-APIs erfassen.
+- vorhandene Registries erfassen,
+- direkte Implementierungsabhängigkeiten suchen,
+- verteilte Fallunterscheidungen dokumentieren,
+- Manifestpfade prüfen,
+- Registry-APIs erfassen.
 
 ## Phase 2 – Gemeinsame Registry-Begriffe definieren
 
-* Entry-ID,
-* Status,
-* Version,
-* Revision,
-* Capability,
-* Health,
-* Fehlervertrag.
+- Entry-ID,
+- Status,
+- Version,
+- Revision,
+- Capability,
+- Health,
+- Fehlervertrag.
 
 ## Phase 3 – Modellprovider konsolidieren
 
-* Provider-Registry als einzige Auflösungsquelle,
-* direkte Providerinstanziierung entfernen,
-* Lazy Initialization,
-* isolierter Shutdown,
-* stabile Fehlercodes.
+- Provider-Registry als einzige Auflösungsquelle,
+- direkte Providerinstanziierung entfernen,
+- Lazy Initialization,
+- isolierter Shutdown,
+- stabile Fehlercodes.
 
 ## Phase 4 – Modell-Registry konsolidieren
 
-* logische Modell-ID,
-* Providerzuordnung,
-* Capability-Metadaten,
-* Verfügbarkeit,
-* Auswählbarkeit.
+- logische Modell-ID,
+- Providerzuordnung,
+- Capability-Metadaten,
+- Verfügbarkeit,
+- Auswählbarkeit.
 
 ## Phase 5 – Tool-Registry konsolidieren
 
-* Manifestvalidierung,
-* Implementierungsauflösung,
-* Berechtigung,
-* Bestätigung,
-* Ausführungshistorie.
+- Manifestvalidierung,
+- Implementierungsauflösung,
+- Berechtigung,
+- Bestätigung,
+- Ausführungshistorie.
 
 ## Phase 6 – Frontend-Registries finalisieren
 
-* Komponenten,
-* Widgets,
-* Actions,
-* Icons,
-* unbekannte Typen,
-* Prop-Validierung.
+- Komponenten,
+- Widgets,
+- Actions,
+- Icons,
+- unbekannte Typen,
+- Prop-Validierung.
 
 ## Phase 7 – Runtime-Registry-Verträge
 
-* RegistryEntryStatus,
-* RuntimeRegistryEntry,
-* RegistryRevisionSet,
-* DefinitionValidationResult,
-* Aktivierungsverträge.
+- RegistryEntryStatus,
+- RuntimeRegistryEntry,
+- RegistryRevisionSet,
+- DefinitionValidationResult,
+- Aktivierungsverträge.
 
 ## Phase 8 – Dynamischer Ressourcentyp `note`
 
-* Definition registrieren,
-* validieren,
-* aktivieren,
-* auflösen,
-* verwenden,
-* Ereignis senden.
+- Definition registrieren,
+- validieren,
+- aktivieren,
+- auflösen,
+- verwenden,
+- Ereignis senden.
 
 ## Phase 9 – Diagnose und Health
 
-* Registry-Status,
-* Fehlerisolation,
-* Readiness-Auswirkung,
-* sichere Adminansicht.
+- Registry-Status,
+- Fehlerisolation,
+- Readiness-Auswirkung,
+- sichere Adminansicht.
 
 ---
 
@@ -1607,23 +1607,23 @@ Gemeinsame Basisverträge sind erlaubt, konkrete Registries bleiben typspezifisc
 
 Die Entscheidung gilt als technisch umgesetzt, wenn:
 
-* der Kern keine direkten Provider-Fallunterscheidungen benötigt,
-* Provider ausschließlich über die Provider-Registry aufgelöst werden,
-* Modelle über die Modell-Registry aufgelöst werden,
-* Tools über die Tool-Registry aufgelöst werden,
-* Frontend-Komponenten ausschließlich aus fester Registry stammen,
-* Actions ausschließlich über bekannte Handler ausgeführt werden,
-* unbekannte IDs sicher abgelehnt werden,
-* doppelte IDs verhindert werden,
-* Manifestversionen validiert werden,
-* Discovery und Aktivierung getrennt sind,
-* Eintragsfehler isoliert werden,
-* Registry-Revisionen verfügbar sind,
-* Lifecycle und Shutdown kontrolliert funktionieren,
-* keine Importpfade aus Manifesten ausgeführt werden,
-* Runtime-Definitionen keinen ausführbaren Code registrieren,
-* Registry-Änderungen auditierbar sind,
-* OpenAPI und Dokumentation den Laufzeitstand korrekt abbilden.
+- der Kern keine direkten Provider-Fallunterscheidungen benötigt,
+- Provider ausschließlich über die Provider-Registry aufgelöst werden,
+- Modelle über die Modell-Registry aufgelöst werden,
+- Tools über die Tool-Registry aufgelöst werden,
+- Frontend-Komponenten ausschließlich aus fester Registry stammen,
+- Actions ausschließlich über bekannte Handler ausgeführt werden,
+- unbekannte IDs sicher abgelehnt werden,
+- doppelte IDs verhindert werden,
+- Manifestversionen validiert werden,
+- Discovery und Aktivierung getrennt sind,
+- Eintragsfehler isoliert werden,
+- Registry-Revisionen verfügbar sind,
+- Lifecycle und Shutdown kontrolliert funktionieren,
+- keine Importpfade aus Manifesten ausgeführt werden,
+- Runtime-Definitionen keinen ausführbaren Code registrieren,
+- Registry-Änderungen auditierbar sind,
+- OpenAPI und Dokumentation den Laufzeitstand korrekt abbilden.
 
 ---
 

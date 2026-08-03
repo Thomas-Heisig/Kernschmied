@@ -9,10 +9,12 @@ Stand: 2026-08-03
 - Chat-Persistenz: Modelle und Repository vorhanden; Laufzeitpfad durch fehlenden persistenten Hierarchieknoten teilweise gestört
 
 Bekannte Laufzeitfehler:
+
 - Entwicklungsdatenbank mit Revision `0009_merge_branches` (nicht im Repo-Head)
 - FK-Fehler beim Conversation-Insert wegen fehlendem Hierarchieknoten
 
 Zu tun (Kurz):
+
 - Alembic-Head dynamisch ermitteln und Entwicklungs-DB sichern
 - Persistente Hierarchie seeden (idempotent)
 - Chat-Repository an persistenten Hierarchiepfad anbinden

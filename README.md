@@ -31,6 +31,7 @@ Ziel dieser Änderung
 Die ausführliche Projekt- und Architekturbeschreibung wurde in die neue `documentation/`-Struktur ausgelagert. `README.md` dient nur noch als kurzes Einstiegscockpit, das auf die kanonische Dokumentation verweist.
 
 Weitere Informationen und Mitwirkungsregeln stehen in `CONTRIBUTING.md`.
+
 - ✅ Tool-Registry
 - ✅ Revisionssystem
 - ✅ Konfigurationsverwaltung
