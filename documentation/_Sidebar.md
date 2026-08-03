@@ -120,6 +120,7 @@
  - [[ADR-0004-Security-Profiles]]
  - [[ADR-0005-Versioned-Contracts]]
  - [[ADR-0024-Identity-and-Authorization]]
+ - [[ADR-0025-Deployment-Architecture]]
  - [[ADR-0032-Backup-and-Disaster-Recovery]]
 
  ---
