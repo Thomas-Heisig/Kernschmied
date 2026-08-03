@@ -16,7 +16,9 @@ if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
 try:
-    import main as app_module
+    import importlib
+
+    app_module = importlib.import_module("main")
 except Exception as exc:
     print("Failed to import application module 'main':", exc)
     raise
