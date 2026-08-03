@@ -1,8 +1,6 @@
 import os
 import json
 from pathlib import Path
-import shutil
-import tempfile
 import subprocess
 
 import pytest
@@ -10,7 +8,7 @@ import pytest
 SCRIPT = Path(__file__).resolve().parents[2] / 'scripts' / 'documentation' / 'build_documentation_index.py'
 
 
-def run_scan(root: Path):
+def run_scan(root: Path) -> None:
     env = os.environ.copy()
     env['DOCUMENTATION_SCAN_ROOT'] = str(root)
     # run script
@@ -18,7 +16,7 @@ def run_scan(root: Path):
 
 
 @pytest.fixture()
-def sample_repo(tmp_path):
+def sample_repo(tmp_path: Path) -> Path:
     # create a minimal repo structure
     (tmp_path / 'documentation').mkdir()
     (tmp_path / 'documentation' / 'Home.md').write_text('# Home\n')
@@ -43,7 +41,7 @@ def sample_repo(tmp_path):
     return tmp_path
 
 
-def test_scan_and_exclusions(sample_repo, tmp_path):
+def test_scan_and_exclusions(sample_repo: Path, tmp_path: Path) -> None:
     root = sample_repo
     env = os.environ.copy()
     env['DOCUMENTATION_SCAN_ROOT'] = str(root)
