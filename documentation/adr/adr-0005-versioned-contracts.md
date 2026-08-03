@@ -1,23 +1,23 @@
 # ADR-0005: Versionierte Verträge und Schema-Evolution
 
-* **Status:** Angenommen – konsolidiert
-* **Datum der ursprünglichen Entscheidung:** 2026-07-27
-* **Letzte Überarbeitung:** 2026-08-03
-* **Entscheidungsträger:** Kernschmied-Architekturteam
-* **Ersetzt:** Keine
-* **Ersetzt durch:** Keine
-* **Verwandte Dokumente:**
+- **Status:** Angenommen – konsolidiert
+- **Datum der ursprünglichen Entscheidung:** 2026-07-27
+- **Letzte Überarbeitung:** 2026-08-03
+- **Entscheidungsträger:** Kernschmied-Architekturteam
+- **Ersetzt:** Keine
+- **Ersetzt durch:** Keine
+- **Verwandte Dokumente:**
 
-  * `documentation/leitkonzept.md`
-  * `documentation/architecture/contracts.md`
-  * `documentation/architecture/contract-refactoring.md`
-  * `documentation/architecture/schema-versioning.md`
-  * `documentation/architecture/dynamic-definitions.md`
-  * `documentation/architecture/effective-context.md`
-  * `documentation/architecture/decisions/ADR-0001-schema-driven-user-interface.md`
-  * `documentation/architecture/decisions/ADR-0002-configuration-architecture-and-runtime-initialization.md`
-  * `documentation/architecture/decisions/ADR-0003-registry-based-extension-architecture.md`
-  * `documentation/architecture/decisions/ADR-0004-security-profiles-and-deployment-modes.md`
+  - `documentation/leitkonzept.md`
+  - `documentation/architecture/contracts.md`
+  - `documentation/architecture/contract-refactoring.md`
+  - `documentation/architecture/schema-versioning.md`
+  - `documentation/architecture/dynamic-definitions.md`
+  - `documentation/architecture/effective-context.md`
+  - `documentation/architecture/decisions/ADR-0001-schema-driven-user-interface.md`
+  - `documentation/architecture/decisions/ADR-0002-configuration-architecture-and-runtime-initialization.md`
+  - `documentation/architecture/decisions/ADR-0003-registry-based-extension-architecture.md`
+  - `documentation/architecture/decisions/ADR-0004-security-profiles-and-deployment-modes.md`
 
 ---
 
@@ -27,23 +27,23 @@ Kernschmied verwendet für alle öffentlichen und dauerhaft gespeicherten Vertr�
 
 Versioniert werden insbesondere:
 
-* REST-Verträge,
-* SSE-Ereignisse,
-* Bootstrap-Verträge,
-* UI-Schemas,
-* Hierarchieverträge,
-* Chat- und Nachrichtenverträge,
-* Ressourcenschemas,
-* Promptdefinitionen,
-* Widgetdefinitionen,
-* Actiondefinitionen,
-* Workflowdefinitionen,
-* Registry-Einträge,
-* Modellmanifeste,
-* Toolmanifeste,
-* Konfigurationsdefinitionen,
-* Vorlagenpakete,
-* Integrationsverträge.
+- REST-Verträge,
+- SSE-Ereignisse,
+- Bootstrap-Verträge,
+- UI-Schemas,
+- Hierarchieverträge,
+- Chat- und Nachrichtenverträge,
+- Ressourcenschemas,
+- Promptdefinitionen,
+- Widgetdefinitionen,
+- Actiondefinitionen,
+- Workflowdefinitionen,
+- Registry-Einträge,
+- Modellmanifeste,
+- Toolmanifeste,
+- Konfigurationsdefinitionen,
+- Vorlagenpakete,
+- Integrationsverträge.
 
 Die zentrale Regel lautet:
 
@@ -61,42 +61,42 @@ Kernschmied ist eine dynamische und langfristig erweiterbare Plattform.
 
 Das System verbindet:
 
-* Python-Backend,
-* React-Frontend,
-* Datenbank,
-* SSE-Streaming,
-* Modellprovider,
-* Tools,
-* dynamische UI-Schemas,
-* Runtime-Registries,
-* Prompts,
-* Ressourcen,
-* Widgets,
-* Actions,
-* Workflows,
-* Integrationen.
+- Python-Backend,
+- React-Frontend,
+- Datenbank,
+- SSE-Streaming,
+- Modellprovider,
+- Tools,
+- dynamische UI-Schemas,
+- Runtime-Registries,
+- Prompts,
+- Ressourcen,
+- Widgets,
+- Actions,
+- Workflows,
+- Integrationen.
 
 Diese Bestandteile entwickeln sich nicht immer gleichzeitig.
 
 Beispiele:
 
-* Das Backend kann bereits ein neues optionales Feld liefern.
-* Ein älteres Frontend kennt dieses Feld noch nicht.
-* Ein Ressourcentyp erhält eine neue Definitionversion.
-* Bereits gespeicherte Ressourcen verwenden weiterhin die alte Version.
-* Ein SSE-Ereignis erhält zusätzliche Metadaten.
-* Eine Datenbankmigration verändert die Speicherung, ohne den öffentlichen Vertrag zu ändern.
-* Eine neue Modellmanifestversion wird unterstützt, während alte Manifeste weiter lesbar bleiben.
+- Das Backend kann bereits ein neues optionales Feld liefern.
+- Ein älteres Frontend kennt dieses Feld noch nicht.
+- Ein Ressourcentyp erhält eine neue Definitionversion.
+- Bereits gespeicherte Ressourcen verwenden weiterhin die alte Version.
+- Ein SSE-Ereignis erhält zusätzliche Metadaten.
+- Eine Datenbankmigration verändert die Speicherung, ohne den öffentlichen Vertrag zu ändern.
+- Eine neue Modellmanifestversion wird unterstützt, während alte Manifeste weiter lesbar bleiben.
 
 Ohne klare Versionierungsregeln entstehen schnell:
 
-* stille Vertragsbrüche,
-* nicht reproduzierbare Fehler,
-* inkompatible Frontend- und Backendstände,
-* fehlerhafte Migrationen,
-* unklare Rollbacks,
-* Datenverlust,
-* langfristig unwartbare Übergangslösungen.
+- stille Vertragsbrüche,
+- nicht reproduzierbare Fehler,
+- inkompatible Frontend- und Backendstände,
+- fehlerhafte Migrationen,
+- unklare Rollbacks,
+- Datenverlust,
+- langfristig unwartbare Übergangslösungen.
 
 ---
 
@@ -106,16 +106,16 @@ Verträge ändern sich im Laufe der Entwicklung.
 
 Typische Änderungen sind:
 
-* neue Felder,
-* entfernte Felder,
-* geänderte Feldtypen,
-* neue Enumwerte,
-* neue Eventarten,
-* neue Ressourcenversionen,
-* neue UI-Komponenten,
-* geänderte Semantik,
-* neue Pflichtfelder,
-* veränderte Sicherheitsregeln.
+- neue Felder,
+- entfernte Felder,
+- geänderte Feldtypen,
+- neue Enumwerte,
+- neue Eventarten,
+- neue Ressourcenversionen,
+- neue UI-Komponenten,
+- geänderte Semantik,
+- neue Pflichtfelder,
+- veränderte Sicherheitsregeln.
 
 Ohne definierte Strategie entstehen mehrere Probleme.
 
@@ -149,11 +149,11 @@ Das Backend liefert neue oder geänderte Strukturen, während das Frontend älte
 
 Mögliche Folgen:
 
-* Laufzeitfehler,
-* falsche Darstellung,
-* verlorene Daten,
-* nicht ausgeführte Aktionen,
-* inkonsistenter Store.
+- Laufzeitfehler,
+- falsche Darstellung,
+- verlorene Daten,
+- nicht ausgeführte Aktionen,
+- inkonsistenter Store.
 
 ## 3.3 Persistierte Daten verlieren ihre Bedeutung
 
@@ -161,10 +161,10 @@ Dynamische Definitionen und Ressourcen können über Jahre gespeichert bleiben.
 
 Wird deren Schema verändert, muss weiterhin erkennbar sein:
 
-* gegen welche Definition sie erstellt wurden,
-* welche Version gültig war,
-* ob eine Migration erforderlich ist,
-* ob alte und neue Version parallel unterstützt werden.
+- gegen welche Definition sie erstellt wurden,
+- welche Version gültig war,
+- ob eine Migration erforderlich ist,
+- ob alte und neue Version parallel unterstützt werden.
 
 ## 3.4 Datenbankmigration wird mit API-Versionierung verwechselt
 
@@ -178,10 +178,10 @@ Werden alte Felder und Aliasnamen unbegrenzt unterstützt, wächst der Übergang
 
 Dadurch entstehen:
 
-* doppelte Modelle,
-* widersprüchliche Felder,
-* schwer entfernbare Sonderfälle,
-* unklare öffentliche Verträge.
+- doppelte Modelle,
+- widersprüchliche Felder,
+- schwer entfernbare Sonderfälle,
+- unklare öffentliche Verträge.
 
 ## 3.6 Unbekannte Typen führen zu unsicherem Verhalten
 
@@ -275,42 +275,42 @@ Kernschmied besitzt bereits mehrere Grundlagen für versionierte Verträge.
 
 ## 5.1 Bereits vorhanden
 
-* versioniertes API-Präfix,
-* Versionsfelder im Bootstrap,
-* UI-Schemaversion,
-* Chat-Schemaversion,
-* SSE-Envelope-Grundlagen,
-* Config-Revision,
-* Registry- und Manifestversionen als Architekturprinzip,
-* Alembic-Migrationen,
-* Pydantic-v2-Verträge,
-* TypeScript-Verträge,
-* strukturierte Fehlerantworten,
-* OpenAPI-Generierung.
+- versioniertes API-Präfix,
+- Versionsfelder im Bootstrap,
+- UI-Schemaversion,
+- Chat-Schemaversion,
+- SSE-Envelope-Grundlagen,
+- Config-Revision,
+- Registry- und Manifestversionen als Architekturprinzip,
+- Alembic-Migrationen,
+- Pydantic-v2-Verträge,
+- TypeScript-Verträge,
+- strukturierte Fehlerantworten,
+- OpenAPI-Generierung.
 
 ## 5.2 Teilweise implementiert
 
-* einheitliche Benennung aller Versionsfelder,
-* Laufzeitvalidierung im Frontend,
-* OpenAPI-Diff-Prüfung,
-* Mindestclientversion,
-* Deprecation-Metadaten,
-* parallele Unterstützung mehrerer Vertragsversionen,
-* Definitionmigrationen,
-* Registry-Revisionsausgabe,
-* vollständige Eventversionierung,
-* systematische Re-Exports verlegter Vertragstypen.
+- einheitliche Benennung aller Versionsfelder,
+- Laufzeitvalidierung im Frontend,
+- OpenAPI-Diff-Prüfung,
+- Mindestclientversion,
+- Deprecation-Metadaten,
+- parallele Unterstützung mehrerer Vertragsversionen,
+- Definitionmigrationen,
+- Registry-Revisionsausgabe,
+- vollständige Eventversionierung,
+- systematische Re-Exports verlegter Vertragstypen.
 
 ## 5.3 Derzeitige Inkonsistenzen
 
-* `schema_version`, `api_version`, `ui_schema_version` und Manifestversionen sind noch nicht überall klar voneinander abgegrenzt,
-* einzelne öffentliche Modelle liegen noch in Routerdateien,
-* manche Verträge verwenden unterschiedliche Feldnamen für dieselbe Bedeutung,
-* Frontendtypen werden teilweise noch ohne Laufzeitvalidierung verwendet,
-* alte Aliasfelder und Übergangsevents sind teilweise noch vorhanden,
-* nicht alle Enum-Erweiterungen sind auf Vorwärtskompatibilität geprüft,
-* Datenbank- und Vertragsmigrationen werden in der Dokumentation teilweise vermischt,
-* nicht alle gespeicherten dynamischen Definitionen tragen eine eindeutige Definitionversion.
+- `schema_version`, `api_version`, `ui_schema_version` und Manifestversionen sind noch nicht überall klar voneinander abgegrenzt,
+- einzelne öffentliche Modelle liegen noch in Routerdateien,
+- manche Verträge verwenden unterschiedliche Feldnamen für dieselbe Bedeutung,
+- Frontendtypen werden teilweise noch ohne Laufzeitvalidierung verwendet,
+- alte Aliasfelder und Übergangsevents sind teilweise noch vorhanden,
+- nicht alle Enum-Erweiterungen sind auf Vorwärtskompatibilität geprüft,
+- Datenbank- und Vertragsmigrationen werden in der Dokumentation teilweise vermischt,
+- nicht alle gespeicherten dynamischen Definitionen tragen eine eindeutige Definitionversion.
 
 ---
 
@@ -368,19 +368,19 @@ Die Entscheidung umfasst folgende verbindliche Punkte.
 
 Ein Vertrag besitzt mindestens:
 
-* einen stabilen Namen,
-* eine Vertragsfamilie,
-* eine Schemaversion,
-* eine dokumentierte Semantik.
+- einen stabilen Namen,
+- eine Vertragsfamilie,
+- eine Schemaversion,
+- eine dokumentierte Semantik.
 
 ## 7.2 Inkompatible Änderungen sind nicht stillschweigend
 
 Bei inkompatiblen Änderungen wird:
 
-* die Hauptversion erhöht,
-* ein Migrationspfad beschrieben,
-* die Kompatibilität getestet,
-* gegebenenfalls eine Übergangsphase eingeführt.
+- die Hauptversion erhöht,
+- ein Migrationspfad beschrieben,
+- die Kompatibilität getestet,
+- gegebenenfalls eine Übergangsphase eingeführt.
 
 ## 7.3 Additive Änderungen werden bevorzugt
 
@@ -394,19 +394,19 @@ Ressourcen, Workflows, Prompts und andere dynamische Instanzen behalten den Bezu
 
 Kompatibilitätsadapter und Re-Exports erhalten:
 
-* Einführungsdatum,
-* Ablöseziel,
-* geplante Entfernung.
+- Einführungsdatum,
+- Ablöseziel,
+- geplante Entfernung.
 
 ## 7.6 Vertragsänderungen werden automatisiert geprüft
 
 Mindestens über:
 
-* Backendtests,
-* Frontendvalidatoren,
-* OpenAPI-Diff,
-* Migrationsprüfungen,
-* Integrations- und Vertragstests.
+- Backendtests,
+- Frontendvalidatoren,
+- OpenAPI-Diff,
+- Migrationsprüfungen,
+- Integrations- und Vertragstests.
 
 ---
 
@@ -446,12 +446,12 @@ Wird erhöht bei inkompatiblen Änderungen.
 
 Beispiele:
 
-* Feld entfernt,
-* Feldtyp verändert,
-* Bedeutung verändert,
-* bisher optionales Feld wird verpflichtend,
-* Objektstruktur grundlegend verändert,
-* Enumwert erhält andere Semantik.
+- Feld entfernt,
+- Feldtyp verändert,
+- Bedeutung verändert,
+- bisher optionales Feld wird verpflichtend,
+- Objektstruktur grundlegend verändert,
+- Enumwert erhält andere Semantik.
 
 ## 9.2 Minor-Version
 
@@ -459,10 +459,10 @@ Wird erhöht bei kompatiblen Erweiterungen.
 
 Beispiele:
 
-* neues optionales Feld,
-* neue optionale Metadaten,
-* neue unterstützte Capability,
-* zusätzliche optionale Darstellungsinformation.
+- neues optionales Feld,
+- neue optionale Metadaten,
+- neue unterstützte Capability,
+- zusätzliche optionale Darstellungsinformation.
 
 ## 9.3 Patch-Version
 
@@ -496,9 +496,9 @@ Nicht jede Vertragsänderung erfordert:
 
 Einzelne Vertragsfamilien können innerhalb von `/api/v1` unterschiedliche Schemaversionen besitzen, solange:
 
-* das Verhalten eindeutig ist,
-* der Client die Version prüfen kann,
-* keine widersprüchliche Semantik entsteht.
+- das Verhalten eindeutig ist,
+- der Client die Version prüfen kann,
+- keine widersprüchliche Semantik entsteht.
 
 ---
 
@@ -524,11 +524,11 @@ Nicht geeignet:
 
 wenn unklar bleibt, ob damit gemeint ist:
 
-* API-Version,
-* Objektversion,
-* Implementierungsversion,
-* Definitionsversion,
-* Manifestversion.
+- API-Version,
+- Objektversion,
+- Implementierungsversion,
+- Definitionsversion,
+- Manifestversion.
 
 Spezifische Felder werden bevorzugt:
 
@@ -565,16 +565,16 @@ Beispiel:
 
 Das bedeutet:
 
-* Objektstruktur folgt Vertrag `1.0`,
-* Objekt wurde bis Revision `14` verändert.
+- Objektstruktur folgt Vertrag `1.0`,
+- Objekt wurde bis Revision `14` verändert.
 
 Revisionen werden verwendet für:
 
-* Optimistic Locking,
-* Konflikterkennung,
-* Cache-Invalidierung,
-* Audit,
-* gezielte Neuladung.
+- Optimistic Locking,
+- Konflikterkennung,
+- Cache-Invalidierung,
+- Audit,
+- gezielte Neuladung.
 
 ---
 
@@ -584,11 +584,11 @@ Revisionen werden verwendet für:
 
 Gründe:
 
-* Zeitauflösung,
-* Zeitzonen,
-* Parallelität,
-* Datenbankunterschiede,
-* nicht deterministische Vergleiche.
+- Zeitauflösung,
+- Zeitzonen,
+- Parallelität,
+- Datenbankunterschiede,
+- nicht deterministische Vergleiche.
 
 Kernschmied verwendet explizite Revisionen.
 
@@ -600,14 +600,14 @@ Zeitstempel bleiben ergänzende Metadaten.
 
 Als grundsätzlich kompatibel gelten:
 
-* neues optionales Feld,
-* neues optionales verschachteltes Objekt,
-* zusätzliche Metadaten,
-* neue Capability, die explizit ausgehandelt wird,
-* neuer Endpunkt,
-* neues bekanntes SSE-Ereignis, wenn unbekannte Events sicher ignoriert werden,
-* neue optionale Action,
-* zusätzliche nicht verpflichtende Registry-Information.
+- neues optionales Feld,
+- neues optionales verschachteltes Objekt,
+- zusätzliche Metadaten,
+- neue Capability, die explizit ausgehandelt wird,
+- neuer Endpunkt,
+- neues bekanntes SSE-Ereignis, wenn unbekannte Events sicher ignoriert werden,
+- neue optionale Action,
+- zusätzliche nicht verpflichtende Registry-Information.
 
 Kompatibilität hängt zusätzlich vom Clientverhalten ab.
 
@@ -619,18 +619,18 @@ Ein neues optionales Feld ist nur kompatibel, wenn ältere Clients zusätzliche 
 
 Als inkompatibel gelten insbesondere:
 
-* Pflichtfeld hinzugefügt,
-* Feld entfernt,
-* Feld umbenannt,
-* Feldtyp geändert,
-* `null` nicht mehr erlaubt,
-* Enumwert entfernt,
-* Bedeutung eines bestehenden Werts geändert,
-* Listenreihenfolge erhält neue Semantik,
-* Fehlercode erhält andere Bedeutung,
-* Eventpayload grundlegend geändert,
-* Sicherheitsanforderung stillschweigend reduziert,
-* Standardverhalten verändert bestehende Daten.
+- Pflichtfeld hinzugefügt,
+- Feld entfernt,
+- Feld umbenannt,
+- Feldtyp geändert,
+- `null` nicht mehr erlaubt,
+- Enumwert entfernt,
+- Bedeutung eines bestehenden Werts geändert,
+- Listenreihenfolge erhält neue Semantik,
+- Fehlercode erhält andere Bedeutung,
+- Eventpayload grundlegend geändert,
+- Sicherheitsanforderung stillschweigend reduziert,
+- Standardverhalten verändert bestehende Daten.
 
 Inkompatible Änderungen benötigen eine neue Hauptversion oder eine explizite Übergangsstrategie.
 
@@ -666,9 +666,9 @@ Neue Werte können ältere Clients brechen, wenn diese erschöpfende Falluntersc
 
 Daher gilt:
 
-* Frontendvalidatoren dürfen bei sicherheitskritischen Enums unbekannte Werte ablehnen.
-* Darstellungsbezogene Enums können einen kontrollierten Fallback besitzen.
-* Unbekannte Werte dürfen niemals automatisch privilegiertes Verhalten auslösen.
+- Frontendvalidatoren dürfen bei sicherheitskritischen Enums unbekannte Werte ablehnen.
+- Darstellungsbezogene Enums können einen kontrollierten Fallback besitzen.
+- Unbekannte Werte dürfen niemals automatisch privilegiertes Verhalten auslösen.
 
 Beispiel:
 
@@ -707,14 +707,14 @@ ConfigDict(extra="forbid")
 Frontend-Requestschema:
 
 ```typescript
-schema.strict()
+schema.strict();
 ```
 
 Vorteile:
 
-* Tippfehler werden erkannt,
-* alte Clients senden keine wirkungslosen Felder,
-* unerwartete Eingaben werden nicht stillschweigend ignoriert.
+- Tippfehler werden erkannt,
+- alte Clients senden keine wirkungslosen Felder,
+- unerwartete Eingaben werden nicht stillschweigend ignoriert.
 
 ## 18.2 Öffentliche Backendantworten
 
@@ -726,10 +726,10 @@ Zusätzliche Felder können je Vertrag kontrolliert toleriert werden.
 
 Sie dürfen jedoch nicht ungeprüft:
 
-* Aktionen auslösen,
-* Komponenten registrieren,
-* Berechtigungen verändern,
-* Sicherheitsentscheidungen steuern.
+- Aktionen auslösen,
+- Komponenten registrieren,
+- Berechtigungen verändern,
+- Sicherheitsentscheidungen steuern.
 
 ---
 
@@ -747,31 +747,31 @@ unbekannter Widget-Typ
 
 Verhalten:
 
-* als nicht unterstützt anzeigen,
-* keine Ausführung,
-* optional Diagnose protokollieren.
+- als nicht unterstützt anzeigen,
+- keine Ausführung,
+- optional Diagnose protokollieren.
 
 ## 19.2 Ereignistyp
 
 Verhalten:
 
-* Stream bleibt aktiv,
-* Event wird nicht verarbeitet,
-* keine unbekannte Aktion auslösen.
+- Stream bleibt aktiv,
+- Event wird nicht verarbeitet,
+- keine unbekannte Aktion auslösen.
 
 ## 19.3 Action-Typ
 
 Verhalten:
 
-* vollständig ablehnen,
-* stabilen Fehlercode liefern.
+- vollständig ablehnen,
+- stabilen Fehlercode liefern.
 
 ## 19.4 Sicherheits- oder Berechtigungstyp
 
 Verhalten:
 
-* sicher ablehnen,
-* niemals permissiven Fallback verwenden.
+- sicher ablehnen,
+- niemals permissiven Fallback verwenden.
 
 ---
 
@@ -822,18 +822,18 @@ UI-Schemas sind öffentliche Verträge.
 
 Versioniert werden:
 
-* Komponentenstruktur,
-* Bindings,
-* Layouts,
-* Actions,
-* Sichtbarkeitsregeln,
-* Metadaten.
+- Komponentenstruktur,
+- Bindings,
+- Layouts,
+- Actions,
+- Sichtbarkeitsregeln,
+- Metadaten.
 
 Eine neue Backenddefinition darf nur Komponenten referenzieren, die:
 
-* vom Client unterstützt werden,
-* über Capabilities angekündigt wurden,
-* eine bekannte Prop-Struktur besitzen.
+- vom Client unterstützt werden,
+- über Capabilities angekündigt wurden,
+- eine bekannte Prop-Struktur besitzen.
 
 Unbekannte Komponenten werden sicher dargestellt.
 
@@ -856,25 +856,25 @@ Eine neue Definition verändert bestehende Ressourcen nicht automatisch.
 
 Beispiele:
 
-* optionales Feld,
-* zusätzliche Anzeigeinformation,
-* neuer Alias.
+- optionales Feld,
+- zusätzliche Anzeigeinformation,
+- neuer Alias.
 
 ## 22.2 Inkompatible Definitionänderung
 
 Beispiele:
 
-* Pflichtfeld,
-* Datentypänderung,
-* Feldentfernung,
-* neue Bedeutung.
+- Pflichtfeld,
+- Datentypänderung,
+- Feldentfernung,
+- neue Bedeutung.
 
 Benötigt:
 
-* neue Definitionversion,
-* Migrationsstrategie,
-* Instanzprüfung,
-* gegebenenfalls parallele Versionen.
+- neue Definitionversion,
+- Migrationsstrategie,
+- Instanzprüfung,
+- gegebenenfalls parallele Versionen.
 
 ---
 
@@ -884,14 +884,14 @@ Prompts werden revisioniert und historisiert.
 
 Ein Prompt besitzt:
 
-* stabile ID,
-* Prompttyp,
-* Scope,
-* Revision,
-* Status,
-* vorherige Revision,
-* Aktivierungszeitpunkt,
-* Autor.
+- stabile ID,
+- Prompttyp,
+- Scope,
+- Revision,
+- Status,
+- vorherige Revision,
+- Aktivierungszeitpunkt,
+- Autor.
 
 Eine Promptänderung überschreibt nicht die historische Bedeutung bereits abgeschlossener Aktionen.
 
@@ -916,9 +916,9 @@ status
 
 Dabei gilt:
 
-* `schema_version` beschreibt den Registry-Eintrag,
-* `definition_version` beschreibt die konkrete Definition,
-* `revision` beschreibt deren aktuellen Änderungsstand.
+- `schema_version` beschreibt den Registry-Eintrag,
+- `definition_version` beschreibt die konkrete Definition,
+- `revision` beschreibt deren aktuellen Änderungsstand.
 
 Nicht aktive Definitionen werden im normalen Laufzeitpfad nicht verwendet.
 
@@ -940,9 +940,9 @@ Eine unbekannte Major-Version wird abgelehnt.
 
 Eine neuere kompatible Minor-Version kann akzeptiert werden, wenn:
 
-* unbekannte optionale Felder sicher ignoriert werden,
-* Pflichtsemantik unverändert bleibt,
-* die Capability-Unterstützung ausreicht.
+- unbekannte optionale Felder sicher ignoriert werden,
+- Pflichtsemantik unverändert bleibt,
+- die Capability-Unterstützung ausreicht.
 
 Manifeste enthalten keinen frei ausführbaren Code.
 
@@ -952,14 +952,14 @@ Manifeste enthalten keinen frei ausführbaren Code.
 
 Konfigurationsdefinitionen besitzen:
 
-* Schlüssel,
-* Schemaversion,
-* Wertschema,
-* Default,
-* Scope,
-* UI-Metadaten,
-* Sicherheitsklasse,
-* Reload-Verhalten.
+- Schlüssel,
+- Schemaversion,
+- Wertschema,
+- Default,
+- Scope,
+- UI-Metadaten,
+- Sicherheitsklasse,
+- Reload-Verhalten.
 
 Ändert sich das Wertschema, müssen bestehende Werte geprüft werden.
 
@@ -984,22 +984,22 @@ Sie sind unabhängig von öffentlichen Vertragsversionen.
 
 Eine Datenbankmigration kann:
 
-* rein intern sein,
-* eine neue Spalte ergänzen,
-* Indizes verändern,
-* Daten transformieren,
-* einen öffentlichen Vertrag vorbereiten.
+- rein intern sein,
+- eine neue Spalte ergänzen,
+- Indizes verändern,
+- Daten transformieren,
+- einen öffentlichen Vertrag vorbereiten.
 
 Jede Migration muss prüfen:
 
-* Upgrade,
-* vorhandene Daten,
-* Downgrade, soweit unterstützt,
-* SQLite,
-* spätere PostgreSQL-Kompatibilität,
-* Fremdschlüssel,
-* Indizes,
-* zeitliche Reihenfolge.
+- Upgrade,
+- vorhandene Daten,
+- Downgrade, soweit unterstützt,
+- SQLite,
+- spätere PostgreSQL-Kompatibilität,
+- Fremdschlüssel,
+- Indizes,
+- zeitliche Reihenfolge.
 
 Bereits veröffentlichte Migrationen werden nicht nachträglich stillschweigend verändert.
 
@@ -1073,9 +1073,9 @@ Beispiel:
 
 Das Frontend verwendet nur:
 
-* unterstützte Vertragsversionen,
-* aktivierte Capabilities,
-* bekannte Features.
+- unterstützte Vertragsversionen,
+- aktivierte Capabilities,
+- bekannte Features.
 
 ---
 
@@ -1085,11 +1085,11 @@ Veraltete Felder, Endpunkte oder Eventarten werden ausdrücklich markiert.
 
 Eine Deprecation-Dokumentation enthält:
 
-* betroffenen Vertrag,
-* Ersatz,
-* Einführungsdatum,
-* geplante Entfernung,
-* Migrationshinweis.
+- betroffenen Vertrag,
+- Ersatz,
+- Einführungsdatum,
+- geplante Entfernung,
+- Migrationshinweis.
 
 Beispiel:
 
@@ -1100,9 +1100,9 @@ models.default_model_id
 
 Deprecation bedeutet:
 
-* weiterhin unterstützt,
-* nicht mehr für neue Implementierungen verwenden,
-* Entfernung geplant.
+- weiterhin unterstützt,
+- nicht mehr für neue Implementierungen verwenden,
+- Entfernung geplant.
 
 ---
 
@@ -1112,17 +1112,17 @@ Adapter dürfen zeitlich begrenzt verwendet werden.
 
 Beispiele:
 
-* altes Feld auf neues Feld abbilden,
-* altes Event normalisieren,
-* alten Importpfad re-exportieren,
-* alte Responseform transformieren.
+- altes Feld auf neues Feld abbilden,
+- altes Event normalisieren,
+- alten Importpfad re-exportieren,
+- alte Responseform transformieren.
 
 Jeder Adapter benötigt:
 
-* Test,
-* Dokumentation,
-* Telemetrie oder Auffindbarkeit,
-* Entfernungsplan.
+- Test,
+- Dokumentation,
+- Telemetrie oder Auffindbarkeit,
+- Entfernungsplan.
 
 Adapter dürfen keine dauerhafte zweite Vertragsrealität erzeugen.
 
@@ -1142,10 +1142,10 @@ __all__ = ["HierarchyNodeRead"]
 
 Dokumentiert werden:
 
-* alter Pfad,
-* neuer Pfad,
-* Zeitpunkt,
-* geplantes Entfernungsrelease.
+- alter Pfad,
+- neuer Pfad,
+- Zeitpunkt,
+- geplantes Entfernungsrelease.
 
 ---
 
@@ -1157,12 +1157,12 @@ Nicht jeder Zukunftsvertrag muss künstlich in OpenAPI erscheinen.
 
 OpenAPI wird geprüft auf:
 
-* neue Endpunkte,
-* entfernte Endpunkte,
-* geänderte Pflichtfelder,
-* veränderte Typen,
-* geänderte Statuscodes,
-* geänderte Response-Modelle.
+- neue Endpunkte,
+- entfernte Endpunkte,
+- geänderte Pflichtfelder,
+- veränderte Typen,
+- geänderte Statuscodes,
+- geänderte Response-Modelle.
 
 Ein OpenAPI-Diff ist Bestandteil der Qualitätsprüfung.
 
@@ -1172,10 +1172,10 @@ Ein OpenAPI-Diff ist Bestandteil der Qualitätsprüfung.
 
 Das Frontend unterscheidet:
 
-* generierte Transporttypen,
-* manuelle Runtime-Validatoren,
-* normalisierte Storemodelle,
-* UI-interne Typen.
+- generierte Transporttypen,
+- manuelle Runtime-Validatoren,
+- normalisierte Storemodelle,
+- UI-interne Typen.
 
 Generierte Dateien werden nicht manuell geändert.
 
@@ -1218,13 +1218,13 @@ deny by default
 
 Dies betrifft insbesondere:
 
-* Berechtigungen,
-* Risikoklassen,
-* Sichtbarkeit,
-* Datenklassifikation,
-* Tenant-Scope,
-* externe Freigaben,
-* Actionbestätigungen.
+- Berechtigungen,
+- Risikoklassen,
+- Sichtbarkeit,
+- Datenklassifikation,
+- Tenant-Scope,
+- externe Freigaben,
+- Actionbestätigungen.
 
 Eine neue Vertragsversion darf keine bestehende Sicherheitsgrenze stillschweigend lockern.
 
@@ -1238,37 +1238,37 @@ Jede Vertragsänderung benötigt passende Tests.
 
 Mindestens:
 
-* gültiges Beispiel,
-* fehlendes Pflichtfeld,
-* unbekanntes Requestfeld,
-* ungültige Version,
-* zusätzliche Responsefelder ausgeschlossen,
-* Serialisierung,
-* Deserialisierung,
-* Enumwerte,
-* Revisionen.
+- gültiges Beispiel,
+- fehlendes Pflichtfeld,
+- unbekanntes Requestfeld,
+- ungültige Version,
+- zusätzliche Responsefelder ausgeschlossen,
+- Serialisierung,
+- Deserialisierung,
+- Enumwerte,
+- Revisionen.
 
 ## 38.2 Frontend
 
 Mindestens:
 
-* gültige Antwort,
-* ungültige Antwort,
-* unbekannter Typ,
-* unbekannter Enumwert,
-* zusätzliche Felder,
-* alte Vertragsversion,
-* neue unterstützte Version,
-* keine Store-Übernahme bei Fehler.
+- gültige Antwort,
+- ungültige Antwort,
+- unbekannter Typ,
+- unbekannter Enumwert,
+- zusätzliche Felder,
+- alte Vertragsversion,
+- neue unterstützte Version,
+- keine Store-Übernahme bei Fehler.
 
 ## 38.3 Integration
 
 Mindestens:
 
-* Backendpayload wird vom Frontendvalidator akzeptiert,
-* OpenAPI entspricht dem Laufzeitverhalten,
-* ältere kompatible Antwort funktioniert,
-* inkompatible Antwort wird kontrolliert abgelehnt.
+- Backendpayload wird vom Frontendvalidator akzeptiert,
+- OpenAPI entspricht dem Laufzeitverhalten,
+- ältere kompatible Antwort funktioniert,
+- inkompatible Antwort wird kontrolliert abgelehnt.
 
 ---
 
@@ -1362,14 +1362,14 @@ Daher müssen alte Versionen kontrolliert entfernt werden.
 
 ### Vorteile
 
-* weniger Felder,
-* einfacher Beginn.
+- weniger Felder,
+- einfacher Beginn.
 
 ### Nachteile
 
-* keine eindeutige Interpretation,
-* schlechte Migration,
-* unklare Clientkompatibilität.
+- keine eindeutige Interpretation,
+- schlechte Migration,
+- unklare Clientkompatibilität.
 
 **Entscheidung:** Verworfen.
 
@@ -1386,14 +1386,14 @@ Beispiel:
 
 ### Vorteile
 
-* leicht sichtbar,
-* bekanntes Muster.
+- leicht sichtbar,
+- bekanntes Muster.
 
 ### Nachteile
 
-* zu grob für einzelne Vertragsfamilien,
-* dynamische Definitionen bleiben unversioniert,
-* jede kleinere Änderung könnte neue API-Version erfordern.
+- zu grob für einzelne Vertragsfamilien,
+- dynamische Definitionen bleiben unversioniert,
+- jede kleinere Änderung könnte neue API-Version erfordern.
 
 **Entscheidung:** Als alleinige Strategie verworfen.
 
@@ -1403,13 +1403,13 @@ Beispiel:
 
 ### Vorteile
 
-* vorhandener Alembic-Mechanismus.
+- vorhandener Alembic-Mechanismus.
 
 ### Nachteile
 
-* beschreibt keine API-Semantik,
-* beschreibt keine Frontendkompatibilität,
-* nicht für SSE, UI-Schemas oder Manifeste geeignet.
+- beschreibt keine API-Semantik,
+- beschreibt keine Frontendkompatibilität,
+- nicht für SSE, UI-Schemas oder Manifeste geeignet.
 
 **Entscheidung:** Verworfen.
 
@@ -1419,13 +1419,13 @@ Beispiel:
 
 ### Vorteile
 
-* scheinbar hohe Vorwärtskompatibilität.
+- scheinbar hohe Vorwärtskompatibilität.
 
 ### Nachteile
 
-* unsichere Annahmen,
-* unvorhersehbares Verhalten,
-* besonders gefährlich bei Aktionen und Berechtigungen.
+- unsichere Annahmen,
+- unvorhersehbares Verhalten,
+- besonders gefährlich bei Aktionen und Berechtigungen.
 
 **Entscheidung:** Verworfen.
 
@@ -1435,14 +1435,14 @@ Beispiel:
 
 ### Vorteile
 
-* keine erzwungenen Clientmigrationen.
+- keine erzwungenen Clientmigrationen.
 
 ### Nachteile
 
-* unbegrenzte Komplexität,
-* Sicherheitsrisiken,
-* wachsender Übergangscode,
-* nicht wartbar.
+- unbegrenzte Komplexität,
+- Sicherheitsrisiken,
+- wachsender Übergangscode,
+- nicht wartbar.
 
 **Entscheidung:** Verworfen.
 
@@ -1452,14 +1452,14 @@ Beispiel:
 
 ### Vorteile
 
-* geringe explizite Migrationsarbeit.
+- geringe explizite Migrationsarbeit.
 
 ### Nachteile
 
-* nicht reproduzierbar,
-* unterschiedliche Datenstände,
-* unerwartete Schreibzugriffe,
-* schwieriger Rollback.
+- nicht reproduzierbar,
+- unterschiedliche Datenstände,
+- unerwartete Schreibzugriffe,
+- schwieriger Rollback.
 
 **Entscheidung:** Als allgemeines Modell verworfen.
 
@@ -1471,11 +1471,11 @@ Kontrollierte Lazy Migration kann später für ausdrücklich geeignete Fälle ei
 
 ## Phase 1 – Versionsinventar
 
-* alle vorhandenen Versionsfelder erfassen,
-* Bedeutung dokumentieren,
-* doppelte oder unklare Felder identifizieren,
-* Router-lokale Verträge erfassen,
-* SSE-Eventversionen dokumentieren.
+- alle vorhandenen Versionsfelder erfassen,
+- Bedeutung dokumentieren,
+- doppelte oder unklare Felder identifizieren,
+- Router-lokale Verträge erfassen,
+- SSE-Eventversionen dokumentieren.
 
 ## Phase 2 – Begriffe vereinheitlichen
 
@@ -1493,11 +1493,11 @@ registry_revision
 
 ## Phase 3 – Basistypen zentralisieren
 
-* SchemaVersion,
-* Revision,
-* Zeitstempel,
-* opaque IDs,
-* Request-ID.
+- SchemaVersion,
+- Revision,
+- Zeitstempel,
+- opaque IDs,
+- Request-ID.
 
 ## Phase 4 – Kernverträge stabilisieren
 
@@ -1513,31 +1513,31 @@ Reihenfolge:
 
 ## Phase 5 – Frontendvalidatoren
 
-* jeden öffentlichen Payload validieren,
-* unbekannte Typen sicher behandeln,
-* Versionsprüfung ergänzen.
+- jeden öffentlichen Payload validieren,
+- unbekannte Typen sicher behandeln,
+- Versionsprüfung ergänzen.
 
 ## Phase 6 – Dynamische Definitionen versionieren
 
-* Ressourcentypen,
-* Prompts,
-* Widgets,
-* Konzepte,
-* Workflows,
-* Knotentypen.
+- Ressourcentypen,
+- Prompts,
+- Widgets,
+- Konzepte,
+- Workflows,
+- Knotentypen.
 
 ## Phase 7 – Deprecation-Verzeichnis
 
-* alte Felder,
-* alte Events,
-* alte Importpfade,
-* geplante Entfernung.
+- alte Felder,
+- alte Events,
+- alte Importpfade,
+- geplante Entfernung.
 
 ## Phase 8 – OpenAPI-Diff und CI
 
-* Vertragsänderungen automatisch prüfen,
-* Breaking Changes sichtbar machen,
-* bewusste Freigabe verlangen.
+- Vertragsänderungen automatisch prüfen,
+- Breaking Changes sichtbar machen,
+- bewusste Freigabe verlangen.
 
 ---
 
@@ -1545,21 +1545,21 @@ Reihenfolge:
 
 Die Entscheidung gilt als technisch umgesetzt, wenn:
 
-* alle öffentlichen Kernverträge eine eindeutige Schemaversion besitzen,
-* Versionsbegriffe klar getrennt sind,
-* Objekt- und Registry-Revisionen nicht mit Schemaversionen verwechselt werden,
-* inkompatible Änderungen eine neue Hauptversion erhalten,
-* gespeicherte dynamische Instanzen ihre Definitionversion behalten,
-* Frontendantworten laufzeitvalidiert werden,
-* unbekannte sicherheitsrelevante Typen abgelehnt werden,
-* unbekannte darstellungsbezogene Typen kontrolliert dargestellt werden,
-* SSE-Events versioniert und vorwärtskompatibel verarbeitet werden,
-* OpenAPI-Diffs geprüft werden,
-* Datenbankmigrationen separat dokumentiert sind,
-* Deprecations einen Entfernungsplan besitzen,
-* Re-Exports nur zeitlich begrenzt bestehen,
-* Vertragsbeispiele und Tests vorhanden sind,
-* Dokumentation und Code dieselbe Versionssemantik verwenden.
+- alle öffentlichen Kernverträge eine eindeutige Schemaversion besitzen,
+- Versionsbegriffe klar getrennt sind,
+- Objekt- und Registry-Revisionen nicht mit Schemaversionen verwechselt werden,
+- inkompatible Änderungen eine neue Hauptversion erhalten,
+- gespeicherte dynamische Instanzen ihre Definitionversion behalten,
+- Frontendantworten laufzeitvalidiert werden,
+- unbekannte sicherheitsrelevante Typen abgelehnt werden,
+- unbekannte darstellungsbezogene Typen kontrolliert dargestellt werden,
+- SSE-Events versioniert und vorwärtskompatibel verarbeitet werden,
+- OpenAPI-Diffs geprüft werden,
+- Datenbankmigrationen separat dokumentiert sind,
+- Deprecations einen Entfernungsplan besitzen,
+- Re-Exports nur zeitlich begrenzt bestehen,
+- Vertragsbeispiele und Tests vorhanden sind,
+- Dokumentation und Code dieselbe Versionssemantik verwenden.
 
 ---
 

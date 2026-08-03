@@ -1,23 +1,23 @@
 # ADR-0006: API-Verträge und API-Versionierung
 
-* **Status:** Angenommen – konsolidiert
-* **Datum der ursprünglichen Entscheidung:** 2026-07-27
-* **Letzte Überarbeitung:** 2026-08-03
-* **Entscheidungsträger:** Kernschmied-Architekturteam
-* **Ersetzt:** Keine
-* **Ersetzt durch:** Keine
-* **Verwandte Dokumente:**
+- **Status:** Angenommen – konsolidiert
+- **Datum der ursprünglichen Entscheidung:** 2026-07-27
+- **Letzte Überarbeitung:** 2026-08-03
+- **Entscheidungsträger:** Kernschmied-Architekturteam
+- **Ersetzt:** Keine
+- **Ersetzt durch:** Keine
+- **Verwandte Dokumente:**
 
-  * `documentation/leitkonzept.md`
-  * `documentation/architecture/contracts.md`
-  * `documentation/architecture/contract-refactoring.md`
-  * `documentation/architecture/schema-versioning.md`
-  * `documentation/architecture/effective-context.md`
-  * `documentation/architecture/decisions/ADR-0001-schema-driven-user-interface.md`
-  * `documentation/architecture/decisions/ADR-0002-configuration-architecture-and-runtime-initialization.md`
-  * `documentation/architecture/decisions/ADR-0003-registry-based-extension-architecture.md`
-  * `documentation/architecture/decisions/ADR-0004-security-profiles-and-deployment-modes.md`
-  * `documentation/architecture/decisions/ADR-0005-versioned-contracts-and-schema-evolution.md`
+  - `documentation/leitkonzept.md`
+  - `documentation/architecture/contracts.md`
+  - `documentation/architecture/contract-refactoring.md`
+  - `documentation/architecture/schema-versioning.md`
+  - `documentation/architecture/effective-context.md`
+  - `documentation/architecture/decisions/ADR-0001-schema-driven-user-interface.md`
+  - `documentation/architecture/decisions/ADR-0002-configuration-architecture-and-runtime-initialization.md`
+  - `documentation/architecture/decisions/ADR-0003-registry-based-extension-architecture.md`
+  - `documentation/architecture/decisions/ADR-0004-security-profiles-and-deployment-modes.md`
+  - `documentation/architecture/decisions/ADR-0005-versioned-contracts-and-schema-evolution.md`
 
 ---
 
@@ -37,10 +37,10 @@ Kompatible Erweiterungen werden bevorzugt additiv eingeführt.
 
 Inkompatible Änderungen benötigen:
 
-* eine neue API-Hauptversion,
-* eine neue konkrete Vertragsversion,
-* einen dokumentierten Migrationspfad,
-* eine kontrollierte Übergangsphase.
+- eine neue API-Hauptversion,
+- eine neue konkrete Vertragsversion,
+- einen dokumentierten Migrationspfad,
+- eine kontrollierte Übergangsphase.
 
 Die zentrale Regel lautet:
 
@@ -51,12 +51,12 @@ Die API-Version ersetzt nicht die Schemaversion einzelner Payloads.
 
 Kernschmied unterscheidet ausdrücklich:
 
-* API-Version,
-* Payload-Schemaversion,
-* Definitionversion,
-* Manifestversion,
-* Objekt-Revision,
-* Registry-Revision.
+- API-Version,
+- Payload-Schemaversion,
+- Definitionversion,
+- Manifestversion,
+- Objekt-Revision,
+- Registry-Revision.
 
 ---
 
@@ -66,34 +66,34 @@ Kernschmied besteht aus mehreren Subsystemen, die sich teilweise unabhängig wei
 
 Dazu gehören:
 
-* FastAPI-Backend,
-* React-Frontend,
-* Modellprovider,
-* Toolprovider,
-* administrative Oberflächen,
-* Runtime-Registries,
-* dynamische Definitionen,
-* spätere Desktop-Clients,
-* spätere Mobile-Clients,
-* externe Integrationen,
-* mögliche spätere Plugins.
+- FastAPI-Backend,
+- React-Frontend,
+- Modellprovider,
+- Toolprovider,
+- administrative Oberflächen,
+- Runtime-Registries,
+- dynamische Definitionen,
+- spätere Desktop-Clients,
+- spätere Mobile-Clients,
+- externe Integrationen,
+- mögliche spätere Plugins.
 
 Die Kommunikation erfolgt über explizite Verträge.
 
 Beispiele:
 
-* REST-Endpunkte,
-* SSE-Streams,
-* Bootstrap-Antworten,
-* UI-Schemas,
-* Hierarchieverträge,
-* Konfigurationsverträge,
-* Chatverträge,
-* Modell- und Toolmetadaten,
-* Registry-Verträge,
-* Ressourcenverträge,
-* Action-Verträge,
-* Fehlerverträge.
+- REST-Endpunkte,
+- SSE-Streams,
+- Bootstrap-Antworten,
+- UI-Schemas,
+- Hierarchieverträge,
+- Konfigurationsverträge,
+- Chatverträge,
+- Modell- und Toolmetadaten,
+- Registry-Verträge,
+- Ressourcenverträge,
+- Action-Verträge,
+- Fehlerverträge.
 
 Diese Systeme können unterschiedliche Releasezyklen besitzen.
 
@@ -103,11 +103,11 @@ Eine externe Integration kann einen öffentlichen Endpunkt länger verwenden als
 
 Deshalb müssen öffentliche Schnittstellen langfristig:
 
-* stabil,
-* nachvollziehbar,
-* validierbar,
-* dokumentiert,
-* migrationsfähig
+- stabil,
+- nachvollziehbar,
+- validierbar,
+- dokumentiert,
+- migrationsfähig
 
 bleiben.
 
@@ -119,19 +119,19 @@ Ohne klare API-Versionierungs- und Vertragsregeln können bereits kleine Backend
 
 Typische Beispiele:
 
-* JSON-Feld umbenennen,
-* Pflichtfeld ergänzen,
-* Feld entfernen,
-* `null` nicht mehr zulassen,
-* Antwortstruktur verändern,
-* Statuscode verändern,
-* Fehlerformat verändern,
-* Endpointsemantik verändern,
-* Pagination ändern,
-* Sortierreihenfolge ändern,
-* SSE-Ereignis umbenennen,
-* Enumwert entfernen,
-* neue Validierung einführen.
+- JSON-Feld umbenennen,
+- Pflichtfeld ergänzen,
+- Feld entfernen,
+- `null` nicht mehr zulassen,
+- Antwortstruktur verändern,
+- Statuscode verändern,
+- Fehlerformat verändern,
+- Endpointsemantik verändern,
+- Pagination ändern,
+- Sortierreihenfolge ändern,
+- SSE-Ereignis umbenennen,
+- Enumwert entfernen,
+- neue Validierung einführen.
 
 Diese Probleme werden kritischer, sobald mehrere Clients und Integrationen existieren.
 
@@ -161,10 +161,10 @@ entsteht ein Vertragsbruch.
 
 Wenn öffentliche Request- und Response-Modelle direkt in Routerdateien definiert werden, entstehen:
 
-* Duplikate,
-* uneinheitliche Benennungen,
-* schwer auffindbare Verträge,
-* unterschiedliche Fehlerformate.
+- Duplikate,
+- uneinheitliche Benennungen,
+- schwer auffindbare Verträge,
+- unterschiedliche Fehlerformate.
 
 ## 3.3 Direkte Datenbankmodelle als API-Antwort
 
@@ -172,11 +172,11 @@ Werden SQLAlchemy-Modelle direkt serialisiert, können interne Felder unbeabsich
 
 Beispiele:
 
-* interne IDs,
-* Secretreferenzen,
-* technische Statusfelder,
-* Fremdschlüssel,
-* Auditmetadaten.
+- interne IDs,
+- Secretreferenzen,
+- technische Statusfelder,
+- Fremdschlüssel,
+- Auditmetadaten.
 
 ## 3.4 Uneinheitliche Listenverträge
 
@@ -234,16 +234,16 @@ Diese ADR konkretisiert die öffentliche API-Schicht.
 
 Sie behandelt insbesondere:
 
-* HTTP-Endpunkte,
-* URL-Versionierung,
-* Requests,
-* Responses,
-* Fehler,
-* Pagination,
-* Statuscodes,
-* OpenAPI,
-* SSE als öffentlicher Transport,
-* Deprecation öffentlicher Endpunkte.
+- HTTP-Endpunkte,
+- URL-Versionierung,
+- Requests,
+- Responses,
+- Fehler,
+- Pagination,
+- Statuscodes,
+- OpenAPI,
+- SSE als öffentlicher Transport,
+- Deprecation öffentlicher Endpunkte.
 
 Dabei gilt:
 
@@ -277,46 +277,46 @@ Kernschmied besitzt bereits wichtige Grundlagen einer versionierten API.
 
 ## 5.1 Bereits vorhanden
 
-* API-Präfix `/api/v1`,
-* FastAPI und OpenAPI,
-* Bootstrap-Endpunkt,
-* UI-Schema-Endpunkt,
-* Hierarchie-Endpunkte,
-* Chat-SSE-Endpunkt,
-* Modell- und Toolendpunkte,
-* Config-Endpunkte,
-* Health-Endpunkte,
-* strukturierte Chatfehler,
-* Pydantic-v2-Verträge,
-* Request-ID-Grundlagen,
-* Versionsinformationen im Bootstrap.
+- API-Präfix `/api/v1`,
+- FastAPI und OpenAPI,
+- Bootstrap-Endpunkt,
+- UI-Schema-Endpunkt,
+- Hierarchie-Endpunkte,
+- Chat-SSE-Endpunkt,
+- Modell- und Toolendpunkte,
+- Config-Endpunkte,
+- Health-Endpunkte,
+- strukturierte Chatfehler,
+- Pydantic-v2-Verträge,
+- Request-ID-Grundlagen,
+- Versionsinformationen im Bootstrap.
 
 ## 5.2 Teilweise implementiert
 
-* zentralisierte öffentliche Contract-Module,
-* einheitliche Listenverträge,
-* einheitliche Mutationsantworten,
-* konsistente Pagination,
-* vollständige strukturierte Fehler,
-* Request-ID in allen Antworten,
-* OpenAPI-Diff-Prüfung,
-* Frontend-Laufzeitvalidierung,
-* endpointbasierte Capability Negotiation,
-* Deprecation-Metadaten,
-* gemeinsame Response-Envelopes.
+- zentralisierte öffentliche Contract-Module,
+- einheitliche Listenverträge,
+- einheitliche Mutationsantworten,
+- konsistente Pagination,
+- vollständige strukturierte Fehler,
+- Request-ID in allen Antworten,
+- OpenAPI-Diff-Prüfung,
+- Frontend-Laufzeitvalidierung,
+- endpointbasierte Capability Negotiation,
+- Deprecation-Metadaten,
+- gemeinsame Response-Envelopes.
 
 ## 5.3 Derzeitige Inkonsistenzen
 
-* einzelne öffentliche Modelle liegen noch direkt in Routerdateien,
-* einige Endpunkte verwenden noch FastAPI-Standardfehler,
-* Listenantworten sind nicht überall einheitlich,
-* Statuscodes und Mutationsantworten sind noch nicht vollständig harmonisiert,
-* Request-ID ist noch nicht in allen Fehler- und Erfolgsantworten konsistent,
-* Health-Endpunkte liegen teilweise außerhalb des `/api/v1`-Präfixes,
-* Bootstrap-Endpointschlüssel und konkrete Routen sind noch nicht vollständig vereinheitlicht,
-* Frontendcode verwendet teilweise feste Pfade statt Bootstrap-Endpointschlüssel,
-* nicht alle Antworten werden im Frontend zur Laufzeit validiert,
-* SSE verwendet teilweise Übergangs- oder Aliasereignisse.
+- einzelne öffentliche Modelle liegen noch direkt in Routerdateien,
+- einige Endpunkte verwenden noch FastAPI-Standardfehler,
+- Listenantworten sind nicht überall einheitlich,
+- Statuscodes und Mutationsantworten sind noch nicht vollständig harmonisiert,
+- Request-ID ist noch nicht in allen Fehler- und Erfolgsantworten konsistent,
+- Health-Endpunkte liegen teilweise außerhalb des `/api/v1`-Präfixes,
+- Bootstrap-Endpointschlüssel und konkrete Routen sind noch nicht vollständig vereinheitlicht,
+- Frontendcode verwendet teilweise feste Pfade statt Bootstrap-Endpointschlüssel,
+- nicht alle Antworten werden im Frontend zur Laufzeit validiert,
+- SSE verwendet teilweise Übergangs- oder Aliasereignisse.
 
 ---
 
@@ -344,15 +344,15 @@ OpenAPI und Laufzeitvalidierung
 
 Jede öffentliche Route besitzt:
 
-* stabile URL,
-* dokumentierte HTTP-Methode,
-* versionierten Request-Vertrag,
-* versionierten Response-Vertrag,
-* dokumentierte Statuscodes,
-* strukturierte Fehler,
-* Request-ID,
-* Autorisierungsanforderungen,
-* Tests.
+- stabile URL,
+- dokumentierte HTTP-Methode,
+- versionierten Request-Vertrag,
+- versionierten Response-Vertrag,
+- dokumentierte Statuscodes,
+- strukturierte Fehler,
+- Request-ID,
+- Autorisierungsanforderungen,
+- Tests.
 
 ---
 
@@ -401,11 +401,11 @@ Kein API-Payload wird ungeprüft in den Store übernommen.
 
 Inkompatible Änderungen benötigen:
 
-* neue Version,
-* Migrationsweg,
-* Deprecation oder Parallelbetrieb,
-* Tests,
-* Dokumentation.
+- neue Version,
+- Migrationsweg,
+- Deprecation oder Parallelbetrieb,
+- Tests,
+- Dokumentation.
 
 ---
 
@@ -490,22 +490,22 @@ Beispiele:
 
 Sie ist:
 
-* explizit,
-* leicht zu dokumentieren,
-* einfach zu debuggen,
-* proxyfreundlich,
-* OpenAPI-kompatibel,
-* für Browser und externe Integrationen verständlich.
+- explizit,
+- leicht zu dokumentieren,
+- einfach zu debuggen,
+- proxyfreundlich,
+- OpenAPI-kompatibel,
+- für Browser und externe Integrationen verständlich.
 
 ## 10.2 Was URL-Versionierung nicht löst
 
 Sie ersetzt nicht:
 
-* Payload-Schemaversionen,
-* Eventversionierung,
-* Definitionversionen,
-* Revisionen,
-* Capability Negotiation.
+- Payload-Schemaversionen,
+- Eventversionierung,
+- Definitionversionen,
+- Revisionen,
+- Capability Negotiation.
 
 ---
 
@@ -513,11 +513,11 @@ Sie ersetzt nicht:
 
 Untersucht wurden:
 
-* HTTP-Header,
-* Content Negotiation,
-* Media Types,
-* Queryparameter,
-* ausschließlich Payload-Versionen.
+- HTTP-Header,
+- Content Negotiation,
+- Media Types,
+- Queryparameter,
+- ausschließlich Payload-Versionen.
 
 Diese Mechanismen können später ergänzend verwendet werden.
 
@@ -599,23 +599,23 @@ ConfigDict(extra="forbid")
 
 Anfragen validieren mindestens:
 
-* Datentypen,
-* Pflichtfelder,
-* Längen,
-* Wertebereiche,
-* IDs,
-* Enumwerte,
-* Revisionen,
-* Feldkombinationen.
+- Datentypen,
+- Pflichtfelder,
+- Längen,
+- Wertebereiche,
+- IDs,
+- Enumwerte,
+- Revisionen,
+- Feldkombinationen.
 
 Unbekannte Felder werden abgelehnt.
 
 Dies verhindert:
 
-* Tippfehler,
-* wirkungslose Altparameter,
-* uneindeutige Eingaben,
-* unbeabsichtigte Felder.
+- Tippfehler,
+- wirkungslose Altparameter,
+- uneindeutige Eingaben,
+- unbeabsichtigte Felder.
 
 ---
 
@@ -629,12 +629,12 @@ Keine internen Zusatzdaten dürfen durch automatische Serialisierung erscheinen.
 
 Antworten enthalten je nach Vertrag:
 
-* `schema_version`,
-* Ressource oder `items`,
-* Revision,
-* Pagination,
-* Request-ID,
-* Status.
+- `schema_version`,
+- Ressource oder `items`,
+- Revision,
+- Pagination,
+- Request-ID,
+- Status.
 
 Nicht jeder Response benötigt denselben globalen Envelope.
 
@@ -684,11 +684,11 @@ Empfohlener Vertrag:
 
 Mögliche Felder:
 
-* `items`,
-* `next_cursor`,
-* `total`,
-* `revision`,
-* `request_id`.
+- `items`,
+- `next_cursor`,
+- `total`,
+- `revision`,
+- `request_id`.
 
 ## 17.1 Cursor-Pagination
 
@@ -696,11 +696,11 @@ Cursor-Pagination wird für wachsende Datenmengen bevorzugt.
 
 Geeignet für:
 
-* Chats,
-* Nachrichten,
-* Ressourcen,
-* Auditereignisse,
-* Registry-Einträge.
+- Chats,
+- Nachrichten,
+- Ressourcen,
+- Auditereignisse,
+- Registry-Einträge.
 
 ## 17.2 Offset-Pagination
 
@@ -838,17 +838,17 @@ Empfohlene Grundregeln:
 
 ## 21.1 401 und 403
 
-* `401`: nicht authentifiziert,
-* `403`: authentifiziert, aber nicht autorisiert.
+- `401`: nicht authentifiziert,
+- `403`: authentifiziert, aber nicht autorisiert.
 
 ## 21.2 409
 
 Für:
 
-* Revisionskonflikte,
-* Eindeutigkeitskonflikte,
-* ungültige Statusübergänge,
-* Zielkonflikte.
+- Revisionskonflikte,
+- Eindeutigkeitskonflikte,
+- ungültige Statusübergänge,
+- Zielkonflikte.
 
 ## 21.3 422
 
@@ -926,11 +926,11 @@ Jede Anfrage erhält eine Request-ID.
 
 Die Request-ID wird:
 
-* aus einem gültigen Clientheader übernommen oder neu erzeugt,
-* in Logs verwendet,
-* in `X-Request-ID` zurückgegeben,
-* in Fehlerantworten ausgegeben,
-* in SSE-Ereignissen berücksichtigt.
+- aus einem gültigen Clientheader übernommen oder neu erzeugt,
+- in Logs verwendet,
+- in `X-Request-ID` zurückgegeben,
+- in Fehlerantworten ausgegeben,
+- in SSE-Ereignissen berücksichtigt.
 
 Ungeeignete oder zu lange Clientwerte werden nicht ungeprüft übernommen.
 
@@ -970,14 +970,14 @@ Externe Origins benötigen eine ausdrückliche technische Freigabe.
 
 Der Bootstrap-Endpunkt liefert:
 
-* Anwendungsversion,
-* API-Version,
-* Vertragsversionen,
-* Endpointschlüssel,
-* Capabilities,
-* Featureinformationen,
-* Revisionsstände,
-* Sicherheitsprofil in nicht sensitiver Form.
+- Anwendungsversion,
+- API-Version,
+- Vertragsversionen,
+- Endpointschlüssel,
+- Capabilities,
+- Featureinformationen,
+- Revisionsstände,
+- Sicherheitsprofil in nicht sensitiver Form.
 
 Beispiel:
 
@@ -1052,17 +1052,17 @@ Bestehende Eventarten werden nicht ohne Migrationspfad umbenannt.
 
 Unbekannte Eventarten:
 
-* beenden den Stream nicht,
-* lösen keine Aktion aus,
-* können diagnostisch protokolliert werden.
+- beenden den Stream nicht,
+- lösen keine Aktion aus,
+- können diagnostisch protokolliert werden.
 
 ## 28.3 Genau ein Abschlusszustand
 
 Ein Stream endet fachlich mit genau einem Abschlussereignis:
 
-* completed,
-* failed,
-* cancelled.
+- completed,
+- failed,
+- cancelled.
 
 ---
 
@@ -1082,12 +1082,12 @@ JSON-Endpunkte werden nicht für beliebig große Binärdaten missbraucht.
 
 Dateien verwenden kontrollierte Endpunkte mit:
 
-* Content-Type,
-* Größenlimit,
-* Dateinamenvalidierung,
-* Berechtigungsprüfung,
-* Streaming,
-* Malware- oder Typprüfung, soweit vorgesehen.
+- Content-Type,
+- Größenlimit,
+- Dateinamenvalidierung,
+- Berechtigungsprüfung,
+- Streaming,
+- Malware- oder Typprüfung, soweit vorgesehen.
 
 Metadaten bleiben versionierte JSON-Verträge.
 
@@ -1105,10 +1105,10 @@ Idempotency-Key: ...
 
 Geeignet für:
 
-* Ressourcenerstellung,
-* Integrationsaufrufe,
-* externe Transaktionen,
-* wiederholte Clientrequests.
+- Ressourcenerstellung,
+- Integrationsaufrufe,
+- externe Transaktionen,
+- wiederholte Clientrequests.
 
 Die konkrete Semantik wird pro Endpunkt dokumentiert.
 
@@ -1122,11 +1122,11 @@ Backendservices sollen Clientabbrüche, soweit technisch möglich, berücksichti
 
 Timeouts werden unterschieden in:
 
-* Clienttimeout,
-* Backendtimeout,
-* Provider-Timeout,
-* Tooltimeout,
-* Integrationstimeout.
+- Clienttimeout,
+- Backendtimeout,
+- Provider-Timeout,
+- Tooltimeout,
+- Integrationstimeout.
 
 Fehlercodes bleiben unterscheidbar.
 
@@ -1138,10 +1138,10 @@ Authentifizierung und Autorisierung sind Bestandteil jedes öffentlichen Endpunk
 
 Jede Route dokumentiert:
 
-* ob Authentifizierung erforderlich ist,
-* welche Berechtigung erforderlich ist,
-* welche Objektprüfung erfolgt,
-* welche Tenant-Grenze gilt.
+- ob Authentifizierung erforderlich ist,
+- welche Berechtigung erforderlich ist,
+- welche Objektprüfung erfolgt,
+- welche Tenant-Grenze gilt.
 
 Das Frontend darf angezeigte Aktionen filtern.
 
@@ -1157,9 +1157,9 @@ Tenant-IDs aus Request-Bodies werden nicht ungeprüft als Autorität übernommen
 
 Der Tenant ergibt sich bevorzugt aus:
 
-* authentifizierter Membership,
-* sicherem Request-Kontext,
-* explizit autorisiertem Tenantwechsel.
+- authentifizierter Membership,
+- sicherem Request-Kontext,
+- explizit autorisiertem Tenantwechsel.
 
 Mandantenübergreifende Zugriffe benötigen eigene Freigabeverträge.
 
@@ -1183,11 +1183,11 @@ Veraltete Endpunkte oder Felder werden dokumentiert.
 
 Ein Deprecation-Eintrag enthält:
 
-* alten Vertrag,
-* Ersatz,
-* Migrationshinweis,
-* Einführungsdatum,
-* geplante Entfernung.
+- alten Vertrag,
+- Ersatz,
+- Migrationshinweis,
+- Einführungsdatum,
+- geplante Entfernung.
 
 Optional können HTTP-Header verwendet werden:
 
@@ -1207,11 +1207,11 @@ Bei einer späteren `/api/v2` können `/api/v1` und `/api/v2` zeitweise parallel
 
 Parallelbetrieb benötigt:
 
-* getrennte Router,
-* getrennte Contract-Module oder eindeutige Versionstypen,
-* gemeinsame Service-Schicht,
-* keine doppelte Fachlogik,
-* definierte Abschaltfrist.
+- getrennte Router,
+- getrennte Contract-Module oder eindeutige Versionstypen,
+- gemeinsame Service-Schicht,
+- keine doppelte Fachlogik,
+- definierte Abschaltfrist.
 
 Versionierte Router dürfen nicht durch Copy-and-paste dauerhaft auseinanderlaufen.
 
@@ -1223,19 +1223,19 @@ FastAPI erzeugt die OpenAPI-Spezifikation.
 
 OpenAPI ist:
 
-* maschinenlesbare Dokumentation,
-* Grundlage für Diff-Prüfungen,
-* mögliche Quelle generierter Transporttypen,
-* nicht die einzige Laufzeitvalidierung.
+- maschinenlesbare Dokumentation,
+- Grundlage für Diff-Prüfungen,
+- mögliche Quelle generierter Transporttypen,
+- nicht die einzige Laufzeitvalidierung.
 
 OpenAPI muss widerspiegeln:
 
-* reale Endpunkte,
-* Requestmodelle,
-* Responsemodelle,
-* Statuscodes,
-* Authentifizierung,
-* Fehlerantworten.
+- reale Endpunkte,
+- Requestmodelle,
+- Responsemodelle,
+- Statuscodes,
+- Authentifizierung,
+- Fehlerantworten.
 
 ---
 
@@ -1245,12 +1245,12 @@ OpenAPI muss widerspiegeln:
 
 Breaking Changes umfassen beispielsweise:
 
-* Endpunkt entfernt,
-* Methode geändert,
-* Pflichtfeld ergänzt,
-* Feldtyp verändert,
-* Responsecode entfernt,
-* Responsemodell inkompatibel verändert.
+- Endpunkt entfernt,
+- Methode geändert,
+- Pflichtfeld ergänzt,
+- Feldtyp verändert,
+- Responsecode entfernt,
+- Responsemodell inkompatibel verändert.
 
 Ein Breaking Change muss bewusst freigegeben werden.
 
@@ -1264,19 +1264,19 @@ Vor Store-Übernahme erfolgt Validierung.
 
 Mindestens für:
 
-* Bootstrap,
-* Hierarchie,
-* Effective Context,
-* Config,
-* Modelle,
-* Tools,
-* Chats,
-* Nachrichten,
-* Ressourcen,
-* Widgets,
-* Actions,
-* SSE-Ereignisse,
-* Fehlerantworten.
+- Bootstrap,
+- Hierarchie,
+- Effective Context,
+- Config,
+- Modelle,
+- Tools,
+- Chats,
+- Nachrichten,
+- Ressourcen,
+- Widgets,
+- Actions,
+- SSE-Ereignisse,
+- Fehlerantworten.
 
 Ungültige Antworten werden nicht still übernommen.
 
@@ -1288,10 +1288,10 @@ Transporttypen können künftig teilweise aus OpenAPI generiert werden.
 
 Dabei gilt:
 
-* generierte Dateien werden nicht manuell geändert,
-* UI-interne Typen bleiben separat,
-* Runtime-Validatoren bleiben erforderlich,
-* normalisierte Storemodelle bleiben unabhängig.
+- generierte Dateien werden nicht manuell geändert,
+- UI-interne Typen bleiben separat,
+- Runtime-Validatoren bleiben erforderlich,
+- normalisierte Storemodelle bleiben unabhängig.
 
 Codegenerierung ersetzt keine Architekturentscheidung.
 
@@ -1303,17 +1303,17 @@ Kernschmied verwendet einen zentralen API-Client.
 
 Dieser behandelt einheitlich:
 
-* Basis-URL,
-* Endpoint-Auflösung,
-* Credentials,
-* Header,
-* Request-ID,
-* JSON,
-* 204- und 205-Antworten,
-* Fehlerantworten,
-* Timeouts,
-* Abbruch,
-* binäre Antworten.
+- Basis-URL,
+- Endpoint-Auflösung,
+- Credentials,
+- Header,
+- Request-ID,
+- JSON,
+- 204- und 205-Antworten,
+- Fehlerantworten,
+- Timeouts,
+- Abbruch,
+- binäre Antworten.
 
 SSE wird über einen eigenen Streamingpfad behandelt und nicht als normales JSON verarbeitet.
 
@@ -1426,14 +1426,14 @@ Ein öffentliches Feld kann nicht ohne Prüfung schnell umbenannt werden.
 
 ### Vorteile
 
-* kurze URLs,
-* weniger sichtbare Versionsangaben.
+- kurze URLs,
+- weniger sichtbare Versionsangaben.
 
 ### Nachteile
 
-* unklare Kompatibilität,
-* schwierige Migration,
-* gefährliche stille Änderungen.
+- unklare Kompatibilität,
+- schwierige Migration,
+- gefährliche stille Änderungen.
 
 **Entscheidung:** Verworfen.
 
@@ -1443,15 +1443,15 @@ Ein öffentliches Feld kann nicht ohne Prüfung schnell umbenannt werden.
 
 ### Vorteile
 
-* saubere URLs,
-* flexible Content Negotiation.
+- saubere URLs,
+- flexible Content Negotiation.
 
 ### Nachteile
 
-* schwerer zu debuggen,
-* weniger sichtbar,
-* aufwendiger für Browser und Reverse Proxies,
-* komplexere OpenAPI-Darstellung.
+- schwerer zu debuggen,
+- weniger sichtbar,
+- aufwendiger für Browser und Reverse Proxies,
+- komplexere OpenAPI-Darstellung.
 
 **Entscheidung:** Als primäre Strategie verworfen.
 
@@ -1467,13 +1467,13 @@ Beispiel:
 
 ### Vorteile
 
-* leicht nachrüstbar.
+- leicht nachrüstbar.
 
 ### Nachteile
 
-* unklare Semantik,
-* schlechte Cache- und Proxyeigenschaften,
-* vermischt Ressource und Vertragsversion.
+- unklare Semantik,
+- schlechte Cache- und Proxyeigenschaften,
+- vermischt Ressource und Vertragsversion.
 
 **Entscheidung:** Verworfen.
 
@@ -1483,15 +1483,15 @@ Beispiel:
 
 ### Vorteile
 
-* wenig Mappingcode,
-* schnelle Entwicklung.
+- wenig Mappingcode,
+- schnelle Entwicklung.
 
 ### Nachteile
 
-* interne Felder werden öffentlich,
-* enge Kopplung an Datenbankmodell,
-* schlechte Versionierbarkeit,
-* Sicherheitsrisiko.
+- interne Felder werden öffentlich,
+- enge Kopplung an Datenbankmodell,
+- schlechte Versionierbarkeit,
+- Sicherheitsrisiko.
 
 **Entscheidung:** Verworfen.
 
@@ -1501,13 +1501,13 @@ Beispiel:
 
 ### Vorteile
 
-* formal einheitlich.
+- formal einheitlich.
 
 ### Nachteile
 
-* unnötige Verschachtelung,
-* unpassend für Streams und Binärdaten,
-* schwächere OpenAPI-Lesbarkeit.
+- unnötige Verschachtelung,
+- unpassend für Streams und Binärdaten,
+- schwächere OpenAPI-Lesbarkeit.
 
 **Entscheidung:** Als zwingendes globales Muster verworfen.
 
@@ -1519,15 +1519,15 @@ Vertragsfamilien bleiben intern konsistent.
 
 ### Vorteile
 
-* flexible Abfragen,
-* starkes Schema.
+- flexible Abfragen,
+- starkes Schema.
 
 ### Nachteile
 
-* höhere Komplexität,
-* zusätzlicher Betriebs- und Sicherheitsaufwand,
-* SSE- und Command-Flows bleiben separat,
-* für den aktuellen MVP nicht erforderlich.
+- höhere Komplexität,
+- zusätzlicher Betriebs- und Sicherheitsaufwand,
+- SSE- und Command-Flows bleiben separat,
+- für den aktuellen MVP nicht erforderlich.
 
 **Entscheidung:** Nicht Teil der aktuellen Architektur.
 
@@ -1537,60 +1537,60 @@ Vertragsfamilien bleiben intern konsistent.
 
 ## Phase 1 – API-Inventar
 
-* alle öffentlichen Router erfassen,
-* Methoden und Pfade dokumentieren,
-* Request- und Response-Modelle erfassen,
-* Router außerhalb des zentralen v1-Routers identifizieren.
+- alle öffentlichen Router erfassen,
+- Methoden und Pfade dokumentieren,
+- Request- und Response-Modelle erfassen,
+- Router außerhalb des zentralen v1-Routers identifizieren.
 
 ## Phase 2 – Contracts zentralisieren
 
-* Routermodelle nach `backend/app/contracts/` verschieben,
-* kompatible Re-Exports,
-* doppelte Typen entfernen.
+- Routermodelle nach `backend/app/contracts/` verschieben,
+- kompatible Re-Exports,
+- doppelte Typen entfernen.
 
 ## Phase 3 – Fehler vereinheitlichen
 
-* zentrale Fehlerantwort,
-* Exception Handler,
-* FastAPI-Validierungsfehler,
-* Request-ID.
+- zentrale Fehlerantwort,
+- Exception Handler,
+- FastAPI-Validierungsfehler,
+- Request-ID.
 
 ## Phase 4 – Listen und Mutationen harmonisieren
 
-* `items`,
-* Pagination,
-* Revision,
-* Mutationsstatus,
-* 409-Konflikte.
+- `items`,
+- Pagination,
+- Revision,
+- Mutationsstatus,
+- 409-Konflikte.
 
 ## Phase 5 – Frontend-API-Client
 
-* zentrale Endpoints,
-* Bootstrap-Auflösung,
-* Laufzeitvalidierung,
-* AbortSignal,
-* strukturierte Fehler.
+- zentrale Endpoints,
+- Bootstrap-Auflösung,
+- Laufzeitvalidierung,
+- AbortSignal,
+- strukturierte Fehler.
 
 ## Phase 6 – SSE konsolidieren
 
-* gemeinsamer Envelope,
-* Eventregistry,
-* Request-ID,
-* genau ein Abschlussereignis,
-* unbekannte Eventtypen.
+- gemeinsamer Envelope,
+- Eventregistry,
+- Request-ID,
+- genau ein Abschlussereignis,
+- unbekannte Eventtypen.
 
 ## Phase 7 – OpenAPI-Diff
 
-* Referenzspezifikation,
-* CI-Prüfung,
-* Breaking-Change-Bericht.
+- Referenzspezifikation,
+- CI-Prüfung,
+- Breaking-Change-Bericht.
 
 ## Phase 8 – Deprecation
 
-* alte Pfade,
-* alte Felder,
-* Übergangsadapter,
-* Entfernungsplan.
+- alte Pfade,
+- alte Felder,
+- Übergangsadapter,
+- Entfernungsplan.
 
 ---
 
@@ -1598,23 +1598,23 @@ Vertragsfamilien bleiben intern konsistent.
 
 Die Entscheidung gilt als technisch umgesetzt, wenn:
 
-* alle öffentlichen Endpunkte unter einer dokumentierten API-Version liegen oder bewusst als Infrastrukturendpunkte ausgenommen sind,
-* öffentliche Request- und Response-Modelle zentral definiert sind,
-* Router keine großen öffentlichen Vertragsmodelle mehr lokal enthalten,
-* Mutationsanfragen unbekannte Felder ablehnen,
-* Fehlerantworten einheitlich strukturiert sind,
-* Request-ID in Headern und Fehlerantworten vorhanden ist,
-* Listenverträge einheitlich dokumentiert sind,
-* Pagination deterministisch ist,
-* Revisionskonflikte `409` verwenden,
-* Frontendantworten zur Laufzeit validiert werden,
-* Bootstrap Endpointschlüssel bereitstellt,
-* Frontend einen zentralen API-Client verwendet,
-* SSE einen versionierten gemeinsamen Envelope besitzt,
-* unbekannte Events den Stream nicht zerstören,
-* OpenAPI dem Laufzeitverhalten entspricht,
-* OpenAPI-Diffs in der Qualitätsprüfung berücksichtigt werden,
-* Breaking Changes einen dokumentierten Migrationsweg besitzen.
+- alle öffentlichen Endpunkte unter einer dokumentierten API-Version liegen oder bewusst als Infrastrukturendpunkte ausgenommen sind,
+- öffentliche Request- und Response-Modelle zentral definiert sind,
+- Router keine großen öffentlichen Vertragsmodelle mehr lokal enthalten,
+- Mutationsanfragen unbekannte Felder ablehnen,
+- Fehlerantworten einheitlich strukturiert sind,
+- Request-ID in Headern und Fehlerantworten vorhanden ist,
+- Listenverträge einheitlich dokumentiert sind,
+- Pagination deterministisch ist,
+- Revisionskonflikte `409` verwenden,
+- Frontendantworten zur Laufzeit validiert werden,
+- Bootstrap Endpointschlüssel bereitstellt,
+- Frontend einen zentralen API-Client verwendet,
+- SSE einen versionierten gemeinsamen Envelope besitzt,
+- unbekannte Events den Stream nicht zerstören,
+- OpenAPI dem Laufzeitverhalten entspricht,
+- OpenAPI-Diffs in der Qualitätsprüfung berücksichtigt werden,
+- Breaking Changes einen dokumentierten Migrationsweg besitzen.
 
 ---
 

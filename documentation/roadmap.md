@@ -35,10 +35,10 @@ Leitprinzipien (Kurz):
 
 Nächste Schritte (konkret):
 
-1. Sofort: `documentation/todo.md` anlegen/aktualisieren mit priorisierten Tasks und Blockern.  
-2. Kurzfristig: Settings‑API erweitern (Definitionsmetadaten) und `SettingsField`‑Vertrag finalisieren.  
-3. Kurzfristig: Frontend‑Hierarchie: Kebab‑Kontextmenu + Modal‑Flows an Mutationsendpunkte binden.  
-4. Kurzfristig: Chat‑Persistenz‑Datenmodell (Conversations/Messages), Migration und API‑Endpunkte definieren.  
+1. Sofort: `documentation/todo.md` anlegen/aktualisieren mit priorisierten Tasks und Blockern.
+2. Kurzfristig: Settings‑API erweitern (Definitionsmetadaten) und `SettingsField`‑Vertrag finalisieren.
+3. Kurzfristig: Frontend‑Hierarchie: Kebab‑Kontextmenu + Modal‑Flows an Mutationsendpunkte binden.
+4. Kurzfristig: Chat‑Persistenz‑Datenmodell (Conversations/Messages), Migration und API‑Endpunkte definieren.
 
 ---
 

@@ -15,7 +15,10 @@
     {
       "title": "Getting Started",
       "pages": [
-        { "file": "getting-started/Getting-Started.md", "title": "Getting Started" },
+        {
+          "file": "getting-started/Getting-Started.md",
+          "title": "Getting Started"
+        },
         { "file": "getting-started/Installation.md", "title": "Installation" }
       ]
     },
@@ -24,8 +27,14 @@
       "pages": [
         { "file": "architecture/architecture.md", "title": "Architecture" },
         { "file": "architecture/leitkonzept.md", "title": "Leitkonzept" },
-        { "file": "architecture/Project-Principles.md", "title": "Project Principles" },
-        { "file": "architecture/Prompt-Inheritance.md", "title": "Prompt Inheritance" }
+        {
+          "file": "architecture/Project-Principles.md",
+          "title": "Project Principles"
+        },
+        {
+          "file": "architecture/Prompt-Inheritance.md",
+          "title": "Prompt Inheritance"
+        }
       ]
     },
     {
@@ -35,14 +44,20 @@
         { "file": "backend/Configuration.md", "title": "Configuration" },
         { "file": "backend/Contracts.md", "title": "Contracts" },
         { "file": "backend/Database.md", "title": "Database" },
-        { "file": "backend/Dependency-Injection.md", "title": "Dependency Injection" }
+        {
+          "file": "backend/Dependency-Injection.md",
+          "title": "Dependency Injection"
+        }
       ]
     },
     {
       "title": "Frontend",
       "pages": [
         { "file": "frontend/Frontend-Overview.md", "title": "Overview" },
-        { "file": "frontend/Component-Registry.md", "title": "Component Registry" },
+        {
+          "file": "frontend/Component-Registry.md",
+          "title": "Component Registry"
+        },
         { "file": "frontend/Action-Registry.md", "title": "Action Registry" },
         { "file": "frontend/UI-Schema.md", "title": "UI Schema" }
       ]
@@ -62,16 +77,31 @@
         { "file": "adr/adr-0003-registries.md", "title": "ADR-0003" },
         { "file": "adr/adr-0004-security-profiles.md", "title": "ADR-0004" },
         { "file": "adr/adr-0005-versioned-contracts.md", "title": "ADR-0005" },
-          { "file": "adr/adr-0006-api-contracts-and-versioning.md", "title": "ADR-0006" },
-          { "file": "adr/adr-0024-identity-and-authorization.md", "title": "ADR-0024" },
-          { "file": "adr/adr-0025-deployment-architecture.md", "title": "ADR-0025" },
-          { "file": "adr/adr-0032-backup-and-disaster-recovery.md", "title": "ADR-0032" }
+        {
+          "file": "adr/adr-0006-api-contracts-and-versioning.md",
+          "title": "ADR-0006"
+        },
+        {
+          "file": "adr/adr-0024-identity-and-authorization.md",
+          "title": "ADR-0024"
+        },
+        {
+          "file": "adr/adr-0025-deployment-architecture.md",
+          "title": "ADR-0025"
+        },
+        {
+          "file": "adr/adr-0032-backup-and-disaster-recovery.md",
+          "title": "ADR-0032"
+        }
       ]
     },
     {
       "title": "Development",
       "pages": [
-        { "file": "development/Coding-Guidelines.md", "title": "Coding Guidelines" },
+        {
+          "file": "development/Coding-Guidelines.md",
+          "title": "Coding Guidelines"
+        },
         { "file": "development/Testing.md", "title": "Testing" },
         { "file": "development/Release-Process.md", "title": "Release Process" }
       ]
@@ -85,9 +115,7 @@
     },
     {
       "title": "User Guide",
-      "pages": [
-        { "file": "user-guide/Chat.md", "title": "Chat" }
-      ]
+      "pages": [{ "file": "user-guide/Chat.md", "title": "Chat" }]
     }
   ]
 }

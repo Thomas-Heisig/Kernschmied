@@ -154,9 +154,9 @@ Whenever an object changes:
 - cache validity changes
 - synchronization becomes possible
 
-Revisions do not describe *what* changed.
+Revisions do not describe _what_ changed.
 
-They describe only *that* something changed.
+They describe only _that_ something changed.
 
 ---
 

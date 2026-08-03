@@ -16,10 +16,12 @@ Die detaillierte Ausarbeitung der Deployment-Architektur befindet sich in:
 
 Begründung
 ---------
+
 Die Deployment-Architektur ist ein operatives Risiko; eine separate ADR stellt
 Sichtbarkeit sicher und verknüpft Operational-Runbooks mit Designentscheidungen.
 
 Konsequenzen
 -----------
+
 - CI/CD Pipelines müssen die in der Architektur spezifizierten Umgebungen abbilden.
 - Rollback- und Backup-Prozesse werden in den Runbooks implementiert.

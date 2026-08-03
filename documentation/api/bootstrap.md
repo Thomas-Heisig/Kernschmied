@@ -16,27 +16,27 @@ Large resources such as hierarchy data, UI schemas, registries, runtime configur
 
 The Bootstrap endpoint provides:
 
-* application identity
-* deployment profile
-* security profile
-* authenticated user information
-* effective tenant information
-* platform capabilities
-* enabled features
-* supported contract versions
-* endpoint discovery
-* runtime revisions
-* registry revisions
-* startup metadata
-* diagnostic information
+- application identity
+- deployment profile
+- security profile
+- authenticated user information
+- effective tenant information
+- platform capabilities
+- enabled features
+- supported contract versions
+- endpoint discovery
+- runtime revisions
+- registry revisions
+- startup metadata
+- diagnostic information
 
 The bootstrap response is intentionally:
 
-* deterministic
-* lightweight
-* cacheable
-* versioned
-* forward compatible
+- deterministic
+- lightweight
+- cacheable
+- versioned
+- forward compatible
 
 ---
 
@@ -66,18 +66,18 @@ The bootstrap endpoint never bypasses authentication rules.
 
 ```json
 {
-  "application": { },
-  "environment": { },
-  "deployment": { },
-  "user": { },
-  "tenant": { },
-  "security": { },
-  "capabilities": { },
-  "features": { },
-  "versions": { },
-  "endpoints": { },
-  "revisions": { },
-  "diagnostics": { },
+  "application": {},
+  "environment": {},
+  "deployment": {},
+  "user": {},
+  "tenant": {},
+  "security": {},
+  "capabilities": {},
+  "features": {},
+  "versions": {},
+  "endpoints": {},
+  "revisions": {},
+  "diagnostics": {},
   "request_id": "..."
 }
 ```
@@ -115,9 +115,9 @@ Describes the active runtime profile.
 
 Possible values:
 
-* development
-* intranet
-* internet
+- development
+- intranet
+- internet
 
 ---
 
@@ -162,8 +162,8 @@ Provides the currently active tenant.
 
 ```json
 {
-    "id": "tenant-default",
-    "display_name": "Default Tenant"
+  "id": "tenant-default",
+  "display_name": "Default Tenant"
 }
 ```
 
@@ -177,8 +177,8 @@ Indicates the active security profile.
 
 ```json
 {
-    "profile": "internet",
-    "authorization": "required"
+  "profile": "internet",
+  "authorization": "required"
 }
 ```
 
@@ -216,13 +216,13 @@ Features describe optional behaviour.
 
 Examples:
 
-* schema_driven_ui
-* runtime_registry
-* dynamic_resources
-* widget_layouts
-* streaming
-* reasoning
-* multi_tenant
+- schema_driven_ui
+- runtime_registry
+- dynamic_resources
+- widget_layouts
+- streaming
+- reasoning
+- multi_tenant
 
 Features are intentionally coarse-grained.
 
@@ -236,17 +236,17 @@ Example:
 
 ```json
 {
-    "api": 1,
-    "bootstrap": 1,
-    "hierarchy": 1,
-    "context": 1,
-    "chat": 1,
-    "resources": 1,
-    "widgets": 1,
-    "actions": 1,
-    "events": 1,
-    "registries": 1,
-    "configuration": 1
+  "api": 1,
+  "bootstrap": 1,
+  "hierarchy": 1,
+  "context": 1,
+  "chat": 1,
+  "resources": 1,
+  "widgets": 1,
+  "actions": 1,
+  "events": 1,
+  "registries": 1,
+  "configuration": 1
 }
 ```
 
@@ -262,13 +262,13 @@ Example:
 
 ```json
 {
-    "bootstrap": "/api/v1/bootstrap",
-    "hierarchy": "/api/v1/hierarchy",
-    "context": "/api/v1/context",
-    "resources": "/api/v1/resources",
-    "widgets": "/api/v1/widgets",
-    "actions": "/api/v1/actions",
-    "registries": "/api/v1/registries"
+  "bootstrap": "/api/v1/bootstrap",
+  "hierarchy": "/api/v1/hierarchy",
+  "context": "/api/v1/context",
+  "resources": "/api/v1/resources",
+  "widgets": "/api/v1/widgets",
+  "actions": "/api/v1/actions",
+  "registries": "/api/v1/registries"
 }
 ```
 
@@ -282,16 +282,16 @@ Revision numbers describe mutable runtime state.
 
 ```json
 {
-    "configuration": 18,
-    "hierarchy": 7,
-    "registries": {
-        "resource_types": 12,
-        "widget_types": 5,
-        "actions": 9,
-        "concepts": 4,
-        "models": 8,
-        "tools": 11
-    }
+  "configuration": 18,
+  "hierarchy": 7,
+  "registries": {
+    "resource_types": 12,
+    "widget_types": 5,
+    "actions": 9,
+    "concepts": 4,
+    "models": 8,
+    "tools": 11
+  }
 }
 ```
 
@@ -305,9 +305,9 @@ Provides diagnostic metadata.
 
 ```json
 {
-    "server_time": "...",
-    "api_status": "online",
-    "request_duration_ms": 3
+  "server_time": "...",
+  "api_status": "online",
+  "request_duration_ms": 3
 }
 ```
 
@@ -321,7 +321,7 @@ Every response contains a request identifier.
 
 ```json
 {
-    "request_id": "5f42cb67"
+  "request_id": "5f42cb67"
 }
 ```
 
@@ -403,26 +403,26 @@ Ready
 
 Bootstrap intentionally excludes:
 
-* hierarchy data
-* conversations
-* resources
-* widgets
-* prompts
-* workflows
-* runtime configuration
-* registry contents
-* model definitions
-* tool definitions
-* search indexes
+- hierarchy data
+- conversations
+- resources
+- widgets
+- prompts
+- workflows
+- runtime configuration
+- registry contents
+- model definitions
+- tool definitions
+- search indexes
 
 Reasons:
 
-* smaller payloads
-* faster startup
-* independent versioning
-* independent caching
-* reduced bandwidth
-* better scalability
+- smaller payloads
+- faster startup
+- independent versioning
+- independent caching
+- reduced bandwidth
+- better scalability
 
 ---
 
@@ -446,10 +446,10 @@ Errors follow the platform-wide error contract.
 
 ```json
 {
-    "code": "bootstrap_generation_failed",
-    "message": "Bootstrap could not be generated.",
-    "details": {},
-    "request_id": "..."
+  "code": "bootstrap_generation_failed",
+  "message": "Bootstrap could not be generated.",
+  "details": {},
+  "request_id": "..."
 }
 ```
 
@@ -461,12 +461,12 @@ Bootstrap responses may be cached for a short time.
 
 Clients should invalidate cached responses when:
 
-* authentication changes
-* deployment changes
-* application restarts
-* configuration revisions change
-* registry revisions change
-* contract versions change
+- authentication changes
+- deployment changes
+- application restarts
+- configuration revisions change
+- registry revisions change
+- contract versions change
 
 ---
 
@@ -474,13 +474,13 @@ Clients should invalidate cached responses when:
 
 Bootstrap must never expose:
 
-* secrets
-* passwords
-* API keys
-* encryption keys
-* internal filesystem paths
-* private runtime configuration
-* provider credentials
+- secrets
+- passwords
+- API keys
+- encryption keys
+- internal filesystem paths
+- private runtime configuration
+- provider credentials
 
 Only information required for client initialization may be returned.
 
@@ -490,11 +490,11 @@ Only information required for client initialization may be returned.
 
 Bootstrap should:
 
-* execute within a few milliseconds
-* avoid expensive database queries
-* avoid loading complete registries
-* avoid loading hierarchy data
-* avoid loading large configuration objects
+- execute within a few milliseconds
+- avoid expensive database queries
+- avoid loading complete registries
+- avoid loading hierarchy data
+- avoid loading large configuration objects
 
 The endpoint should remain lightweight regardless of platform size.
 
@@ -502,14 +502,14 @@ The endpoint should remain lightweight regardless of platform size.
 
 # Related ADRs
 
-* ADR-0002 — Bootstrap Configuration and Runtime Initialization
-* ADR-0003 — Registry-Based Extension Architecture
-* ADR-0005 — Versioned Contracts and Schema Evolution
-* ADR-0006 — API Contracts and Versioning
-* ADR-0007 — Generic Hierarchy and Context Architecture
-* ADR-0009 — Runtime Registry Architecture
-* ADR-0014 — Runtime Configuration Architecture
-* ADR-0020 — Multi-Tenant Architecture
+- ADR-0002 — Bootstrap Configuration and Runtime Initialization
+- ADR-0003 — Registry-Based Extension Architecture
+- ADR-0005 — Versioned Contracts and Schema Evolution
+- ADR-0006 — API Contracts and Versioning
+- ADR-0007 — Generic Hierarchy and Context Architecture
+- ADR-0009 — Runtime Registry Architecture
+- ADR-0014 — Runtime Configuration Architecture
+- ADR-0020 — Multi-Tenant Architecture
 
 ---
 

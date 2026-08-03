@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@openapitools/openapi-generator-cli": "^2.40.1",
+    "@vitejs/plugin-react": "^5.0.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

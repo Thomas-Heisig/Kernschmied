@@ -2,51 +2,185 @@
   "migrated_at": "2026-08-03T00:00:00Z",
   "migrated_by_branch": "feat/footer-systeminfo",
   "migrations": [
-    { "source": "documentation/unknown/configuration.md", "dest": "documentation/backend/Configuration.md" },
-    { "source": "documentation/unknown/contracts.md", "dest": "documentation/backend/Contracts.md" },
-    { "source": "documentation/unknown/database.md", "dest": "documentation/backend/Database.md" },
-    { "source": "documentation/unknown/dependency-injection.md", "dest": "documentation/backend/Dependency-Injection.md" },
-    { "source": "documentation/unknown/chat.md", "dest": "documentation/user-guide/Chat.md" },
-    { "source": "documentation/unknown/component-registry.md", "dest": "documentation/frontend/Component-Registry.md" },
-    { "source": "documentation/unknown/action-registry.md", "dest": "documentation/frontend/Action-Registry.md" },
-    { "source": "documentation/unknown/ui-schema.md", "dest": "documentation/frontend/UI-Schema.md" },
-    { "source": "documentation/unknown/coding-guidelines.md", "dest": "documentation/development/Coding-Guidelines.md" },
-    { "source": "documentation/unknown/testing.md", "dest": "documentation/development/Testing.md" },
-    { "source": "documentation/unknown/release-process.md", "dest": "documentation/development/Release-Process.md" },
-    { "source": "documentation/unknown/project-principles.md", "dest": "documentation/architecture/Project-Principles.md" },
-    { "source": "documentation/unknown/prompt-inheritance.md", "dest": "documentation/architecture/Prompt-Inheritance.md" }
-  ,
-    { "source": "documentation/unknown/api-client.md", "dest": "documentation/migrated/api-client.md" },
-    { "source": "documentation/unknown/api-todo.md", "dest": "documentation/migrated/api-todo.md" },
-    { "source": "documentation/unknown/bootstrap.md", "dest": "documentation/migrated/bootstrap.md" },
-    { "source": "documentation/unknown/bug_report.yml", "dest": "documentation/migrated/bug_report.yml" },
-    { "source": "documentation/unknown/calendar.md", "dest": "documentation/migrated/calendar.md" },
-    { "source": "documentation/unknown/ci.yml", "dest": "documentation/migrated/ci.yml" },
-    { "source": "documentation/unknown/configuration-revisions.md", "dest": "documentation/migrated/configuration-revisions.md" },
-    { "source": "documentation/unknown/development.md", "dest": "documentation/migrated/development.md" },
-    { "source": "documentation/unknown/dynamic-ui.md", "dest": "documentation/migrated/dynamic-ui.md" },
-    { "source": "documentation/unknown/error-handling.md", "dest": "documentation/migrated/error-handling.md" },
-    { "source": "documentation/unknown/files.txt", "dest": "documentation/migrated/files.txt" },
-    { "source": "documentation/unknown/forms.md", "dest": "documentation/migrated/forms.md" },
-    { "source": "documentation/unknown/generic-tree.md", "dest": "documentation/migrated/generic-tree.md" },
-    { "source": "documentation/unknown/hierarchy.md", "dest": "documentation/migrated/hierarchy.md" },
-    { "source": "documentation/unknown/history_rewrite.md", "dest": "documentation/migrated/history_rewrite.md" },
-    { "source": "documentation/unknown/internet.md", "dest": "documentation/migrated/internet.md" },
-    { "source": "documentation/unknown/intranet.md", "dest": "documentation/migrated/intranet.md" },
-    { "source": "documentation/unknown/leitkonzept.md", "dest": "documentation/migrated/leitkonzept.md" },
-    { "source": "documentation/unknown/model-registry.md", "dest": "documentation/migrated/model-registry.md" },
-    { "source": "documentation/unknown/plugin-system.md", "dest": "documentation/migrated/plugin-system.md" },
-    { "source": "documentation/unknown/project_prompt.agent.md", "dest": "documentation/migrated/project_prompt.agent.md" },
-    { "source": "documentation/unknown/PROJECT_PROMPT.md", "dest": "documentation/migrated/PROJECT_PROMPT.md" },
-    { "source": "documentation/unknown/pull_request_template.md", "dest": "documentation/migrated/pull_request_template.md" },
-    { "source": "documentation/unknown/roadmap.md", "dest": "documentation/migrated/roadmap.md" },
-    { "source": "documentation/unknown/routing.md", "dest": "documentation/migrated/routing.md" },
-    { "source": "documentation/unknown/runtime-configuration.md", "dest": "documentation/migrated/runtime-configuration.md" },
-    { "source": "documentation/unknown/schema-renderer.md", "dest": "documentation/migrated/schema-renderer.md" },
-    { "source": "documentation/unknown/schema-versioning.md", "dest": "documentation/migrated/schema-versioning.md" },
-    { "source": "documentation/unknown/state-management.md", "dest": "documentation/migrated/state-management.md" },
-    { "source": "documentation/unknown/streaming.md", "dest": "documentation/migrated/streaming.md" },
-    { "source": "documentation/unknown/todo.md", "dest": "documentation/migrated/todo.md" },
-    { "source": "documentation/unknown/tool-registry.md", "dest": "documentation/migrated/tool-registry.md" }
+    {
+      "source": "documentation/unknown/configuration.md",
+      "dest": "documentation/backend/Configuration.md"
+    },
+    {
+      "source": "documentation/unknown/contracts.md",
+      "dest": "documentation/backend/Contracts.md"
+    },
+    {
+      "source": "documentation/unknown/database.md",
+      "dest": "documentation/backend/Database.md"
+    },
+    {
+      "source": "documentation/unknown/dependency-injection.md",
+      "dest": "documentation/backend/Dependency-Injection.md"
+    },
+    {
+      "source": "documentation/unknown/chat.md",
+      "dest": "documentation/user-guide/Chat.md"
+    },
+    {
+      "source": "documentation/unknown/component-registry.md",
+      "dest": "documentation/frontend/Component-Registry.md"
+    },
+    {
+      "source": "documentation/unknown/action-registry.md",
+      "dest": "documentation/frontend/Action-Registry.md"
+    },
+    {
+      "source": "documentation/unknown/ui-schema.md",
+      "dest": "documentation/frontend/UI-Schema.md"
+    },
+    {
+      "source": "documentation/unknown/coding-guidelines.md",
+      "dest": "documentation/development/Coding-Guidelines.md"
+    },
+    {
+      "source": "documentation/unknown/testing.md",
+      "dest": "documentation/development/Testing.md"
+    },
+    {
+      "source": "documentation/unknown/release-process.md",
+      "dest": "documentation/development/Release-Process.md"
+    },
+    {
+      "source": "documentation/unknown/project-principles.md",
+      "dest": "documentation/architecture/Project-Principles.md"
+    },
+    {
+      "source": "documentation/unknown/prompt-inheritance.md",
+      "dest": "documentation/architecture/Prompt-Inheritance.md"
+    },
+    {
+      "source": "documentation/unknown/api-client.md",
+      "dest": "documentation/migrated/api-client.md"
+    },
+    {
+      "source": "documentation/unknown/api-todo.md",
+      "dest": "documentation/migrated/api-todo.md"
+    },
+    {
+      "source": "documentation/unknown/bootstrap.md",
+      "dest": "documentation/migrated/bootstrap.md"
+    },
+    {
+      "source": "documentation/unknown/bug_report.yml",
+      "dest": "documentation/migrated/bug_report.yml"
+    },
+    {
+      "source": "documentation/unknown/calendar.md",
+      "dest": "documentation/migrated/calendar.md"
+    },
+    {
+      "source": "documentation/unknown/ci.yml",
+      "dest": "documentation/migrated/ci.yml"
+    },
+    {
+      "source": "documentation/unknown/configuration-revisions.md",
+      "dest": "documentation/migrated/configuration-revisions.md"
+    },
+    {
+      "source": "documentation/unknown/development.md",
+      "dest": "documentation/migrated/development.md"
+    },
+    {
+      "source": "documentation/unknown/dynamic-ui.md",
+      "dest": "documentation/migrated/dynamic-ui.md"
+    },
+    {
+      "source": "documentation/unknown/error-handling.md",
+      "dest": "documentation/migrated/error-handling.md"
+    },
+    {
+      "source": "documentation/unknown/files.txt",
+      "dest": "documentation/migrated/files.txt"
+    },
+    {
+      "source": "documentation/unknown/forms.md",
+      "dest": "documentation/migrated/forms.md"
+    },
+    {
+      "source": "documentation/unknown/generic-tree.md",
+      "dest": "documentation/migrated/generic-tree.md"
+    },
+    {
+      "source": "documentation/unknown/hierarchy.md",
+      "dest": "documentation/migrated/hierarchy.md"
+    },
+    {
+      "source": "documentation/unknown/history_rewrite.md",
+      "dest": "documentation/migrated/history_rewrite.md"
+    },
+    {
+      "source": "documentation/unknown/internet.md",
+      "dest": "documentation/migrated/internet.md"
+    },
+    {
+      "source": "documentation/unknown/intranet.md",
+      "dest": "documentation/migrated/intranet.md"
+    },
+    {
+      "source": "documentation/unknown/leitkonzept.md",
+      "dest": "documentation/migrated/leitkonzept.md"
+    },
+    {
+      "source": "documentation/unknown/model-registry.md",
+      "dest": "documentation/migrated/model-registry.md"
+    },
+    {
+      "source": "documentation/unknown/plugin-system.md",
+      "dest": "documentation/migrated/plugin-system.md"
+    },
+    {
+      "source": "documentation/unknown/project_prompt.agent.md",
+      "dest": "documentation/migrated/project_prompt.agent.md"
+    },
+    {
+      "source": "documentation/unknown/PROJECT_PROMPT.md",
+      "dest": "documentation/migrated/PROJECT_PROMPT.md"
+    },
+    {
+      "source": "documentation/unknown/pull_request_template.md",
+      "dest": "documentation/migrated/pull_request_template.md"
+    },
+    {
+      "source": "documentation/unknown/roadmap.md",
+      "dest": "documentation/migrated/roadmap.md"
+    },
+    {
+      "source": "documentation/unknown/routing.md",
+      "dest": "documentation/migrated/routing.md"
+    },
+    {
+      "source": "documentation/unknown/runtime-configuration.md",
+      "dest": "documentation/migrated/runtime-configuration.md"
+    },
+    {
+      "source": "documentation/unknown/schema-renderer.md",
+      "dest": "documentation/migrated/schema-renderer.md"
+    },
+    {
+      "source": "documentation/unknown/schema-versioning.md",
+      "dest": "documentation/migrated/schema-versioning.md"
+    },
+    {
+      "source": "documentation/unknown/state-management.md",
+      "dest": "documentation/migrated/state-management.md"
+    },
+    {
+      "source": "documentation/unknown/streaming.md",
+      "dest": "documentation/migrated/streaming.md"
+    },
+    {
+      "source": "documentation/unknown/todo.md",
+      "dest": "documentation/migrated/todo.md"
+    },
+    {
+      "source": "documentation/unknown/tool-registry.md",
+      "dest": "documentation/migrated/tool-registry.md"
+    }
   ]
 }

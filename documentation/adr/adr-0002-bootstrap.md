@@ -1,19 +1,19 @@
 # ADR-0002: Konfigurationsarchitektur, Bootstrap und Laufzeitinitialisierung
 
-* **Status:** Angenommen – konsolidiert
-* **Datum der ursprünglichen Entscheidung:** 2026-07-27
-* **Letzte Überarbeitung:** 2026-08-03
-* **Entscheidungsträger:** Kernschmied-Architekturteam
-* **Ersetzt:** Keine
-* **Ersetzt durch:** Keine
-* **Verwandte Dokumente:**
+- **Status:** Angenommen – konsolidiert
+- **Datum der ursprünglichen Entscheidung:** 2026-07-27
+- **Letzte Überarbeitung:** 2026-08-03
+- **Entscheidungsträger:** Kernschmied-Architekturteam
+- **Ersetzt:** Keine
+- **Ersetzt durch:** Keine
+- **Verwandte Dokumente:**
 
-  * `documentation/leitkonzept.md`
-  * `documentation/architecture/contracts.md`
-  * `documentation/architecture/contract-refactoring.md`
-  * `documentation/architecture/effective-context.md`
-  * `documentation/architecture/dynamic-definitions.md`
-  * `documentation/architecture/decisions/ADR-0001-schema-driven-user-interface.md`
+  - `documentation/leitkonzept.md`
+  - `documentation/architecture/contracts.md`
+  - `documentation/architecture/contract-refactoring.md`
+  - `documentation/architecture/effective-context.md`
+  - `documentation/architecture/dynamic-definitions.md`
+  - `documentation/architecture/decisions/ADR-0001-schema-driven-user-interface.md`
 
 ---
 
@@ -47,37 +47,37 @@ Kernschmied ist als dynamische, fachneutrale Kommunikations- und Assistenzplattf
 
 Die Plattform soll sich im laufenden Betrieb verändern können, ohne dass für jede fachliche Anpassung:
 
-* eine `.env`-Datei geändert,
-* die Anwendung neu gebaut,
-* der Server neu gestartet,
-* das Frontend neu veröffentlicht
+- eine `.env`-Datei geändert,
+- die Anwendung neu gebaut,
+- der Server neu gestartet,
+- das Frontend neu veröffentlicht
 
 werden muss.
 
 Kernschmied unterstützt oder plant:
 
-* unterschiedliche Betriebsprofile,
-* persistente Laufzeitkonfiguration,
-* dynamische Hierarchien,
-* dynamische Ressourcentypen,
-* konfigurierbare Prompts,
-* Modell- und Tool-Registries,
-* UI-Schemas,
-* Widgets,
-* Actions,
-* Workflows,
-* Integrationen,
-* Vorlagenpakete,
-* Mehrmandantenfähigkeit,
-* revisionsbasierte Cache-Invalidierung.
+- unterschiedliche Betriebsprofile,
+- persistente Laufzeitkonfiguration,
+- dynamische Hierarchien,
+- dynamische Ressourcentypen,
+- konfigurierbare Prompts,
+- Modell- und Tool-Registries,
+- UI-Schemas,
+- Widgets,
+- Actions,
+- Workflows,
+- Integrationen,
+- Vorlagenpakete,
+- Mehrmandantenfähigkeit,
+- revisionsbasierte Cache-Invalidierung.
 
 Gleichzeitig muss der Startvorgang:
 
-* sicher,
-* deterministisch,
-* nachvollziehbar,
-* fehlertolerant,
-* testbar
+- sicher,
+- deterministisch,
+- nachvollziehbar,
+- fehlertolerant,
+- testbar
 
 bleiben.
 
@@ -93,17 +93,17 @@ Viele Anwendungen beginnen mit einer überschaubaren `.env`-Datei.
 
 Im Laufe der Zeit werden dort jedoch zunehmend Werte abgelegt wie:
 
-* Firmenname,
-* Branding,
-* Modellwahl,
-* Toolfreigaben,
-* Prompttexte,
-* Feature-Flags,
-* Workflowregeln,
-* UI-Einstellungen,
-* Benutzerpräferenzen,
-* Rollen,
-* fachliche Standardwerte.
+- Firmenname,
+- Branding,
+- Modellwahl,
+- Toolfreigaben,
+- Prompttexte,
+- Feature-Flags,
+- Workflowregeln,
+- UI-Einstellungen,
+- Benutzerpräferenzen,
+- Rollen,
+- fachliche Standardwerte.
 
 Dadurch entstehen mehrere Probleme.
 
@@ -127,11 +127,11 @@ Eine Änderung des Firmennamens oder eines Prompts würde dadurch einen Neustart
 
 Mit wachsendem Funktionsumfang entstehen:
 
-* hunderte Einträge,
-* redundante Werte,
-* versteckte Abhängigkeiten,
-* schwer nachvollziehbare Überschreibungen,
-* unterschiedliche Stände zwischen Umgebungen.
+- hunderte Einträge,
+- redundante Werte,
+- versteckte Abhängigkeiten,
+- schwer nachvollziehbare Überschreibungen,
+- unterschiedliche Stände zwischen Umgebungen.
 
 ## 3.3 Fehlende Typisierung
 
@@ -139,23 +139,23 @@ Umgebungsvariablen sind zunächst Strings.
 
 Ohne zentrale Validierung entstehen Probleme bei:
 
-* Zahlen,
-* Booleans,
-* Listen,
-* URLs,
-* Pfaden,
-* Secrets,
-* komplexen Konfigurationen.
+- Zahlen,
+- Booleans,
+- Listen,
+- URLs,
+- Pfaden,
+- Secrets,
+- komplexen Konfigurationen.
 
 ## 3.4 Unterschiedliche Umgebungen driften auseinander
 
 Manuell gepflegte `.env`-Dateien führen zu Abweichungen zwischen:
 
-* Entwicklung,
-* Intranet,
-* Internet,
-* Testsystemen,
-* einzelnen Installationen.
+- Entwicklung,
+- Intranet,
+- Internet,
+- Testsystemen,
+- einzelnen Installationen.
 
 ## 3.5 Laufzeitänderungen werden verhindert
 
@@ -186,11 +186,11 @@ Steuert allgemeines Verhalten.
 
 Beispiele:
 
-* Standardmodell,
-* Sprache,
-* erlaubte Modelle,
-* UI-Präferenzen,
-* Aufbewahrungsdauer.
+- Standardmodell,
+- Sprache,
+- erlaubte Modelle,
+- UI-Präferenzen,
+- Aufbewahrungsdauer.
 
 ## 4.2 Definition
 
@@ -198,11 +198,11 @@ Beschreibt, was grundsätzlich existieren kann.
 
 Beispiele:
 
-* Ressourcentyp `note`,
-* Knotentyp `collection`,
-* Widget-Konfigurationstyp,
-* semantisches Konzept,
-* Workflowdefinition.
+- Ressourcentyp `note`,
+- Knotentyp `collection`,
+- Widget-Konfigurationstyp,
+- semantisches Konzept,
+- Workflowdefinition.
 
 ## 4.3 Instanz
 
@@ -210,10 +210,10 @@ Ist ein konkretes Objekt auf Grundlage einer Definition.
 
 Beispiele:
 
-* eine konkrete Notiz,
-* ein konkreter Hierarchieknoten,
-* eine konkrete Widget-Instanz,
-* ein konkreter Workflowlauf.
+- eine konkrete Notiz,
+- ein konkreter Hierarchieknoten,
+- eine konkrete Widget-Instanz,
+- ein konkreter Workflowlauf.
 
 ## 4.4 Zuordnung
 
@@ -221,10 +221,10 @@ Legt fest, wo oder für wen etwas gilt.
 
 Beispiele:
 
-* Prompt gehört zu Knoten X,
-* Widget wird im Projekt Y angezeigt,
-* Ressource ist mit Chat Z verknüpft,
-* Benutzer hat Rolle R in Tenant T.
+- Prompt gehört zu Knoten X,
+- Widget wird im Projekt Y angezeigt,
+- Ressource ist mit Chat Z verknüpft,
+- Benutzer hat Rolle R in Tenant T.
 
 Diese Ebenen dürfen nicht vermischt werden.
 
@@ -236,41 +236,41 @@ Zum Zeitpunkt dieser Überarbeitung besitzt Kernschmied bereits wichtige Teile d
 
 ## 5.1 Bereits vorhanden
 
-* Bootstrap-Endpunkt,
-* zentrale Anwendungskonfiguration,
-* `.env`-basierte Bootstrapwerte,
-* unterschiedliche Betriebsprofile,
-* persistente Systemkonfiguration,
-* Config-Revision,
-* Konfigurationsdefinitionen,
-* UI-Metadaten für Einstellungen,
-* serverseitige Validierungsgrundlagen,
-* Settings-Katalog,
-* zentrale Registries für Modelle und Tools,
-* Bootstrap-Capabilities und Versionsinformationen.
+- Bootstrap-Endpunkt,
+- zentrale Anwendungskonfiguration,
+- `.env`-basierte Bootstrapwerte,
+- unterschiedliche Betriebsprofile,
+- persistente Systemkonfiguration,
+- Config-Revision,
+- Konfigurationsdefinitionen,
+- UI-Metadaten für Einstellungen,
+- serverseitige Validierungsgrundlagen,
+- Settings-Katalog,
+- zentrale Registries für Modelle und Tools,
+- Bootstrap-Capabilities und Versionsinformationen.
 
 ## 5.2 Teilweise implementiert
 
-* Config-v2-Migration,
-* vollständige Definitionsmetadaten,
-* revisionsgeschützte Updates,
-* atomare Batch-Updates,
-* gezielte Cache-Invalidierung,
-* Frontend-Laufzeitvalidierung,
-* Provider- und Modellabhängigkeiten,
-* dynamische Optionsquellen,
-* vollständige Capability Negotiation.
+- Config-v2-Migration,
+- vollständige Definitionsmetadaten,
+- revisionsgeschützte Updates,
+- atomare Batch-Updates,
+- gezielte Cache-Invalidierung,
+- Frontend-Laufzeitvalidierung,
+- Provider- und Modellabhängigkeiten,
+- dynamische Optionsquellen,
+- vollständige Capability Negotiation.
 
 ## 5.3 Derzeitige Inkonsistenzen
 
-* einzelne fachliche Werte können noch über Bootstrap oder statische Defaults beeinflusst werden,
-* nicht alle Konfigurationsänderungen werden atomar gespeichert,
-* Registry-Revisionen sind noch nicht vollständig getrennt,
-* Multi-Worker-Invalidierung ist noch nicht vollständig umgesetzt,
-* Secrets und normale Konfiguration sind konzeptionell getrennt, aber noch nicht in allen Pfaden vollständig abgesichert,
-* nicht alle Frontendwerte werden ausschließlich aus versionierten Backendverträgen bezogen,
-* einige Defaults sind noch im Code verteilt,
-* dynamische Definitionen besitzen noch keinen vollständigen Lifecycle.
+- einzelne fachliche Werte können noch über Bootstrap oder statische Defaults beeinflusst werden,
+- nicht alle Konfigurationsänderungen werden atomar gespeichert,
+- Registry-Revisionen sind noch nicht vollständig getrennt,
+- Multi-Worker-Invalidierung ist noch nicht vollständig umgesetzt,
+- Secrets und normale Konfiguration sind konzeptionell getrennt, aber noch nicht in allen Pfaden vollständig abgesichert,
+- nicht alle Frontendwerte werden ausschließlich aus versionierten Backendverträgen bezogen,
+- einige Defaults sind noch im Code verteilt,
+- dynamische Definitionen besitzen noch keinen vollständigen Lifecycle.
 
 ---
 
@@ -298,11 +298,11 @@ REST / SSE / Frontend
 
 Jede Schicht besitzt:
 
-* eigenen Zweck,
-* eigene Verträge,
-* eigene Validierung,
-* eigene Revisionslogik,
-* klare Sicherheitsgrenzen.
+- eigenen Zweck,
+- eigene Verträge,
+- eigene Validierung,
+- eigene Revisionslogik,
+- klare Sicherheitsgrenzen.
 
 ---
 
@@ -316,21 +316,21 @@ Die Entscheidung besteht aus mehreren verbindlichen Teilen.
 
 Bootstrapwerte enthalten ausschließlich:
 
-* technische Infrastruktur,
-* Sicherheitsuntergrenzen,
-* Startpfade,
-* Verbindungsdaten,
-* initiale Betriebsparameter.
+- technische Infrastruktur,
+- Sicherheitsuntergrenzen,
+- Startpfade,
+- Verbindungsdaten,
+- initiale Betriebsparameter.
 
 ## 7.2 Fachliches Verhalten liegt in der Datenbank
 
 Fachliche Einstellungen werden:
 
-* validiert,
-* versioniert,
-* revisioniert,
-* auditierbar,
-* zur Laufzeit änderbar
+- validiert,
+- versioniert,
+- revisioniert,
+- auditierbar,
+- zur Laufzeit änderbar
 
 gespeichert.
 
@@ -410,28 +410,28 @@ Bootstrap-Konfiguration enthält nur Werte, die vor oder während der Infrastruk
 
 Typische Werte:
 
-* Betriebsprofil,
-* Datenbank-URL,
-* Secret-Key,
-* Verschlüsselungsschlüssel,
-* Cookie-Sicherheitsparameter,
-* HTTPS- und Proxy-Vertrauen,
-* Host und Port,
-* Logging-Level,
-* Log-Ausgabeziel,
-* Dateispeicherpfade,
-* erlaubte Modell- und Tool-Verzeichnisse,
-* temporäre Verzeichnisse,
-* initialer Entwicklungsbenutzer,
-* Migrationsverhalten,
-* Startdiagnostik.
+- Betriebsprofil,
+- Datenbank-URL,
+- Secret-Key,
+- Verschlüsselungsschlüssel,
+- Cookie-Sicherheitsparameter,
+- HTTPS- und Proxy-Vertrauen,
+- Host und Port,
+- Logging-Level,
+- Log-Ausgabeziel,
+- Dateispeicherpfade,
+- erlaubte Modell- und Tool-Verzeichnisse,
+- temporäre Verzeichnisse,
+- initialer Entwicklungsbenutzer,
+- Migrationsverhalten,
+- Startdiagnostik.
 
 Bootstrapwerte:
 
-* werden beim Start validiert,
-* sind grundsätzlich restartpflichtig,
-* werden nicht über normale Fach-API-Endpunkte verändert,
-* werden nicht vollständig an das Frontend ausgegeben.
+- werden beim Start validiert,
+- sind grundsätzlich restartpflichtig,
+- werden nicht über normale Fach-API-Endpunkte verändert,
+- werden nicht vollständig an das Frontend ausgegeben.
 
 ---
 
@@ -439,21 +439,21 @@ Bootstrapwerte:
 
 Nicht in die Bootstrap-Konfiguration gehören:
 
-* Firmenname,
-* Benutzerprofile,
-* Branding,
-* Prompts,
-* Modellwahl,
-* Toolauswahl,
-* Widget-Zuordnungen,
-* Hierarchieknoten,
-* Ressourcentypen,
-* Workflowdefinitionen,
-* fachliche Feature-Flags,
-* Standardprojekte,
-* fachliche Rollen,
-* Chatkonfiguration,
-* Vorlagenpakete.
+- Firmenname,
+- Benutzerprofile,
+- Branding,
+- Prompts,
+- Modellwahl,
+- Toolauswahl,
+- Widget-Zuordnungen,
+- Hierarchieknoten,
+- Ressourcentypen,
+- Workflowdefinitionen,
+- fachliche Feature-Flags,
+- Standardprojekte,
+- fachliche Rollen,
+- Chatkonfiguration,
+- Vorlagenpakete.
 
 Diese Werte gehören in persistente, versionierte Laufzeitkonfiguration oder dynamische Definitionen.
 
@@ -482,18 +482,18 @@ Session
 
 Typische Beispiele:
 
-* Standardmodell,
-* verfügbare Modelle,
-* erlaubte Tools,
-* Promptzuordnungen,
-* UI-Präferenzen,
-* Sprachpräferenzen,
-* Widget-Layouts,
-* Datenprofile,
-* Aufbewahrungsregeln,
-* Benachrichtigungsregeln,
-* Suchoptionen,
-* Actionfreigaben.
+- Standardmodell,
+- verfügbare Modelle,
+- erlaubte Tools,
+- Promptzuordnungen,
+- UI-Präferenzen,
+- Sprachpräferenzen,
+- Widget-Layouts,
+- Datenprofile,
+- Aufbewahrungsregeln,
+- Benachrichtigungsregeln,
+- Suchoptionen,
+- Actionfreigaben.
 
 ---
 
@@ -551,12 +551,12 @@ Diese Notiz ist mit Projekt X und Chat Y verknüpft.
 
 Dasselbe Modell gilt für:
 
-* Prompts,
-* Widgets,
-* Actions,
-* Workflows,
-* Integrationen,
-* Knotentypen.
+- Prompts,
+- Widgets,
+- Actions,
+- Workflows,
+- Integrationen,
+- Knotentypen.
 
 ---
 
@@ -611,11 +611,11 @@ Es gilt:
 
 Eine neu gefundene Definition darf nicht automatisch:
 
-* im Frontend erscheinen,
-* Aktionen anbieten,
-* Ressourcen erzeugen,
-* Prompts beeinflussen,
-* Tools freigeben.
+- im Frontend erscheinen,
+- Aktionen anbieten,
+- Ressourcen erzeugen,
+- Prompts beeinflussen,
+- Tools freigeben.
 
 ---
 
@@ -625,18 +625,18 @@ Der Effective Context ist das serverseitig berechnete Ergebnis aller relevanten 
 
 Er berücksichtigt:
 
-* Tenant,
-* Benutzer,
-* Rollen,
-* aktiven Hierarchieknoten,
-* Hierarchievorfahren,
-* Promptbeiträge,
-* Widget-Zuordnungen,
-* Actionfreigaben,
-* Datenprofil,
-* Runtime-Konfiguration,
-* Registry-Revisionen,
-* Capabilities.
+- Tenant,
+- Benutzer,
+- Rollen,
+- aktiven Hierarchieknoten,
+- Hierarchievorfahren,
+- Promptbeiträge,
+- Widget-Zuordnungen,
+- Actionfreigaben,
+- Datenprofil,
+- Runtime-Konfiguration,
+- Registry-Revisionen,
+- Capabilities.
 
 Beispiel:
 
@@ -658,24 +658,19 @@ Beispiel:
     "widget_instances": 7,
     "concepts": 3
   },
-  "available_action_ids": [
-    "message.send",
-    "resource.create"
-  ],
-  "available_widget_ids": [
-    "widget_notes"
-  ],
+  "available_action_ids": ["message.send", "resource.create"],
+  "available_widget_ids": ["widget_notes"],
   "data_profile": "standard"
 }
 ```
 
 Nicht ausgegeben werden:
 
-* Secrets,
-* vollständige Sicherheitsprompts,
-* interne Rollenauflösung,
-* ungefilterte Policytexte,
-* interne Modellrouting-Details.
+- Secrets,
+- vollständige Sicherheitsprompts,
+- interne Rollenauflösung,
+- ungefilterte Policytexte,
+- interne Modellrouting-Details.
 
 ---
 
@@ -687,10 +682,10 @@ Jedes veränderbare Objekt besitzt eine monotone Revision.
 
 Verwendung:
 
-* Optimistic Locking,
-* Konflikterkennung,
-* Audit,
-* Cache-Invalidierung.
+- Optimistic Locking,
+- Konflikterkennung,
+- Audit,
+- Cache-Invalidierung.
 
 ## 18.2 Config-Revision
 
@@ -767,11 +762,7 @@ Beispiel:
     "runtime_configuration": {
       "enabled": true,
       "version": "2.0",
-      "features": [
-        "revision",
-        "validation",
-        "batch_update"
-      ]
+      "features": ["revision", "validation", "batch_update"]
     },
     "dynamic_resource_types": {
       "enabled": false,
@@ -793,36 +784,36 @@ Das Frontend darf aus vorhandenen Verträgen nicht schließen, dass eine Funktio
 
 Zulässig:
 
-* vereinfachte lokale Identität,
-* unsichere lokale HTTP-Verbindung,
-* ausführliche Diagnosen,
-* lokale Standardwerte.
+- vereinfachte lokale Identität,
+- unsichere lokale HTTP-Verbindung,
+- ausführliche Diagnosen,
+- lokale Standardwerte.
 
 Nicht zulässig:
 
-* versehentliche Übernahme unsicherer Werte in produktive Profile.
+- versehentliche Übernahme unsicherer Werte in produktive Profile.
 
 ## 21.2 Intranet
 
 Erforderlich:
 
-* Authentifizierung,
-* Audit,
-* sichere Session- oder Proxy-Identität,
-* kontrollierte CORS-Regeln,
-* sichere Secrets.
+- Authentifizierung,
+- Audit,
+- sichere Session- oder Proxy-Identität,
+- kontrollierte CORS-Regeln,
+- sichere Secrets.
 
 ## 21.3 Internet
 
 Erforderlich:
 
-* HTTPS,
-* sichere Sessions,
-* CSRF-Schutz,
-* Rate Limiting,
-* sichere Cookies,
-* Security Header,
-* strenge Startup-Validierung.
+- HTTPS,
+- sichere Sessions,
+- CSRF-Schutz,
+- Rate Limiting,
+- sichere Cookies,
+- Security Header,
+- strenge Startup-Validierung.
 
 Ein Profil kann Sicherheitsuntergrenzen verschärfen.
 
@@ -836,18 +827,18 @@ Secrets gehören nicht in normale Runtime-Konfiguration.
 
 Dazu zählen:
 
-* API-Schlüssel,
-* Passwörter,
-* Session-Schlüssel,
-* OAuth-Secrets,
-* private Schlüssel,
-* Datenbankpasswörter.
+- API-Schlüssel,
+- Passwörter,
+- Session-Schlüssel,
+- OAuth-Secrets,
+- private Schlüssel,
+- Datenbankpasswörter.
 
 Secrets werden:
 
-* über Bootstrap,
-* Secret Store,
-* sichere Referenzen
+- über Bootstrap,
+- Secret Store,
+- sichere Referenzen
 
 bereitgestellt.
 
@@ -860,10 +851,10 @@ secret_configured
 
 Nicht ausgegeben werden:
 
-* Secretwert,
-* teilweise maskierter Originalwert,
-* Secret in Auditdaten,
-* Secret in API-Antworten.
+- Secretwert,
+- teilweise maskierter Originalwert,
+- Secret in Auditdaten,
+- Secret in API-Antworten.
 
 ---
 
@@ -875,37 +866,37 @@ Nicht jede Änderung erfordert einen Neustart.
 
 Typische Laufzeitänderungen:
 
-* Promptzuordnung,
-* Widget-Layout,
-* Standardmodell,
-* aktive Ressourcentypdefinition,
-* Alias,
-* Konzept,
-* Benutzerpräferenz,
-* Hierarchieknoten,
-* Datenprofil,
-* Toolfreigabe.
+- Promptzuordnung,
+- Widget-Layout,
+- Standardmodell,
+- aktive Ressourcentypdefinition,
+- Alias,
+- Konzept,
+- Benutzerpräferenz,
+- Hierarchieknoten,
+- Datenprofil,
+- Toolfreigabe.
 
 ## 23.2 Mit Neustart
 
 Typische Bootstrapänderungen:
 
-* Datenbankverbindung,
-* Secret-Key,
-* Speicherpfad,
-* Netzwerkbindung,
-* HTTPS-Konfiguration,
-* importierte technische Verzeichnisse,
-* Logging-Infrastruktur.
+- Datenbankverbindung,
+- Secret-Key,
+- Speicherpfad,
+- Netzwerkbindung,
+- HTTPS-Konfiguration,
+- importierte technische Verzeichnisse,
+- Logging-Infrastruktur.
 
 ## 23.3 Bedingter Reload
 
 Einige Änderungen erfordern:
 
-* Registry-Neuladen,
-* Provider-Neustart,
-* Cache-Invalidierung,
-* kontrollierten Service-Reload.
+- Registry-Neuladen,
+- Provider-Neustart,
+- Cache-Invalidierung,
+- kontrollierten Service-Reload.
 
 Die Änderungsklasse muss im Konfigurationsvertrag dokumentiert sein.
 
@@ -932,14 +923,14 @@ revision_behavior
 
 Eine Definition beschreibt:
 
-* Datentyp,
-* Validierung,
-* Standardwert,
-* zulässige Scopes,
-* UI-Komponente,
-* Berechtigungen,
-* Sicherheitsklasse,
-* Reload-Verhalten.
+- Datentyp,
+- Validierung,
+- Standardwert,
+- zulässige Scopes,
+- UI-Komponente,
+- Berechtigungen,
+- Sicherheitsklasse,
+- Reload-Verhalten.
 
 ---
 
@@ -947,11 +938,11 @@ Eine Definition beschreibt:
 
 Jede Mutation muss:
 
-* autorisiert,
-* validiert,
-* revisionsgeschützt,
-* atomar,
-* auditierbar
+- autorisiert,
+- validiert,
+- revisionsgeschützt,
+- atomar,
+- auditierbar
 
 sein.
 
@@ -1012,12 +1003,12 @@ gesamten Request validieren
 
 Jede Konfigurationsänderung besitzt:
 
-* vorherige Revision,
-* neue Revision,
-* Autor,
-* Zeitstempel,
-* Änderungsgrund,
-* Diff oder sichere Änderungsreferenz.
+- vorherige Revision,
+- neue Revision,
+- Autor,
+- Zeitstempel,
+- Änderungsgrund,
+- Diff oder sichere Änderungsreferenz.
 
 Rollback erzeugt eine neue Revision.
 
@@ -1039,12 +1030,12 @@ Konfigurationsschemata können sich verändern.
 
 Dafür benötigt Kernschmied:
 
-* Schemaversion,
-* Migrationen,
-* Kompatibilitätsprüfung,
-* Default-Ergänzungen,
-* Deprecation-Phasen,
-* Tests.
+- Schemaversion,
+- Migrationen,
+- Kompatibilitätsprüfung,
+- Default-Ergänzungen,
+- Deprecation-Phasen,
+- Tests.
 
 Alte Werte dürfen nicht stillschweigend anders interpretiert werden.
 
@@ -1085,25 +1076,25 @@ Der Bootstrap-Endpunkt liefert ausschließlich nicht sensitive Informationen.
 
 Mindestens:
 
-* Anwendungsname,
-* Version,
-* Betriebsprofil,
-* API-Version,
-* Endpointschlüssel,
-* Capabilities,
-* Featureinformationen,
-* Revisionsstände,
-* Identitätsstatus,
-* degradierte Funktionen.
+- Anwendungsname,
+- Version,
+- Betriebsprofil,
+- API-Version,
+- Endpointschlüssel,
+- Capabilities,
+- Featureinformationen,
+- Revisionsstände,
+- Identitätsstatus,
+- degradierte Funktionen.
 
 Nicht enthalten:
 
-* Secrets,
-* Tokens,
-* Session-IDs,
-* interne Pfade,
-* vollständige Sicherheitskonfiguration,
-* Datenbankverbindungsdaten.
+- Secrets,
+- Tokens,
+- Session-IDs,
+- interne Pfade,
+- vollständige Sicherheitskonfiguration,
+- Datenbankverbindungsdaten.
 
 ---
 
@@ -1131,9 +1122,9 @@ Empfohlener Ablauf:
 
 Bei Fehlern wird unterschieden zwischen:
 
-* fatal,
-* degradierbar,
-* optional.
+- fatal,
+- degradierbar,
+- optional.
 
 ---
 
@@ -1141,12 +1132,12 @@ Bei Fehlern wird unterschieden zwischen:
 
 Fatal sind beispielsweise:
 
-* ungültige Bootstrapwerte,
-* fehlender Secret-Key im Internetprofil,
-* nicht erreichbare Pflichtdatenbank,
-* inkompatibles Datenbankschema,
-* ungültige Sicherheitsuntergrenze,
-* nicht lesbarer Pflichtspeicher.
+- ungültige Bootstrapwerte,
+- fehlender Secret-Key im Internetprofil,
+- nicht erreichbare Pflichtdatenbank,
+- inkompatibles Datenbankschema,
+- ungültige Sicherheitsuntergrenze,
+- nicht lesbarer Pflichtspeicher.
 
 Die Anwendung darf nicht als ready gelten.
 
@@ -1156,10 +1147,10 @@ Die Anwendung darf nicht als ready gelten.
 
 Degradierbar können sein:
 
-* optionaler Modellprovider nicht erreichbar,
-* optionales Tool ungültig,
-* optionale Integration deaktiviert,
-* nicht benötigte Registry teilweise fehlerhaft.
+- optionaler Modellprovider nicht erreichbar,
+- optionales Tool ungültig,
+- optionale Integration deaktiviert,
+- nicht benötigte Registry teilweise fehlerhaft.
 
 Das System startet, markiert aber die Capability als deaktiviert oder degradiert.
 
@@ -1177,12 +1168,12 @@ Prüft, ob die Anwendung fachlich verwendbar ist.
 
 Readiness kann berücksichtigen:
 
-* Datenbank,
-* Migration,
-* Konfiguration,
-* Pflichtregistries,
-* Sicherheitsprofil,
-* zentrale Services.
+- Datenbank,
+- Migration,
+- Konfiguration,
+- Pflichtregistries,
+- Sicherheitsprofil,
+- zentrale Services.
 
 Optionale Provider dürfen die gesamte Readiness nicht zwingend blockieren.
 
@@ -1274,16 +1265,16 @@ Es muss nachvollziehbar sein, warum ein bestimmter Wert effektiv gilt.
 
 ### Vorteile
 
-* einfach zu starten,
-* vertrautes Betriebsmodell.
+- einfach zu starten,
+- vertrautes Betriebsmodell.
 
 ### Nachteile
 
-* Neustarts,
-* fehlende Laufzeitflexibilität,
-* schlechte Typisierung,
-* hohe Drift,
-* Secrets und Fachwerte vermischt.
+- Neustarts,
+- fehlende Laufzeitflexibilität,
+- schlechte Typisierung,
+- hohe Drift,
+- Secrets und Fachwerte vermischt.
 
 **Entscheidung:** Verworfen.
 
@@ -1293,14 +1284,14 @@ Es muss nachvollziehbar sein, warum ein bestimmter Wert effektiv gilt.
 
 ### Vorteile
 
-* maximale Laufzeitflexibilität.
+- maximale Laufzeitflexibilität.
 
 ### Nachteile
 
-* Anwendung kann ohne Datenbank nicht sicher starten,
-* Bootstrap-Secrets fehlen,
-* Infrastrukturparameter werden unklar,
-* Startreihenfolge wird zirkulär.
+- Anwendung kann ohne Datenbank nicht sicher starten,
+- Bootstrap-Secrets fehlen,
+- Infrastrukturparameter werden unklar,
+- Startreihenfolge wird zirkulär.
 
 **Entscheidung:** Verworfen.
 
@@ -1310,21 +1301,21 @@ Es muss nachvollziehbar sein, warum ein bestimmter Wert effektiv gilt.
 
 Beispiele:
 
-* YAML,
-* JSON,
-* TOML.
+- YAML,
+- JSON,
+- TOML.
 
 ### Vorteile
 
-* strukturierter als `.env`,
-* versionierbar.
+- strukturierter als `.env`,
+- versionierbar.
 
 ### Nachteile
 
-* weiterhin restartpflichtig,
-* schwierig pro Tenant oder Benutzer,
-* Secrets und Fachwerte können vermischt werden,
-* parallele Konfigurationsquellen.
+- weiterhin restartpflichtig,
+- schwierig pro Tenant oder Benutzer,
+- Secrets und Fachwerte können vermischt werden,
+- parallele Konfigurationsquellen.
 
 **Entscheidung:** Nicht als primäre Laufzeitquelle.
 
@@ -1336,15 +1327,15 @@ Manifeste und Pakete dürfen weiterhin dateibasiert importiert werden.
 
 ### Vorteile
 
-* schnelle UI-Anpassung,
-* lokale Präferenzen einfach speicherbar.
+- schnelle UI-Anpassung,
+- lokale Präferenzen einfach speicherbar.
 
 ### Nachteile
 
-* keine zentrale Autorisierung,
-* inkonsistente Zustände,
-* keine Mandantenkontrolle,
-* schlechte Auditierbarkeit.
+- keine zentrale Autorisierung,
+- inkonsistente Zustände,
+- keine Mandantenkontrolle,
+- schlechte Auditierbarkeit.
 
 **Entscheidung:** Verworfen.
 
@@ -1356,16 +1347,16 @@ Lokale, rein visuelle Präferenzen dürfen kontrolliert lokal gespeichert werden
 
 ### Vorteile
 
-* einfache Zugriffe,
-* geringe Boilerplate.
+- einfache Zugriffe,
+- geringe Boilerplate.
 
 ### Nachteile
 
-* schwer testbar,
-* versteckte Abhängigkeiten,
-* Probleme bei Multi-Tenancy,
-* schwierige Invalidierung,
-* ungeeignet für Multi-Worker.
+- schwer testbar,
+- versteckte Abhängigkeiten,
+- Probleme bei Multi-Tenancy,
+- schwierige Invalidierung,
+- ungeeignet für Multi-Worker.
 
 **Entscheidung:** Verworfen.
 
@@ -1377,64 +1368,64 @@ Dependency Injection und explizite Services werden verwendet.
 
 ## Phase 1 – Konfigurationsbestand inventarisieren
 
-* `.env`-Werte katalogisieren,
-* fachliche Werte identifizieren,
-* Sicherheitswerte identifizieren,
-* Defaults im Code suchen,
-* Frontend-Lokalwerte erfassen.
+- `.env`-Werte katalogisieren,
+- fachliche Werte identifizieren,
+- Sicherheitswerte identifizieren,
+- Defaults im Code suchen,
+- Frontend-Lokalwerte erfassen.
 
 ## Phase 2 – Bootstrapwerte reduzieren
 
-* nur Infrastruktur,
-* Secrets,
-* Profile,
-* Startpfade,
-* Netzwerk,
-* Logging.
+- nur Infrastruktur,
+- Secrets,
+- Profile,
+- Startpfade,
+- Netzwerk,
+- Logging.
 
 ## Phase 3 – Config-v2 abschließen
 
-* vollständige Definitionsmetadaten,
-* Schemavalidierung,
-* Revisionsschutz,
-* strukturierte Fehler,
-* Secret-Metadaten.
+- vollständige Definitionsmetadaten,
+- Schemavalidierung,
+- Revisionsschutz,
+- strukturierte Fehler,
+- Secret-Metadaten.
 
 ## Phase 4 – Atomare Batch-Updates
 
-* mehrere Werte gemeinsam validieren,
-* Transaktionen,
-* keine Teiländerung,
-* einheitliche Revision.
+- mehrere Werte gemeinsam validieren,
+- Transaktionen,
+- keine Teiländerung,
+- einheitliche Revision.
 
 ## Phase 5 – Registry-Revisionen
 
-* getrennte Revisionen für dynamische Definitionen,
-* Capability-Ausgabe,
-* Cache-Invalidierung.
+- getrennte Revisionen für dynamische Definitionen,
+- Capability-Ausgabe,
+- Cache-Invalidierung.
 
 ## Phase 6 – Effective Context
 
-* Scopes,
-* Hierarchiepfad,
-* Berechtigungen,
-* Prompts,
-* Widgets,
-* Actions,
-* Datenprofil.
+- Scopes,
+- Hierarchiepfad,
+- Berechtigungen,
+- Prompts,
+- Widgets,
+- Actions,
+- Datenprofil.
 
 ## Phase 7 – Diagnose
 
-* Herkunft eines Werts anzeigen,
-* Revision anzeigen,
-* Merge-Strategie anzeigen,
-* keine Secrets offenlegen.
+- Herkunft eines Werts anzeigen,
+- Revision anzeigen,
+- Merge-Strategie anzeigen,
+- keine Secrets offenlegen.
 
 ## Phase 8 – Multi-Worker-Invalidierung
 
-* Datenbankrevision,
-* Polling oder Notify,
-* später PostgreSQL `LISTEN/NOTIFY` oder Redis.
+- Datenbankrevision,
+- Polling oder Notify,
+- später PostgreSQL `LISTEN/NOTIFY` oder Redis.
 
 ---
 
@@ -1442,23 +1433,23 @@ Dependency Injection und explizite Services werden verwendet.
 
 Die Entscheidung gilt als technisch umgesetzt, wenn:
 
-* `.env` nur Bootstrap-, Infrastruktur- und Sicherheitswerte enthält,
-* fachliche Werte in der Datenbank liegen,
-* Bootstrapwerte beim Start streng validiert werden,
-* Runtime-Konfiguration versioniert ist,
-* jede Mutation revisionsgeschützt ist,
-* Batch-Updates atomar sind,
-* Validierungsfehler keine Teiländerung speichern,
-* Secrets nicht in normalen Configantworten erscheinen,
-* Config-Änderungen auditierbar sind,
-* Registry-Revisionen vorhanden sind,
-* Effective Context serverseitig berechnet wird,
-* Capability Negotiation funktioniert,
-* Sicherheitsprofile ihre Untergrenzen erzwingen,
-* unsichere Developmentwerte produktiv abgelehnt werden,
-* Frontend nur validierte Konfiguration übernimmt,
-* Cache-Invalidierung revisionsbasiert funktioniert,
-* OpenAPI dem tatsächlichen Vertragsstand entspricht.
+- `.env` nur Bootstrap-, Infrastruktur- und Sicherheitswerte enthält,
+- fachliche Werte in der Datenbank liegen,
+- Bootstrapwerte beim Start streng validiert werden,
+- Runtime-Konfiguration versioniert ist,
+- jede Mutation revisionsgeschützt ist,
+- Batch-Updates atomar sind,
+- Validierungsfehler keine Teiländerung speichern,
+- Secrets nicht in normalen Configantworten erscheinen,
+- Config-Änderungen auditierbar sind,
+- Registry-Revisionen vorhanden sind,
+- Effective Context serverseitig berechnet wird,
+- Capability Negotiation funktioniert,
+- Sicherheitsprofile ihre Untergrenzen erzwingen,
+- unsichere Developmentwerte produktiv abgelehnt werden,
+- Frontend nur validierte Konfiguration übernimmt,
+- Cache-Invalidierung revisionsbasiert funktioniert,
+- OpenAPI dem tatsächlichen Vertragsstand entspricht.
 
 ---
 
@@ -1556,11 +1547,11 @@ revisionsbasierte Cache-Invalidierung
 
 Dadurch bleibt Kernschmied:
 
-* sicher startbar,
-* dynamisch veränderbar,
-* fachneutral,
-* auditierbar,
-* mandantenfähig,
-* langfristig wartbar.
+- sicher startbar,
+- dynamisch veränderbar,
+- fachneutral,
+- auditierbar,
+- mandantenfähig,
+- langfristig wartbar.
 
 Die Plattform kann neue fachliche Strukturen und Verhaltensweisen aufnehmen, ohne dass Infrastrukturwerte, Secrets und Fachkonfiguration miteinander vermischt werden.

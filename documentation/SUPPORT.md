@@ -13,6 +13,7 @@ Wenn du einen Bug entdeckst, erstelle bitte ein **Issue** auf GitHub:
 👉 [Neues Bug-Issue erstellen](https://github.com/Thomas-Heisig/Kernschmied/issues/new?template=bug_report.yml)
 
 Bitte gib so viele Details wie möglich an:
+
 - Betriebssystem und Version
 - Browser (falls relevant)
 - Schritte zum Reproduzieren
@@ -39,23 +40,23 @@ Hier kannst du auch Tipps mit anderen Nutzern teilen oder dich über Best Practi
 
 Sicherheitsrelevante Probleme **bitte nicht** über öffentliche Issues melden, sondern vertraulich an:
 
-📧 **security@kernschmied.dev** (oder die hinterlegte E-Mail-Adresse im SECURITY.md)
+📧 **<security@kernschmied.dev>** (oder die hinterlegte E-Mail-Adresse im SECURITY.md)
 
 Wir kümmern uns umgehend darum.
 
 ## 🧑‍💻 Entwickler-Support
 
- Falls du selbst zum Projekt beitragen möchtest, lies zuerst die [`CONTRIBUTING.md`](../CONTRIBUTING.md) und die [`CODE_OF_CONDUCT.md`](../CODE_OF_CONDUCT.md). Dort findest du alle wichtigen Informationen zu Setup, Code-Stil und Pull-Request-Prozess.
+Falls du selbst zum Projekt beitragen möchtest, lies zuerst die [`CONTRIBUTING.md`](../CONTRIBUTING.md) und die [`CODE_OF_CONDUCT.md`](../CODE_OF_CONDUCT.md). Dort findest du alle wichtigen Informationen zu Setup, Code-Stil und Pull-Request-Prozess.
 
 ## 📞 Direkter Kontakt
 
 Bei dringenden oder persönlichen Anliegen kannst du den Projektbetreuer auch direkt kontaktieren:
 
-- **E-Mail:** thomas.heisig@kernschmied.dev (oder die tatsächliche Adresse)
+- **E-Mail:** <thomas.heisig@kernschmied.dev> (oder die tatsächliche Adresse)
 - **GitHub:** [Thomas-Heisig](https://github.com/Thomas-Heisig)
 
 Wir bemühen uns, alle Anfragen innerhalb von **2 Werktagen** zu beantworten.
 
 ---
 
-*Wir schmieden gemeinsam eine bessere Software – dein Feedback ist der Hammer!* 🔨
+_Wir schmieden gemeinsam eine bessere Software – dein Feedback ist der Hammer!_ 🔨

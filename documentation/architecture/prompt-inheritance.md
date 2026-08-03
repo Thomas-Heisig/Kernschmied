@@ -1,4 +1,5 @@
 {COPY_FROM: documentation/unknown/prompt-inheritance.md}
+
 # Prompt Inheritance
 
 The **Prompt Inheritance** architecture defines how prompts are composed from multiple hierarchical sources to produce the final prompt that is sent to an AI model.

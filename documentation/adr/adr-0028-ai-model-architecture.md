@@ -1,10 +1,10 @@
 # ADR-0028: AI Model Architecture
 
-* **Status:** Accepted
-* **Date:** 2026-08-03
-* **Decision Makers:** Kernschmied Architecture Team
-* **Supersedes:** None
-* **Superseded by:** None
+- **Status:** Accepted
+- **Date:** 2026-08-03
+- **Decision Makers:** Kernschmied Architecture Team
+- **Supersedes:** None
+- **Superseded by:** None
 
 ---
 
@@ -18,17 +18,17 @@ The platform must support multiple AI technologies throughout its lifetime witho
 
 Typical examples include:
 
-* local Large Language Models
-* cloud AI providers
-* reasoning models
-* multimodal models
-* vision models
-* embedding models
-* speech recognition
-* speech synthesis
-* image generation
-* translation models
-* future AI architectures
+- local Large Language Models
+- cloud AI providers
+- reasoning models
+- multimodal models
+- vision models
+- embedding models
+- speech recognition
+- speech synthesis
+- image generation
+- translation models
+- future AI architectures
 
 Different providers expose different APIs, capabilities and runtime characteristics.
 
@@ -42,14 +42,14 @@ Without a dedicated model architecture, AI functionality becomes tightly coupled
 
 Typical problems include:
 
-* provider-specific business logic
-* duplicated implementations
-* inconsistent capabilities
-* difficult provider replacement
-* inconsistent error handling
-* missing lifecycle management
-* poor runtime configurability
-* vendor lock-in
+- provider-specific business logic
+- duplicated implementations
+- inconsistent capabilities
+- difficult provider replacement
+- inconsistent error handling
+- missing lifecycle management
+- poor runtime configurability
+- vendor lock-in
 
 As the platform evolves, supporting new providers becomes increasingly difficult.
 
@@ -63,11 +63,11 @@ Business services never communicate directly with AI providers.
 
 Instead, every request passes through a centralized Model Service that resolves:
 
-* logical models
-* physical models
-* providers
-* capabilities
-* runtime configuration
+- logical models
+- physical models
+- providers
+- capabilities
+- runtime configuration
 
 Providers execute requests through standardized provider adapters.
 
@@ -129,13 +129,13 @@ Applications always reference logical models.
 
 Examples include:
 
-* default_chat
-* coding_assistant
-* image_generation
-* embeddings
-* speech_to_text
-* text_to_speech
-* reasoning
+- default_chat
+- coding_assistant
+- image_generation
+- embeddings
+- speech_to_text
+- text_to_speech
+- reasoning
 
 Logical model identifiers remain stable even if physical models change.
 
@@ -147,15 +147,15 @@ Physical models represent concrete implementations.
 
 Examples include:
 
-* GPT
-* Claude
-* Gemini
-* Qwen
-* Mistral
-* Llama
-* DeepSeek
-* Gemma
-* Phi
+- GPT
+- Claude
+- Gemini
+- Qwen
+- Mistral
+- Llama
+- DeepSeek
+- Gemma
+- Phi
 
 Applications never reference physical models directly.
 
@@ -167,15 +167,15 @@ Every provider is implemented through a Provider Adapter.
 
 Typical providers include:
 
-* OpenAI
-* Azure OpenAI
-* Anthropic
-* Google Gemini
-* Ollama
-* llama.cpp
-* MLX
-* HuggingFace
-* Generic HTTP Providers
+- OpenAI
+- Azure OpenAI
+- Anthropic
+- Google Gemini
+- Ollama
+- llama.cpp
+- MLX
+- HuggingFace
+- Generic HTTP Providers
 
 Every provider follows the same contract.
 
@@ -187,17 +187,17 @@ Every model declares its supported capabilities.
 
 Typical capabilities include:
 
-* chat
-* completion
-* reasoning
-* streaming
-* tool calling
-* structured output
-* vision
-* embeddings
-* speech recognition
-* speech synthesis
-* image generation
+- chat
+- completion
+- reasoning
+- streaming
+- tool calling
+- structured output
+- vision
+- embeddings
+- speech recognition
+- speech synthesis
+- image generation
 
 Capabilities are declared through manifests and never hard-coded.
 
@@ -209,14 +209,14 @@ Every logical model is represented as a Runtime Registry entry.
 
 Typical metadata includes:
 
-* identifier
-* logical model
-* provider
-* physical model
-* capabilities
-* deployment profile
-* enabled state
-* revision
+- identifier
+- logical model
+- provider
+- physical model
+- capabilities
+- deployment profile
+- enabled state
+- revision
 
 Activation always requires validation.
 
@@ -228,13 +228,13 @@ The Model Service resolves the appropriate model for every request.
 
 Routing may consider:
 
-* logical model
-* required capabilities
-* deployment profile
-* hierarchy context
-* runtime configuration
-* prompt configuration
-* tenant policy
+- logical model
+- required capabilities
+- deployment profile
+- hierarchy context
+- runtime configuration
+- prompt configuration
+- tenant policy
 
 Routing remains deterministic.
 
@@ -268,14 +268,14 @@ Streaming responses follow the Event Architecture.
 
 Typical events include:
 
-* chat.started
-* chat.token
-* chat.reasoning
-* tool.requested
-* tool.completed
-* usage
-* completed
-* failed
+- chat.started
+- chat.token
+- chat.reasoning
+- tool.requested
+- tool.completed
+- usage
+- completed
+- failed
 
 Streaming contracts remain provider independent.
 
@@ -287,13 +287,13 @@ Model behaviour is configurable.
 
 Examples include:
 
-* default models
-* temperature
-* maximum tokens
-* timeout
-* retry policy
-* streaming defaults
-* reasoning mode
+- default models
+- temperature
+- maximum tokens
+- timeout
+- retry policy
+- streaming defaults
+- reasoning mode
 
 Configuration is managed through the Runtime Configuration Architecture.
 
@@ -303,12 +303,12 @@ Configuration is managed through the Runtime Configuration Architecture.
 
 The Model Lifecycle Manager controls:
 
-* initialization
-* loading
-* unloading
-* warm-up
-* health monitoring
-* shutdown
+- initialization
+- loading
+- unloading
+- warm-up
+- health monitoring
+- shutdown
 
 Provider failures never affect unrelated providers.
 
@@ -320,12 +320,12 @@ Provider-specific errors are translated into generic platform errors.
 
 Typical categories include:
 
-* authentication failure
-* timeout
-* unavailable provider
-* invalid request
-* quota exceeded
-* model unavailable
+- authentication failure
+- timeout
+- unavailable provider
+- invalid request
+- quota exceeded
+- model unavailable
 
 Business services never receive provider-specific exceptions.
 
@@ -335,10 +335,10 @@ Business services never receive provider-specific exceptions.
 
 Models never receive:
 
-* secrets
-* internal policies
-* registry metadata
-* unrestricted database access
+- secrets
+- internal policies
+- registry metadata
+- unrestricted database access
 
 All requests are validated before execution.
 
@@ -348,13 +348,13 @@ All requests are validated before execution.
 
 Operational metrics include:
 
-* request count
-* latency
-* token usage
-* streaming duration
-* provider availability
-* error rate
-* fallback usage
+- request count
+- latency
+- token usage
+- streaming duration
+- provider availability
+- error rate
+- fallback usage
 
 Monitoring integrates with ADR-0030.
 
@@ -366,13 +366,13 @@ Every model invocation generates immutable audit information.
 
 Typical information includes:
 
-* logical model
-* physical model
-* provider
-* execution time
-* token usage
-* request identifier
-* hierarchy context
+- logical model
+- physical model
+- provider
+- execution time
+- token usage
+- request identifier
+- hierarchy context
 
 Sensitive prompt content may be redacted according to policy.
 
@@ -394,14 +394,14 @@ All contracts follow ADR-0005.
 
 Future APIs may include:
 
-* List Models
-* Get Model
-* Activate Model
-* Deactivate Model
-* Validate Model
-* Test Model
-* Provider Status
-* Model Capabilities
+- List Models
+- Get Model
+- Activate Model
+- Deactivate Model
+- Validate Model
+- Test Model
+- Provider Status
+- Model Capabilities
 
 All contracts are versioned.
 
@@ -473,14 +473,14 @@ Provider capabilities must be maintained and tested.
 
 ### Advantages
 
-* Simple implementation
-* Fast initial development
+- Simple implementation
+- Fast initial development
 
 ### Disadvantages
 
-* Strong provider coupling
-* Difficult replacement
-* Code duplication
+- Strong provider coupling
+- Difficult replacement
+- Code duplication
 
 Rejected.
 
@@ -490,13 +490,13 @@ Rejected.
 
 ### Advantages
 
-* Minimal complexity
+- Minimal complexity
 
 ### Disadvantages
 
-* Vendor lock-in
-* No fallback strategy
-* Limited flexibility
+- Vendor lock-in
+- No fallback strategy
+- Limited flexibility
 
 Rejected.
 
@@ -504,19 +504,19 @@ Rejected.
 
 # Related ADRs
 
-* ADR-0003 — Registry-Based Extension Architecture
-* ADR-0005 — Versioned Contracts and Schema Evolution
-* ADR-0008 — Prompt Architecture and Context Resolution
-* ADR-0009 — Runtime Registry Architecture
-* ADR-0012 — Action Architecture
-* ADR-0013 — Event Architecture
-* ADR-0014 — Runtime Configuration Architecture
-* ADR-0015 — Chat and Conversation Architecture
-* ADR-0019 — Audit and Revision Architecture
-* ADR-0022 — Integration Architecture
-* ADR-0029 — Tool Execution Architecture
-* ADR-0030 — Monitoring and Observability
-* ADR-0031 — Performance and Caching
+- ADR-0003 — Registry-Based Extension Architecture
+- ADR-0005 — Versioned Contracts and Schema Evolution
+- ADR-0008 — Prompt Architecture and Context Resolution
+- ADR-0009 — Runtime Registry Architecture
+- ADR-0012 — Action Architecture
+- ADR-0013 — Event Architecture
+- ADR-0014 — Runtime Configuration Architecture
+- ADR-0015 — Chat and Conversation Architecture
+- ADR-0019 — Audit and Revision Architecture
+- ADR-0022 — Integration Architecture
+- ADR-0029 — Tool Execution Architecture
+- ADR-0030 — Monitoring and Observability
+- ADR-0031 — Performance and Caching
 
 ---
 

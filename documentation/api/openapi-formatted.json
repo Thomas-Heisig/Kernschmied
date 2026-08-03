@@ -1,120 +1,120 @@
 {
-	"openapi": "3.1.0",
-	"info": {
-		"title": "Kernschmied",
-		"description": "Modulare, schema-gesteuerte Chat-Anwendung mit versionierten API-Verträgen.",
-		"version": "0.1.0"
-	},
-	"paths": {
-		"/api/v1/health": {
-			"get": {
-				"tags": ["System / Health"],
-				"summary": "Health Check",
-				"operationId": "health_api_v1_health_get",
-				"responses": {
-					"200": {
-						"description": "Successful Response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/HealthResponse"
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/api/v1/settings/catalog": {
-			"get": {
-				"tags": ["Administration / Settings"],
-				"summary": "Settings-Katalog laden",
-				"description": "Liefert die versionierte Navigations- und Metadatenstruktur der Kernschmied-Einstellungen. Der Katalog enthält keine Secrets und ersetzt keine serverseitige Autorisierung.",
-				"operationId": "get_settings_catalog_api_v1_settings_catalog_get",
-				"responses": {
-					"200": {
-						"description": "Successful Response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/SettingsCatalogResponse"
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/api/v1/bootstrap": {
-			"get": {
-				"tags": ["System / Bootstrap"],
-				"summary": "Frontend-Bootstrap laden",
-				"description": "Liefert die initialen, nicht sensiblen Laufzeitinformationen für das schema-gesteuerte Frontend. Der Bootstrap ersetzt keine serverseitige Autorisierung.",
-				"operationId": "bootstrap_api_v1_bootstrap_get",
-				"responses": {
-					"200": {
-						"description": "Successful Response",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/BootstrapResponse"
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"/api/v1/ui/schema": {
-			"get": {
-				"tags": ["UI / Schema"],
-				"summary": "UI-Schema laden",
-				"description": "Liefert den versionierten, schema-gesteuerten UI-Vertrag. Das Frontend darf ausschließlich bekannte Komponenten- und Aktionstypen aus seinen festen Registries ausführen.",
-				"operationId": "ui_schema_api_v1_ui_schema_get",
-				"parameters": [
-					{
-						"name": "include_disabled",
-						"in": "query",
-						"required": false,
-						"schema": {
-							"type": "boolean",
-							"description": "Deaktivierte Schemaelemente mit ausgeben. Für administrative Ansichten vorgesehen.",
-							"default": false,
-							"title": "Include Disabled"
-						},
-						"description": "Deaktivierte Schemaelemente mit ausgeben. Für administrative Ansichten vorgesehen."
-					}
-				],
-				"responses": {
-					"200": {
-						"description": "Das UI-Schema wurde erfolgreich erzeugt.",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/UISchemaResponse"
-								}
-							}
-						}
-					},
-					"500": {
-						"description": "Das erzeugte UI-Schema ist ungültig."
-					},
-					"503": {
-						"description": "Der UI-Schema-Builder ist nicht verfügbar."
-					},
-					"422": {
-						"description": "Validation Error",
-						"content": {
-							"application/json": {
-								"schema": {
-									"$ref": "#/components/schemas/HTTPValidationError"
-								}
-							}
-						}
-					}
-				}
-			}
-		},
-		"...": "(truncated for brevity)"
-	}
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Kernschmied",
+    "description": "Modulare, schema-gesteuerte Chat-Anwendung mit versionierten API-Verträgen.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "tags": ["System / Health"],
+        "summary": "Health Check",
+        "operationId": "health_api_v1_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/settings/catalog": {
+      "get": {
+        "tags": ["Administration / Settings"],
+        "summary": "Settings-Katalog laden",
+        "description": "Liefert die versionierte Navigations- und Metadatenstruktur der Kernschmied-Einstellungen. Der Katalog enthält keine Secrets und ersetzt keine serverseitige Autorisierung.",
+        "operationId": "get_settings_catalog_api_v1_settings_catalog_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SettingsCatalogResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/bootstrap": {
+      "get": {
+        "tags": ["System / Bootstrap"],
+        "summary": "Frontend-Bootstrap laden",
+        "description": "Liefert die initialen, nicht sensiblen Laufzeitinformationen für das schema-gesteuerte Frontend. Der Bootstrap ersetzt keine serverseitige Autorisierung.",
+        "operationId": "bootstrap_api_v1_bootstrap_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BootstrapResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ui/schema": {
+      "get": {
+        "tags": ["UI / Schema"],
+        "summary": "UI-Schema laden",
+        "description": "Liefert den versionierten, schema-gesteuerten UI-Vertrag. Das Frontend darf ausschließlich bekannte Komponenten- und Aktionstypen aus seinen festen Registries ausführen.",
+        "operationId": "ui_schema_api_v1_ui_schema_get",
+        "parameters": [
+          {
+            "name": "include_disabled",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Deaktivierte Schemaelemente mit ausgeben. Für administrative Ansichten vorgesehen.",
+              "default": false,
+              "title": "Include Disabled"
+            },
+            "description": "Deaktivierte Schemaelemente mit ausgeben. Für administrative Ansichten vorgesehen."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Das UI-Schema wurde erfolgreich erzeugt.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UISchemaResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Das erzeugte UI-Schema ist ungültig."
+          },
+          "503": {
+            "description": "Der UI-Schema-Builder ist nicht verfügbar."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "...": "(truncated for brevity)"
+  }
 }

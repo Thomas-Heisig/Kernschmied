@@ -1,10 +1,10 @@
 # ADR-0029: Tool Execution Architecture
 
-* **Status:** Accepted
-* **Date:** 2026-08-03
-* **Decision Makers:** Kernschmied Architecture Team
-* **Supersedes:** None
-* **Superseded by:** None
+- **Status:** Accepted
+- **Date:** 2026-08-03
+- **Decision Makers:** Kernschmied Architecture Team
+- **Supersedes:** None
+- **Superseded by:** None
 
 ---
 
@@ -18,18 +18,18 @@ Instead, AI models must cooperate with backend tools that provide controlled acc
 
 Typical examples include:
 
-* web search
-* document processing
-* file management
-* database queries
-* calendar integration
-* email integration
-* REST API calls
-* workflow execution
-* report generation
-* data import
-* data export
-* future integrations
+- web search
+- document processing
+- file management
+- database queries
+- calendar integration
+- email integration
+- REST API calls
+- workflow execution
+- report generation
+- data import
+- data export
+- future integrations
 
 The platform therefore requires a generic tool execution architecture.
 
@@ -41,14 +41,14 @@ Without a dedicated tool architecture, backend functionality becomes tightly cou
 
 Typical problems include:
 
-* duplicated integration logic
-* inconsistent authorization
-* missing validation
-* unsafe execution
-* poor auditability
-* provider-specific implementations
-* difficult extensibility
-* inconsistent error handling
+- duplicated integration logic
+- inconsistent authorization
+- missing validation
+- unsafe execution
+- poor auditability
+- provider-specific implementations
+- difficult extensibility
+- inconsistent error handling
 
 As the platform evolves, adding new tools becomes increasingly difficult.
 
@@ -64,12 +64,12 @@ Every tool invocation passes through a centralized Tool Execution Service.
 
 The execution service is responsible for:
 
-* validation
-* authorization
-* execution
-* timeout handling
-* audit logging
-* result normalization
+- validation
+- authorization
+- execution
+- timeout handling
+- audit logging
+- result normalization
 
 Only registered tools may be executed.
 
@@ -125,15 +125,15 @@ Every tool is represented by a Runtime Registry entry.
 
 Typical metadata includes:
 
-* identifier
-* name
-* version
-* provider
-* capabilities
-* permissions
-* timeout
-* enabled state
-* revision
+- identifier
+- name
+- version
+- provider
+- capabilities
+- permissions
+- timeout
+- enabled state
+- revision
 
 Activation always requires validation.
 
@@ -145,14 +145,14 @@ Every tool belongs to a Tool Provider.
 
 Examples include:
 
-* Local Tools
-* REST Providers
-* Database Providers
-* Calendar Providers
-* Email Providers
-* File Providers
-* AI Providers
-* Future Plugin Providers
+- Local Tools
+- REST Providers
+- Database Providers
+- Calendar Providers
+- Email Providers
+- File Providers
+- AI Providers
+- Future Plugin Providers
 
 Providers implement standardized contracts.
 
@@ -164,14 +164,14 @@ Every tool is described by a versioned manifest.
 
 Typical information includes:
 
-* identifier
-* description
-* input schema
-* output schema
-* permissions
-* required capabilities
-* supported execution modes
-* timeout policy
+- identifier
+- description
+- input schema
+- output schema
+- permissions
+- required capabilities
+- supported execution modes
+- timeout policy
 
 Manifests never contain executable business logic.
 
@@ -185,11 +185,11 @@ Only validated and activated tools become available.
 
 Tool availability depends on:
 
-* deployment profile
-* runtime configuration
-* permissions
-* hierarchy context
-* provider status
+- deployment profile
+- runtime configuration
+- permissions
+- hierarchy context
+- provider status
 
 Discovery never implies execution permission.
 
@@ -201,13 +201,13 @@ Every execution follows the same lifecycle.
 
 Typical steps include:
 
-* request validation
-* permission evaluation
-* input validation
-* execution
-* output validation
-* audit logging
-* event publication
+- request validation
+- permission evaluation
+- input validation
+- execution
+- output validation
+- audit logging
+- event publication
 
 Every invocation is deterministic.
 
@@ -239,10 +239,10 @@ Every tool declares required permissions.
 
 Typical permissions include:
 
-* tool.execute
-* tool.read
-* tool.write
-* tool.admin
+- tool.execute
+- tool.read
+- tool.write
+- tool.admin
 
 Permission evaluation follows ADR-0024.
 
@@ -254,12 +254,12 @@ Tool behaviour is configurable.
 
 Examples include:
 
-* enabled state
-* timeout
-* retry policy
-* concurrency limits
-* execution quotas
-* provider configuration
+- enabled state
+- timeout
+- retry policy
+- concurrency limits
+- execution quotas
+- provider configuration
 
 Configuration follows ADR-0014.
 
@@ -271,11 +271,11 @@ Tools execute within controlled runtime boundaries.
 
 Typical isolation includes:
 
-* execution timeout
-* memory limits
-* process isolation
-* network restrictions
-* filesystem restrictions
+- execution timeout
+- memory limits
+- process isolation
+- network restrictions
+- filesystem restrictions
 
 Execution policies depend on deployment profile.
 
@@ -299,11 +299,11 @@ Tool execution publishes standardized platform events.
 
 Typical events include:
 
-* tool.started
-* tool.progress
-* tool.completed
-* tool.failed
-* tool.timeout
+- tool.started
+- tool.progress
+- tool.completed
+- tool.failed
+- tool.timeout
 
 Other services may subscribe to these events.
 
@@ -315,12 +315,12 @@ Tool-specific errors are translated into generic platform errors.
 
 Typical categories include:
 
-* validation failure
-* authorization failure
-* timeout
-* unavailable provider
-* execution failure
-* quota exceeded
+- validation failure
+- authorization failure
+- timeout
+- unavailable provider
+- execution failure
+- quota exceeded
 
 Business services never receive provider-specific exceptions.
 
@@ -330,12 +330,12 @@ Business services never receive provider-specific exceptions.
 
 Operational metrics include:
 
-* execution count
-* execution duration
-* failure rate
-* timeout count
-* provider availability
-* quota usage
+- execution count
+- execution duration
+- failure rate
+- timeout count
+- provider availability
+- quota usage
 
 Monitoring integrates with ADR-0030.
 
@@ -347,13 +347,13 @@ Every tool invocation generates immutable audit information.
 
 Typical information includes:
 
-* execution identity
-* tool identifier
-* provider
-* execution time
-* request identifier
-* hierarchy context
-* execution result
+- execution identity
+- tool identifier
+- provider
+- execution time
+- request identifier
+- hierarchy context
+- execution result
 
 Sensitive parameters may be redacted according to policy.
 
@@ -375,14 +375,14 @@ All contracts follow ADR-0005.
 
 Future APIs may include:
 
-* List Tools
-* Get Tool
-* Activate Tool
-* Deactivate Tool
-* Validate Tool
-* Test Tool
-* Execute Tool
-* Tool Capabilities
+- List Tools
+- Get Tool
+- Activate Tool
+- Deactivate Tool
+- Validate Tool
+- Test Tool
+- Execute Tool
+- Tool Capabilities
 
 All contracts are versioned.
 
@@ -454,15 +454,15 @@ Tool providers require continuous monitoring.
 
 ### Advantages
 
-* Simple implementation
-* Fast development
+- Simple implementation
+- Fast development
 
 ### Disadvantages
 
-* Tight coupling
-* Poor security
-* Difficult auditing
-* Code duplication
+- Tight coupling
+- Poor security
+- Difficult auditing
+- Code duplication
 
 Rejected.
 
@@ -472,13 +472,13 @@ Rejected.
 
 ### Advantages
 
-* Full provider flexibility
+- Full provider flexibility
 
 ### Disadvantages
 
-* Inconsistent APIs
-* Difficult maintenance
-* Poor extensibility
+- Inconsistent APIs
+- Difficult maintenance
+- Poor extensibility
 
 Rejected.
 
@@ -488,14 +488,14 @@ Rejected.
 
 ### Advantages
 
-* Minimal architecture
+- Minimal architecture
 
 ### Disadvantages
 
-* Uncontrolled execution
-* Security risks
-* No audit trail
-* No permission enforcement
+- Uncontrolled execution
+- Security risks
+- No audit trail
+- No permission enforcement
 
 Rejected.
 
@@ -503,18 +503,18 @@ Rejected.
 
 # Related ADRs
 
-* ADR-0003 — Registry-Based Extension Architecture
-* ADR-0005 — Versioned Contracts and Schema Evolution
-* ADR-0009 — Runtime Registry Architecture
-* ADR-0012 — Action Architecture
-* ADR-0013 — Event Architecture
-* ADR-0014 — Runtime Configuration Architecture
-* ADR-0019 — Audit and Revision Architecture
-* ADR-0022 — Integration Architecture
-* ADR-0024 — Identity and Authorization
-* ADR-0028 — AI Model Architecture
-* ADR-0030 — Monitoring and Observability
-* ADR-0031 — Performance and Caching
+- ADR-0003 — Registry-Based Extension Architecture
+- ADR-0005 — Versioned Contracts and Schema Evolution
+- ADR-0009 — Runtime Registry Architecture
+- ADR-0012 — Action Architecture
+- ADR-0013 — Event Architecture
+- ADR-0014 — Runtime Configuration Architecture
+- ADR-0019 — Audit and Revision Architecture
+- ADR-0022 — Integration Architecture
+- ADR-0024 — Identity and Authorization
+- ADR-0028 — AI Model Architecture
+- ADR-0030 — Monitoring and Observability
+- ADR-0031 — Performance and Caching
 
 ---
 
