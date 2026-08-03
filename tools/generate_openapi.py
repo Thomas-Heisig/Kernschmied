@@ -10,13 +10,14 @@ import pathlib
 from importlib import util
 
 repo_root = pathlib.Path(__file__).resolve().parents[1]
-backend_path = str(repo_root / "backend")
+main_file = repo_root / "backend" / "main.py"
 
-if backend_path not in sys.path:
-    sys.path.insert(0, backend_path)
+if not main_file.exists():
+    print(f"backend main.py not found at: {main_file}")
+    raise SystemExit(1)
 
 try:
-    spec = util.spec_from_file_location("backend_main", str(repo_root / "backend" / "main.py"))
+    spec = util.spec_from_file_location("backend_main", str(main_file))
     if spec is None or spec.loader is None:
         raise ImportError("Could not create import spec for backend/main.py")
     app_module = util.module_from_spec(spec)
