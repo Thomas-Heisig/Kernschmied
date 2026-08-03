@@ -76,3 +76,7 @@ mlx-lm==0.22.0
 # ============================================================
 # prometheus-client==0.21.1
 # python-json-logger==3.3.0
+
+# Password hashing
+passlib==1.7.4
+argon2-cffi==21.3.0

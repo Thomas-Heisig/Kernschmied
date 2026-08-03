@@ -1,0 +1,23 @@
+from __future__ import annotations
+
+from typing import Protocol, runtime_checkable
+
+
+@runtime_checkable
+class UserRepository(Protocol):
+    async def get_by_username(self, username: str): ...
+
+    async def create_user(self, user_data: dict): ...
+
+    async def update_user(self, user_id: str, changes: dict): ...
+
+
+@runtime_checkable
+class SessionRepository(Protocol):
+    async def create_session(self, session_data: dict): ...
+
+    async def get_session_by_hash(self, session_token_hash: str): ...
+
+    async def revoke_session(self, session_id: str): ...
+
+    async def revoke_all_for_user(self, user_id: str): ...
