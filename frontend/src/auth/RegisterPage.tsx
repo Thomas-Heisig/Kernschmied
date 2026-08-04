@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
+import { apiPost } from '../api/client';
 import { useAuth } from './AuthProvider';
 import { toast } from 'sonner';
 
-export default function LoginPage({ onSuccess, onShowRegister }: { onSuccess?: () => void; onShowRegister?: () => void }) {
-  const { login } = useAuth();
+export default function RegisterPage({ onSuccess }: { onSuccess?: () => void }) {
+  const { refresh } = useAuth();
   const [username, setUsername] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -12,11 +15,12 @@ export default function LoginPage({ onSuccess, onShowRegister }: { onSuccess?: (
     e.preventDefault();
     setLoading(true);
     try {
-      await login(username, password);
-      toast.success('Angemeldet');
+      await apiPost('/auth/register', { username, password, display_name: displayName || undefined, email: email || undefined }, { credentials: 'include' });
+      toast.success('Account erstellt. Bitte anmelden.');
+      await refresh();
       onSuccess?.();
     } catch (err: any) {
-      toast.error('Anmeldung fehlgeschlagen: ' + String(err?.message ?? err));
+      toast.error('Registrierung fehlgeschlagen: ' + String(err?.message ?? err));
     } finally {
       setLoading(false);
     }
@@ -24,16 +28,35 @@ export default function LoginPage({ onSuccess, onShowRegister }: { onSuccess?: (
 
   return (
     <div className="max-w-md mx-auto p-4 bg-white rounded shadow">
-      <h2 className="text-lg font-semibold mb-4">Anmelden</h2>
+      <h2 className="text-lg font-semibold mb-4">Registrieren</h2>
       <form onSubmit={handleSubmit}>
         <label className="block mb-2">
-          <div className="text-sm mb-1">Benutzername / E-Mail</div>
+          <div className="text-sm mb-1">Benutzername</div>
           <input
             className="w-full rounded border px-2 py-1"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
             autoFocus
+          />
+        </label>
+
+        <label className="block mb-2">
+          <div className="text-sm mb-1">Anzeigename</div>
+          <input
+            className="w-full rounded border px-2 py-1"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+          />
+        </label>
+
+        <label className="block mb-2">
+          <div className="text-sm mb-1">E-Mail</div>
+          <input
+            type="email"
+            className="w-full rounded border px-2 py-1"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
           />
         </label>
 
@@ -50,15 +73,10 @@ export default function LoginPage({ onSuccess, onShowRegister }: { onSuccess?: (
 
         <div className="flex justify-end gap-2">
           <button type="submit" className="px-4 py-2 bg-sky-600 text-white rounded" disabled={loading}>
-            {loading ? 'Lädt…' : 'Anmelden'}
+            {loading ? 'Lädt…' : 'Registrieren'}
           </button>
         </div>
       </form>
-      <div className="mt-3 text-sm text-center">
-        <button type="button" className="text-sky-600 underline" onClick={() => onShowRegister?.()}>
-          Noch keinen Account? Registrieren
-        </button>
-      </div>
     </div>
   );
 }

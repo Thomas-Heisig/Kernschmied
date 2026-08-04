@@ -19,7 +19,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   async function fetchUser() {
     try {
-      const me = await apiGet<any>('/me');
+      const me = await apiGet<any>('/auth/me');
       setUser(me ?? null);
     } catch (err) {
       setUser(null);

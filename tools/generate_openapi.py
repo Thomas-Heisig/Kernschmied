@@ -17,10 +17,16 @@ if backend_path not in sys.path:
     sys.path.insert(0, backend_path)
 
 try:
-    spec = util.spec_from_file_location("backend_main", str(repo_root / "backend" / "main.py"))
+    module_name = "backend.main"
+    path = str(repo_root / "backend" / "main.py")
+    spec = util.spec_from_file_location(module_name, path)
     if spec is None or spec.loader is None:
         raise ImportError("Could not create import spec for backend/main.py")
     app_module = util.module_from_spec(spec)
+    # Ensure the module is available under its package-style name so
+    # dataclass/type lookups that consult sys.modules succeed during
+    # runtime initialization of classes.
+    sys.modules[module_name] = app_module
     spec.loader.exec_module(app_module)
 except Exception as exc:
     print("Failed to import application module from backend/main.py:", exc)

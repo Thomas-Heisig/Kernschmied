@@ -12,6 +12,7 @@ import React from 'react';
 const CalendarPanel = React.lazy(() => import('../components/calendar/CalendarPanel'));
 import AuthProvider, { useAuth } from '../auth/AuthProvider';
 import LoginPage from '../auth/LoginPage';
+import RegisterPage from '../auth/RegisterPage';
 import {
   selectExpandedNodeIds,
   selectHierarchyRoot,
@@ -38,11 +39,17 @@ export function AppShell() {
 function AppShellContent() {
   const auth = useAuth();
 
+  const [isRegistering, setIsRegistering] = useState(false);
+
   if (auth && !auth.loading && !auth.user) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
         <div className="p-4">
-          <LoginPage onSuccess={() => void auth.refresh()} />
+          {isRegistering ? (
+            <RegisterPage onSuccess={() => void auth.refresh()} />
+          ) : (
+            <LoginPage onSuccess={() => void auth.refresh()} onShowRegister={() => setIsRegistering(true)} />
+          )}
         </div>
       </div>
     );
