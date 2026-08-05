@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from datetime import datetime
 from typing import Literal
 
 
 class BaseContract(BaseModel):
-    class Config:
-        extra = "forbid"
+    model_config = ConfigDict(extra="forbid")
 
 
 class UserCreateRequest(BaseContract):

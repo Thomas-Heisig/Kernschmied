@@ -100,6 +100,16 @@ async def _run_in_memory_test():
     assert msg_roles[0].value == MessageRole.SYSTEM.value
     assert any(m.content and "Befolge" in m.content for m in model.last_request.messages)
 
+    # dispose engine and cleanup temporary directory to release file handles
+    try:
+        await engine.dispose()
+    except Exception:
+        pass
+    try:
+        tmp.cleanup()
+    except Exception:
+        pass
+
 
 def test_chat_resolved_prompt_integration():
     asyncio.run(_run_in_memory_test())

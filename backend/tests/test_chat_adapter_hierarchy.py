@@ -93,6 +93,13 @@ def test_chat_adapter_hierarchy_behaviour() -> None:
 
         finally:
             try:
+                try:
+                    await engine.dispose()
+                except Exception:
+                    pass
+            except NameError:
+                pass
+            try:
                 db_file.close()
                 os.unlink(db_file.name)
             except Exception:

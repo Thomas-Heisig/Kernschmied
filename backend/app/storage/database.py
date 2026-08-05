@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+from sqlalchemy.pool import NullPool
 
 from app.core.settings import settings
 from app.database.base import Base
@@ -139,10 +140,16 @@ class DatabaseManager:
                 # Defensive: any errors while checking settings should not block initialization
                 logger.exception("Error while checking database migration mode")
 
+        # Use NullPool for SQLite to avoid holding file handles open between
+        # tests; helps on Windows where tempfile cleanup can fail with
+        # PermissionError if the DB file is still open.
+        engine_kwargs = dict(echo=echo, pool_pre_ping=True)
+        if self._database_url.startswith("sqlite"):
+            engine_kwargs["poolclass"] = NullPool
+
         self._engine = create_async_engine(
             self._database_url,
-            echo=echo,
-            pool_pre_ping=True,
+            **engine_kwargs,
         )
 
         # Ensure SQLite foreign keys are enabled for every new DBAPI connection.
@@ -190,6 +197,28 @@ class DatabaseManager:
         self._engine = None
         self._session_factory = None
 
+    def _dispose_sync(self) -> None:
+        """Synchronous disposal fallback for use during interpreter shutdown
+        or when async loop isn't available (helps tests on Windows free
+        temporary SQLite files)."""
+        try:
+            if self._engine is not None:
+                try:
+                    # Close the underlying sync engine to release file handles.
+                    self._engine.sync_engine.dispose()
+                except Exception:
+                    pass
+        finally:
+            self._engine = None
+            self._session_factory = None
+
+    def __del__(self) -> None:
+        # Best-effort synchronous cleanup when object is garbage-collected.
+        try:
+            self._dispose_sync()
+        except Exception:
+            pass
+
 
 # Ensure runtime directories exist before constructing the database URL/manager.
 # This guarantees the configured `data_directory` (and parent directories)
@@ -200,6 +229,14 @@ settings.ensure_runtime_directories()
 # when `DATABASE_URL` is not explicitly configured.
 _database_manager = DatabaseManager(settings.effective_database_url)
 
+# Ensure we attempt synchronous cleanup at process exit to release any
+# lingering SQLite file handles (helps Windows tempfile cleanup).
+try:
+    import atexit
+
+    atexit.register(_database_manager._dispose_sync)
+except Exception:
+    pass
 
 def get_database_manager() -> DatabaseManager:
     return _database_manager

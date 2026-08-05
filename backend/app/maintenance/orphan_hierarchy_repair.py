@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from app.storage.models.base import utc_now
 from typing import Any
 
 from sqlalchemy import select, func
@@ -208,5 +209,5 @@ async def apply_orphan_repair(
         deleted_node_id=deleted,
         message_count_before=before,
         message_count_after=after,
-        applied_at=datetime.utcnow(),
+        applied_at=utc_now(),
     )

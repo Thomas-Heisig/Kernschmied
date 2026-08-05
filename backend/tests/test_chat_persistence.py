@@ -86,6 +86,14 @@ def test_append_and_list_messages() -> None:
                 assert m3 is not None and m3.status == "failed"
         finally:
             try:
+                try:
+                    await engine.dispose()
+                except Exception:
+                    pass
+            except NameError:
+                # engine may not be defined if initialization failed
+                pass
+            try:
                 db_file.close()
                 os.unlink(db_file.name)
             except Exception:

@@ -131,6 +131,34 @@ def test_exact_hierarchy_actor_instance_is_preserved():
         finally:
             csmod.PromptResolver = original
 
+        # ensure engine disposed and temp dir removed
+        try:
+            await engine.dispose()
+            try:
+                engine.sync_engine.dispose()
+            except Exception:
+                pass
+        except Exception:
+            pass
+        try:
+            tmp.cleanup()
+        except Exception:
+            pass
+
+        # ensure engine disposed and temp dir removed
+        try:
+            await engine.dispose()
+            try:
+                engine.sync_engine.dispose()
+            except Exception:
+                pass
+        except Exception:
+            pass
+        try:
+            tmp.cleanup()
+        except Exception:
+            pass
+
     asyncio.run(_inner())
 
 
@@ -176,6 +204,20 @@ def test_unauthorized_actor_prevents_model_invocation():
             assert model.call_count == 0
 
         finally:
+            pass
+
+        # ensure engine disposed and temp dir removed
+        try:
+            await engine.dispose()
+            try:
+                engine.sync_engine.dispose()
+            except Exception:
+                pass
+        except Exception:
+            pass
+        try:
+            tmp.cleanup()
+        except Exception:
             pass
 
     asyncio.run(_inner())
