@@ -11,6 +11,7 @@ import { DocumentationDialog } from '../components/documentation';
 import React from 'react';
 const CalendarPanel = React.lazy(() => import('../components/calendar/CalendarPanel'));
 import AuthProvider, { useAuth } from '../auth/AuthProvider';
+import UserAccountPanelsProvider from '../auth/UserAccountPanels';
 import LoginPage from '../auth/LoginPage';
 import RegisterPage from '../auth/RegisterPage';
 import {
@@ -48,7 +49,9 @@ export function AppShell() {
     <ToastProvider>
       <Toaster position="bottom-right" />
       <AuthProvider bootstrap={authBootstrap}>
-        <AppShellContent bootstrapHook={bootstrapHook} />
+        <UserAccountPanelsProvider>
+          <AppShellContent bootstrapHook={bootstrapHook} />
+        </UserAccountPanelsProvider>
       </AuthProvider>
     </ToastProvider>
   );

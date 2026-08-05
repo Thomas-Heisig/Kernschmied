@@ -157,8 +157,8 @@ def test_apply_reassigns_chats_and_deletes_orphan(session_factory: async_session
             await s.merge(orphan)  # type: ignore
             await s.commit()  # type: ignore
 
-            # create chat record and message
-            chat = ChatModel(id="conv-d", conversation_id="conversation_d", node_id="orp-d", user_id="u1")
+            # create chat record and message (updated to current Chat model fields)
+            chat = ChatModel(id="conv-d", node_id="orp-d", title="Conversation conversation_d")
             msg = MessageModel(id="m1", conversation_id="conv-d", sequence_number=1, role="user", content="hi", message_type="text", status="ok")  # type: ignore[arg-type]
             await s.merge(chat)  # type: ignore
             await s.merge(msg)  # type: ignore
@@ -167,8 +167,9 @@ def test_apply_reassigns_chats_and_deletes_orphan(session_factory: async_session
             plan = await build_orphan_repair_plan(s, orphan_node_id="orp-d", target_parent_id="root", target_chat_node_id="chat-1")  # type: ignore
             assert plan.can_apply is True
 
-            # apply
-            async with s.begin():  # type: ignore
+            # apply using a nested transaction so this works even if a transaction
+            # was started during plan building.
+            async with s.begin_nested():  # type: ignore
                 await apply_orphan_repair(s, plan=plan)  # type: ignore
 
             # assert chat reassigned and orphan deleted

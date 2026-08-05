@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Body, Depends, HTTPException, Request, Response, status
 from pydantic import BaseModel, EmailStr, ConfigDict
+from app.contracts.auth import CurrentUserResponse, TenantSummary
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import cast, ClassVar
 
@@ -11,7 +12,11 @@ from app.auth.registration_service import RegistrationService, RegistrationError
 from app.core.settings import settings
 from app.database.models.user import UserModel
 from app.storage.database import get_session
+# dependencies
+from app.auth.dependencies import AuthenticatedUser
 # from app.auth.password_service import PasswordService
+from app.auth.session_management_service import list_sessions, revoke_session, revoke_all_sessions
+from app.contracts.auth import UserSessionResponse
 
 router = APIRouter()
 
@@ -26,16 +31,9 @@ class LoginRequest(BaseModel):
     password: str
 
 
-class UserOut(BaseModel):
-    id: str
-    username: str
-    display_name: str
-    email: EmailStr | None = None
-    is_active: bool
-    authenticated: bool = True
-    development_session: bool = False
-    password_login_available: bool = False
-    tenant: dict[str, object] | None = None
+class UserOut(CurrentUserResponse):
+    # Keep backward-compatible alias for inline usage
+    pass
 
 
 class RegisterRequest(BaseModel):
@@ -77,8 +75,7 @@ def _user_to_out(u: object) -> UserOut:
             # metadata values are untyped; cast the email entry to expected type
             email = cast(str | None, metadata.get("email"))
 
-    is_active = bool(getattr(u, "is_active", None) or getattr(u, "active", True))
-
+    # `is_active` not used here; presence kept in DB models but not needed in DTO mapping
     # Determine development_session flag and password login availability
     development_session = False
     password_login_available = False
@@ -115,14 +112,14 @@ def _user_to_out(u: object) -> UserOut:
             if hasattr(u, 'password_hash'):
                 password_login_available = bool(getattr(u, 'password_hash'))
 
-    tenant_obj = None
+    tenant_obj: TenantSummary | None = None
     if hasattr(u, 'tenant') and getattr(u, 'tenant') is not None:
         tenant = getattr(u, 'tenant')
         try:
-            tenant_obj = {
-                'id': str(tenant.get('id')),
-                'display_name': str(tenant.get('display_name') or tenant.get('name') or ''),
-            }
+            tenant_obj = TenantSummary(
+                id=str(tenant.get('id')),
+                display_name=str(tenant.get('display_name') or tenant.get('name') or ''),
+            )
         except Exception:
             tenant_obj = None
     else:
@@ -135,18 +132,17 @@ def _user_to_out(u: object) -> UserOut:
             tenant_name = getattr(u, 'organization_name')
 
         if tenant_id is not None:
-            tenant_obj = {'id': str(tenant_id), 'display_name': str(tenant_name or '')}
+            tenant_obj = TenantSummary(id=str(tenant_id), display_name=str(tenant_name or ''))
 
     return UserOut(
         id=str(user_id),
         username=username,
         display_name=display_name,
         email=email,
-        is_active=is_active,
         authenticated=True,
         development_session=development_session,
         password_login_available=password_login_available,
-        tenant=cast(dict[str, object] | None, tenant_obj),
+        tenant=tenant_obj,
     )
 
 
@@ -183,7 +179,21 @@ async def login(
         max_age=settings.session_lifetime_seconds,
     )
 
-    return _user_to_out(user)
+    # Convert to canonical contract
+    out = _user_to_out(user)
+    # Map fields to CurrentUserResponse shape where possible
+    return CurrentUserResponse(
+        id=out.id,
+        username=out.username,
+        display_name=out.display_name,
+        email=out.email,
+        authenticated=True,
+        development_session=out.development_session,
+        password_login_available=out.password_login_available,
+        tenant=out.tenant,
+        created_at=getattr(user, 'created_at', None),
+        last_login_at=getattr(user, 'last_login_at', None),
+    )
 
 
 @router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
@@ -207,7 +217,19 @@ async def me(request: Request):
     if user is None or (hasattr(user, "authenticated") and not getattr(user, "authenticated")):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    return _user_to_out(user)
+    out = _user_to_out(user)
+    return CurrentUserResponse(
+        id=out.id,
+        username=out.username,
+        display_name=out.display_name,
+        email=out.email,
+        authenticated=True,
+        development_session=out.development_session,
+        password_login_available=out.password_login_available,
+        tenant=out.tenant,
+        created_at=getattr(user, 'created_at', None),
+        last_login_at=getattr(user, 'last_login_at', None),
+    )
 
 
 @router.post("/development-login", response_model=UserOut)
@@ -240,7 +262,19 @@ async def development_login(request: Request, response: Response, session: Async
         max_age=settings.session_lifetime_seconds,
     )
 
-    return _user_to_out(user)
+    out = _user_to_out(user)
+    return CurrentUserResponse(
+        id=out.id,
+        username=out.username,
+        display_name=out.display_name,
+        email=out.email,
+        authenticated=True,
+        development_session=out.development_session,
+        password_login_available=out.password_login_available,
+        tenant=out.tenant,
+        created_at=getattr(user, 'created_at', None),
+        last_login_at=getattr(user, 'last_login_at', None),
+    )
 
 
 @router.post("/register", response_model=RegisterResponse)
@@ -330,3 +364,50 @@ async def register(
         login_required = False
 
     return RegisterResponse(user=_user_to_out(user), login_required=login_required)
+
+
+@router.get("/sessions", response_model=list[UserSessionResponse])
+async def list_auth_sessions(request: Request, user: AuthenticatedUser, session: AsyncSession = Depends(get_session)):
+    current_session_id = getattr(user, 'session_id', None)
+    rows = await list_sessions(session, getattr(user, 'id'), current_session_id)
+    return rows
+
+
+@router.delete("/sessions/{session_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_auth_session(session_id: str, request: Request, response: Response, user: AuthenticatedUser, session: AsyncSession = Depends(get_session)):
+    try:
+        revoked = await revoke_session(session, getattr(user, 'id'), session_id)
+        if not revoked:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"code": "SESSION_NOT_FOUND", "message": "Session nicht gefunden.", "request_id": getattr(request.state, 'request_id', None)})
+
+        try:
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+
+    finally:
+        # If user revoked the current session, clear cookie
+        if session_id == getattr(user, 'session_id', None):
+            cookie_name = settings.session_cookie_name
+            response.delete_cookie(cookie_name, path=settings.session_cookie_path)
+
+    return None
+
+
+@router.post("/logout-all", status_code=status.HTTP_200_OK)
+async def logout_all(request: Request, response: Response, user: AuthenticatedUser, session: AsyncSession = Depends(get_session)):
+    try:
+        count = await revoke_all_sessions(session, getattr(user, 'id'))
+        try:
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail={"code": "LOGOUT_ALL_FAILED", "message": "Konnte alle Sessions nicht abmelden.", "request_id": getattr(request.state, 'request_id', None)})
+
+    # Clear cookie for current session
+    cookie_name = settings.session_cookie_name
+    response.delete_cookie(cookie_name, path=settings.session_cookie_path)
+    return {"revoked": count}

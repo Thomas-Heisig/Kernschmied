@@ -137,6 +137,10 @@ class BootstrapEndpoints(BaseModel):
     auth_me: str | None = None
     auth_development_login: str | None = None
     auth_register: str | None = None
+    user_profile: str | None = None
+    user_preferences: str | None = None
+    auth_sessions: str | None = None
+    auth_logout_all: str | None = None
     health_live: str
     health_ready: str
 
@@ -1022,6 +1026,10 @@ def _build_endpoints(
         auth_me=f"{api_prefix}/auth/me",
         auth_development_login=f"{api_prefix}/auth/development-login",
         auth_register=f"{api_prefix}/auth/register",
+        user_profile=f"{api_prefix}/users/me",
+        user_preferences=f"{api_prefix}/users/me/preferences",
+        auth_sessions=f"{api_prefix}/auth/sessions",
+        auth_logout_all=f"{api_prefix}/auth/logout-all",
         health_live="/health/live",
         health_ready="/health/ready",
     )

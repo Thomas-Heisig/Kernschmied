@@ -10,7 +10,7 @@ import {
   Sun,
   CalendarDays,
 } from 'lucide-react';
-import UserMenu from '../UserMenu';
+import UserMenu from '../../auth/UserMenu';
 import { useAuth } from '../../auth/AuthProvider';
 
 type AppTheme = 'light' | 'dark';

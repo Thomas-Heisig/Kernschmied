@@ -3406,6 +3406,77 @@ def _build_security_group() -> SettingsGroupDescriptor:
                 ),
             ),
             SettingsSectionDescriptor(
+                id="security.authentication",
+                title="Authentifizierung",
+                description=(
+                    "Konfiguration und Status der Authentifizierungsmechanismen."
+                ),
+                order=15,
+                availability=available,
+                fields=(
+                    _config_field(
+                        "security.authentication.development_fallback",
+                        "Entwicklungs-Authentifizierungs-Fallback",
+                        description=(
+                            "Erlaubt lokale Entwicklungsauthentifizierung als Fallback."
+                        ),
+                        group="security",
+                        key="development_auth_fallback_enabled",
+                        control=SettingsControl.BOOLEAN,
+                        order=10,
+                        tags=("security", "authentication", "development"),
+                    ),
+                    _config_field(
+                        "security.authentication.development_admin_login_enabled",
+                        "Entwickler-Admin-Login aktiv",
+                        description=(
+                            "Ermöglicht einen passwortlosen Admin-Login in Development-Umgebungen."
+                        ),
+                        group="security",
+                        key="development_admin_login_enabled",
+                        control=SettingsControl.BOOLEAN,
+                        order=20,
+                        tags=("security", "authentication", "development"),
+                    ),
+                    _config_field(
+                        "security.authentication.self_registration_enabled",
+                        "Selbstregistrierung aktiv",
+                        description=(
+                            "Erlaubt Benutzern, sich selbst zu registrieren."
+                        ),
+                        group="security",
+                        key="self_registration_enabled",
+                        control=SettingsControl.BOOLEAN,
+                        order=30,
+                        tags=("security", "authentication", "registration"),
+                    ),
+                    _config_field(
+                        "security.authentication.development_self_registration_enabled",
+                        "Selbstregistrierung in Development erlauben",
+                        description=(
+                            "Erlaubt Selbstregistrierung nur in Entwicklungsumgebungen."
+                        ),
+                        group="security",
+                        key="development_self_registration_enabled",
+                        control=SettingsControl.BOOLEAN,
+                        order=40,
+                        tags=("security", "authentication", "development"),
+                    ),
+                    _config_field(
+                        "security.authentication.registration_requires_invitation",
+                        "Registrierung erfordert Einladung",
+                        description=(
+                            "Erfordert eine Einladung für die Benutzerregistrierung."
+                        ),
+                        group="security",
+                        key="registration_requires_invitation",
+                        control=SettingsControl.BOOLEAN,
+                        order=50,
+                        tags=("security", "authentication", "registration"),
+                    ),
+                ),
+            ),
+            SettingsSectionDescriptor(
                 id="security.data",
                 title="Datenklassifizierung",
                 description=("Standardklassifizierung und Schutz sensibler Inhalte."),

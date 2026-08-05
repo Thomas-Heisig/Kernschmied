@@ -64,3 +64,41 @@ class AuthSessionRepository:
         obj.revoked_at = when
         self.session.add(obj)
         await self.session.flush()
+
+    async def list_for_user(self, user_id: str) -> list[AuthSessionModel]:
+        stmt = select(AuthSessionModel).where(AuthSessionModel.user_id == user_id)
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_for_user(self, session_id: str, user_id: str) -> AuthSessionModel | None:
+        stmt = select(AuthSessionModel).where(AuthSessionModel.id == session_id).where(AuthSessionModel.user_id == user_id)
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
+
+    async def revoke_by_id(self, session_id: str, user_id: str, revoked_at: datetime) -> bool:
+        obj = await self.get_for_user(session_id, user_id)
+        if obj is None:
+            return False
+        if obj.revoked_at is not None:
+            # already revoked
+            return True
+        obj.revoked_at = revoked_at
+        self.session.add(obj)
+        await self.session.flush()
+        return True
+
+    async def revoke_all_for_user(self, user_id: str, revoked_at: datetime, *, except_session_id: str | None = None) -> int:
+        stmt = select(AuthSessionModel).where(AuthSessionModel.user_id == user_id)
+        if except_session_id is not None:
+            stmt = stmt.where(AuthSessionModel.id != except_session_id)
+        result = await self.session.execute(stmt)
+        rows = list(result.scalars().all())
+        count = 0
+        for r in rows:
+            if r.revoked_at is None:
+                r.revoked_at = revoked_at
+                self.session.add(r)
+                count += 1
+        if count:
+            await self.session.flush()
+        return count

@@ -108,6 +108,7 @@ async def test_parallel_inserts(
         chat: Any = await session.scalar(text("SELECT id FROM chats LIMIT 1"))
         assert chat is not None
         conversation_id: str = cast(str, chat[0] if isinstance(chat, tuple) else chat)
+        # use the retrieved conversation id for the workers
 
     async def worker(i: int) -> int:
         async with session_factory() as s:
@@ -120,12 +121,17 @@ async def test_parallel_inserts(
     tasks = [asyncio.create_task(worker(i)) for i in range(20)]
     results = await asyncio.gather(*tasks)
     assert len(results) == 20
-    assert sorted(results) == list(range(min(results), min(results) + 20))
+    sorted_results = sorted(results)
+    assert sorted_results == list(range(min(results), min(results) + 20))
 
     # verify next_message_sequence advanced
     async with session_factory() as s2:
-        r = await s2.execute(text("SELECT next_message_sequence FROM chats LIMIT 1"))
-        next_seq = r.scalar_one()
+        # verify the counter for the specific conversation we used
+        r = await s2.execute(text("SELECT id, next_message_sequence FROM chats WHERE id = :cid"), {"cid": conversation_id})
+        row = r.first()
+        if row is None:
+            raise AssertionError("conversation row missing when checking next_message_sequence")
+        next_seq = row[1]
         assert next_seq >= 20
 
 

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from pydantic import BaseModel, Field, EmailStr
+from datetime import datetime
+from typing import Literal
 
 
 class BaseContract(BaseModel):
@@ -30,3 +32,24 @@ class UserRead(BaseContract):
     is_system: bool | None = False
     created_at: str
     updated_at: str
+
+
+class UserPreferencesResponse(BaseContract):
+    schema_version: Literal["1.0"] = "1.0"
+
+    language: str
+    timezone: str
+    theme: Literal["system", "light", "dark"]
+    density: Literal["comfortable", "compact"]
+    default_view: str | None
+    notifications_enabled: bool
+    updated_at: datetime | None
+
+
+class UpdateUserPreferencesRequest(BaseContract):
+    language: str | None = None
+    timezone: str | None = None
+    theme: Literal["system", "light", "dark"] | None = None
+    density: Literal["comfortable", "compact"] | None = None
+    default_view: str | None = None
+    notifications_enabled: bool | None = None

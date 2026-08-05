@@ -20,6 +20,8 @@ type AuthContextValue = {
   register: (input: any) => Promise<void>;
   logout: () => Promise<void>;
   reload: () => Promise<void>;
+  refreshCurrentUser: () => Promise<void>;
+  markUnauthenticated: () => void;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -180,6 +182,12 @@ export function AuthProvider({ children, bootstrap }: { children: React.ReactNod
     },
     logout,
     reload: async () => await fetchUser(),
+    refreshCurrentUser: async () => await fetchUser(),
+    markUnauthenticated: () => {
+      setUser(null);
+      setStatus('unauthenticated');
+      setError(null);
+    },
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
