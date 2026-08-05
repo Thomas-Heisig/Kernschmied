@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, cast
 import json
 from pydantic import BaseModel, ValidationError
 from app.contracts import documentation as contracts
@@ -29,7 +29,7 @@ class ManifestSchema(BaseModel):
     schema_version: str
     documentation_version: Optional[str] = "0.1.0"
     home_page: Optional[str]
-    sections: List[Dict]
+    sections: List[Dict[str, Any]]
 
 
 def _safe_id_from_file(file_path: str) -> str:
@@ -68,12 +68,23 @@ class DocumentationService:
 
         if isinstance(raw, dict) and "sections" in raw and isinstance(raw["sections"], list):
             try:
-                m = ManifestSchema(**{
-                    "schema_version": raw.get("schema_version", "1.0"),
-                    "documentation_version": raw.get("documentation_version", raw.get("version", "0.1.0")),
-                    "home_page": raw.get("home_page") or raw.get("default_page_id") or None,
-                    "sections": raw["sections"],
-                })
+                raw_dict = cast(dict[str, Any], raw)
+
+                schema_version: str = str(raw_dict.get("schema_version") or "1.0")
+                documentation_version: Optional[str] = (
+                    raw_dict.get("documentation_version") or raw_dict.get("version") or "0.1.0"
+                )
+                home_page: Optional[str] = (
+                    raw_dict.get("home_page") or raw_dict.get("default_page_id") or None
+                )
+                sections_typed: List[Dict[str, Any]] = cast(List[Dict[str, Any]], raw_dict["sections"])
+
+                m = ManifestSchema(
+                    schema_version=schema_version,
+                    documentation_version=documentation_version,
+                    home_page=home_page,
+                    sections=sections_typed,
+                )
             except ValidationError as e:
                 raise DocumentationManifestError(f"manifest validation failed: {e}")
         else:
@@ -82,12 +93,14 @@ class DocumentationService:
         # build page map for safe resolution
         page_map: Dict[str, str] = {}
         for sec in m.sections:
-            for p in sec.get("pages", []):
-                file = p.get("file") or p.get("path") or p.get("href")
+            sec_dict = sec
+            for p in sec_dict.get("pages", []):
+                p_dict = cast(Dict[str, Any], p)
+                file = p_dict.get("file") or p_dict.get("path") or p_dict.get("href")
                 if not file:
                     continue
-                pid = p.get("id") or _safe_id_from_file(file)
-                page_map[pid] = file
+                pid = p_dict.get("id") or _safe_id_from_file(file)
+                page_map[str(pid)] = str(file)
 
         self._manifest = m
         self._page_map = page_map
@@ -102,19 +115,21 @@ class DocumentationService:
         home_page_id = manifest.home_page or ""
 
         for sec in manifest.sections:
-            title = sec.get("title") or sec.get("name") or str(sec.get("id", "section"))
-            pages = []
-            for p in sec.get("pages", []):
-                file = p.get("file") or p.get("path") or p.get("href")
+            sec_dict = sec
+            title = sec_dict.get("title") or sec_dict.get("name") or str(sec_dict.get("id", "section"))
+            pages: list[contracts.DocumentationPageSummary] = []
+            for p in sec_dict.get("pages", []):
+                p_dict = cast(Dict[str, Any], p)
+                file = p_dict.get("file") or p_dict.get("path") or p_dict.get("href")
                 if not file:
                     continue
-                pid = p.get("id") or _safe_id_from_file(file)
+                pid = p_dict.get("id") or _safe_id_from_file(file)
                 pages.append(
                     contracts.DocumentationPageSummary(
-                        id=pid,
-                        title=p.get("title") or Path(file).stem,
+                        id=str(pid),
+                        title=p_dict.get("title") or Path(file).stem,
                         section_id=title.lower().replace(" ", "-"),
-                        order=int(p.get("order") or 0),
+                        order=int(p_dict.get("order") or 0),
                     )
                 )
                 if (manifest.home_page is None) and (home_page_id == ""):
@@ -182,7 +197,7 @@ class DocumentationService:
             section_id=path.parent.name,
             content=content,
             source_path=str(path.relative_to(ROOT)),
-            documentation_version=self._manifest.documentation_version if self._manifest else "0.1.0",
+            documentation_version=(self._manifest.documentation_version or "0.1.0") if self._manifest else "0.1.0",
         )
 
 

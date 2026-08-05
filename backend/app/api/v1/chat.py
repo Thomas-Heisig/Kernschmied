@@ -15,6 +15,7 @@ from typing import (
     Literal,
     TypeAlias,
     cast,
+    Final,
 )
 from uuid import UUID, uuid4
 
@@ -60,8 +61,8 @@ router = APIRouter()
 SOURCE_FILE = "backend/app/api/v1/chat.py"
 LOG_AREA = "chat-api"
 
-CHAT_REQUEST_SCHEMA_VERSION = "1.0"
-CHAT_STREAM_SCHEMA_VERSION = "1.0"
+CHAT_REQUEST_SCHEMA_VERSION: Final[Literal["1.0"]] = "1.0"
+CHAT_STREAM_SCHEMA_VERSION: Final[Literal["1.0"]] = "1.0"
 
 MAX_MESSAGE_LENGTH = 50_000
 MAX_IDENTIFIER_LENGTH = 255

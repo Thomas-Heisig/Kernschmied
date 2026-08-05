@@ -168,7 +168,7 @@ async def get_config_revision(
         ):
             return 0
 
-    raw_revision: object = getattr(
+    raw_revision = getattr(
         config_service,
         "revision",
         0,

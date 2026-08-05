@@ -25,7 +25,7 @@ from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Final, Protocol, TypeAlias, runtime_checkable
+from typing import Final, Protocol, TypeAlias, runtime_checkable, cast
 
 from pydantic import JsonValue, TypeAdapter  # <-- JsonValue von pydantic importiert
 
@@ -1230,7 +1230,7 @@ class SupportsModelDump(Protocol):
 def _definition_value(definition: object, key: str) -> object | None:
     if isinstance(definition, Mapping):
         try:
-            normalized = _normalize_json_object(dict(definition))  # type: ignore[arg-type]
+            normalized = _normalize_json_object(dict(cast(Mapping[str, object], definition)))
             return normalized.get(key)
         except ValueError:
             return None
@@ -1239,11 +1239,11 @@ def _definition_value(definition: object, key: str) -> object | None:
 
 def _serialize_definition(definition: object) -> JsonObject:
     if isinstance(definition, Mapping):
-        return _normalize_json_object(dict(definition))  # type: ignore[arg-type]
+        return _normalize_json_object(dict(cast(Mapping[str, object], definition)))
 
     if isinstance(definition, SupportsModelDump):
         dumped = definition.model_dump(mode="json", exclude_none=True)
-        return _normalize_json_object(dict(dumped))  # type: ignore[arg-type]
+        return _normalize_json_object(dict(cast(Mapping[str, object], dumped)))
 
     return {"value": str(definition)}
 
@@ -1256,14 +1256,14 @@ def _serialize_value(value: object) -> JsonValue:
         return value.value
 
     if isinstance(value, Mapping):
-        return _normalize_json_object(dict(value))  # type: ignore[arg-type]
+        return _normalize_json_object(dict(cast(Mapping[str, JsonValue], value)))
 
     if isinstance(value, (list, tuple, set, frozenset)):
         return [_serialize_value(item) for item in value]  # type: ignore[arg-type]
 
     if isinstance(value, SupportsModelDump):
         dumped = value.model_dump(mode="json", exclude_none=True)
-        return _normalize_json_value_adapter(dict(dumped))  # type: ignore[arg-type]
+        return _normalize_json_value_adapter(dict(cast(Mapping[str, JsonValue], dumped)))
 
     return str(value)
 

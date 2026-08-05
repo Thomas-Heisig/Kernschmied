@@ -7,10 +7,11 @@ import { ApiError, apiGet } from '../api/client';
 import { isHierarchyTree, type HierarchyNode, type HierarchyTree } from '../contracts/hierarchy';
 
 import { isUISchema, parseUISchema, type UISchema } from '../contracts/schema';
+import type { AppBootstrap } from '../types/bootstrap';
 
 const BOOTSTRAP_ENDPOINT = '/bootstrap';
 
-export type AppSchemaLoadStatus = 'idle' | 'loading' | 'success' | 'error';
+export type AppSchemaLoadStatus = 'idle' | 'loading' | 'ready' | 'error';
 
 export interface AppSchemaError {
   code: string;
@@ -68,6 +69,8 @@ export interface UseAppSchemaResult {
    * verfügbar sind.
    */
   isReady: boolean;
+  /** Normalized, camelCase bootstrap object */
+  bootstrap: AppBootstrap | null;
 
   /**
    * Lädt Bootstrap, UI-Schema und Hierarchie erneut (Full reload).
@@ -88,16 +91,9 @@ export interface UseAppSchemaResult {
  * `contracts/bootstrap.ts` liegen. Der Hook interpretiert bewusst nur
  * die hier benötigten stabilen Felder.
  */
-interface AppBootstrap {
-  schema_version: string;
-  endpoints: {
-    ui_schema: string;
-    hierarchy: string;
-  };
-  request_id?: string;
-}
+// AppBootstrap type is imported from ../types/bootstrap and used for normalized bootstrap
 
-export function useAppSchema(): UseAppSchemaResult {
+export function useAppSchema(enabled: boolean = true, initialBootstrap: AppBootstrap | null = null): UseAppSchemaResult {
   const [schema, setSchema] = useState<UISchema | null>(null);
 
   const [hierarchyTree, setHierarchyTree] = useState<HierarchyTree | null>(null);
@@ -107,6 +103,8 @@ export function useAppSchema(): UseAppSchemaResult {
   const [status, setStatus] = useState<AppSchemaLoadStatus>('idle');
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const [bootstrapState, setBootstrapState] = useState<AppBootstrap | null>(null);
 
   const activeRequestControllerRef = useRef<AbortController | null>(null);
 
@@ -126,7 +124,7 @@ export function useAppSchema(): UseAppSchemaResult {
    */
   const hasUsableDataRef = useRef(false);
 
-  const load = useCallback(async (): Promise<void> => {
+  const loadFull = useCallback(async (): Promise<void> => {
     activeRequestControllerRef.current?.abort();
 
     const requestController = new AbortController();
@@ -148,37 +146,41 @@ export function useAppSchema(): UseAppSchemaResult {
     setError(null);
 
     try {
-      const rawBootstrapResponse = await apiGet<unknown>(BOOTSTRAP_ENDPOINT, {
-        signal: requestController.signal,
-      });
-
-      if (import.meta.env.DEV) {
-        console.debug('Bootstrap raw response:', rawBootstrapResponse);
+      // Ensure we have bootstrapState available. If not, fetch bootstrap-only first.
+      if (!bootstrapState) {
+        await loadBootstrapOnly();
       }
 
-      assertRequestIsCurrent(requestController, requestGeneration, requestGenerationRef);
+      const bootstrap = bootstrapState as AppBootstrap;
 
-      const bootstrap = normalizeBootstrapResponse(rawBootstrapResponse);
-
-      const uiSchemaEndpoint = normalizeBootstrapEndpoint(
-        bootstrap.endpoints.ui_schema,
-        'endpoints.ui_schema',
+      const uiSchemaEndpoint = normalizeBootstrapEndpointIfPresent(
+        bootstrap.endpoints.uiSchema ?? '',
+        'endpoints.uiSchema',
       );
 
-      const hierarchyEndpoint = normalizeBootstrapEndpoint(
-        bootstrap.endpoints.hierarchy,
+      const hierarchyEndpoint = normalizeBootstrapEndpointIfPresent(
+        bootstrap.endpoints.hierarchy ?? '',
         'endpoints.hierarchy',
       );
 
       // Hierarchie-Endpunkt für spätere Teil-Reloads speichern
-      hierarchyEndpointRef.current = hierarchyEndpoint;
+      hierarchyEndpointRef.current = hierarchyEndpoint ?? null;
+
+      // If enabled is false, do not fetch uiSchema/hierarchy yet.
+      if (!enabled) {
+        // Mark that we have bootstrap data but not full schema
+        hasUsableDataRef.current = false;
+        setStatus('idle');
+        setIsRefreshing(false);
+        return;
+      }
 
       const [rawSchemaResponse, rawHierarchyResponse] = await Promise.all([
-        apiGet<unknown>(uiSchemaEndpoint, {
+        apiGet<unknown>(uiSchemaEndpoint ?? '', {
           signal: requestController.signal,
         }),
 
-        apiGet<unknown>(hierarchyEndpoint, {
+        apiGet<unknown>(hierarchyEndpoint ?? '', {
           signal: requestController.signal,
         }),
       ]);
@@ -208,7 +210,7 @@ export function useAppSchema(): UseAppSchemaResult {
       hasUsableDataRef.current = true;
 
       setError(null);
-      setStatus('success');
+      setStatus('ready');
     } catch (caughtError) {
       if (
         requestController.signal.aborted ||
@@ -232,7 +234,7 @@ export function useAppSchema(): UseAppSchemaResult {
        * Daten nicht unbrauchbar machen.
        */
       if (hasUsableDataRef.current) {
-        setStatus('success');
+        setStatus('ready');
       } else {
         setStatus('error');
       }
@@ -241,6 +243,57 @@ export function useAppSchema(): UseAppSchemaResult {
         setIsRefreshing(false);
       }
 
+      if (activeRequestControllerRef.current === requestController) {
+        activeRequestControllerRef.current = null;
+      }
+    }
+  }, [enabled]);
+
+  /**
+   * Lädt nur den Bootstrap-Teil (ohne UI-Schema und Hierarchie).
+   * Wird initial immer ausgeführt, damit die Anwendung schnell
+   * die öffentlichen Einstiegspunkte kennt. Vollständige Ladung
+   * erfolgt durch `loadFull`.
+   */
+  const loadBootstrapOnly = useCallback(async (): Promise<void> => {
+    activeRequestControllerRef.current?.abort();
+    const requestController = new AbortController();
+    activeRequestControllerRef.current = requestController;
+    const requestGeneration = requestGenerationRef.current + 1;
+    requestGenerationRef.current = requestGeneration;
+
+    try {
+      const rawBootstrapResponse = await apiGet<unknown>(BOOTSTRAP_ENDPOINT, {
+        signal: requestController.signal,
+      });
+
+      assertRequestIsCurrent(requestController, requestGeneration, requestGenerationRef);
+
+      const bootstrap = normalizeBootstrapResponse(rawBootstrapResponse);
+      setBootstrapState(bootstrap);
+
+      const hierarchyEndpoint = normalizeBootstrapEndpointIfPresent(
+        bootstrap.endpoints.hierarchy ?? '',
+        'endpoints.hierarchy',
+      );
+
+      hierarchyEndpointRef.current = hierarchyEndpoint ?? null;
+
+      // Keep status idle until full load
+      setStatus('idle');
+    } catch (err) {
+      if (
+        requestController.signal.aborted ||
+        isAbortError(err) ||
+        requestGeneration !== requestGenerationRef.current
+      ) {
+        return;
+      }
+
+      const normalizedError = normalizeAppSchemaError(err);
+      setError(normalizedError);
+      setStatus('error');
+    } finally {
       if (activeRequestControllerRef.current === requestController) {
         activeRequestControllerRef.current = null;
       }
@@ -254,7 +307,7 @@ export function useAppSchema(): UseAppSchemaResult {
   const loadHierarchy = useCallback(async (): Promise<void> => {
     // Falls noch kein Endpunkt bekannt ist, Full-Reload durchführen
     if (!hierarchyEndpointRef.current) {
-      await load();
+      await loadFull();
       return;
     }
 
@@ -297,8 +350,8 @@ export function useAppSchema(): UseAppSchemaResult {
 
       // Fehler zurücksetzen, da erfolgreich geladen
       setError(null);
-      // Status bleibt "success", da wir bereits Daten haben
-      setStatus('success');
+      // Status bleibt "ready", da wir bereits Daten haben
+      setStatus('ready');
     } catch (caughtError) {
       // Abort ignorieren
       if (
@@ -313,7 +366,7 @@ export function useAppSchema(): UseAppSchemaResult {
 
       logDevelopmentError('Hierarchie konnte nicht neu geladen werden.', caughtError);
 
-      // Fehler setzen, aber Status bleibt "success", da wir bereits Daten haben
+      // Fehler setzen, aber Status bleibt "ready", da wir bereits Daten haben
       setError(normalizedError);
     } finally {
       // isRefreshing zurücksetzen, aber nur wenn keine neuere Anfrage läuft
@@ -321,10 +374,24 @@ export function useAppSchema(): UseAppSchemaResult {
         setIsRefreshing(false);
       }
     }
-  }, [load]);
+  }, [loadFull]);
 
   useEffect(() => {
-    void load();
+    // If an initial bootstrap is provided, use it and skip internal bootstrap fetch.
+    if (initialBootstrap) {
+      const bootstrap = normalizeBootstrapResponse(initialBootstrap as unknown);
+      setBootstrapState(bootstrap);
+      const hierarchyEndpoint = normalizeBootstrapEndpointIfPresent(
+        bootstrap.endpoints.hierarchy ?? '',
+        'endpoints.hierarchy',
+      );
+      hierarchyEndpointRef.current = hierarchyEndpoint ?? null;
+      setStatus('idle');
+      return;
+    }
+
+    // Always fetch bootstrap-only on mount so UI gets endpoints and features when no initial bootstrap
+    void loadBootstrapOnly();
 
     return () => {
       requestGenerationRef.current += 1;
@@ -333,9 +400,15 @@ export function useAppSchema(): UseAppSchemaResult {
 
       activeRequestControllerRef.current = null;
     };
-  }, [load]);
+  }, [loadBootstrapOnly, initialBootstrap]);
 
   const isReady = schema !== null && hierarchyTree !== null;
+  useEffect(() => {
+    // When enabled flips to true, perform the full load (if not already ready).
+    if (enabled && !isReady) {
+      void loadFull();
+    }
+  }, [enabled, isReady, loadFull]);
 
   return {
     schema,
@@ -347,22 +420,149 @@ export function useAppSchema(): UseAppSchemaResult {
     isLoading: status === 'loading' && !isReady,
     isRefreshing,
     isReady,
-    reload: load,
+    bootstrap: bootstrapState,
+    reload: async () => {
+      if (enabled) {
+        await loadFull();
+      } else {
+        await loadBootstrapOnly();
+      }
+    },
     reloadHierarchy: loadHierarchy,
   };
 }
+
+// Helper that treats empty endpoints as absent instead of throwing
+function normalizeBootstrapEndpointIfPresent(value: string, fieldName: string): string | null {
+  const trimmed = (value ?? '').trim();
+  if (trimmed.length === 0) return null;
+  return normalizeBootstrapEndpoint(trimmed, fieldName);
+}
+
 
 // ============================================================
 // Normalisierungs- und Validierungs-Hilfen (unverändert)
 // ============================================================
 
+function toCamel(s: string): string {
+  return s.replace(/_([a-z0-9])/g, (_, ch) => ch.toUpperCase());
+}
+
+function deepCamel<T>(obj: unknown): T {
+  if (Array.isArray(obj)) {
+    return obj.map((v) => deepCamel(v)) as unknown as T;
+  }
+
+  if (obj === null || typeof obj !== 'object') {
+    return obj as T;
+  }
+
+  const out: Record<string, unknown> = {};
+
+  for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+    const nk = toCamel(k);
+    out[nk] = deepCamel(v);
+  }
+
+  return out as T;
+}
+
 function normalizeBootstrapResponse(value: unknown): AppBootstrap {
   const candidates = getResponseCandidates(value, ['data', 'bootstrap', 'result']);
 
   for (const candidate of candidates) {
-    if (isAppBootstrap(candidate)) {
-      return candidate;
+    if (!isRecord(candidate)) continue;
+
+    // Convert keys recursively to camelCase for normalized handling
+    const camel = deepCamel<Record<string, unknown>>(candidate);
+
+    // Extract security
+    const securityRaw = (camel.security_profile ?? camel.security ?? camel.securityProfile) as
+      | Record<string, unknown>
+      | undefined;
+
+    const featuresRaw = (camel.features ?? camel.capabilities ?? {}) as Record<string, unknown>;
+
+    const endpointsRaw = (camel.endpoints ?? {}) as Record<string, unknown>;
+
+    const security = {
+      profile: String((securityRaw?.profile ?? securityRaw?.environment ?? 'internet')).toLowerCase() as
+        | 'development'
+        | 'intranet'
+        | 'internet',
+      authenticationRequired: Boolean(securityRaw?.authentication_required ?? securityRaw?.authenticationRequired ?? false),
+      developmentIdentityActive: Boolean(securityRaw?.development_identity_active ?? securityRaw?.developmentIdentityActive ?? false),
+      availableLoginMethods: Array.isArray(securityRaw?.available_login_methods ?? securityRaw?.availableLoginMethods)
+        ? ((securityRaw?.available_login_methods ?? securityRaw?.availableLoginMethods) as string[])
+        : [],
+    } as AppBootstrap['security'];
+
+    const features = {
+      developmentAdminLogin: Boolean(
+        featuresRaw.development_admin_login ?? featuresRaw.developmentAdminLogin ?? featuresRaw.development_login ?? false,
+      ),
+      selfRegistration: Boolean(
+        featuresRaw.self_registration ?? featuresRaw.selfRegistration ?? false,
+      ),
+      registrationRequiresInvitation: Boolean(
+        featuresRaw.registration_requires_invitation ?? featuresRaw.registrationRequiresInvitation ?? false,
+      ),
+    } as AppBootstrap['features'];
+
+    const endpoints = {
+      authLogin: String(endpointsRaw.auth_login ?? endpointsRaw.authLogin ?? endpointsRaw.login ?? ''),
+      authLogout: String(endpointsRaw.auth_logout ?? endpointsRaw.authLogout ?? endpointsRaw.logout ?? ''),
+      authMe: String(endpointsRaw.me ?? endpointsRaw.auth_me ?? endpointsRaw.authMe ?? ''),
+      authDevelopmentLogin: String(
+        endpointsRaw.auth_development_login ?? endpointsRaw.authDevelopmentLogin ?? endpointsRaw.development_login_endpoint ?? '',
+      ),
+      authRegister: String(endpointsRaw.auth_register ?? endpointsRaw.authRegister ?? ''),
+      userProfile: String(endpointsRaw.user_profile ?? endpointsRaw.userProfile ?? ''),
+      userPreferences: String(endpointsRaw.user_preferences ?? endpointsRaw.userPreferences ?? ''),
+      uiSchema: String(endpointsRaw.ui_schema ?? endpointsRaw.uiSchema ?? ''),
+      hierarchy: String(endpointsRaw.hierarchy ?? ''),
+    } as AppBootstrap['endpoints'];
+
+    // Compute derived availability per spec
+    const developmentLoginAvailable =
+      security.profile === 'development' &&
+      features.developmentAdminLogin === true &&
+      security.availableLoginMethods.map((s) => String(s)).includes('development_admin') &&
+      Boolean(endpoints.authDevelopmentLogin);
+
+    features.developmentLoginAvailable = developmentLoginAvailable;
+
+    const registrationAvailable =
+      features.selfRegistration === true &&
+      security.availableLoginMethods.map((s) => String(s)).includes('registration') &&
+      Boolean(endpoints.authRegister);
+
+    features.registrationRequiresInvitation = Boolean(features.registrationRequiresInvitation);
+    // preserve computed convenience flag
+    (features as any).registrationAvailable = registrationAvailable;
+
+    const requestIdVal =
+      typeof camel.request_id === 'string'
+        ? camel.request_id
+        : typeof camel.requestId === 'string'
+        ? camel.requestId
+        : null;
+
+    const result: AppBootstrap = {
+      security,
+      features,
+      endpoints,
+      schemaVersion: String(camel.schema_version ?? camel.schemaVersion ?? camel.schema ?? ''),
+      apiVersion: String(camel.api_version ?? camel.apiVersion ?? ''),
+      requestId: requestIdVal,
+    };
+
+    // Validate minimal shape
+    if (!result.endpoints.uiSchema || !result.endpoints.hierarchy) {
+      continue;
     }
+
+    return result;
   }
 
   throw createContractError(

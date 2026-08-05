@@ -16,7 +16,7 @@ depends_on = None
 
 
 def upgrade() -> None:
-    conn = op.get_bind()
+    _conn = op.get_bind()
 
     # Users table
     op.create_table(
@@ -116,5 +116,70 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Downgrade intentionally omitted to avoid accidental data loss.
-    pass
+    conn = op.get_bind()
+    dialect = getattr(conn, "dialect", None)
+    _dialect_name = getattr(dialect, "name", "") if dialect is not None else ""
+
+    # Helper to drop an index if it exists; some backends (SQLite) may
+    # behave differently, so wrap in try/except to keep downgrade idempotent.
+    def _safe_drop_index(name: str, table_name: str | None = None) -> None:
+        try:
+            if table_name:
+                op.drop_index(name, table_name=table_name)
+            else:
+                op.drop_index(name)
+        except Exception:
+            # best-effort: ignore missing index or backend-specific errors
+            pass
+
+    # Drop association tables first to avoid FK constraint problems.
+    # 1) role_permissions
+    try:
+        op.drop_table("role_permissions")
+    except Exception:
+        pass
+
+    # 2) user_roles
+    try:
+        op.drop_table("user_roles")
+    except Exception:
+        pass
+
+    # 3) user_preferences (drop indices first)
+    _safe_drop_index("ix_user_preferences_user_id", table_name="user_preferences")
+    try:
+        op.drop_table("user_preferences")
+    except Exception:
+        pass
+
+    # 4) auth_sessions (drop indices first)
+    _safe_drop_index("ix_auth_sessions_session_token_hash", table_name="auth_sessions")
+    _safe_drop_index("ix_auth_sessions_user_id", table_name="auth_sessions")
+    try:
+        op.drop_table("auth_sessions")
+    except Exception:
+        pass
+
+    # 5) permissions
+    try:
+        op.drop_table("permissions")
+    except Exception:
+        pass
+
+    # 6) roles
+    try:
+        op.drop_table("roles")
+    except Exception:
+        pass
+
+    # 7) users (drop indices first)
+    _safe_drop_index("ix_users_username", table_name="users")
+    _safe_drop_index("ix_users_email", table_name="users")
+    try:
+        op.drop_table("users")
+    except Exception:
+        pass
+
+    # End of downgrade. This operation is best-effort and written to be
+    # repeatable in development and test environments. It intentionally
+    # does not touch any other tables.

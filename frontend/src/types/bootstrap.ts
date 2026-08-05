@@ -1,56 +1,29 @@
-export interface BootstrapApplication {
-  name: string;
-  version: string;
-  environment?: string;
-  api_prefix?: string;
-}
-
-export interface BootstrapVersions {
-  bootstrap_schema?: string;
-  ui_schema?: string;
-  api?: string;
-}
-
-export interface BootstrapRevisions {
-  configuration?: number;
-  model_registry?: number;
-  tool_registry?: number;
-}
-
-export interface BootstrapEndpoints {
-  bootstrap?: string;
-  ui_schema?: string;
-  models?: string;
-  tools?: string;
-  health_live?: string;
-  health_ready?: string;
-}
-
-export interface BootstrapResponse {
-  schema_version: string;
-  api_version: string;
-  application: BootstrapApplication;
-  environment: string;
-  versions: BootstrapVersions;
-  /** convenience: current user info (may be present at top-level) */
-  user?: {
-    id: string;
-    name?: string;
-    roles?: string[];
-    permissions?: string[];
-    authenticated?: boolean;
+export interface AppBootstrap {
+  security: {
+    profile: 'development' | 'intranet' | 'internet';
+    authenticationRequired: boolean;
+    developmentIdentityActive: boolean;
+    availableLoginMethods: string[];
   };
-  /** capability/feature maps (may be present at top-level) */
-  capabilities?: { [key: string]: unknown };
-  features?: { [key: string]: unknown };
-  /** convenience top-level schema fields used by UI */
-  ui_schema?: string;
-  bootstrap_schema?: string;
-  /** top-level authenticated flag for quick checks */
-  authenticated?: boolean;
-  /** optional request id returned by backend */
-  request_id?: string | null;
-  endpoints?: BootstrapEndpoints;
-  revisions?: BootstrapRevisions;
-  config_revision?: number;
+  features: {
+    developmentAdminLogin: boolean;
+    // derived convenience flags computed by normalizer
+    developmentLoginAvailable?: boolean;
+    selfRegistration?: boolean;
+    registrationRequiresInvitation?: boolean;
+  };
+  endpoints: {
+    authLogin?: string;
+    authLogout?: string;
+    authMe?: string;
+    authDevelopmentLogin?: string;
+    authRegister?: string;
+    userProfile?: string;
+    userPreferences?: string;
+    uiSchema?: string;
+    hierarchy?: string;
+  };
+  schemaVersion?: string;
+  apiVersion?: string;
+  requestId?: string | null;
 }

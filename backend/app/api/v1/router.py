@@ -15,6 +15,7 @@ from app.api.v1 import (
     tools,
     ui,
 )
+from app.api.v1 import users
 from app.api.v1 import auth
 from app.api.v1 import debug_resolver
 from app.api.v1 import calendar
@@ -127,6 +128,12 @@ api_router.include_router(
     debug_resolver.router,
     prefix="/debug",
     tags=["Debug / Development"],
+)
+
+api_router.include_router(
+    users.router,
+    prefix="/users",
+    tags=["Users / Administration"],
 )
 
 # Authentication endpoints (local identity provider)

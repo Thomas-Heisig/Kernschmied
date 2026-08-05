@@ -29,7 +29,7 @@ from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import TypeAlias
+from typing import TypeAlias, Any, AsyncIterator
 
 from pydantic import JsonValue
 
@@ -709,6 +709,31 @@ class BaseModelBackend(ABC):
     def get_model_info(self) -> ModelInfo:
         """Gibt die Modellinformationen des Backends zurück."""
         pass
+
+    # Optional runtime methods that some backends provide. Declared here
+    # so static type checkers (mypy) accept dynamic backends that may
+    # implement these operations. Default implementations raise
+    # NotImplementedError to preserve existing runtime behavior.
+
+    async def generate(self, request: GenerationRequest) -> StreamEvent:
+        """Optional: vollständige Generierung ausführen (nicht streaming)."""
+        raise NotImplementedError()
+
+    def stream(self, request: GenerationRequest) -> AsyncIterator[StreamEvent]:
+        """Optional: Streaming-Interface zurückgeben (AsyncIterator of StreamEvent)."""
+        raise NotImplementedError()
+
+    async def shutdown(self) -> None:
+        """Optional: sauber herunterfahren; default: not implemented."""
+        raise NotImplementedError()
+
+    def unload_model(self, *args: Any, **kwargs: Any) -> Any:
+        """Optional: provider-specific model unload hook."""
+        raise NotImplementedError()
+
+    def unload(self, *args: Any, **kwargs: Any) -> Any:
+        """Optional: legacy provider unload hook."""
+        raise NotImplementedError()
 
 
 __all__ = [

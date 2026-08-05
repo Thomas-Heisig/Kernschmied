@@ -664,6 +664,90 @@ class Settings(BaseSettings):
     )
 
     # --------------------------------------------------------
+    # Development helpers (must be conservative and opt-in)
+    # --------------------------------------------------------
+
+    # Allow a development-only auth fallback (e.g. for local dev only).
+    # Default is False to avoid accidental exposure in dev environments.
+    development_auth_fallback_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "DEVELOPMENT_AUTH_FALLBACK_ENABLED",
+            "development_auth_fallback_enabled",
+        ),
+    )
+
+    # Enable a development administrator login endpoint (no password).
+    # Only effective when `app_environment` == DEVELOPMENT.
+    development_admin_login_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "DEVELOPMENT_ADMIN_LOGIN_ENABLED",
+            "development_admin_login_enabled",
+        ),
+    )
+
+    # Configurable identity for the development admin user created by the
+    # idempotent dev-seed. These defaults are conservative and stable.
+    development_admin_user_id: str = Field(
+        default="local-development-admin",
+        min_length=1,
+        validation_alias=AliasChoices(
+            "DEVELOPMENT_ADMIN_USER_ID",
+            "development_admin_user_id",
+        ),
+    )
+
+    development_admin_username: str = Field(
+        default="development-admin",
+        min_length=1,
+        validation_alias=AliasChoices(
+            "DEVELOPMENT_ADMIN_USERNAME",
+            "development_admin_username",
+        ),
+    )
+
+    development_admin_display_name: str = Field(
+        default="Development Administrator",
+        min_length=1,
+        validation_alias=AliasChoices(
+            "DEVELOPMENT_ADMIN_DISPLAY_NAME",
+            "development_admin_display_name",
+        ),
+    )
+
+    # --------------------------------------------------------
+    # Registration and self-service
+    # --------------------------------------------------------
+
+    # Global toggle for self-registration (affects intranet/internet profiles)
+    self_registration_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices(
+            "SELF_REGISTRATION_ENABLED",
+            "self_registration_enabled",
+        ),
+    )
+
+    # In development, allow enabling self-registration separately for convenience
+    development_self_registration_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "DEVELOPMENT_SELF_REGISTRATION_ENABLED",
+            "development_self_registration_enabled",
+        ),
+    )
+
+    # Require a valid invitation for registration when true
+    registration_requires_invitation: bool = Field(
+        default=True,
+        validation_alias=AliasChoices(
+            "REGISTRATION_REQUIRES_INVITATION",
+            "registration_requires_invitation",
+        ),
+    )
+
+    # --------------------------------------------------------
     # Logging und Diagnose
     # --------------------------------------------------------
 

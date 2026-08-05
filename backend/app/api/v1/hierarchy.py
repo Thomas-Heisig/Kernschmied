@@ -340,7 +340,7 @@ def _map_backend_tree_to_frontend(value: JSONDict | List[Any]) -> JSONDict | Lis
     return value
 
 
-def _publicize_node(node: object) -> object:
+def _publicize_node(node: object) -> JSONDict | List[Any]:
     """Recursively normalize a node to the public API shape.
 
     - Rename `available_actions` -> `actions`
@@ -359,7 +359,7 @@ def _publicize_node(node: object) -> object:
         obj_any = node
 
     if not isinstance(obj_any, dict):
-        return obj_any
+        return cast(JSONDict | List[Any], obj_any)
 
     obj: JSONDict = cast(JSONDict, obj_any)
 

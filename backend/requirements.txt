@@ -80,3 +80,4 @@ mlx-lm==0.22.0
 # Password hashing
 passlib==1.7.4
 argon2-cffi==21.3.0
+email-validator>=2.2,<3

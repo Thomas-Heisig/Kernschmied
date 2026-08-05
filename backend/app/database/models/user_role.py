@@ -38,13 +38,11 @@ class PermissionModel(Base):
 
 class UserRoleModel(Base):
     __tablename__ = "user_roles"
-
-    user_id: Mapped[str] = mapped_column(String(36), nullable=False)
-    role_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    user_id: Mapped[str] = mapped_column(String(36), nullable=False, primary_key=True)
+    role_id: Mapped[str] = mapped_column(String(36), nullable=False, primary_key=True)
 
 
 class RolePermissionModel(Base):
     __tablename__ = "role_permissions"
-
-    role_id: Mapped[str] = mapped_column(String(36), nullable=False)
-    permission_id: Mapped[str] = mapped_column(String(36), nullable=False)
+    role_id: Mapped[str] = mapped_column(String(36), nullable=False, primary_key=True)
+    permission_id: Mapped[str] = mapped_column(String(36), nullable=False, primary_key=True)

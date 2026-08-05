@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from enum import Enum
-from typing import Any, Literal
+from typing import Any, Literal, Final
 
 from pydantic import (
     BaseModel,
@@ -14,9 +14,9 @@ from pydantic import (
     model_validator,
 )
 
-UI_SCHEMA_NAME = "app-ui"
-UI_SCHEMA_VERSION = "1.0"
-MINIMUM_CLIENT_VERSION = "0.1.0"
+UI_SCHEMA_NAME: Final[Literal["app-ui"]] = "app-ui"
+UI_SCHEMA_VERSION: Final[Literal["1.0"]] = "1.0"
+MINIMUM_CLIENT_VERSION: Final[str] = "0.1.0"
 
 
 IDENTIFIER_PATTERN = re.compile(

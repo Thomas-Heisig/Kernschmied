@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from pydantic import BaseModel, Field
-from typing import Literal, Tuple
+from typing import Literal, Tuple, Final
 
 
-PROMPT_SCHEMA_VERSION = "1.0"
+PROMPT_SCHEMA_VERSION: Final[Literal["1.0"]] = "1.0"
 
 
 class PromptFragment(BaseModel):

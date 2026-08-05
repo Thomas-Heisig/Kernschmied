@@ -727,6 +727,11 @@ async def bootstrap_application(
         # 9. Dienste atomar veröffentlichen
         # ====================================================
 
+        # At this point bootstrap steps either raised or populated the
+        # `config_service` variable — assert to inform static checkers
+        # that it is non-None for subsequent attribute access.
+        assert config_service is not None
+
         result = BootstrapResult(
             session_factory=session_factory,
             config_service=config_service,
@@ -1632,7 +1637,7 @@ def _registry_item_count(
 
         return len(typed_items)
 
-        return None
+    return None
 
 
 # ============================================================

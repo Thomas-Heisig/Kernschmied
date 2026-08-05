@@ -14,10 +14,9 @@ from typing import Literal, TypeAlias, cast
 
 from fastapi import (
     APIRouter,
-    HTTPException,
     Request,
     Response,
-    status,
+    
 )
 from pydantic import (
     BaseModel,
@@ -25,7 +24,7 @@ from pydantic import (
     Field,
 )
 
-from app.core.security_profile import get_security_profile
+from app.core.security_profile import get_security_profile, SecurityProfile
 from app.core.settings import settings
 
 router = APIRouter()
@@ -133,6 +132,11 @@ class BootstrapEndpoints(BaseModel):
     configuration: str
     models: str
     tools: str
+    auth_login: str | None = None
+    auth_logout: str | None = None
+    auth_me: str | None = None
+    auth_development_login: str | None = None
+    auth_register: str | None = None
     health_live: str
     health_ready: str
 
@@ -161,6 +165,7 @@ class BootstrapCapabilities(BaseModel):
     configuration_admin: bool = False
     file_upload: bool = False
     audit_log: bool = False
+    development_login: bool = False
 
 
 class BootstrapFeatures(BaseModel):
@@ -179,6 +184,10 @@ class BootstrapFeatures(BaseModel):
     dynamic_models: bool = False
     dynamic_tools: bool = False
     runtime_configuration: bool = False
+    # Runtime-visible feature flags
+    development_admin_login: bool = False
+    self_registration: bool = False
+    registration_requires_invitation: bool = False
 
 
 class BootstrapRevisions(BaseModel):
@@ -317,19 +326,11 @@ def _get_config_service(
         None,
     )
 
-    if config_service is None:
-        raise HTTPException(
-            status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
-            detail={
-                "code": "CONFIG_SERVICE_UNAVAILABLE",
-                "message": ("Der Konfigurationsdienst ist nicht verfügbar."),
-                "details": {},
-                "request_id": _get_request_id(
-                    request,
-                ),
-            },
-        )
-
+    # If no config service is registered in the ASGI app state, do not
+    # treat this as a hard failure for the bootstrap endpoint. The
+    # frontend needs a minimal, public bootstrap to render the login UI
+    # and feature flags. Downstream callers should defensively handle a
+    # missing config_service where appropriate.
     return config_service
 
 
@@ -738,10 +739,22 @@ async def _resolve_user(
     if authenticated_user is not None:
         return authenticated_user
 
+    # Only provide the development fallback when the runtime configuration
+    # actually enables the authentication fallback. This keeps the bootstrap
+    # response consistent with the AuthenticationContextMiddleware which may
+    # refuse to inject a development principal.
     if environment == "development":
-        return await _development_user(
-            config_service,
-        )
+        runtime_cfg = getattr(request.app.state, "runtime_config", None)
+        fallback_enabled = False
+        if runtime_cfg is not None:
+            fallback_enabled = bool(
+                getattr(runtime_cfg, "development_auth_fallback_enabled", False)
+            )
+
+        if fallback_enabled:
+            return await _development_user(
+                config_service,
+            )
 
     return _anonymous_user()
 
@@ -940,6 +953,11 @@ def _resolve_capabilities(
         },
     )
 
+    development_login_enabled = (
+        str(getattr(settings, "app_environment", "development")).lower() == "development"
+        and bool(getattr(settings, "development_admin_login_enabled", False))
+    )
+
     return BootstrapCapabilities(
         hierarchy=hierarchy_available,
         ui_schema=ui_schema_available,
@@ -952,12 +970,24 @@ def _resolve_capabilities(
         configuration_admin=configuration_admin,
         file_upload=file_upload_available,
         audit_log=audit_log_available,
+        development_login=development_login_enabled,
     )
 
 
 def _resolve_features(
     capabilities: BootstrapCapabilities,
 ) -> BootstrapFeatures:
+    # Determine registration and development-login features based on settings
+    app_env = str(getattr(settings, "app_environment", "development")).lower()
+    development_admin_login = app_env == "development" and bool(getattr(settings, "development_admin_login_enabled", False))
+
+    if app_env == "development":
+        self_registration = bool(getattr(settings, "development_self_registration_enabled", False))
+    else:
+        self_registration = bool(getattr(settings, "self_registration_enabled", False))
+
+    registration_requires_invitation = bool(getattr(settings, "registration_requires_invitation", False))
+
     return BootstrapFeatures(
         schema_driven_ui=True,
         recursive_hierarchy=capabilities.hierarchy,
@@ -966,6 +996,12 @@ def _resolve_features(
         dynamic_models=(capabilities.model_registry or capabilities.model_service),
         dynamic_tools=capabilities.tool_registry,
         runtime_configuration=(capabilities.configuration),
+        # extend with runtime-visible flags
+        **{
+            "development_admin_login": development_admin_login,
+            "self_registration": self_registration,
+            "registration_requires_invitation": registration_requires_invitation,
+        },
     )
 
 
@@ -981,6 +1017,11 @@ def _build_endpoints(
         configuration=f"{api_prefix}/config",
         models=f"{api_prefix}/models",
         tools=f"{api_prefix}/tools",
+        auth_login=f"{api_prefix}/auth/login",
+        auth_logout=f"{api_prefix}/auth/logout",
+        auth_me=f"{api_prefix}/auth/me",
+        auth_development_login=f"{api_prefix}/auth/development-login",
+        auth_register=f"{api_prefix}/auth/register",
         health_live="/health/live",
         health_ready="/health/ready",
     )
@@ -1057,17 +1098,76 @@ async def _resolve_revisions(
     )
 
 
-def _serialize_security_profile() -> dict[str, object]:
-    security_profile = get_security_profile()
+def _serialize_security_profile(security_profile: SecurityProfile | None = None) -> dict[str, object]:
+    if security_profile is None:
+        security_profile = get_security_profile()
 
     raw_security = security_profile.model_dump(
         mode="json",
     )
 
-    return cast(
-        dict[str, object],
-        raw_security,
+    return cast(dict[str, object], raw_security)
+
+
+def _enhanced_security_profile() -> dict[str, object]:
+    """Return a serializable security profile extended with runtime
+    information about available login methods and development identity.
+    """
+    security_profile = get_security_profile()
+
+    raw_security = _serialize_security_profile(security_profile)
+
+    result: dict[str, object] = dict(raw_security)
+
+    # Canonical profile name
+    result["profile"] = str(getattr(settings, "app_environment", "development")).lower()
+
+    result["authentication_required"] = bool(getattr(security_profile, "auth_required", True))
+
+    # Development identity active only in development when explicitly enabled
+    app_env = str(getattr(settings, "app_environment", "development")).lower()
+    result["development_identity_active"] = (
+        app_env == "development" and bool(getattr(settings, "development_admin_login_enabled", False))
     )
+
+    # Compute available login methods conservatively from security profile and settings
+    methods: list[str] = []
+    allowed_auth_modes: set[object] = getattr(security_profile, "allowed_auth_modes", set())
+    # session -> password-based login
+    from app.core.security_profile import AuthMode
+
+    if AuthMode.SESSION in allowed_auth_modes:
+        methods.append("password")
+
+    if AuthMode.API_KEY in allowed_auth_modes:
+        methods.append("api_key")
+
+    # development-admin only in development and when enabled
+    if app_env == "development" and bool(getattr(settings, "development_admin_login_enabled", False)):
+        methods.append("development_admin")
+
+    # registration availability
+    registration_allowed = False
+    if app_env == "development":
+        registration_allowed = bool(getattr(settings, "development_self_registration_enabled", False))
+    else:
+        registration_allowed = bool(getattr(settings, "self_registration_enabled", False))
+
+    if registration_allowed:
+        methods.append("registration")
+
+    result["available_login_methods"] = methods
+
+    # Explicit runtime flags for authentication/settings UI
+    result["development_fallback_enabled"] = (
+        app_env == "development" and bool(getattr(settings, "development_auth_fallback_enabled", False))
+    )
+    result["development_admin_login_enabled"] = bool(getattr(settings, "development_admin_login_enabled", False))
+    result["self_registration"] = registration_allowed
+    result["development_self_registration"] = bool(getattr(settings, "development_self_registration_enabled", False))
+    result["registration_requires_invitation"] = bool(getattr(settings, "registration_requires_invitation", False))
+
+    return result
 
 
 @router.get(
@@ -1164,7 +1264,7 @@ async def bootstrap(
         ),
         environment=environment,
         user=user,
-        security_profile=_serialize_security_profile(),
+        security_profile=_enhanced_security_profile(),
         capabilities=capabilities,
         features=_resolve_features(
             capabilities,

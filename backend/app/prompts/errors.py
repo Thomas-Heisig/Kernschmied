@@ -25,7 +25,3 @@ class InactivePromptHierarchyNodeError(RuntimeError):
     code = "PROMPT_HIERARCHY_INACTIVE"
 
 
-class UnsupportedPromptModeError(ValueError):
-    """Raised when a prompt fragment uses an unknown prompt mode."""
-
-    pass

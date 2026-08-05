@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { useAppStoreCommands } from '../store';
+import { useCallback, useState, useEffect } from 'react';
+import { useRef } from 'react';
 
 import { AppErrorScreen } from '../components/errors';
 import { Toaster } from 'sonner';
@@ -24,42 +24,60 @@ import { SYSTEM_ROOT_NODE_ID } from '../contracts/hierarchy';
 import { useTheme } from '../theme';
 import { AppWorkspace } from './AppWorkspace';
 import { useAppBootstrap } from './useAppBootstrap';
+import { useAppStoreCommands, useAppStoreState } from '../store';
+import { useAppSchema } from '../hooks/useAppSchema';
+import { useBootstrap } from '../hooks/useBootstrap';
+import { useMemo } from 'react';
 
 export function AppShell() {
+  const bootstrapHook = useBootstrap();
+
+  // Memoize the specific bootstrap parts passed to AuthProvider so it doesn't
+  // receive a new object on every render and cause effects to re-run.
+  const authBootstrap = useMemo(() => {
+    const b = bootstrapHook.bootstrap;
+    if (!b) return null;
+    return {
+      endpoints: b.endpoints ?? {},
+      security: b.security ?? {},
+      features: b.features ?? {},
+    } as any;
+  }, [bootstrapHook.bootstrap]);
+
   return (
     <ToastProvider>
       <Toaster position="bottom-right" />
-      <AuthProvider>
-        <AppShellContent />
+      <AuthProvider bootstrap={authBootstrap}>
+        <AppShellContent bootstrapHook={bootstrapHook} />
       </AuthProvider>
     </ToastProvider>
   );
 }
 
-function AppShellContent() {
+function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof useBootstrap> }) {
   const auth = useAuth();
+  // Use the single bootstrap hook passed from parent
+  const { bootstrap, status: bootstrapStatus, error: bootstrapError } = bootstrapHook;
 
-  const [isRegistering, setIsRegistering] = useState(false);
+  // Hooks must be called unconditionally and in the same order on every render.
+  // Declare all hooks up-front before any early returns.
+  const [authView, setAuthView] = useState<'login' | 'register'>('login');
 
-  if (auth && !auth.loading && !auth.user) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-        <div className="p-4">
-          {isRegistering ? (
-            <RegisterPage onSuccess={() => void auth.refresh()} />
-          ) : (
-            <LoginPage onSuccess={() => void auth.refresh()} onShowRegister={() => setIsRegistering(true)} />
-          )}
-        </div>
-      </div>
-    );
-  }
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDocumentationOpen, setIsDocumentationOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
+  // Request schema/hierarchy only when authenticated. Hook handles single-load semantics.
+  const schemaHook = useAppSchema(auth.status === 'authenticated', bootstrap ?? null);
+
+  const { schema: loadedSchema, hierarchy: loadedHierarchy, hierarchyTree: loadedHierarchyTree, status: schemaStatus, error: schemaError, isLoading, isReady, reload, reloadHierarchy } = schemaHook;
+
+  const state = useAppStoreState();
+  const { beginLoading, setLoadedData, setError } = useAppStoreCommands();
+
+  const appBootstrap = useAppBootstrap({ bootstrap: bootstrap ?? null, reload: reload, reloadHierarchy: reloadHierarchy });
+
   const {
-    state,
     reloadApplication,
     selectHierarchyNode,
     replaceExpandedNodeIds,
@@ -67,7 +85,25 @@ function AppShellContent() {
     updateHierarchyNode,
     moveHierarchyNode,
     deleteHierarchyNode,
-  } = useAppBootstrap();
+  } = appBootstrap;
+
+  useEffect(() => {
+    if (isLoading) {
+      beginLoading();
+    }
+  }, [isLoading, beginLoading]);
+
+  useEffect(() => {
+    if (loadedSchema && loadedHierarchyTree) {
+      setLoadedData(loadedSchema, loadedHierarchyTree as any);
+    }
+  }, [loadedSchema, loadedHierarchyTree, setLoadedData]);
+
+  useEffect(() => {
+    if (schemaStatus === 'error' && schemaError) {
+      setError(schemaError);
+    }
+  }, [schemaStatus, schemaError, setError]);
 
   const { theme, toggleTheme } = useTheme();
 
@@ -100,6 +136,54 @@ function AppShellContent() {
   const handleCloseDocumentation = useCallback((): void => {
     setIsDocumentationOpen(false);
   }, []);
+
+  // Single debug output for startup state
+  console.debug("[Kernschmied startup state]", {
+    bootstrapStatus,
+    authStatus: auth.status,
+    schemaStatus,
+    bootstrapReady: !!bootstrap,
+    authReady: auth.status === 'authenticated' && !!auth.user,
+    schemaReady: isReady,
+    bootstrapError: bootstrapError?.message ?? null,
+    authError: auth.error ?? null,
+    schemaError: schemaError?.message ?? null,
+  });
+
+  // Auth state machine handling (render short-circuit cases after hooks)
+  // Bootstrap load state must be honored first
+  if (bootstrapStatus === 'loading' || (!bootstrap && bootstrapStatus !== 'error')) {
+    return <AppLoadingScreen />;
+  }
+
+  if (bootstrapStatus === 'error') {
+    return (
+      <AppErrorScreen
+        message={bootstrapError?.message ?? 'Bootstrap konnte nicht geladen werden.'}
+        onRetry={() => void bootstrapHook.reloadBootstrap?.()}
+      />
+    );
+  }
+  if (auth.status === 'checking') {
+    return <AppLoadingScreen />;
+  }
+
+  if (auth.status === 'unauthenticated') {
+    return authView === 'login' ? (
+      <LoginPage onSuccess={() => void auth.reload()} onRegister={() => setAuthView('register')} />
+    ) : (
+      <RegisterPage onSuccess={() => void auth.reload()} />
+    );
+  }
+
+  if (auth.status === 'error') {
+    return (
+      <AppErrorScreen
+        message={auth.error ?? 'Verbindung zum Kernschmied-Backend fehlgeschlagen.'}
+        onRetry={() => void auth.reload()}
+      />
+    );
+  }
 
   if (state.status === 'idle' || state.status === 'loading') {
     return <AppLoadingScreen />;

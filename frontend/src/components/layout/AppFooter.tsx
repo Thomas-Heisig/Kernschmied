@@ -1,7 +1,7 @@
 // F:\Kernschmied\frontend\src\components\layout\AppFooter.tsx
 
 import React, { useEffect, useMemo, useState } from 'react';
-import type { BootstrapResponse } from '../../types/bootstrap';
+import type { AppBootstrap } from '../../types/bootstrap';
 import { listCalendars } from '../../api/fetchCalendarClient';
 import { sendSelectedDateIfOptIn } from '../../lib/calendar';
 import {
@@ -46,7 +46,8 @@ export function AppFooter({
   toolRevision = 1,
   backendOnline = true,
 }: AppFooterProps) {
-  const [bootstrap, setBootstrap] = useState<BootstrapResponse | null>(null);
+  // Keep bootstrap as any for compatibility with legacy usage in this footer
+  const [bootstrap, setBootstrap] = useState<any | null>(null);
   const [online, setOnline] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -86,7 +87,7 @@ export function AppFooter({
         const res = await fetch('/api/v1/bootstrap', { cache: 'no-store' });
         if (!mounted) return;
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-        const data = (await res.json()) as BootstrapResponse;
+        const data = (await res.json()) as any;
         setBootstrap(data);
         setOnline(true);
         setLastChecked(new Date());
@@ -433,7 +434,7 @@ function DatePickerPopup({
   autoRefresh?: boolean;
   setAutoRefresh?: React.Dispatch<React.SetStateAction<boolean>>;
   setSystemTab?: (t: 'overview' | 'functions' | 'versions' | 'technical') => void;
-  bootstrap?: BootstrapResponse | null;
+  bootstrap?: any | null;
   configRevision?: number;
   modelsCount?: number | null;
   toolsCount?: number | null;
@@ -641,8 +642,8 @@ function SystemInfoPanel({
 }: {
   appName: string;
   appVersion: string;
-  bootstrap: BootstrapResponse | null;
-  setBootstrap: React.Dispatch<React.SetStateAction<BootstrapResponse | null>>;
+  bootstrap: any | null;
+  setBootstrap: React.Dispatch<React.SetStateAction<any | null>>;
   online: boolean | null;
   setOnline: React.Dispatch<React.SetStateAction<boolean | null>>;
   error: string | null;
@@ -912,7 +913,7 @@ function SystemInfoPanel({
                 </div>
                 <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 max-h-64 overflow-auto bg-gray-50 dark:bg-slate-900/50">
                   <pre className="whitespace-pre-wrap break-all">
-                    {JSON.stringify(bootstrap ?? { online, error, versions: (bootstrap as BootstrapResponse | null)?.versions }, null, 2)}
+                    {JSON.stringify(bootstrap ?? { online, error, versions: (bootstrap as any | null)?.versions }, null, 2)}
                   </pre>
                 </div>
               </div>

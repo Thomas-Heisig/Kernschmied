@@ -28,6 +28,8 @@ from .configs_schema import (
 )
 
 from app.schemas.configuration import ConfigListResponse, ConfigEntryResponse
+from typing import cast
+from pydantic import JsonValue
 
 
 @router.get(
@@ -57,8 +59,8 @@ async def list_config(request: Request, response: Response) -> ConfigListRespons
     # Cast entries to the annotated ConfigEntries type for static checkers
     from .configs import ConfigEntries
 
-    typed_entries: ConfigEntries = {  # type: ignore[arg-type]
-        (g, k): v for (g, k), v in entries.items()
+    typed_entries: ConfigEntries = {
+        (g, k): cast(JsonValue, v) for (g, k), v in entries.items()
     }
 
     groups = build_config_groups(typed_entries)

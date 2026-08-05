@@ -1,82 +1,93 @@
-import React, { useState } from 'react';
-import { apiPost } from '../api/client';
+import React, { useCallback, useState } from 'react';
 import { useAuth } from './AuthProvider';
-import { toast } from 'sonner';
 
 export default function RegisterPage({ onSuccess }: { onSuccess?: () => void }) {
-  const { refresh } = useAuth();
+  const { register, registrationAvailable, registrationRequiresInvitation } = useAuth();
   const [username, setUsername] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [invite, setInvite] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
+  const handleSubmit = useCallback(async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!registrationAvailable) return;
+    setError(null);
+    if (!username.trim() || !displayName.trim() || !password) {
+      setError('Bitte alle Pflichtfelder ausfüllen.');
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setError('Passwörter stimmen nicht überein.');
+      return;
+    }
+    setIsSubmitting(true);
     try {
-      await apiPost('/auth/register', { username, password, display_name: displayName || undefined, email: email || undefined }, { credentials: 'include' });
-      toast.success('Account erstellt. Bitte anmelden.');
-      await refresh();
+      await register({
+        username: username.trim(),
+        displayName: displayName.trim(),
+        email: email ? email.trim() : null,
+        password,
+        passwordConfirmation: passwordConfirm,
+        invitationToken: invite || null,
+      } as any);
+
       onSuccess?.();
     } catch (err: any) {
-      toast.error('Registrierung fehlgeschlagen: ' + String(err?.message ?? err));
+      setError(err?.message ?? String(err));
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
+  }, [username, displayName, email, password, passwordConfirm, invite, register, registrationAvailable, onSuccess]);
+
+  if (!registrationAvailable) {
+    return <div>Registrierung ist nicht verfügbar.</div>;
   }
 
   return (
-    <div className="max-w-md mx-auto p-4 bg-white rounded shadow">
-      <h2 className="text-lg font-semibold mb-4">Registrieren</h2>
-      <form onSubmit={handleSubmit}>
-        <label className="block mb-2">
-          <div className="text-sm mb-1">Benutzername</div>
-          <input
-            className="w-full rounded border px-2 py-1"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            autoFocus
-          />
-        </label>
-
-        <label className="block mb-2">
-          <div className="text-sm mb-1">Anzeigename</div>
-          <input
-            className="w-full rounded border px-2 py-1"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-          />
-        </label>
-
-        <label className="block mb-2">
-          <div className="text-sm mb-1">E-Mail</div>
-          <input
-            type="email"
-            className="w-full rounded border px-2 py-1"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-
-        <label className="block mb-4">
-          <div className="text-sm mb-1">Passwort</div>
-          <input
-            type="password"
-            className="w-full rounded border px-2 py-1"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </label>
-
-        <div className="flex justify-end gap-2">
-          <button type="submit" className="px-4 py-2 bg-sky-600 text-white rounded" disabled={loading}>
-            {loading ? 'Lädt…' : 'Registrieren'}
-          </button>
+    <form onSubmit={handleSubmit} className="max-w-md mx-auto space-y-4">
+      {error && <div className="text-red-600">{error}</div>}
+      <div>
+        <label className="block text-sm font-medium">Benutzername</label>
+        <input value={username} onChange={(e) => setUsername(e.target.value)} className="mt-1 block w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Anzeigename</label>
+        <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="mt-1 block w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">E-Mail (optional)</label>
+        <input value={email} onChange={(e) => setEmail(e.target.value)} className="mt-1 block w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Passwort</label>
+        <input type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)} className="mt-1 block w-full" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium">Passwort bestätigen</label>
+        <input type={showPassword ? 'text' : 'password'} value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} className="mt-1 block w-full" />
+      </div>
+      {registrationRequiresInvitation && (
+        <div>
+          <label className="block text-sm font-medium">Einladungscode</label>
+          <input value={invite} onChange={(e) => setInvite(e.target.value)} className="mt-1 block w-full" />
         </div>
-      </form>
-    </div>
+      )}
+      <div className="flex items-center">
+        <label className="inline-flex items-center">
+          <input type="checkbox" checked={showPassword} onChange={() => setShowPassword((s) => !s)} />
+          <span className="ml-2 text-sm">Passwort anzeigen</span>
+        </label>
+      </div>
+      <div>
+        <button disabled={isSubmitting} className="px-4 py-2 bg-blue-600 text-white rounded">
+          {isSubmitting ? 'Sende...' : 'Registrieren'}
+        </button>
+      </div>
+    </form>
   );
 }

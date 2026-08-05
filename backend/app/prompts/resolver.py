@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from typing import Iterable, List
+from typing import Iterable, List, Literal, cast
 
-from app.prompts.models import PromptFragment, ResolvedPrompt
+from app.prompts.models import PromptFragment, ResolvedPrompt, PROMPT_SCHEMA_VERSION
 from app.prompts.errors import UnsupportedPromptModeError
 from app.hierarchy.models import HierarchyActor
 from app.hierarchy.repository import HierarchyRepository
@@ -87,7 +87,7 @@ class PromptResolver:
                     source_type=str(getattr(node, "type", "node")),
                     source_id=str(getattr(node, "id")),
                     source_name=getattr(node, "name", None),
-                    mode=mode,
+                    mode=cast(Literal["append", "prepend", "replace", "disabled"], mode),
                     priority=int(getattr(node, "prompt_priority", 0)),
                     prompt=text,
                     enabled=True,
@@ -120,11 +120,11 @@ class PromptResolver:
 
         # Build ResolvedPrompt
         resolved = ResolvedPrompt(
-            schema_version="1.0",
+            schema_version=PROMPT_SCHEMA_VERSION,
             hierarchy_node_id=last_node_id or None,
             config_revision=None,
             hierarchy_revision=None,
-            fragments=applied,
+            fragments=tuple(applied),
             system_prompt=final or "",
         )
 

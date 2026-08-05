@@ -11,6 +11,7 @@ import {
   CalendarDays,
 } from 'lucide-react';
 import UserMenu from '../UserMenu';
+import { useAuth } from '../../auth/AuthProvider';
 
 type AppTheme = 'light' | 'dark';
 
@@ -41,7 +42,9 @@ export function AppHeader({
   onCreatePublicWorkspace,
   onCreateInternWorkspace,
 }: AppHeaderProps) {
-  const userInitials = createInitials(userName);
+  const auth = useAuth();
+  const resolvedUserName = auth?.user?.displayName ?? userName;
+  const userInitials = createInitials(resolvedUserName);
   const normalizedEnvironment = environment.trim().toLowerCase();
   const environmentLabel =
     normalizedEnvironment === 'development'
@@ -189,7 +192,7 @@ export function AppHeader({
             <CircleUserRound
               size={20}
               className="text-text-soft dark:text-gray-300"
-              aria-label={`Angemeldet als ${userName}`}
+              aria-label={`Angemeldet als ${resolvedUserName}`}
             />
           </div>
         </div>

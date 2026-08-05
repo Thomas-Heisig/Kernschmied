@@ -1694,6 +1694,10 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
 
                 value = entries.get((cfg_group, cfg_key))
 
+                # Prepare a typed options container for both branches so static
+                # analyzers can infer the element type when items are appended.
+                options: list[ConfigOptionResponse] = []
+
                 # Prefer authoritative ConfigDefinition metadata when available
                 definition = None
                 try:
@@ -1784,7 +1788,7 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                     )
                 else:
                     # build UI from catalog fallback
-                    options: list[ConfigOptionResponse] = []
+                    options = []
                     for opt in field.options:
                         options.append(
                             ConfigOptionResponse(
@@ -1909,14 +1913,14 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
 
     # convert to ConfigGroupResponse list
     result: list[ConfigGroupResponse] = []
-    for g in groups.values():
+    for gb in groups.values():
         result.append(
             ConfigGroupResponse(
-                id=g["id"],
-                label=g["label"],
-                description=g["description"],
-                order=g["order"],
-                entries=g["entries"],
+                id=gb["id"],
+                label=gb["label"],
+                description=gb["description"],
+                order=gb["order"],
+                entries=gb["entries"],
             )
         )
 

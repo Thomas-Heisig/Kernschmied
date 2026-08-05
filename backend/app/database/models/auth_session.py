@@ -36,6 +36,8 @@ class AuthSessionModel(Base):
 
     csrf_token_hash: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
+    authentication_method: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
     schema_version: Mapped[str] = mapped_column(String(16), nullable=False, default="1.0")
 
     __table_args__ = (

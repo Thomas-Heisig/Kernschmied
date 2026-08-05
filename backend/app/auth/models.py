@@ -520,6 +520,15 @@ class UserContext(BaseModel):
             default=(),
         )
 
+        # Map legacy/system flags on DB principals to an admin role so
+        # converted UserContext instances carry expected privileges.
+        raw_is_system_admin = read_principal_value(
+            principal,
+            "is_system_admin",
+            "is_admin",
+            default=False,
+        )
+
         raw_tenant_id = read_principal_value(
             principal,
             "tenant_id",
@@ -553,7 +562,13 @@ class UserContext(BaseModel):
                 raw_active,
                 default=True,
             ),
-            roles=normalize_string_collection_value(raw_roles),
+            # Normalize roles/permissions and inject the `admin` role when the
+            # backing principal indicates a system/admin user.
+            roles=(
+                ("admin",) + normalize_string_collection_value(raw_roles)
+                if normalize_bool(raw_is_system_admin, default=False)
+                else normalize_string_collection_value(raw_roles)
+            ),
             permissions=normalize_string_collection_value(raw_permissions),
             tenant_id=normalize_optional_string(
                 raw_tenant_id,

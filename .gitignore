@@ -18,3 +18,5 @@ frontend/dist/
 artifacts/
 *.env
 *.log
+*.tsbuildinfo
+tmp_*.py

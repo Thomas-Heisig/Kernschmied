@@ -3390,10 +3390,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                         endpoint="/api/v1/bootstrap",
                         availability=available,
                         order=10,
-                        tags=(
-                            "security",
-                            "profile",
-                        ),
+                        tags=("security", "profile"),
                     ),
                     _runtime_field(
                         "security.authorization",
@@ -3404,10 +3401,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                         endpoint="/api/v1/bootstrap",
                         availability=available,
                         order=20,
-                        tags=(
-                            "security",
-                            "authorization",
-                        ),
+                        tags=("security", "authorization"),
                     ),
                 ),
             ),
@@ -3428,11 +3422,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                         options=DATA_CLASSIFICATION_OPTIONS,
                         requires_confirmation=True,
                         order=10,
-                        tags=(
-                            "security",
-                            "classification",
-                            "high-impact",
-                        ),
+                        tags=("security", "classification", "high-impact"),
                     ),
                     _config_field(
                         "security.block_secret_output",
@@ -3446,10 +3436,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                         control=SettingsControl.BOOLEAN,
                         requires_confirmation=True,
                         order=20,
-                        tags=(
-                            "security",
-                            "secrets",
-                        ),
+                        tags=("security", "secrets"),
                     ),
                     _config_field(
                         "security.mask_sensitive_logs",
@@ -3462,11 +3449,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                         control=SettingsControl.BOOLEAN,
                         requires_confirmation=True,
                         order=30,
-                        tags=(
-                            "security",
-                            "logging",
-                            "sensitive",
-                        ),
+                        tags=("security", "logging", "sensitive"),
                     ),
                 ),
             ),
@@ -3490,11 +3473,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                         key="prompt_injection_detection",
                         control=SettingsControl.BOOLEAN,
                         order=10,
-                        tags=(
-                            "security",
-                            "threats",
-                            "prompt-injection",
-                        ),
+                        tags=("security", "threats", "prompt-injection"),
                     ),
                     _config_field(
                         "security.tool_manipulation_detection",
@@ -3507,11 +3486,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                         key="tool_manipulation_detection",
                         control=SettingsControl.BOOLEAN,
                         order=20,
-                        tags=(
-                            "security",
-                            "threats",
-                            "tools",
-                        ),
+                        tags=("security", "threats", "tools"),
                     ),
                     _config_field(
                         "security.exfiltration_detection",
@@ -3524,11 +3499,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                         key="data_exfiltration_detection",
                         control=SettingsControl.BOOLEAN,
                         order=30,
-                        tags=(
-                            "security",
-                            "threats",
-                            "exfiltration",
-                        ),
+                        tags=("security", "threats", "exfiltration"),
                     ),
                 ),
             ),
@@ -3549,10 +3520,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                         endpoint="/api/v1/diagnostics/audit",
                         availability=planned,
                         order=10,
-                        tags=(
-                            "security",
-                            "audit",
-                        ),
+                        tags=("security", "audit"),
                     ),
                     _resource_link(
                         "security.audit_entries",
@@ -3564,11 +3532,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                         endpoint="/api/v1/audit",
                         availability=planned,
                         order=20,
-                        tags=(
-                            "security",
-                            "audit",
-                            "resource",
-                        ),
+                        tags=("security", "audit", "resource"),
                     ),
                 ),
             ),

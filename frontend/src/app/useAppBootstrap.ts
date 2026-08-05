@@ -1,20 +1,16 @@
-import { useCallback, useEffect } from 'react';
-
-import { useAppSchema } from '../hooks/useAppSchema';
+import { useCallback } from 'react';
 import { useAppStoreCommands, useAppStoreState } from '../store';
+import type { AppBootstrap } from '../types/bootstrap';
 import type {
   HierarchyNodeCreate,
   HierarchyNodeUpdate,
   HierarchyTree,
 } from '../contracts/hierarchy';
 
-export function useAppBootstrap() {
-  const { schema, hierarchyTree, error, isLoading, reload, reloadHierarchy } = useAppSchema();
-
+export function useAppBootstrap(options?: { bootstrap?: AppBootstrap | null; reload?: () => Promise<void>; reloadHierarchy?: () => Promise<void>; }) {
   const state = useAppStoreState();
 
-  const { beginLoading, setLoadedData, setError, selectHierarchyNode, replaceExpandedNodeIds } =
-    useAppStoreCommands();
+  const { selectHierarchyNode, replaceExpandedNodeIds } = useAppStoreCommands();
 
   // Hierarchie-Mutationen
   const createHierarchyNode = useCallback(
@@ -38,7 +34,7 @@ export function useAppBootstrap() {
       // Create node and ensure UI selects the newly created node after reload.
       const created = await apiCreate(payload as any);
       try {
-        await reloadHierarchy();
+        if (options?.reloadHierarchy) await options.reloadHierarchy();
       } catch {
         // ignore reload errors here – selection may still be useful
       }
@@ -53,16 +49,16 @@ export function useAppBootstrap() {
         // silent fallback
       }
     },
-    [reloadHierarchy, selectHierarchyNode],
+    [options?.reloadHierarchy, selectHierarchyNode],
   );
 
   const updateHierarchyNode = useCallback(
     async (id: string, payload: unknown) => {
       const { updateHierarchyNode: apiUpdate } = await import('../api/hierarchy');
       await apiUpdate(id, payload as HierarchyNodeUpdate);
-      void reloadHierarchy();
+      void (options?.reloadHierarchy?.());
     },
-    [reloadHierarchy],
+      [options?.reloadHierarchy],
   );
 
   const moveHierarchyNode = useCallback(
@@ -75,49 +71,25 @@ export function useAppBootstrap() {
         await reorderHierarchy([{ id, new_parent_id: newParentId, new_position: position }]);
       }
 
-      void reloadHierarchy();
+      void (options?.reloadHierarchy?.());
     },
-    [reloadHierarchy],
+    [options?.reloadHierarchy],
   );
 
   const deleteHierarchyNode = useCallback(
     async (id: string) => {
       const { deleteHierarchyNode: apiDelete } = await import('../api/hierarchy');
       await apiDelete(id);
-      void reloadHierarchy();
+      void (options?.reloadHierarchy?.());
     },
-    [reloadHierarchy],
+    [options?.reloadHierarchy],
   );
-
-  useEffect(() => {
-    if (!isLoading) {
-      return;
-    }
-
-    beginLoading();
-  }, [beginLoading, isLoading]);
-
-  useEffect(() => {
-    if (!schema || !hierarchyTree) {
-      return;
-    }
-
-    setLoadedData(schema, hierarchyTree as HierarchyTree);
-  }, [hierarchyTree, schema, setLoadedData]);
-
-  useEffect(() => {
-    if (!error) {
-      return;
-    }
-
-    setError(error);
-  }, [error, setError]);
-
   const reloadApplication = useCallback((): void => {
-    void reload();
-  }, [reload]);
+    void (options?.reload?.());
+  }, [options?.reload]);
 
   return {
+    bootstrap: options?.bootstrap ?? null,
     state,
     reloadApplication,
     selectHierarchyNode,

@@ -345,7 +345,7 @@ async def read_revision(
         ):
             return 0
 
-    raw_revision: object = getattr(
+    raw_revision = getattr(
         source,
         "revision",
         0,
