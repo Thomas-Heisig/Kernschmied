@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 # removed unused imports: Path, Literal
-
 from fastapi import APIRouter, HTTPException, status
-
-from app.services import documentation_service as doc_svc
 
 from app.contracts.documentation import (
     DocumentationNavigationResponse as DocNavContract,
-    DocumentationPageResponse as DocPageContract,
 )
+from app.contracts.documentation import DocumentationPageResponse as DocPageContract
+from app.services import documentation_service as doc_svc
 
 router = APIRouter()
 
@@ -33,7 +31,11 @@ async def list_documentation():
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail={
-                "code": "DOCUMENTATION_MANIFEST_EMPTY" if str(e).startswith("DOCUMENTATION_MANIFEST_EMPTY") else "DOCUMENTATION_MANIFEST_INVALID",
+                "code": (
+                    "DOCUMENTATION_MANIFEST_EMPTY"
+                    if str(e).startswith("DOCUMENTATION_MANIFEST_EMPTY")
+                    else "DOCUMENTATION_MANIFEST_INVALID"
+                ),
                 "message": str(e),
                 "details": {},
             },
@@ -52,7 +54,11 @@ async def get_navigation():
     return await list_documentation()
 
 
-@router.get("/pages/{page_id}", response_model=DocPageContract, summary="Dokumentationsseite laden")
+@router.get(
+    "/pages/{page_id}",
+    response_model=DocPageContract,
+    summary="Dokumentationsseite laden",
+)
 async def get_documentation_page(page_id: str):
     try:
         page = doc_svc.load_page(page_id)

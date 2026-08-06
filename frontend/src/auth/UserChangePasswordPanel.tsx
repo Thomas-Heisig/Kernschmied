@@ -25,7 +25,7 @@ export default function UserChangePasswordPanel({ onClose }: { onClose?: () => v
     setError(null);
     try {
       if (newPassword !== repeatPassword) throw new Error('Die Passwörter stimmen nicht überein.');
-      await changePassword(undefined, { currentPassword, newPassword });
+      await changePassword(undefined, { currentPassword, newPassword, revokeOtherSessions: false });
       setSuccess('Passwort geändert');
       // Optionally refresh user context
       await refreshCurrentUser();
@@ -51,22 +51,22 @@ export default function UserChangePasswordPanel({ onClose }: { onClose?: () => v
       <div className="mt-4 space-y-3">
         <div>
           <label className="block text-sm">Aktuelles Passwort</label>
-          <input type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full rounded border px-2 py-1" />
+          <input aria-label="aktuelles Passwort" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} className="w-full rounded border px-2 py-1" />
         </div>
         <div>
           <label className="block text-sm">Neues Passwort</label>
-          <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded border px-2 py-1" />
+          <input aria-label="neues Passwort" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} className="w-full rounded border px-2 py-1" />
           <div className="text-xs text-gray-600 mt-1">Stärke: {['sehr schwach', 'schwach', 'mittel', 'stark', 'sehr stark'][strength]}</div>
         </div>
         <div>
           <label className="block text-sm">Neues Passwort wiederholen</label>
-          <input type="password" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full rounded border px-2 py-1" />
+          <input aria-label="neues Passwort wiederholen" type="password" value={repeatPassword} onChange={(e) => setRepeatPassword(e.target.value)} className="w-full rounded border px-2 py-1" />
         </div>
       </div>
 
       <div className="mt-6">
-        <button disabled={saving} onClick={() => void handleSave()} className="px-3 py-1 bg-sky-600 text-white rounded">{saving ? 'Speichert…' : 'Passwort ändern'}</button>
-        <button disabled={saving} onClick={() => onClose && onClose()} className="ml-2 px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded">Abbrechen</button>
+        <button type="button" disabled={saving} onClick={() => void handleSave()} className="px-3 py-1 bg-sky-600 text-white rounded">{saving ? 'Speichert…' : 'Passwort ändern'}</button>
+        <button type="button" disabled={saving} onClick={() => onClose && onClose()} className="ml-2 px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded">Abbrechen</button>
       </div>
     </div>
   );

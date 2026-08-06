@@ -3,25 +3,25 @@ from __future__ import annotations
 import inspect
 import logging
 import os
-from collections.abc import Awaitable, Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from functools import lru_cache
-from typing import Callable, cast
+from typing import cast
 
 from fastapi import Request, status
 
 from app.config.service import ConfigService, ConfigValidationError
-
-from app.services.settings_catalog import build_settings_catalog
 from app.schemas.settings_catalog import (
+    SettingsAvailability,
     SettingsControl,
     SettingsFieldDescriptor,
     SettingsSource,
-    SettingsAvailability,
 )
+from app.services.settings_catalog import build_settings_catalog
+from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
+
 # Note: responses from `app.schemas.configuration` are intentionally not
 # imported here to avoid unused-import diagnostics in these helper functions.
 from .configs_schema import ConfigUpdateRequest
-from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 
 logger = logging.getLogger(__name__)
 
@@ -121,7 +121,8 @@ def build_config_set_kwargs(
     parameters = signature.parameters
 
     accepts_var_keyword = any(
-        parameter.kind is inspect.Parameter.VAR_KEYWORD for parameter in parameters.values()
+        parameter.kind is inspect.Parameter.VAR_KEYWORD
+        for parameter in parameters.values()
     )
 
     candidate_values: dict[str, object] = {
@@ -131,7 +132,11 @@ def build_config_set_kwargs(
         "reason": payload.reason,
     }
 
-    return {name: value for (name, value) in candidate_values.items() if (accepts_var_keyword or name in parameters)}
+    return {
+        name: value
+        for (name, value) in candidate_values.items()
+        if (accepts_var_keyword or name in parameters)
+    }
 
 
 async def call_config_set(
@@ -167,7 +172,9 @@ async def call_config_set(
     except Exception:
         request_id = None
 
-    setter_kwargs = build_config_set_kwargs(setter=setter, payload=payload, actor_id=actor_id, request_id=request_id)
+    setter_kwargs = build_config_set_kwargs(
+        setter=setter, payload=payload, actor_id=actor_id, request_id=request_id
+    )
 
     try:
         raw_result: object = setter(group, key, value, **setter_kwargs)
@@ -177,7 +184,12 @@ async def call_config_set(
     except TypeError as exc:
         logger.error(
             "ConfigService.set does not support the required contract",
-            extra={"group": group, "key": key, "request_id": request_id, "supported_kwargs": sorted(setter_kwargs)},
+            extra={
+                "group": group,
+                "key": key,
+                "request_id": request_id,
+                "supported_kwargs": sorted(setter_kwargs),
+            },
         )
 
         from .configs import structured_http_error
@@ -228,12 +240,16 @@ async def call_config_set(
             request=request,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code="INTERNAL_SERVER_ERROR",
-            message=("Bei der Verarbeitung der Anfrage ist ein interner Fehler aufgetreten."),
+            message=(
+                "Bei der Verarbeitung der Anfrage ist ein interner Fehler aufgetreten."
+            ),
             details={"group": group, "key": key},
         ) from exc
 
 
-def add_normalized_entry(*, target: dict[tuple[str, str], object], group: str, key: str, value: object) -> None:
+def add_normalized_entry(
+    *, target: dict[tuple[str, str], object], group: str, key: str, value: object
+) -> None:
     from .configs import normalize_config_value
 
     normalized_group = group.strip().lower()
@@ -243,15 +259,26 @@ def add_normalized_entry(*, target: dict[tuple[str, str], object], group: str, k
         return
 
     try:
-        normalized_value = normalize_config_value(value, path=(f"{normalized_group}.{normalized_key}"))
+        normalized_value = normalize_config_value(
+            value, path=(f"{normalized_group}.{normalized_key}")
+        )
     except TypeError:
-        logger.exception("Ignoring unsupported config value", extra={"group": normalized_group, "key": normalized_key, "value_type": type(value).__name__})
+        logger.exception(
+            "Ignoring unsupported config value",
+            extra={
+                "group": normalized_group,
+                "key": normalized_key,
+                "value_type": type(value).__name__,
+            },
+        )
         return
 
     target[(normalized_group, normalized_key)] = normalized_value
 
 
-async def read_config_entries(service: ConfigService, request: Request) -> dict[tuple[str, str], object]:
+async def read_config_entries(
+    service: ConfigService, request: Request
+) -> dict[tuple[str, str], object]:
     get_all_value: object = getattr(service, "get_all", None)
 
     if callable(get_all_value):
@@ -266,8 +293,13 @@ async def read_config_entries(service: ConfigService, request: Request) -> dict[
                 request=request,
                 status_code=(status.HTTP_503_SERVICE_UNAVAILABLE),
                 code="CONFIG_SERVICE_CONTRACT_UNSUPPORTED",
-                message=("Der Konfigurationsdienst unterstützt keine öffentliche Methode zum Auflisten der Konfiguration."),
-                details={"required_method": "get_all", "alternative_method": "list_values"},
+                message=(
+                    "Der Konfigurationsdienst unterstützt keine öffentliche Methode zum Auflisten der Konfiguration."
+                ),
+                details={
+                    "required_method": "get_all",
+                    "alternative_method": "list_values",
+                },
             )
 
         raw_entries = list_values_value()
@@ -282,14 +314,17 @@ async def read_config_entries(service: ConfigService, request: Request) -> dict[
             status_code=(status.HTTP_500_INTERNAL_SERVER_ERROR),
             code="INVALID_CONFIG_SERVICE_RESPONSE",
             message=("Der Konfigurationsdienst hat ein ungültiges Ergebnis geliefert."),
-            details={"expected_type": "mapping", "actual_type": type(resolved_entries).__name__},
+            details={
+                "expected_type": "mapping",
+                "actual_type": type(resolved_entries).__name__,
+            },
         )
 
     typed_entries = cast(Mapping[object, object], resolved_entries)
 
     normalized_entries: dict[tuple[str, str], object] = {}
 
-    for (raw_identifier, raw_value) in typed_entries.items():
+    for raw_identifier, raw_value in typed_entries.items():
         if isinstance(raw_identifier, str) and isinstance(raw_value, Mapping):
             normalized_group = raw_identifier.strip().lower()
             if not normalized_group:
@@ -297,12 +332,20 @@ async def read_config_entries(service: ConfigService, request: Request) -> dict[
                 continue
 
             group_values = cast(Mapping[object, object], raw_value)
-            for (raw_key, nested_value) in group_values.items():
+            for raw_key, nested_value in group_values.items():
                 if not isinstance(raw_key, str):
-                    logger.warning("Ignoring invalid config key", extra={"group": normalized_group, "key": repr(raw_key)})
+                    logger.warning(
+                        "Ignoring invalid config key",
+                        extra={"group": normalized_group, "key": repr(raw_key)},
+                    )
                     continue
 
-                add_normalized_entry(target=normalized_entries, group=normalized_group, key=raw_key, value=nested_value)
+                add_normalized_entry(
+                    target=normalized_entries,
+                    group=normalized_group,
+                    key=raw_key,
+                    value=nested_value,
+                )
 
             continue
 
@@ -311,11 +354,16 @@ async def read_config_entries(service: ConfigService, request: Request) -> dict[
 
         identifier = normalize_config_identifier(raw_identifier)
         if identifier is None:
-            logger.warning("Ignoring invalid config identifier", extra={"identifier": repr(raw_identifier)})
+            logger.warning(
+                "Ignoring invalid config identifier",
+                extra={"identifier": repr(raw_identifier)},
+            )
             continue
 
-        (group, key) = identifier
-        add_normalized_entry(target=normalized_entries, group=group, key=key, value=raw_value)
+        group, key = identifier
+        add_normalized_entry(
+            target=normalized_entries, group=group, key=key, value=raw_value
+        )
 
     return normalized_entries
 
@@ -346,7 +394,9 @@ def get_settings_field_map() -> dict[tuple[str, str], SettingsFieldDescriptor]:
     return result
 
 
-def get_config_field_descriptor(*, group: str, key: str, request: Request) -> SettingsFieldDescriptor:
+def get_config_field_descriptor(
+    *, group: str, key: str, request: Request
+) -> SettingsFieldDescriptor:
     descriptor = get_settings_field_map().get((group, key))
 
     if descriptor is None:
@@ -369,7 +419,9 @@ def get_config_field_descriptor(*, group: str, key: str, request: Request) -> Se
             request=request,
             status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
             code="CONFIG_FIELD_NOT_REGISTERED",
-            message=("Dieser Konfigurationswert ist nicht im Settings-Katalog registriert."),
+            message=(
+                "Dieser Konfigurationswert ist nicht im Settings-Katalog registriert."
+            ),
             details={"group": group, "key": key},
         )
 

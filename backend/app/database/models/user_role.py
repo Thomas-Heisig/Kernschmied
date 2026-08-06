@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import uuid4
 
-from sqlalchemy import DateTime, JSON, String, Text
+from sqlalchemy import String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -24,7 +24,9 @@ class RoleModel(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    schema_version: Mapped[str] = mapped_column(String(16), nullable=False, default="1.0")
+    schema_version: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="1.0"
+    )
 
 
 class PermissionModel(Base):
@@ -33,7 +35,9 @@ class PermissionModel(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
     permission: Mapped[str] = mapped_column(String(200), nullable=False)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    schema_version: Mapped[str] = mapped_column(String(16), nullable=False, default="1.0")
+    schema_version: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="1.0"
+    )
 
 
 class UserRoleModel(Base):
@@ -45,4 +49,6 @@ class UserRoleModel(Base):
 class RolePermissionModel(Base):
     __tablename__ = "role_permissions"
     role_id: Mapped[str] = mapped_column(String(36), nullable=False, primary_key=True)
-    permission_id: Mapped[str] = mapped_column(String(36), nullable=False, primary_key=True)
+    permission_id: Mapped[str] = mapped_column(
+        String(36), nullable=False, primary_key=True
+    )

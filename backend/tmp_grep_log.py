@@ -1,4 +1,5 @@
 import sys
+
 p = r'F:/Kernschmied/artifacts/logs/backend-20260803_174043.log'
 with open(p, 'rb') as f:
     data = f.read()

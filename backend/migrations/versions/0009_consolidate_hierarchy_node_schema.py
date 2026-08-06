@@ -4,9 +4,9 @@ Revision ID: 0009_consolidate_hierarchy_node_schema
 Revises: 0008_remove_sequence_server_default
 Create Date: 2026-08-02 13:30:00.000000
 """
-from alembic import op
-import sqlalchemy as sa
 
+import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0009_consolidate_hierarchy_node_schema"
@@ -21,9 +21,7 @@ def _sqlite_rebuild_table(conn: sa.engine.Connection) -> None:
     existing_cols = {c["name"] for c in inspector.get_columns("hierarchy_nodes")}
 
     # Create new table with canonical schema
-    conn.execute(
-        sa.text(
-            """
+    conn.execute(sa.text("""
             CREATE TABLE IF NOT EXISTS hierarchy_nodes_new (
                 id VARCHAR(36) PRIMARY KEY,
                 parent_id VARCHAR(36) NULL,
@@ -39,9 +37,7 @@ def _sqlite_rebuild_table(conn: sa.engine.Connection) -> None:
                 updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
                 FOREIGN KEY(parent_id) REFERENCES hierarchy_nodes(id)
             );
-            """
-        )
-    )
+            """))
 
     # Determine which legacy columns exist
     has_node_type = "node_type" in existing_cols
@@ -98,11 +94,15 @@ def _sqlite_rebuild_table(conn: sa.engine.Connection) -> None:
         select_parts.append("json('{}') AS tool_policy")
     # config_overrides
     if has_config and has_config_overrides:
-        select_parts.append("COALESCE(config, config_overrides, json('{}')) AS config_overrides")
+        select_parts.append(
+            "COALESCE(config, config_overrides, json('{}')) AS config_overrides"
+        )
     elif has_config:
         select_parts.append("COALESCE(config, json('{}')) AS config_overrides")
     elif has_config_overrides:
-        select_parts.append("COALESCE(config_overrides, json('{}')) AS config_overrides")
+        select_parts.append(
+            "COALESCE(config_overrides, json('{}')) AS config_overrides"
+        )
     else:
         select_parts.append("json('{}') AS config_overrides")
     # metadata
@@ -116,15 +116,28 @@ def _sqlite_rebuild_table(conn: sa.engine.Connection) -> None:
     else:
         select_parts.append("1 AS is_active")
     # created_at
-    select_parts.append("created_at" if has_created_at else "CURRENT_TIMESTAMP AS created_at")
+    select_parts.append(
+        "created_at" if has_created_at else "CURRENT_TIMESTAMP AS created_at"
+    )
     # updated_at
-    select_parts.append("updated_at" if has_updated_at else "CURRENT_TIMESTAMP AS updated_at")
+    select_parts.append(
+        "updated_at" if has_updated_at else "CURRENT_TIMESTAMP AS updated_at"
+    )
 
     # Build the INSERT statement
     columns = [
-        "id", "parent_id", "type", "name", "position", "system_prompt",
-        "tool_policy", "config_overrides", "metadata", "is_active",
-        "created_at", "updated_at"
+        "id",
+        "parent_id",
+        "type",
+        "name",
+        "position",
+        "system_prompt",
+        "tool_policy",
+        "config_overrides",
+        "metadata",
+        "is_active",
+        "created_at",
+        "updated_at",
     ]
     column_list = ", ".join(columns)
     select_clause = ", ".join(select_parts)
@@ -175,7 +188,10 @@ def upgrade() -> None:
                 )
                 orphans = list(result)
                 if orphans:
-                    print("WARNING: orphaned chat.node_id entries after migration:", orphans)
+                    print(
+                        "WARNING: orphaned chat.node_id entries after migration:",
+                        orphans,
+                    )
             except Exception:
                 pass
 
@@ -184,7 +200,9 @@ def upgrade() -> None:
                 fk_result = conn.execute(sa.text("PRAGMA foreign_key_check;"))
                 fk_issues = list(fk_result)
                 if fk_issues:
-                    raise RuntimeError(f"Foreign key check failed after migration: {fk_issues}")
+                    raise RuntimeError(
+                        f"Foreign key check failed after migration: {fk_issues}"
+                    )
             except Exception:
                 # If FK check fails, abort to avoid inconsistent state
                 raise
@@ -199,21 +217,61 @@ def upgrade() -> None:
         with op.batch_alter_table("hierarchy_nodes") as batch_op:
             cols = {c["name"] for c in inspector.get_columns("hierarchy_nodes")}
             if "type" not in cols:
-                batch_op.add_column(sa.Column("type", sa.String(length=100), nullable=False, server_default="unknown"))
+                batch_op.add_column(
+                    sa.Column(
+                        "type",
+                        sa.String(length=100),
+                        nullable=False,
+                        server_default="unknown",
+                    )
+                )
             if "system_prompt" not in cols:
-                batch_op.add_column(sa.Column("system_prompt", sa.Text(), nullable=True))
+                batch_op.add_column(
+                    sa.Column("system_prompt", sa.Text(), nullable=True)
+                )
             if "tool_policy" not in cols:
-                batch_op.add_column(sa.Column("tool_policy", sa.JSON(), nullable=False, server_default=sa.text("'{}'")))
+                batch_op.add_column(
+                    sa.Column(
+                        "tool_policy",
+                        sa.JSON(),
+                        nullable=False,
+                        server_default=sa.text("'{}'"),
+                    )
+                )
             if "config_overrides" not in cols:
-                batch_op.add_column(sa.Column("config_overrides", sa.JSON(), nullable=False, server_default=sa.text("'{}'")))
+                batch_op.add_column(
+                    sa.Column(
+                        "config_overrides",
+                        sa.JSON(),
+                        nullable=False,
+                        server_default=sa.text("'{}'"),
+                    )
+                )
             if "metadata" not in cols:
-                batch_op.add_column(sa.Column("metadata", sa.JSON(), nullable=False, server_default=sa.text("'{}'")))
+                batch_op.add_column(
+                    sa.Column(
+                        "metadata",
+                        sa.JSON(),
+                        nullable=False,
+                        server_default=sa.text("'{}'"),
+                    )
+                )
 
         # Map legacy data
         try:
-            conn.execute(sa.text("UPDATE hierarchy_nodes SET type = COALESCE(node_type, type);"))
-            conn.execute(sa.text("UPDATE hierarchy_nodes SET system_prompt = COALESCE(prompt, system_prompt);"))
-            conn.execute(sa.text("UPDATE hierarchy_nodes SET config_overrides = COALESCE(config, config_overrides);"))
+            conn.execute(
+                sa.text("UPDATE hierarchy_nodes SET type = COALESCE(node_type, type);")
+            )
+            conn.execute(
+                sa.text(
+                    "UPDATE hierarchy_nodes SET system_prompt = COALESCE(prompt, system_prompt);"
+                )
+            )
+            conn.execute(
+                sa.text(
+                    "UPDATE hierarchy_nodes SET config_overrides = COALESCE(config, config_overrides);"
+                )
+            )
         except Exception:
             pass
 

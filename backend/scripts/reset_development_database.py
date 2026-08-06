@@ -9,6 +9,7 @@ This script is intentionally conservative:
 Usage:
   python scripts/reset_development_database.py [--apply]
 """
+
 from __future__ import annotations
 
 import argparse
@@ -19,10 +20,9 @@ from pathlib import Path
 
 from alembic import command
 from alembic.config import Config
-
+from app.core import dev_seed
 from app.core.settings import settings
 from app.storage.database import init_database
-from app.core import dev_seed
 
 
 def resolve_sqlite_path(database_url: str) -> Path | None:
@@ -34,8 +34,12 @@ def resolve_sqlite_path(database_url: str) -> Path | None:
 
 
 async def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Reset development database (dry-run default)")
-    parser.add_argument("--apply", action="store_true", help="Actually perform destructive changes")
+    parser = argparse.ArgumentParser(
+        description="Reset development database (dry-run default)"
+    )
+    parser.add_argument(
+        "--apply", action="store_true", help="Actually perform destructive changes"
+    )
     args = parser.parse_args(argv)
 
     if not settings.is_development:
@@ -55,7 +59,9 @@ async def main(argv: list[str] | None = None) -> int:
     print("MODE=" + ("APPLY" if args.apply else "DRY_RUN"))
     print(f"PROFILE={settings.app_environment}")
     print(f"DATABASE_PATH={db_path}")
-    backup_path = db_path.with_name(f"{db_path.stem}.backup.before-reset.{datetime.now().strftime('%Y%m%d-%H%M%S')}{db_path.suffix}")
+    backup_path = db_path.with_name(
+        f"{db_path.stem}.backup.before-reset.{datetime.now().strftime('%Y%m%d-%H%M%S')}{db_path.suffix}"
+    )
     print(f"BACKUP_PATH={backup_path}")
     print(f"WILL_RECREATE_DATABASE={will_recreate}")
     print(f"WILL_CREATE_SYSTEM_ROOT={will_create_system_root}")

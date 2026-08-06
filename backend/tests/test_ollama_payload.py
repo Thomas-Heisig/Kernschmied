@@ -1,7 +1,7 @@
 from typing import Any, cast
 
-from app.models.providers.ollama import OllamaProvider
 from app.contracts.model_backend import ChatMessage, GenerationRequest, MessageRole
+from app.models.providers.ollama import OllamaProvider
 
 
 def test_ollama_payload_contains_full_conversation_history() -> None:

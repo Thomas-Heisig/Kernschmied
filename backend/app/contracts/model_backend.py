@@ -25,11 +25,11 @@ Architekturregeln:
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import AsyncIterator, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import TypeAlias, Any, AsyncIterator
+from typing import Any, TypeAlias
 
 from pydantic import JsonValue
 

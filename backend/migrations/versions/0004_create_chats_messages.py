@@ -4,12 +4,14 @@ Revision ID: 0004_create_chats_messages
 Revises: 0003_add_default_calendar
 Create Date: 2026-08-02 00:00:00.000000
 """
-from alembic import op
+
 import sqlalchemy as sa
+from alembic import op
+from typing import cast
 
 # revision identifiers, used by Alembic.
-revision = '0004_create_chats_messages'
-down_revision = '0003_add_default_calendar'
+revision = "0004_create_chats_messages"
+down_revision = "0003_add_default_calendar"
 branch_labels = None
 depends_on = None
 
@@ -20,21 +22,26 @@ def upgrade() -> None:
     inspector = sa.inspect(conn)
     existing_tables = inspector.get_table_names()
 
-    if 'chats' not in existing_tables:
+    if "chats" not in existing_tables:
         op.create_table(
-            'chats',
-            sa.Column('id', sa.String(length=36), primary_key=True),
+            "chats",
+            sa.Column("id", sa.String(length=36), primary_key=True),
             # Do not enforce a UNIQUE constraint on node_id here. Multiple chats
             # per hierarchy node are allowed and the UNIQUE constraint caused
             # conflicts when a single node was reused.
-            sa.Column('node_id', sa.String(length=36), sa.ForeignKey('hierarchy_nodes.id', ondelete='CASCADE'), nullable=False),
-            sa.Column('title', sa.String(length=255), nullable=False),
-            sa.Column('config', sa.JSON(), nullable=False),
-            sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
-            sa.Column('updated_at', sa.TIMESTAMP(timezone=True), nullable=False),
+            sa.Column(
+                "node_id",
+                sa.String(length=36),
+                sa.ForeignKey("hierarchy_nodes.id", ondelete="CASCADE"),
+                nullable=False,
+            ),
+            sa.Column("title", sa.String(length=255), nullable=False),
+            sa.Column("config", sa.JSON(), nullable=False),
+            sa.Column("created_at", sa.TIMESTAMP(timezone=True), nullable=False),
+            sa.Column("updated_at", sa.TIMESTAMP(timezone=True), nullable=False),
         )
         try:
-            op.create_index('ix_chats_node_id', 'chats', ['node_id'])
+            op.create_index("ix_chats_node_id", "chats", ["node_id"])
         except Exception:
             pass
     else:
@@ -43,62 +50,89 @@ def upgrade() -> None:
         # backend, so inspect unique constraints and drop any that include
         # the `node_id` column.
         try:
-            for uq in inspector.get_unique_constraints('chats'):
-                cols = uq.get('column_names') or uq.get('columns') or []
-                name = uq.get('name')
-                if 'node_id' in cols and name:
+            for uq in inspector.get_unique_constraints("chats"):
+                cols = cast(list[str], uq.get("column_names") or uq.get("columns") or [])
+                name = uq.get("name")
+                if "node_id" in cols and name:
                     try:
-                        op.drop_constraint(name, 'chats', type_='unique')
+                        op.drop_constraint(name, "chats", type_="unique")
                     except Exception:
                         pass
         except Exception:
             pass
         # Ensure the node_id index exists
         try:
-            index_names = [idx['name'] for idx in inspector.get_indexes('chats')]
-            if 'ix_chats_node_id' not in index_names:
-                op.create_index('ix_chats_node_id', 'chats', ['node_id'])
+            index_names = [idx["name"] for idx in inspector.get_indexes("chats")]
+            if "ix_chats_node_id" not in index_names:
+                op.create_index("ix_chats_node_id", "chats", ["node_id"])
         except Exception:
             pass
 
-    if 'messages' not in existing_tables:
+    if "messages" not in existing_tables:
         op.create_table(
-            'messages',
-            sa.Column('id', sa.String(length=36), primary_key=True),
+            "messages",
+            sa.Column("id", sa.String(length=36), primary_key=True),
             # conversation_id refers to chats.id (conversation)
-            sa.Column('conversation_id', sa.String(length=36), sa.ForeignKey('chats.id', ondelete='CASCADE'), nullable=False),
-            sa.Column('user_id', sa.String(length=36), nullable=True, index=False),
-            sa.Column('role', sa.String(length=50), nullable=False),
-            sa.Column('message_type', sa.String(length=50), nullable=False, server_default='text'),
-            sa.Column('content', sa.Text(), nullable=False),
-            sa.Column('ui_context', sa.JSON(), nullable=False),
-            sa.Column('sequence_number', sa.Integer(), nullable=False, server_default='0'),
-            sa.Column('status', sa.String(length=20), nullable=False, server_default='pending'),
-            sa.Column('request_id', sa.String(length=128), nullable=True),
-            sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
-            sa.Column('completed_at', sa.TIMESTAMP(timezone=True), nullable=True),
-            sa.Column('schema_version', sa.String(length=32), nullable=False, server_default='1.0'),
+            sa.Column(
+                "conversation_id",
+                sa.String(length=36),
+                sa.ForeignKey("chats.id", ondelete="CASCADE"),
+                nullable=False,
+            ),
+            sa.Column("user_id", sa.String(length=36), nullable=True, index=False),
+            sa.Column("role", sa.String(length=50), nullable=False),
+            sa.Column(
+                "message_type",
+                sa.String(length=50),
+                nullable=False,
+                server_default="text",
+            ),
+            sa.Column("content", sa.Text(), nullable=False),
+            sa.Column("ui_context", sa.JSON(), nullable=False),
+            sa.Column(
+                "sequence_number", sa.Integer(), nullable=False, server_default="0"
+            ),
+            sa.Column(
+                "status", sa.String(length=20), nullable=False, server_default="pending"
+            ),
+            sa.Column("request_id", sa.String(length=128), nullable=True),
+            sa.Column("created_at", sa.TIMESTAMP(timezone=True), nullable=False),
+            sa.Column("completed_at", sa.TIMESTAMP(timezone=True), nullable=True),
+            sa.Column(
+                "schema_version",
+                sa.String(length=32),
+                nullable=False,
+                server_default="1.0",
+            ),
         )
         try:
             # unique constraint on (conversation_id, sequence_number)
-            op.create_unique_constraint('uq_messages_conversation_sequence', 'messages', ['conversation_id', 'sequence_number'])
+            op.create_unique_constraint(
+                "uq_messages_conversation_sequence",
+                "messages",
+                ["conversation_id", "sequence_number"],
+            )
         except Exception:
             pass
         try:
-            op.create_index('ix_messages_conversation_sequence', 'messages', ['conversation_id', 'sequence_number'])
+            op.create_index(
+                "ix_messages_conversation_sequence",
+                "messages",
+                ["conversation_id", "sequence_number"],
+            )
         except Exception:
             pass
 
 
 def downgrade() -> None:
     try:
-        op.drop_index('ix_messages_chat_position', table_name='messages')
+        op.drop_index("ix_messages_chat_position", table_name="messages")
     except Exception:
         pass
-    op.drop_table('messages')
+    op.drop_table("messages")
 
     try:
-        op.drop_index('ix_chats_node_id', table_name='chats')
+        op.drop_index("ix_chats_node_id", table_name="chats")
     except Exception:
         pass
-    op.drop_table('chats')
+    op.drop_table("chats")

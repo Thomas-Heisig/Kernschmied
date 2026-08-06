@@ -25,7 +25,7 @@ from collections.abc import Awaitable, Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Final, Protocol, TypeAlias, runtime_checkable, cast
+from typing import Final, Protocol, TypeAlias, cast, runtime_checkable
 
 from pydantic import JsonValue, TypeAdapter  # <-- JsonValue von pydantic importiert
 
@@ -801,9 +801,7 @@ class ToolRegistry:
         normalized_risk = (
             risk_level.value
             if isinstance(risk_level, ToolRiskLevel)
-            else str(risk_level).strip().lower()
-            if risk_level is not None
-            else None
+            else str(risk_level).strip().lower() if risk_level is not None else None
         )
         required_tags = frozenset(
             str(t).strip().lower() for t in (tags or ()) if str(t).strip()
@@ -1230,7 +1228,9 @@ class SupportsModelDump(Protocol):
 def _definition_value(definition: object, key: str) -> object | None:
     if isinstance(definition, Mapping):
         try:
-            normalized = _normalize_json_object(dict(cast(Mapping[str, object], definition)))
+            normalized = _normalize_json_object(
+                dict(cast(Mapping[str, object], definition))
+            )
             return normalized.get(key)
         except ValueError:
             return None
@@ -1263,7 +1263,9 @@ def _serialize_value(value: object) -> JsonValue:
 
     if isinstance(value, SupportsModelDump):
         dumped = value.model_dump(mode="json", exclude_none=True)
-        return _normalize_json_value_adapter(dict(cast(Mapping[str, JsonValue], dumped)))
+        return _normalize_json_value_adapter(
+            dict(cast(Mapping[str, JsonValue], dumped))
+        )
 
     return str(value)
 

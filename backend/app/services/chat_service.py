@@ -31,7 +31,6 @@ Abwärtskompatibilität erhalten.
 
 from __future__ import annotations
 
-
 import asyncio
 import inspect
 import json
@@ -44,25 +43,26 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import (
+    Any,
     Final,
     Protocol,
     TypeAlias,
+    cast,
     runtime_checkable,
 )
-from typing import Any, Awaitable, Optional, cast, Tuple
-
-from app.prompts.resolver import PromptResolver
 from uuid import uuid4
-from app.hierarchy.models import HierarchyActor
 
 from pydantic import (
     JsonValue,
     TypeAdapter,
 )
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
+from app.hierarchy.models import HierarchyActor
+from app.prompts.resolver import PromptResolver
 
 logger = logging.getLogger(__name__)
 
@@ -380,6 +380,7 @@ class ChatHierarchyNodeRequiredError(
     Fehler, wenn eine Operation einen Hierarchieknoten erfordert, dieser
     jedoch nicht angegeben wurde.
     """
+
     code = "CHAT_HIERARCHY_NODE_REQUIRED"
     status_code = 422
 
@@ -814,10 +815,13 @@ class ChatRepository(Protocol):
         user_id: str | None,
         tenant_id: str | None,
         model_id: str,
-        metadata: Mapping[
-            str,
-            JsonValue,
-        ] | None,
+        metadata: (
+            Mapping[
+                str,
+                JsonValue,
+            ]
+            | None
+        ),
         hierarchy_node_id: str | None = None,
     ) -> Awaitable[None] | None: ...
 
@@ -899,10 +903,13 @@ class NullChatRepository:
         user_id: str | None,
         tenant_id: str | None,
         model_id: str,
-        metadata: Mapping[
-            str,
-            JsonValue,
-        ] | None,
+        metadata: (
+            Mapping[
+                str,
+                JsonValue,
+            ]
+            | None
+        ),
         hierarchy_node_id: str | None = None,
     ) -> None:
         del conversation_id
@@ -1062,7 +1069,8 @@ class ChatService:
         from typing import cast
 
         self._repository: ChatRepository = cast(
-            ChatRepository, repository if repository is not None else NullChatRepository()
+            ChatRepository,
+            repository if repository is not None else NullChatRepository(),
         )
 
         self._history_provider: ChatHistoryProvider = (
@@ -1325,8 +1333,14 @@ class ChatService:
         import contextlib
 
         try:
-            message_roles = [getattr(m.role, "value", str(m.role)) for m in generation_request.messages]
-            message_lengths = [len(getattr(m, "content", "") or "") for m in generation_request.messages]
+            message_roles = [
+                getattr(m.role, "value", str(m.role))
+                for m in generation_request.messages
+            ]
+            message_lengths = [
+                len(getattr(m, "content", "") or "")
+                for m in generation_request.messages
+            ]
 
             _log_info(
                 "Chat generation request prepared",
@@ -1744,11 +1758,11 @@ class ChatService:
                     settings_result = maybe
 
                 if isinstance(settings_result, tuple):
-                    sr = cast(Tuple[Any, ...], settings_result)
-                    system_prompt = cast(Optional[str], sr[0]) if len(sr) >= 1 else None
-                    config_revision = cast(Optional[int], sr[1]) if len(sr) > 1 else None
+                    sr = cast(tuple[Any, ...], settings_result)
+                    system_prompt = cast(str | None, sr[0]) if len(sr) >= 1 else None
+                    config_revision = cast(int | None, sr[1]) if len(sr) > 1 else None
                 else:
-                    system_prompt = cast(Optional[str], settings_result)
+                    system_prompt = cast(str | None, settings_result)
             except Exception:
                 # Don't fail hard on config read; fallback to default
                 system_prompt = self._default_system_prompt
@@ -1761,9 +1775,9 @@ class ChatService:
             session_factory = self._hierarchy_session_factory
 
             async with session_factory() as session:
+                from app.hierarchy.permissions import HierarchyPermissionService
                 from app.hierarchy.repository import HierarchyRepository
-                from app.hierarchy.permissions import HierarchyPermissionService    
-                            
+
                 repo = HierarchyRepository(session)
                 permission_service = HierarchyPermissionService()
                 resolver = PromptResolver(permission_service=permission_service)
@@ -1814,7 +1828,12 @@ class ChatService:
                         chat_step=("resolve-hierarchy"),
                         request_id=(context.request_id),
                         hierarchy_node_id=hierarchy_node_id,
-                        fragment_count=(len(resolved.fragments) if resolved and getattr(resolved, "fragments", None) is not None else 0),
+                        fragment_count=(
+                            len(resolved.fragments)
+                            if resolved
+                            and getattr(resolved, "fragments", None) is not None
+                            else 0
+                        ),
                     )
 
                 except LookupError:
@@ -1843,7 +1862,9 @@ class ChatService:
             # if a settings prompt exists, resolve a ResolvedPrompt from it alone
             if system_prompt and self._hierarchy_session_factory is None:
                 resolver = PromptResolver()
-                resolved = resolver.resolve_from_chain(chain=(), settings_system_prompt=system_prompt)
+                resolved = resolver.resolve_from_chain(
+                    chain=(), settings_system_prompt=system_prompt
+                )
                 # attach config revision
                 if config_revision is not None:
                     import contextlib as _contextlib3
@@ -1856,7 +1877,9 @@ class ChatService:
             system_prompt = request.system_prompt or self._default_system_prompt
 
         if system_prompt:
-            messages.insert(0, ChatMessage(role=MessageRole.SYSTEM, content=system_prompt))
+            messages.insert(
+                0, ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)
+            )
 
         # Load persisted history when we have an effective conversation id.
         # Use the service-side `conversation_id` (which may be generated by
@@ -1879,7 +1902,9 @@ class ChatService:
             # Log non-sensitive info about the loaded history for debugging
             # (count and roles only). Do NOT log message contents.
             try:
-                roles = [getattr(m.role, "value", str(m.role)) for m in persisted_history]
+                roles = [
+                    getattr(m.role, "value", str(m.role)) for m in persisted_history
+                ]
             except Exception:
                 roles = [str(getattr(m, "role", "?")) for m in persisted_history]
 
@@ -1906,7 +1931,11 @@ class ChatService:
             if user_message_id is not None:
                 filtered: list[ChatMessage] = []
                 for pm in persisted_history:
-                    pm_mid = getattr(pm, "metadata", {}).get("message_id") if hasattr(pm, "metadata") else None
+                    pm_mid = (
+                        getattr(pm, "metadata", {}).get("message_id")
+                        if hasattr(pm, "metadata")
+                        else None
+                    )
                     if pm_mid == user_message_id:
                         # skip the already-persisted current message
                         continue
@@ -1922,7 +1951,10 @@ class ChatService:
                 except Exception:
                     role_val = str(getattr(pm, "role", "")).lower()
 
-                if role_val == str(MessageRole.SYSTEM.value).lower() or role_val == "system":
+                if (
+                    role_val == str(MessageRole.SYSTEM.value).lower()
+                    or role_val == "system"
+                ):
                     # skip persisted system messages
                     continue
                 cleaned.append(pm)
@@ -1940,7 +1972,11 @@ class ChatService:
             ChatMessage(
                 role=MessageRole.USER,
                 content=request.message,
-                metadata={"message_id": user_message_id} if user_message_id is not None else {},
+                metadata=(
+                    {"message_id": user_message_id}
+                    if user_message_id is not None
+                    else {}
+                ),
             ),
         )
 
@@ -2212,18 +2248,27 @@ class ChatService:
     @staticmethod
     def _assert_generation_message_invariants(messages: Sequence[ChatMessage]) -> None:
         # At most one system message
-        system_indexes = [i for i, m in enumerate(messages) if getattr(m.role, "value", str(m.role)).lower() == "system" or getattr(m, "role", None) == "system"]
+        system_indexes = [
+            i
+            for i, m in enumerate(messages)
+            if getattr(m.role, "value", str(m.role)).lower() == "system"
+            or getattr(m, "role", None) == "system"
+        ]
         if len(system_indexes) > 1:
-            raise ChatServiceError("Mehr als eine Systemnachricht in den Generation-Messages gefunden.")
+            raise ChatServiceError(
+                "Mehr als eine Systemnachricht in den Generation-Messages gefunden."
+            )
 
         if system_indexes:
             if system_indexes[0] != 0:
                 raise ChatServiceError("Systemnachricht muss an Index 0 stehen.")
 
             first_system = messages[0]
-            if not getattr(first_system, "content", "") or not str(getattr(first_system, "content", "")).strip():
+            if (
+                not getattr(first_system, "content", "")
+                or not str(getattr(first_system, "content", "")).strip()
+            ):
                 raise ChatServiceError("Leere Systemnachricht ist nicht zulässig.")
-
 
     @staticmethod
     def _stream_event_payload(
@@ -2366,6 +2411,8 @@ class ChatService:
         conversation_id: str,
         user_message_id: str,
     ) -> None:
+        from contextlib import suppress
+
         try:
             if request.conversation_id is None:
                 # Enforce service-level requirement: hierarchy_node_id must be present
@@ -2374,7 +2421,7 @@ class ChatService:
                         "Für einen sichtbaren Chat ist ein Hierarchieknoten erforderlich."
                     )
                 # Structured diagnostic log for persistence context (no message content)
-                try:
+                with suppress(Exception):
                     logger.info(
                         "Preparing conversation persistence",
                         extra={
@@ -2383,8 +2430,6 @@ class ChatService:
                             "request_id": context.request_id,
                         },
                     )
-                except Exception:
-                    pass
 
                 val: Awaitable[None] | None = self._repository.create_conversation(
                     conversation_id=(conversation_id),
@@ -2484,17 +2529,19 @@ class ChatService:
         error: ChatServiceError,
     ) -> None:
         try:
-            val4: Awaitable[None] | None = self._repository.mark_assistant_message_failed(
-                conversation_id=(conversation_id),
-                message_id=message_id,
-                error_code=error.code,
-                error_message=(error.message),
-                metadata={
-                    "request_id": (error.request_id),
-                    "details": dict(
-                        error.details,
-                    ),
-                },
+            val4: Awaitable[None] | None = (
+                self._repository.mark_assistant_message_failed(
+                    conversation_id=(conversation_id),
+                    message_id=message_id,
+                    error_code=error.code,
+                    error_message=(error.message),
+                    metadata={
+                        "request_id": (error.request_id),
+                        "details": dict(
+                            error.details,
+                        ),
+                    },
+                )
             )
 
             await self._await_if_needed(val4)

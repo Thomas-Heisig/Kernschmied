@@ -23,5 +23,3 @@ class PromptHierarchyDepthError(RuntimeError):
 
 class InactivePromptHierarchyNodeError(RuntimeError):
     code = "PROMPT_HIERARCHY_INACTIVE"
-
-

@@ -1,25 +1,26 @@
-"""Resolve an orphan hierarchy subtree by building and optionally applying a repair plan.
+"""Resolve an orphan hierarchy subtree by building and optionally
+applying a repair plan.
 
 Usage:
-  python scripts/resolve_orphan_subtree.py --node-id <id> --target-parent-id <id> --target-chat-node-id <id> [--apply]
+    python scripts/resolve_orphan_subtree.py \
+        --node-id <id> --target-parent-id <id> --target-chat-node-id <id> \
+        [--apply]
 """
+
 from __future__ import annotations
 
 import argparse
 import asyncio
 import shutil
-from datetime import datetime
+from datetime import UTC, datetime
 from pathlib import Path
 
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.core.settings import settings
-from app.storage.database import init_database
 from app.maintenance.orphan_hierarchy_repair import (
-    build_orphan_repair_plan,
     apply_orphan_repair,
-    OrphanRepairPlan,
+    build_orphan_repair_plan,
 )
+from app.storage.database import init_database
 
 
 def resolve_sqlite_path(database_url: str) -> Path | None:
@@ -31,7 +32,9 @@ def resolve_sqlite_path(database_url: str) -> Path | None:
 
 
 async def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Resolve orphan subtree (dry-run default)")
+    parser = argparse.ArgumentParser(
+        description="Resolve orphan subtree (dry-run default)"
+    )
     parser.add_argument("--node-id", required=True)
     parser.add_argument("--target-parent-id", required=True)
     parser.add_argument("--target-chat-node-id", required=True)
@@ -45,15 +48,19 @@ async def main(argv: list[str] | None = None) -> int:
 
     print(f"Resolved SQLite DB path: {db_path}")
 
+    backup_path: Path | None = None
+
     if args.apply:
-        timestamp = datetime.utcnow().strftime("%Y%m%d-%H%M%S")
-        backup_path = db_path.with_name(f"chat.before-orphan-subtree-repair-{timestamp}.db")
+        timestamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
+        backup_path = db_path.with_name(
+            f"chat.before-orphan-subtree-repair-{timestamp}.db"
+        )
         shutil.copy2(db_path, backup_path)
         print(f"Backup created: {backup_path}")
 
     session_factory = await init_database(create_schema=False)
 
-    async with session_factory() as session:  # type: AsyncSession
+    async with session_factory() as session:
         plan = await build_orphan_repair_plan(
             session,
             orphan_node_id=args.node_id,
@@ -64,8 +71,8 @@ async def main(argv: list[str] | None = None) -> int:
         # Structured dry-run output
         print("MODE=" + ("APPLY" if args.apply else "DRY_RUN"))
         print(f"ORPHAN_NODE_ID={plan.orphan_node_id}")
-        print(f"ORPHAN_TYPE=chat")
-        print(f"ORPHAN_NAME=...")
+        print("ORPHAN_TYPE=chat")
+        print("ORPHAN_NAME=...")
         print(f"DIRECT_CHILD_COUNT={len(plan.child_node_ids)}")
         print(f"DESCENDANT_COUNT={len(plan.child_node_ids)}")
         print(f"LINKED_CHAT_COUNT={len(plan.chat_ids)}")
@@ -84,11 +91,15 @@ async def main(argv: list[str] | None = None) -> int:
 
     # apply within a fresh transactional session_factory
     try:
-        async with session_factory() as write_session:
-            async with write_session.begin():
-                result = await apply_orphan_repair(write_session, plan=plan)
-
+        async with session_factory() as write_session, write_session.begin():
+            result = await apply_orphan_repair(write_session, plan=plan)
+    except Exception as exc:
+        print(f"Error during apply: {exc}")
+        return 4
+    else:
         print("MODE=APPLY")
+        # backup_path is only set when args.apply is True
+        assert backup_path is not None
         print(f"BACKUP_PATH={backup_path}")
         print(f"MOVED_CHILD_IDS={','.join(result.moved_child_ids)}")
         print(f"REASSIGNED_CHAT_IDS={','.join(result.reassigned_chat_ids)}")
@@ -97,9 +108,6 @@ async def main(argv: list[str] | None = None) -> int:
         print(f"MESSAGE_COUNT_AFTER={result.message_count_after}")
         print("TRANSACTION_STATUS=COMMITTED")
         return 0
-    except Exception as exc:
-        print(f"Error during apply: {exc}")
-        return 4
 
 
 if __name__ == "__main__":

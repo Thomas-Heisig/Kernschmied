@@ -15,7 +15,7 @@ export default function UserSettingsPanel() {
   const [language, setLanguage] = useState<string>('de');
   const [timezone, setTimezone] = useState<string>('Europe/Berlin');
   const [themeChoice, setThemeChoice] = useState<UserPreferences['theme']>('system');
-  const [density, setDensity] = useState<UserPreferences['density']>('comfortable');
+  const [compactMode, setCompactMode] = useState<boolean>(false);
   const [defaultView, setDefaultView] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
 
@@ -39,7 +39,7 @@ export default function UserSettingsPanel() {
         setLanguage(p.language ?? 'de');
         setTimezone(p.timezone ?? 'Europe/Berlin');
         setThemeChoice(p.theme ?? 'system');
-        setDensity(p.density ?? 'comfortable');
+        setCompactMode(Boolean(p.compactMode ?? false));
         setDefaultView(p.defaultView ?? null);
         setNotificationsEnabled(Boolean(p.notificationsEnabled ?? true));
         setIsDirty(false);
@@ -99,10 +99,10 @@ export default function UserSettingsPanel() {
     setError(null);
     try {
       const input: UpdateUserPreferencesInput = {
-        language,
+        language: language === 'en' ? 'en' : 'de',
         timezone,
         theme: themeChoice,
-        density,
+        compactMode,
         defaultView,
         notificationsEnabled,
       };
@@ -113,7 +113,7 @@ export default function UserSettingsPanel() {
       setLanguage(updated.language);
       setTimezone(updated.timezone);
       setThemeChoice(updated.theme);
-      setDensity(updated.density);
+      setCompactMode(Boolean(updated.compactMode));
       setDefaultView(updated.defaultView ?? null);
       setNotificationsEnabled(Boolean(updated.notificationsEnabled));
       setIsDirty(false);
@@ -141,7 +141,7 @@ export default function UserSettingsPanel() {
     setLanguage(prefsOriginal.language ?? 'de');
     setTimezone(prefsOriginal.timezone ?? 'Europe/Berlin');
     setThemeChoice(prefsOriginal.theme ?? 'system');
-    setDensity(prefsOriginal.density ?? 'comfortable');
+    setCompactMode(Boolean(prefsOriginal.compactMode ?? false));
     setDefaultView(prefsOriginal.defaultView ?? null);
     setNotificationsEnabled(Boolean(prefsOriginal.notificationsEnabled));
     setIsDirty(false);
@@ -187,7 +187,7 @@ export default function UserSettingsPanel() {
 
             <div>
               <label className="block text-sm mb-1">Dichte</label>
-              <select value={density} onChange={(e) => { setDensity(e.target.value as any); markDirty(); }} className="rounded border px-2 py-1 w-full max-w-xs">
+              <select value={compactMode ? 'compact' : 'comfortable'} onChange={(e) => { setCompactMode(e.target.value === 'compact'); markDirty(); }} className="rounded border px-2 py-1 w-full max-w-xs">
                 <option value="comfortable">Komfortabel</option>
                 <option value="compact">Kompakt</option>
               </select>
@@ -205,8 +205,8 @@ export default function UserSettingsPanel() {
           </div>
 
           <div className="mt-6">
-            <button disabled={!isDirty || isSaving} onClick={() => void handleSave()} className="px-3 py-1 bg-sky-600 text-white rounded">{isSaving ? 'Speichert…' : 'Speichern'}</button>
-            <button disabled={isSaving} onClick={handleReset} className="ml-2 px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded">Zurücksetzen</button>
+            <button type="button" disabled={!isDirty || isSaving} onClick={() => void handleSave()} className="px-3 py-1 bg-sky-600 text-white rounded">{isSaving ? 'Speichert…' : 'Speichern'}</button>
+            <button type="button" disabled={isSaving} onClick={handleReset} className="ml-2 px-3 py-1 bg-slate-200 dark:bg-slate-700 rounded">Zurücksetzen</button>
           </div>
 
           {successMessage && <div className="mt-3 text-green-600">{successMessage}</div>}

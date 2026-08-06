@@ -3,9 +3,9 @@ import os
 import sys
 from pathlib import Path
 from types import ModuleType
+from typing import Any, cast
 
 from fastapi.testclient import TestClient
-from typing import Any, Dict, List, cast
 
 
 def _load_create_application() -> ModuleType:
@@ -40,7 +40,7 @@ def test_hierarchy_endpoint_contract(tmp_path: Path) -> None:
         assert "schema_version" in data
         assert "root" in data
 
-        root = cast(Dict[str, Any], data["root"])
+        root = cast(dict[str, Any], data["root"])
         assert isinstance(root, dict)
         # required node fields
         assert "id" in root and isinstance(root["id"], str)
@@ -49,15 +49,15 @@ def test_hierarchy_endpoint_contract(tmp_path: Path) -> None:
         assert "children" in root and isinstance(root["children"], list)
 
         # every child must have children array and actions array
-        def check_children(node: Dict[str, Any]) -> None:
+        def check_children(node: dict[str, Any]) -> None:
             assert "children" in node and isinstance(node["children"], list)
             assert "actions" in node and isinstance(node["actions"], list)
             # ensure old internal key is not present
             assert "available_actions" not in node
-            children = cast(List[Any], node["children"])
+            children = cast(list[Any], node["children"])
             for c in children:
                 if isinstance(c, dict):
-                    c_dict = cast(Dict[str, Any], c)
+                    c_dict = cast(dict[str, Any], c)
                     check_children(c_dict)
 
         check_children(root)

@@ -229,4 +229,3 @@ class HierarchyNodeModel(Base):
     @config.setter
     def config(self, value: JsonObject) -> None:
         self.config_overrides = value
-    

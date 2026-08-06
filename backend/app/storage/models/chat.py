@@ -177,5 +177,9 @@ class Message(Base):
             "conversation_id",
             "sequence_number",
         ),
-        UniqueConstraint("conversation_id", "sequence_number", name="uq_messages_conversation_sequence"),
+        UniqueConstraint(
+            "conversation_id",
+            "sequence_number",
+            name="uq_messages_conversation_sequence",
+        ),
     )

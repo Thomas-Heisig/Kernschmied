@@ -2,13 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from app.storage.models.base import utc_now
-from typing import Any
 
-from sqlalchemy import select, func
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.hierarchy_node import HierarchyNodeModel
+from app.storage.models.base import utc_now
 from app.storage.models.chat import Chat as ChatModel
 from app.storage.models.chat import Message as MessageModel
 
@@ -68,7 +67,7 @@ async def build_orphan_repair_plan(
     if orphan.id == "system-root":
         blockers.append("orphan_is_system_root")
 
-    if not (isinstance(orphan.name, str) and orphan.name.startswith("Conversation conversation_")):
+    if not orphan.name.startswith("Conversation conversation_"):
         blockers.append("orphan_name_unexpected")
 
     # target parent
@@ -94,7 +93,9 @@ async def build_orphan_repair_plan(
         queue = list(rows)
         while queue:
             cur = queue.pop(0)
-            q2 = select(HierarchyNodeModel).where(HierarchyNodeModel.parent_id == cur.id)
+            q2 = select(HierarchyNodeModel).where(
+                HierarchyNodeModel.parent_id == cur.id
+            )
             more = (await session.execute(q2)).scalars().all()
             for m in more:
                 if m.id not in descendant_ids:
@@ -105,7 +106,9 @@ async def build_orphan_repair_plan(
             blockers.append("target_parent_is_descendant")
 
     # collect children and linked chats/messages
-    q_children = select(HierarchyNodeModel).where(HierarchyNodeModel.parent_id == orphan.id)
+    q_children = select(HierarchyNodeModel).where(
+        HierarchyNodeModel.parent_id == orphan.id
+    )
     children = (await session.execute(q_children)).scalars().all()
     child_ids = tuple(c.id for c in children)
 
@@ -115,7 +118,11 @@ async def build_orphan_repair_plan(
 
     message_count = 0
     for c in chats:
-        cnt_q = select(func.count()).select_from(MessageModel).where(MessageModel.conversation_id == c.id)
+        cnt_q = (
+            select(func.count())
+            .select_from(MessageModel)
+            .where(MessageModel.conversation_id == c.id)
+        )
         cnt = (await session.execute(cnt_q)).scalar_one()
         message_count += int(cnt or 0)
 
@@ -143,7 +150,9 @@ async def apply_orphan_repair(
     plan: OrphanRepairPlan,
 ) -> OrphanRepairResult:
     if not plan.can_apply:
-        raise RuntimeError("Plan cannot be applied; blockers present: %s" % (plan.blockers,))
+        raise RuntimeError(
+            "Plan cannot be applied; blockers present: %s" % (plan.blockers,)
+        )
 
     # Re-load and validate inside transaction
     orphan = await session.get(HierarchyNodeModel, plan.orphan_node_id)
@@ -159,7 +168,7 @@ async def apply_orphan_repair(
         raise LookupError("Target chat disappeared")
 
     # move children
-    moved = []
+    moved: list[str] = []
     for child_id in plan.child_node_ids:
         child = await session.get(HierarchyNodeModel, child_id)
         if child is None:
@@ -169,7 +178,7 @@ async def apply_orphan_repair(
         moved.append(child.id)
 
     # reassign chats
-    reassigned = []
+    reassigned: list[str] = []
     for chat_id in plan.chat_ids:
         chat = await session.get(ChatModel, chat_id)
         if chat is None:
@@ -185,13 +194,19 @@ async def apply_orphan_repair(
 
     after = 0
     for chat_id in plan.chat_ids:
-        mq = select(func.count()).select_from(MessageModel).where(MessageModel.conversation_id == chat_id)
+        mq = (
+            select(func.count())
+            .select_from(MessageModel)
+            .where(MessageModel.conversation_id == chat_id)
+        )
         cnt = (await session.execute(mq)).scalar_one()
         after += int(cnt or 0)
 
     deleted = None
     # delete orphan only if it has no children and no chats referencing it
-    q_children2 = select(HierarchyNodeModel).where(HierarchyNodeModel.parent_id == orphan.id)
+    q_children2 = select(HierarchyNodeModel).where(
+        HierarchyNodeModel.parent_id == orphan.id
+    )
     remaining_children = (await session.execute(q_children2)).scalars().all()
     q_chatrefs = select(ChatModel).where(ChatModel.node_id == orphan.id)
     remaining_chats = (await session.execute(q_chatrefs)).scalars().all()

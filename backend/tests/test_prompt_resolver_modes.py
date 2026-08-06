@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from typing import Optional, List
 from app.prompts.models import ResolvedPrompt
-
 from app.prompts.resolver import PromptResolver
+
 # PromptFragment not required in these tests
 
 
@@ -12,7 +11,7 @@ class FakeNode:
         self,
         id: str,
         type: str,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         prompt_enabled: bool = True,
         prompt_priority: int = 0,
         prompt_mode: str = "append",
@@ -25,7 +24,7 @@ class FakeNode:
         self.prompt_mode = prompt_mode
 
 
-def _ids(resolved: ResolvedPrompt) -> List[str]:
+def _ids(resolved: ResolvedPrompt) -> list[str]:
     return [f.source_id for f in resolved.fragments]
 
 

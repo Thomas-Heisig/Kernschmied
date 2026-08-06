@@ -1,9 +1,11 @@
 import asyncio
-from sqlalchemy import select, func
+
 from app.database.models.hierarchy_node import HierarchyNodeModel
 from app.storage.database import init_database
 from app.storage.models.chat import Chat as ChatModel
 from app.storage.models.chat import Message as MessageModel
+from sqlalchemy import func, select
+
 
 async def main():
     sf = await init_database(create_schema=False)

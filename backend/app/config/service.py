@@ -621,7 +621,9 @@ class ConfigService:
             result.setdefault(
                 definition.group,
                 {},
-            )[definition.key] = deepcopy(value)
+            )[
+                definition.key
+            ] = deepcopy(value)
 
         return result
 
@@ -1475,7 +1477,9 @@ class ConfigService:
         if manifest is not None:
             selectable = getattr(manifest, "selectable", True)
             # prefer explicit 'available' attribute, fall back to 'is_enabled'
-            available = getattr(manifest, "available", getattr(manifest, "is_enabled", True))
+            available = getattr(
+                manifest, "available", getattr(manifest, "is_enabled", True)
+            )
 
         if not enabled or not available or not selectable:
             raise ConfigValidationError(

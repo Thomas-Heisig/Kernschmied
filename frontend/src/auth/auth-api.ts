@@ -1,15 +1,13 @@
 import { apiGet, apiPost } from '../api/client';
 import { apiPatch, apiDelete } from '../api/client';
-import type { CurrentUser, UpdateOwnProfileInput } from './auth-contracts';
-
-function normalizeTenant(raw: unknown): CurrentUser['tenant'] {
-  if (!raw || typeof raw !== 'object') return null;
-  const r = raw as Record<string, unknown>;
-  const id = r.id ?? r['id'];
-  const displayName = r.display_name ?? r.displayName ?? r.name ?? '';
-  if (id === undefined) return null;
-  return { id: String(id), displayName: String(displayName) };
-}
+import type {
+  CurrentUser,
+  UpdateOwnProfileInput,
+  UserPreferences,
+  UpdateUserPreferencesInput,
+  UserSession,
+  ChangePasswordInput,
+} from './auth-contracts';
 
 function normalizeUser(raw: unknown): CurrentUser | null {
   if (!raw || typeof raw !== 'object') return null;
@@ -19,36 +17,80 @@ function normalizeUser(raw: unknown): CurrentUser | null {
   if (id === undefined) return null;
 
   const username = String(r.username ?? r['username'] ?? r.name ?? id);
-  const displayName = String(r.display_name ?? r.displayName ?? r.display_name ?? username);
+  const displayName = String(r.display_name ?? r.displayName ?? username);
   const email = r.email === undefined ? null : String(r.email ?? r['email'] ?? null);
-  const authenticated = Boolean(r.authenticated ?? r['authenticated'] ?? true);
-  const developmentSession = Boolean(r.development_session ?? r.developmentSession ?? false);
-  const passwordLoginAvailable = Boolean(
-    r.password_login_available ?? r.passwordLoginAvailable ?? r['password_login_available'] ?? false,
-  );
 
-  const tenant = normalizeTenant(r.tenant ?? r['tenant']);
+  const tenantRaw = r.tenant ?? r['tenant'] ?? null;
+  const tenant =
+    tenantRaw && typeof tenantRaw === 'object'
+      ? {
+          id: String((tenantRaw as any).id ?? ''),
+          displayName: String(
+            (tenantRaw as any).display_name ?? (tenantRaw as any).displayName ?? '',
+          ),
+        }
+      : null;
+
+  const roles = Array.isArray(r.roles) ? (r.roles as unknown[]).map((v) => String(v)) : [];
 
   return {
     id: String(id),
     username,
     displayName,
     email,
-    authenticated,
-    developmentSession,
-    passwordLoginAvailable,
     tenant,
+    roles,
+    authenticated: Boolean(r.authenticated ?? r['authenticated'] ?? false),
+    developmentSession: Boolean(r.development_session ?? r['developmentSession'] ?? false),
+    passwordLoginAvailable: Boolean(
+      r.password_login_available ?? r['passwordLoginAvailable'] ?? false,
+    ),
+    createdAt: r.created_at ? String(r.created_at) : null,
+    lastLoginAt: r.last_login_at ? String(r.last_login_at) : null,
+    schemaVersion: String(r.schema_version ?? r['schemaVersion'] ?? '1.0'),
   };
 }
 
-export async function loadCurrentUser(meEndpoint: string | undefined): Promise<CurrentUser | null> {
-  const ep = meEndpoint ?? '/api/v1/auth/me';
-  const resRaw = await apiGet<unknown>(ep, { credentials: 'include' });
-  const normalized = normalizeUser(resRaw);
-  return normalized;
+export interface CurrentUserResult {
+  authenticated: boolean;
+  user: CurrentUser | null;
 }
 
-export async function loginWithPassword(loginEndpoint: string | undefined, username: string, password: string): Promise<void> {
+export async function loadCurrentUser(
+  meEndpoint: string | undefined,
+  signal?: AbortSignal,
+): Promise<CurrentUserResult> {
+  const ep = meEndpoint ?? '/api/v1/auth/me';
+  const resRaw = await apiGet<unknown>(ep, { credentials: 'include', signal });
+
+  // Some backends return a wrapper like { authenticated: true, user: {...} }
+  // while others return the user object directly. Normalize both cases.
+  if (!resRaw || typeof resRaw !== 'object') {
+    return { authenticated: false, user: null };
+  }
+
+  const r = resRaw as Record<string, unknown>;
+
+  if ('authenticated' in r) {
+    const authenticated = Boolean(r.authenticated);
+    if ('user' in r) {
+      return { authenticated, user: normalizeUser((r.user as unknown) ?? null) };
+    }
+    // If authenticated is true but no user object, attempt to normalize the wrapper itself
+    const possibleUser = normalizeUser(r);
+    return { authenticated, user: possibleUser };
+  }
+
+  // Otherwise try to interpret the response as a user object
+  const normalized = normalizeUser(resRaw);
+  return { authenticated: !!normalized, user: normalized };
+}
+
+export async function loginWithPassword(
+  loginEndpoint: string | undefined,
+  username: string,
+  password: string,
+): Promise<void> {
   const ep = loginEndpoint ?? '/api/v1/auth/login';
   await apiPost(ep, { username, password }, { credentials: 'include' });
 }
@@ -72,16 +114,23 @@ export interface RegisterInput {
   invitationToken?: string | null;
 }
 
-export async function registerUser(registerEndpoint: string | undefined, payload: RegisterInput): Promise<any> {
+export async function registerUser(
+  registerEndpoint: string | undefined,
+  payload: RegisterInput,
+): Promise<any> {
   const ep = registerEndpoint ?? '/api/v1/auth/register';
-  return await apiPost(ep, {
-    username: payload.username,
-    display_name: payload.displayName,
-    email: payload.email ?? null,
-    password: payload.password,
-    password_confirmation: payload.passwordConfirmation,
-    invitation_token: payload.invitationToken ?? null,
-  }, { credentials: 'include' });
+  return await apiPost(
+    ep,
+    {
+      username: payload.username,
+      display_name: payload.displayName,
+      email: payload.email ?? null,
+      password: payload.password,
+      password_confirmation: payload.passwordConfirmation,
+      invitation_token: payload.invitationToken ?? null,
+    },
+    { credentials: 'include' },
+  );
 }
 
 // ---------- Profile / Preferences / Sessions wrappers ----------
@@ -92,7 +141,10 @@ export async function loadOwnProfile(endpoint?: string): Promise<CurrentUser | n
   return normalizeUser(resRaw);
 }
 
-export async function updateOwnProfile(endpoint: string | undefined, input: UpdateOwnProfileInput): Promise<CurrentUser> {
+export async function updateOwnProfile(
+  endpoint: string | undefined,
+  input: UpdateOwnProfileInput,
+): Promise<CurrentUser> {
   const ep = endpoint ?? '/api/v1/users/me';
   const body = {
     display_name: input.displayName,
@@ -104,36 +156,50 @@ export async function updateOwnProfile(endpoint: string | undefined, input: Upda
   return normalized;
 }
 
-function normalizePreferences(raw: unknown): import('./auth-contracts').UserPreferences | null {
+function normalizePreferences(raw: unknown): UserPreferences | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
+  const density = (r.density ?? r['density'] ?? r['compactMode'] ?? null) as string | null;
+  const compactMode =
+    density === 'compact' || Boolean(r.compact_mode ?? r['compact_mode'] ?? false);
   return {
-    schemaVersion: String(r.schema_version ?? '1.0'),
-    language: String(r.language ?? 'de'),
-    timezone: String(r.timezone ?? 'Europe/Berlin'),
-    theme: (r.theme as any) ?? 'system',
-    density: (r.density as any) ?? 'comfortable',
-    defaultView: r.default_view === undefined ? null : (r.default_view as string | null),
-    notificationsEnabled: Boolean(r.notifications_enabled ?? true),
+    language: String(r.language ?? r['language'] ?? 'de') === 'en' ? 'en' : 'de',
+    timezone: String(r.timezone ?? r['timezone'] ?? 'Europe/Berlin'),
+    theme: (r.theme as any) ?? (r['theme'] as any) ?? 'system',
+    compactMode: Boolean(compactMode),
+    defaultView:
+      (r.default_view ?? r['defaultView'] ?? null) == null
+        ? null
+        : String(r.default_view ?? r['defaultView']),
+    notificationsEnabled: Boolean(r.notifications_enabled ?? r['notificationsEnabled'] ?? true),
+    revision: Number(r.revision ?? 0) as number,
     updatedAt: r.updated_at ? String(r.updated_at) : null,
-  } as import('./auth-contracts').UserPreferences;
+    schemaVersion: String(r.schema_version ?? r['schemaVersion'] ?? '1.0'),
+  };
 }
 
-export async function loadUserPreferences(endpoint?: string): Promise<import('./auth-contracts').UserPreferences | null> {
+export async function loadUserPreferences(
+  endpoint?: string,
+): Promise<import('./auth-contracts').UserPreferences | null> {
   const ep = endpoint ?? '/api/v1/users/me/preferences';
   const resRaw = await apiGet<unknown>(ep, { credentials: 'include' });
   return normalizePreferences(resRaw);
 }
 
-export async function updateUserPreferences(endpoint: string | undefined, input: import('./auth-contracts').UpdateUserPreferencesInput): Promise<import('./auth-contracts').UserPreferences> {
+export async function updateUserPreferences(
+  endpoint: string | undefined,
+  input: import('./auth-contracts').UpdateUserPreferencesInput,
+): Promise<import('./auth-contracts').UserPreferences> {
   const ep = endpoint ?? '/api/v1/users/me/preferences';
   const body: Record<string, unknown> = {};
   if (input.language !== undefined) body.language = input.language;
   if (input.timezone !== undefined) body.timezone = input.timezone;
   if (input.theme !== undefined) body.theme = input.theme;
-  if (input.density !== undefined) body.density = input.density;
+  if ((input as UpdateUserPreferencesInput).compactMode !== undefined)
+    body.compact_mode = (input as UpdateUserPreferencesInput).compactMode ? 1 : 0;
   if (input.defaultView !== undefined) body.default_view = input.defaultView;
-  if (input.notificationsEnabled !== undefined) body.notifications_enabled = input.notificationsEnabled;
+  if (input.notificationsEnabled !== undefined)
+    body.notifications_enabled = input.notificationsEnabled;
 
   const resRaw = await apiPatch<unknown, typeof body>(ep, body, { credentials: 'include' });
   const normalized = normalizePreferences(resRaw);
@@ -141,32 +207,37 @@ export async function updateUserPreferences(endpoint: string | undefined, input:
   return normalized;
 }
 
-function normalizeSession(raw: unknown): import('./auth-contracts').UserSession | null {
+function normalizeSession(raw: unknown): UserSession | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   return {
-    schemaVersion: String(r.schema_version ?? '1.0'),
     id: String(r.id),
-    authenticationMethod: String(r.authentication_method ?? ''),
-    createdAt: String(r.created_at ?? ''),
-    expiresAt: String(r.expires_at ?? ''),
-    lastSeenAt: r.last_seen_at ? String(r.last_seen_at) : null,
-    revokedAt: r.revoked_at ? String(r.revoked_at) : null,
     current: Boolean(r.current ?? false),
-    active: Boolean(r.active ?? false),
-    ipAddress: r.ip_address === undefined ? null : String(r.ip_address),
-    userAgent: r.user_agent === undefined ? null : String(r.user_agent),
-  } as import('./auth-contracts').UserSession;
+    authenticationMethod: String(r.authentication_method ?? r['authenticationMethod'] ?? ''),
+    ipAddress: r.ip_address === undefined ? null : String(r.ip_address ?? r['ipAddress']),
+    userAgent: r.user_agent === undefined ? null : String(r.user_agent ?? r['userAgent']),
+    createdAt: String(r.created_at ?? r['createdAt'] ?? ''),
+    lastSeenAt: r.last_seen_at ? String(r.last_seen_at) : null,
+    expiresAt: String(r.expires_at ?? r['expiresAt'] ?? ''),
+    revokedAt: r.revoked_at ? String(r.revoked_at) : null,
+  };
 }
 
-export async function loadSessions(endpoint?: string): Promise<import('./auth-contracts').UserSession[]> {
+export async function loadSessions(
+  endpoint?: string,
+): Promise<import('./auth-contracts').UserSession[]> {
   const ep = endpoint ?? '/api/v1/auth/sessions';
   const res = await apiGet<unknown[]>(ep, { credentials: 'include' });
   if (!Array.isArray(res)) return [];
-  return res.map(normalizeSession).filter((s): s is import('./auth-contracts').UserSession => s !== null);
+  return res
+    .map(normalizeSession)
+    .filter((s): s is import('./auth-contracts').UserSession => s !== null);
 }
 
-export async function revokeSession(endpoint: string | undefined, sessionId: string): Promise<void> {
+export async function revokeSession(
+  endpoint: string | undefined,
+  sessionId: string,
+): Promise<void> {
   const ep = endpoint ?? `/api/v1/auth/sessions/${sessionId}`;
   await apiDelete<void>(ep, { credentials: 'include' });
 }
@@ -176,7 +247,15 @@ export async function logoutAllSessions(endpoint?: string): Promise<{ revoked: n
   return await apiPost<{ revoked: number }>(ep, undefined, { credentials: 'include' });
 }
 
-export async function changePassword(endpoint: string | undefined, payload: { currentPassword: string; newPassword: string }) {
+export async function changePassword(endpoint: string | undefined, payload: ChangePasswordInput) {
   const ep = endpoint ?? '/api/v1/users/me/password';
-  return await apiPost(ep, { current_password: payload.currentPassword, new_password: payload.newPassword }, { credentials: 'include' });
+  return await apiPost(
+    ep,
+    {
+      current_password: payload.currentPassword,
+      new_password: payload.newPassword,
+      revoke_other_sessions: payload.revokeOtherSessions,
+    },
+    { credentials: 'include' },
+  );
 }

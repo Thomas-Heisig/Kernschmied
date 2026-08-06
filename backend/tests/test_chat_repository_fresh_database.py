@@ -113,7 +113,9 @@ async def test_parallel_inserts(
     async def worker(i: int) -> int:
         async with session_factory() as s:
             repo = ChatRepository(s)
-            m = Message(conversation_id=conversation_id, role="user", content=f"msg-{i}")
+            m = Message(
+                conversation_id=conversation_id, role="user", content=f"msg-{i}"
+            )
             async with s.begin():
                 stored = await repo.add_message(m)
             return stored.sequence_number
@@ -127,10 +129,15 @@ async def test_parallel_inserts(
     # verify next_message_sequence advanced
     async with session_factory() as s2:
         # verify the counter for the specific conversation we used
-        r = await s2.execute(text("SELECT id, next_message_sequence FROM chats WHERE id = :cid"), {"cid": conversation_id})
+        r = await s2.execute(
+            text("SELECT id, next_message_sequence FROM chats WHERE id = :cid"),
+            {"cid": conversation_id},
+        )
         row = r.first()
         if row is None:
-            raise AssertionError("conversation row missing when checking next_message_sequence")
+            raise AssertionError(
+                "conversation row missing when checking next_message_sequence"
+            )
         next_seq = row[1]
         assert next_seq >= 20
 
@@ -142,7 +149,9 @@ async def test_transaction_boundary(
     async with session_factory() as session:
         # prepare chat
         chat: Any = await session.scalar(text("SELECT id FROM chats LIMIT 1"))
-        conversation_id: str = cast(str, chat if not isinstance(chat, tuple) else chat[0])
+        conversation_id: str = cast(
+            str, chat if not isinstance(chat, tuple) else chat[0]
+        )
 
         # create a new message but do not commit outer change
         async def run_test() -> None:
@@ -176,7 +185,9 @@ async def test_transaction_boundary(
 
             repo = ChatRepository(session)
             m = Message(conversation_id=conversation_id, role="user", content="tx-test")
-            _ = await repo.add_message(m)  # unused, but needed to test transaction boundary
+            _ = await repo.add_message(
+                m
+            )  # unused, but needed to test transaction boundary
 
             # repository must not have committed or rolled back
             assert called["commit"] is False
@@ -196,7 +207,9 @@ async def test_status_transitions(
     async with session_factory() as session:
         # create a fresh message
         chat: Any = await session.scalar(text("SELECT id FROM chats LIMIT 1"))
-        conversation_id: str = cast(str, chat if not isinstance(chat, tuple) else chat[0])
+        conversation_id: str = cast(
+            str, chat if not isinstance(chat, tuple) else chat[0]
+        )
         repo = ChatRepository(session)
         m = Message(conversation_id=conversation_id, role="user", content="status-test")
         stored = await repo.add_message(m)
@@ -209,14 +222,18 @@ async def test_status_transitions(
         assert msg.completed_at is not None
 
         # create another and test failed and cancelled transitions
-        m2 = Message(conversation_id=conversation_id, role="user", content="status-test2")
+        m2 = Message(
+            conversation_id=conversation_id, role="user", content="status-test2"
+        )
         s2 = await repo.add_message(m2)
         await repo.mark_message_failed(s2.id, metadata={"code": "E"})  # type: ignore[arg-type]
         msg2 = await repo.get_message(s2.id)
         assert msg2 is not None
         assert msg2.status == "failed"
 
-        m3 = Message(conversation_id=conversation_id, role="user", content="status-test3")
+        m3 = Message(
+            conversation_id=conversation_id, role="user", content="status-test3"
+        )
         s3 = await repo.add_message(m3)
         await repo.mark_message_cancelled(s3.id)
         msg3 = await repo.get_message(s3.id)

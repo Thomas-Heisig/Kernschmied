@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Any
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -69,7 +69,13 @@ class ChatRepository(Repository[Chat]):
             # Do not rollback the session here — let caller manage transaction scope.
             raise
 
-    async def list_messages(self, conversation_id: str, limit: int | None = None, offset: int | None = None, after_sequence: int | None = None) -> Sequence[Message]:
+    async def list_messages(
+        self,
+        conversation_id: str,
+        limit: int | None = None,
+        offset: int | None = None,
+        after_sequence: int | None = None,
+    ) -> Sequence[Message]:
         stmt = select(Message).where(Message.conversation_id == conversation_id)
         if after_sequence is not None:
             stmt = stmt.where(Message.sequence_number > after_sequence)
@@ -85,32 +91,42 @@ class ChatRepository(Repository[Chat]):
     async def get_message(self, message_id: str) -> Message | None:
         return await self.session.get(Message, message_id)
 
-    async def mark_message_complete(self, message_id: str, *, completed_at: datetime | None = None) -> None:
+    async def mark_message_complete(
+        self, message_id: str, *, completed_at: datetime | None = None
+    ) -> None:
         msg = await self.session.get(Message, message_id)
         if msg is None:
             return
         # only allow transition from pending -> complete
         if msg.status != "pending":
-            raise InvalidMessageStatusTransition(f"cannot transition {msg.status} -> complete")
+            raise InvalidMessageStatusTransition(
+                f"cannot transition {msg.status} -> complete"
+            )
         msg.status = "complete"
         msg.completed_at = completed_at or utc_now()
         self.session.add(msg)
         await self.session.flush()
 
-    async def mark_message_failed(self, message_id: str, *, metadata: dict[str, Any] | None = None) -> None:
+    async def mark_message_failed(
+        self, message_id: str, *, metadata: dict[str, Any] | None = None
+    ) -> None:
         msg = await self.session.get(Message, message_id)
         if msg is None:
             return
         # only allow transition from pending -> failed
         if msg.status != "pending":
-            raise InvalidMessageStatusTransition(f"cannot transition {msg.status} -> failed")
+            raise InvalidMessageStatusTransition(
+                f"cannot transition {msg.status} -> failed"
+            )
         msg.status = "failed"
         if metadata:
             # ensure ui_context is a plain dict[str, Any] for static checkers
             md: dict[str, Any] = dict(getattr(msg, "ui_context", {}) or {})
             # store only limited error information to avoid leaking raw traces
             error: dict[str, Any] = dict(md.get("error") or {})
-            update_data: dict[str, Any] = {k: metadata.get(k) for k in ("code", "message") if k in metadata}
+            update_data: dict[str, Any] = {
+                k: metadata.get(k) for k in ("code", "message") if k in metadata
+            }
             if update_data:
                 error.update(update_data)
             if error:
@@ -125,7 +141,9 @@ class ChatRepository(Repository[Chat]):
             return
         # only allow transition from pending -> cancelled
         if msg.status != "pending":
-            raise InvalidMessageStatusTransition(f"cannot transition {msg.status} -> cancelled")
+            raise InvalidMessageStatusTransition(
+                f"cannot transition {msg.status} -> cancelled"
+            )
         msg.status = "cancelled"
         msg.completed_at = utc_now()
         self.session.add(msg)

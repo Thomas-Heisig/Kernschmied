@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from app.auth.models import UserContext
 from pathlib import Path
+
+from app.auth.models import UserContext
 
 
 def test_development_admin_identity():

@@ -6,26 +6,29 @@ SQLite databases via `create_async_engine(...)` and forget to dispose
 them explicitly; forcing `NullPool` reduces lingering file handles on
 Windows and prevents PermissionError warnings during tempfile cleanup.
 """
+
+from typing import Any
+
 from sqlalchemy.ext.asyncio import create_async_engine as _orig_create_async_engine
 from sqlalchemy.pool import NullPool
 
 
-def create_async_engine(url: str | object, **kwargs):
-	"""Wrapper around SQLAlchemy's create_async_engine.
+def create_async_engine(url: Any, **kwargs: Any) -> Any:
+    """Wrapper around SQLAlchemy's create_async_engine.
 
-	If the URL indicates SQLite and no explicit `poolclass` is given,
-	set `NullPool` to avoid file handles being held across GC cycles.
-	"""
-	try:
-		u = str(url)
-	except Exception:
-		u = ""
+    If the URL indicates SQLite and no explicit `poolclass` is given,
+    set `NullPool` to avoid file handles being held across GC cycles.
+    """
+    try:
+        u = str(url)
+    except Exception:
+        u = ""
 
-	if u.startswith("sqlite") and "poolclass" not in kwargs:
-		kwargs = dict(kwargs)
-		kwargs.setdefault("poolclass", NullPool)
+    if u.startswith("sqlite") and "poolclass" not in kwargs:
+        kwargs = dict(kwargs)
+        kwargs.setdefault("poolclass", NullPool)
 
-	return _orig_create_async_engine(url, **kwargs)
+    return _orig_create_async_engine(url, **kwargs)
 
 
 # Export the wrapped function so callers using `from sqlalchemy.ext.asyncio import create_async_engine`

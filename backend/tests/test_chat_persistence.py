@@ -7,15 +7,22 @@ from app.storage.models.base import Base
 from app.storage.models.chat import Chat, Message
 from app.storage.repositories.chat import ChatRepository
 from sqlalchemy import event
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 
 def test_append_and_list_messages() -> None:
     async def _run() -> None:
         # use a temporary file-backed sqlite DB so multiple connections share state
-        db_file = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+        fd, db_path = tempfile.mkstemp(suffix=".sqlite")
+        os.close(fd)
+        engine: AsyncEngine | None = None
         try:
-            url = f"sqlite+aiosqlite:///{db_file.name}"
+            url = f"sqlite+aiosqlite:///{db_path}"
             engine = create_async_engine(url, echo=False)
 
             # enable foreign keys for SQLite
@@ -28,7 +35,10 @@ def test_append_and_list_messages() -> None:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
 
-            session_factory = async_sessionmaker[AsyncSession](engine, expire_on_commit=False)
+            session_factory = async_sessionmaker[AsyncSession](
+                engine,
+                expire_on_commit=False,
+            )
 
             async with session_factory() as session:
                 repo = ChatRepository(session)
@@ -36,7 +46,12 @@ def test_append_and_list_messages() -> None:
                 # create a hierarchy node first (foreign key)
                 from app.storage.models.hierarchy import HierarchyNode
 
-                node = HierarchyNode(id="node-1", node_type="chat", name="Node 1", config={})
+                node = HierarchyNode(
+                    id="node-1",
+                    node_type="chat",
+                    name="Node 1",
+                    config={},
+                )
                 session.add(node)
                 await session.flush()
                 await session.commit()
@@ -56,15 +71,21 @@ def test_append_and_list_messages() -> None:
                         user_id=None,
                         role=role,
                         content=content,
-                        ui_context={}
+                        ui_context={},
                     )
                     await repo.add_message(msg)
                     await session.commit()
                     return msg
 
-            _results = await asyncio.gather(
-                *[append_message(f"m{i}", "user" if i % 2 == 0 else "assistant", f"msg{i}") for i in range(6)]
-            )
+            tasks = [
+                append_message(
+                    f"m{i}",
+                    "user" if i % 2 == 0 else "assistant",
+                    f"msg{i}",
+                )
+                for i in range(6)
+            ]
+            _results = await asyncio.gather(*tasks)
 
             async with session_factory() as session:
                 repo = ChatRepository(session)
@@ -80,22 +101,22 @@ def test_append_and_list_messages() -> None:
                 m = await repo.get_message(some_id)
                 assert m is not None and m.status == "complete"
 
-                # fail a message – type ignore due to partial unknown in repository signature
-                await repo.mark_message_failed(msgs[3].id, metadata={"code": "E_TEST", "message": "fail"})  # type: ignore[arg-type]
+                # fail a message - type ignore due to partial unknown in repository signature
+                await repo.mark_message_failed(
+                    msgs[3].id,
+                    metadata={"code": "E_TEST", "message": "fail"},
+                )  # type: ignore[arg-type]
                 m3 = await repo.get_message(msgs[3].id)
                 assert m3 is not None and m3.status == "failed"
         finally:
-            try:
-                try:
+            if engine is not None:
+                import contextlib
+
+                with contextlib.suppress(Exception):
                     await engine.dispose()
-                except Exception:
-                    pass
-            except NameError:
-                # engine may not be defined if initialization failed
-                pass
+
             try:
-                db_file.close()
-                os.unlink(db_file.name)
+                os.remove(db_path)
             except Exception:
                 pass
 

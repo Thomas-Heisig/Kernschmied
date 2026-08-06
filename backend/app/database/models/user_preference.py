@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from typing import Any
 from uuid import uuid4
 
-from sqlalchemy import DateTime, Index, Integer, JSON, String, Text
+from sqlalchemy import JSON, DateTime, Index, Integer, String
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -33,15 +34,22 @@ class UserPreferenceModel(Base):
     default_model_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
     default_workspace_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
-    preferences_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    preferences_json: Mapped[dict[str, Any]] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
 
     revision: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
-
-    schema_version: Mapped[str] = mapped_column(String(16), nullable=False, default="1.0")
-
-    __table_args__ = (
-        Index("ix_user_preferences_user_id", "user_id"),
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
     )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
+    )
+
+    schema_version: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="1.0"
+    )
+
+    # Ensure a single preferences row per user
+    __table_args__ = (Index("ix_user_preferences_user_id", "user_id", unique=True),)

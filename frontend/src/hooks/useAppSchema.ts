@@ -93,7 +93,10 @@ export interface UseAppSchemaResult {
  */
 // AppBootstrap type is imported from ../types/bootstrap and used for normalized bootstrap
 
-export function useAppSchema(enabled: boolean = true, initialBootstrap: AppBootstrap | null = null): UseAppSchemaResult {
+export function useAppSchema(
+  enabled: boolean = true,
+  initialBootstrap: AppBootstrap | null = null,
+): UseAppSchemaResult {
   const [schema, setSchema] = useState<UISchema | null>(null);
 
   const [hierarchyTree, setHierarchyTree] = useState<HierarchyTree | null>(null);
@@ -125,6 +128,12 @@ export function useAppSchema(enabled: boolean = true, initialBootstrap: AppBoots
   const hasUsableDataRef = useRef(false);
 
   const loadFull = useCallback(async (): Promise<void> => {
+    // The hook must not perform any bootstrap fetches. It relies on
+    // `initialBootstrap` provided by the caller or the parent `useBootstrap`.
+    if (!bootstrapState) {
+      throw new Error('useAppSchema requires a bootstrap to be provided by the parent.');
+    }
+
     activeRequestControllerRef.current?.abort();
 
     const requestController = new AbortController();
@@ -146,11 +155,6 @@ export function useAppSchema(enabled: boolean = true, initialBootstrap: AppBoots
     setError(null);
 
     try {
-      // Ensure we have bootstrapState available. If not, fetch bootstrap-only first.
-      if (!bootstrapState) {
-        await loadBootstrapOnly();
-      }
-
       const bootstrap = bootstrapState as AppBootstrap;
 
       const uiSchemaEndpoint = normalizeBootstrapEndpointIfPresent(
@@ -168,7 +172,6 @@ export function useAppSchema(enabled: boolean = true, initialBootstrap: AppBoots
 
       // If enabled is false, do not fetch uiSchema/hierarchy yet.
       if (!enabled) {
-        // Mark that we have bootstrap data but not full schema
         hasUsableDataRef.current = false;
         setStatus('idle');
         setIsRefreshing(false);
@@ -191,7 +194,6 @@ export function useAppSchema(enabled: boolean = true, initialBootstrap: AppBoots
       }
 
       assertRequestIsCurrent(requestController, requestGeneration, requestGenerationRef);
-
 
       const normalizedSchema = normalizeUISchemaResponse(rawSchemaResponse);
 
@@ -222,17 +224,10 @@ export function useAppSchema(enabled: boolean = true, initialBootstrap: AppBoots
 
       const normalizedError = normalizeAppSchemaError(caughtError);
 
-      logDevelopmentError(
-        'Bootstrap, UI-Schema oder Hierarchie konnten nicht geladen werden.',
-        caughtError,
-      );
+      logDevelopmentError('UI-Schema oder Hierarchie konnten nicht geladen werden.', caughtError);
 
       setError(normalizedError);
 
-      /**
-       * Ein fehlgeschlagener Reload darf bereits erfolgreich geladene
-       * Daten nicht unbrauchbar machen.
-       */
       if (hasUsableDataRef.current) {
         setStatus('ready');
       } else {
@@ -247,7 +242,7 @@ export function useAppSchema(enabled: boolean = true, initialBootstrap: AppBoots
         activeRequestControllerRef.current = null;
       }
     }
-  }, [enabled]);
+  }, [enabled, bootstrapState]);
 
   /**
    * Lädt nur den Bootstrap-Teil (ohne UI-Schema und Hierarchie).
@@ -439,7 +434,6 @@ function normalizeBootstrapEndpointIfPresent(value: string, fieldName: string): 
   return normalizeBootstrapEndpoint(trimmed, fieldName);
 }
 
-
 // ============================================================
 // Normalisierungs- und Validierungs-Hilfen (unverändert)
 // ============================================================
@@ -478,43 +472,59 @@ function normalizeBootstrapResponse(value: unknown): AppBootstrap {
 
     // Extract security
     const securityRaw = (camel.security_profile ?? camel.security ?? camel.securityProfile) as
-      | Record<string, unknown>
-      | undefined;
+      Record<string, unknown> | undefined;
 
     const featuresRaw = (camel.features ?? camel.capabilities ?? {}) as Record<string, unknown>;
 
     const endpointsRaw = (camel.endpoints ?? {}) as Record<string, unknown>;
 
     const security = {
-      profile: String((securityRaw?.profile ?? securityRaw?.environment ?? 'internet')).toLowerCase() as
-        | 'development'
-        | 'intranet'
-        | 'internet',
-      authenticationRequired: Boolean(securityRaw?.authentication_required ?? securityRaw?.authenticationRequired ?? false),
-      developmentIdentityActive: Boolean(securityRaw?.development_identity_active ?? securityRaw?.developmentIdentityActive ?? false),
-      availableLoginMethods: Array.isArray(securityRaw?.available_login_methods ?? securityRaw?.availableLoginMethods)
+      profile: String(
+        securityRaw?.profile ?? securityRaw?.environment ?? 'internet',
+      ).toLowerCase() as 'development' | 'intranet' | 'internet',
+      authenticationRequired: Boolean(
+        securityRaw?.authentication_required ?? securityRaw?.authenticationRequired ?? false,
+      ),
+      developmentIdentityActive: Boolean(
+        securityRaw?.development_identity_active ?? securityRaw?.developmentIdentityActive ?? false,
+      ),
+      availableLoginMethods: Array.isArray(
+        securityRaw?.available_login_methods ?? securityRaw?.availableLoginMethods,
+      )
         ? ((securityRaw?.available_login_methods ?? securityRaw?.availableLoginMethods) as string[])
         : [],
     } as AppBootstrap['security'];
 
     const features = {
       developmentAdminLogin: Boolean(
-        featuresRaw.development_admin_login ?? featuresRaw.developmentAdminLogin ?? featuresRaw.development_login ?? false,
+        featuresRaw.development_admin_login ??
+        featuresRaw.developmentAdminLogin ??
+        featuresRaw.development_login ??
+        false,
       ),
       selfRegistration: Boolean(
         featuresRaw.self_registration ?? featuresRaw.selfRegistration ?? false,
       ),
       registrationRequiresInvitation: Boolean(
-        featuresRaw.registration_requires_invitation ?? featuresRaw.registrationRequiresInvitation ?? false,
+        featuresRaw.registration_requires_invitation ??
+        featuresRaw.registrationRequiresInvitation ??
+        false,
       ),
     } as AppBootstrap['features'];
 
     const endpoints = {
-      authLogin: String(endpointsRaw.auth_login ?? endpointsRaw.authLogin ?? endpointsRaw.login ?? ''),
-      authLogout: String(endpointsRaw.auth_logout ?? endpointsRaw.authLogout ?? endpointsRaw.logout ?? ''),
+      authLogin: String(
+        endpointsRaw.auth_login ?? endpointsRaw.authLogin ?? endpointsRaw.login ?? '',
+      ),
+      authLogout: String(
+        endpointsRaw.auth_logout ?? endpointsRaw.authLogout ?? endpointsRaw.logout ?? '',
+      ),
       authMe: String(endpointsRaw.me ?? endpointsRaw.auth_me ?? endpointsRaw.authMe ?? ''),
       authDevelopmentLogin: String(
-        endpointsRaw.auth_development_login ?? endpointsRaw.authDevelopmentLogin ?? endpointsRaw.development_login_endpoint ?? '',
+        endpointsRaw.auth_development_login ??
+          endpointsRaw.authDevelopmentLogin ??
+          endpointsRaw.development_login_endpoint ??
+          '',
       ),
       authRegister: String(endpointsRaw.auth_register ?? endpointsRaw.authRegister ?? ''),
       userProfile: String(endpointsRaw.user_profile ?? endpointsRaw.userProfile ?? ''),
@@ -545,8 +555,8 @@ function normalizeBootstrapResponse(value: unknown): AppBootstrap {
       typeof camel.request_id === 'string'
         ? camel.request_id
         : typeof camel.requestId === 'string'
-        ? camel.requestId
-        : null;
+          ? camel.requestId
+          : null;
 
     const result: AppBootstrap = {
       security,

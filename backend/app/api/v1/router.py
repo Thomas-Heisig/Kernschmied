@@ -5,23 +5,23 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    auth,
     bootstrap,
+    calendar,
+    calendars,
     chat,
+    chats,
     configs,
+    debug_resolver,
     documentation,
     health,
     hierarchy,
     models,
     tools,
     ui,
+    users,
 )
-from app.api.v1 import users
-from app.api.v1 import auth
-from app.api.v1 import debug_resolver
-from app.api.v1 import calendar
-from app.api.v1 import calendars
 from app.api.v1.settings_catalog import router as settings_catalog_router
-from app.api.v1 import chats
 
 API_VERSION = "v1"
 

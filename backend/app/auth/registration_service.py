@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-from typing import Optional, Tuple
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.storage.repositories.user import UserRepository
 from app.auth.password_service import PasswordService
-from app.database.models.user_role import RoleModel, UserRoleModel
-from app.database.models.user_preference import UserPreferenceModel
 from app.database.models.user import UserModel
+from app.database.models.user_preference import UserPreferenceModel
+from app.database.models.user_role import RoleModel, UserRoleModel
+from app.storage.repositories.user import UserRepository
 
 
 class RegistrationError(Exception):
@@ -30,7 +29,7 @@ class RegistrationService:
         password: str,
         invitation_token: str | None = None,
         auto_login: bool = False,
-    ) -> Tuple[UserModel, Optional[str]]:
+    ) -> tuple[UserModel, str | None]:
         # Normalize inputs
         uname = username.strip()
         dname = display_name.strip()
@@ -75,7 +74,9 @@ class RegistrationService:
             await self.session.flush()
 
         # Insert mapping if it doesn't exist
-        q2 = select(UserRoleModel).where(UserRoleModel.user_id == user.id, UserRoleModel.role_id == role.id)
+        q2 = select(UserRoleModel).where(
+            UserRoleModel.user_id == user.id, UserRoleModel.role_id == role.id
+        )
         res2 = await self.session.execute(q2)
         mapping = res2.scalar_one_or_none()
         if mapping is None:

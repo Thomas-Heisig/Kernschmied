@@ -12,10 +12,10 @@ from collections.abc import (
 )
 from enum import Enum, StrEnum
 from typing import (
+    Final,
     Literal,
     TypeAlias,
     cast,
-    Final,
 )
 from uuid import UUID, uuid4
 
@@ -34,19 +34,17 @@ from pydantic import (
     field_validator,
 )
 
-from app.models.errors import ModelError
-from app.models.service import ModelAccessContext
 from app.hierarchy.actor_factory import hierarchy_actor_from_user_context
 from app.hierarchy.models import HierarchyActor
-from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
-from app.services.chat_service import (
-    ChatRequest as ServiceChatRequest,
-)
+from app.models.errors import ModelError
+from app.models.service import ModelAccessContext
+from app.services.chat_service import ChatRequest as ServiceChatRequest
 from app.services.chat_service import (
     ChatService,
     ChatServiceContext,
     ChatServiceError,
 )
+from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 
 logger = logging.getLogger(__name__)
 
@@ -422,8 +420,12 @@ def create_stream_context(
         requested_conversation_id=payload.conversation_id,
         user_id=get_current_user_id(request),
         roles=tuple(getattr(getattr(request.state, "user", None), "roles", ()) or ()),
-        permissions=tuple(getattr(getattr(request.state, "user", None), "permissions", ()) or ()),
-        hierarchy_actor=hierarchy_actor_from_user_context(getattr(request.state, "user", None)),
+        permissions=tuple(
+            getattr(getattr(request.state, "user", None), "permissions", ()) or ()
+        ),
+        hierarchy_actor=hierarchy_actor_from_user_context(
+            getattr(request.state, "user", None)
+        ),
     )
 
     _log_info(
@@ -1033,10 +1035,12 @@ def create_service_request(
 
     md = dict(payload.metadata)
     # keep metadata but do not use it as primary source for hierarchy_node_id
-    md.update({
-        "requested_tool_ids": list(payload.tool_ids),
-        "request_schema_version": payload.schema_version,
-    })
+    md.update(
+        {
+            "requested_tool_ids": list(payload.tool_ids),
+            "request_schema_version": payload.schema_version,
+        }
+    )
 
     return ServiceChatRequest(
         message=payload.message,
@@ -1514,18 +1518,18 @@ async def stream_chat(
     )
 
     # Also log a compact plain-text line so simple log formatters show the key
-    try:
+    from contextlib import suppress
+
+    with suppress(Exception):
         logger.info(
             "Chat stream request accepted: request_conversation_id=%s requested_model_id=%s message_length=%s",
             payload.conversation_id,
             payload.model_id,
             len(payload.message),
         )
-    except Exception:
-        pass
 
     # Log the hierarchy context explicitly for diagnostics (no message content)
-    try:
+    with suppress(Exception):
         logger.info(
             "Chat request hierarchy context",
             extra={
@@ -1534,8 +1538,6 @@ async def stream_chat(
                 "request_id": context.request_id,
             },
         )
-    except Exception:
-        pass
 
     return StreamingResponse(
         generate_chat_events(

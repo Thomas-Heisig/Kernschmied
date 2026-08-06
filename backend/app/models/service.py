@@ -66,7 +66,6 @@ from enum import StrEnum
 from pathlib import Path
 from types import MappingProxyType
 from typing import Any, Final, Protocol, TypeAlias, runtime_checkable
-from app.registries.model_registry import ModelRegistryEntry
 
 from app.contracts.model_backend import (
     BaseModelBackend,
@@ -102,7 +101,7 @@ from app.models.manifest import (
     load_model_manifest,
 )
 from app.models.providers import ModelProviderRegistry
-from app.registries.model_registry import ModelRegistry
+from app.registries.model_registry import ModelRegistry, ModelRegistryEntry
 
 logger = logging.getLogger(__name__)
 
@@ -2910,24 +2909,26 @@ class ModelService:
 
                 is_sel = getattr(backend, "is_selectable", None)
                 if callable(is_sel):
-                    try:
+                    from contextlib import suppress
+
+                    with suppress(Exception):
                         sel_res = is_sel()
                         if asyncio.iscoroutine(sel_res):
                             selectable = await sel_res
                         else:
                             selectable = bool(sel_res)
-                    except Exception:
-                        selectable = False
 
                 # Try to close/unload backend if it exposes a cleanup method
-                cleanup = getattr(backend, "close", None) or getattr(backend, "shutdown", None)
+                cleanup = getattr(backend, "close", None) or getattr(
+                    backend, "shutdown", None
+                )
                 if callable(cleanup):
-                    try:
+                    from contextlib import suppress
+
+                    with suppress(Exception):
                         res = cleanup()
                         if asyncio.iscoroutine(res):
                             await res
-                    except Exception:
-                        pass
 
                 return bool(available), bool(selectable)
 

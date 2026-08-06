@@ -4,9 +4,9 @@ Revision ID: 0010_add_hierarchy_policy_fields
 Revises: 0009_consolidate_hierarchy_node_schema
 Create Date: 2026-08-03 12:00:00.000000
 """
-from alembic import op
-import sqlalchemy as sa
 
+import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0010_add_hierarchy_policy_fields"

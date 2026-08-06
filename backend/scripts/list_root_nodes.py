@@ -1,9 +1,10 @@
 from __future__ import annotations
+
 import asyncio
-from sqlalchemy import select
+
 from app.database.models.hierarchy_node import HierarchyNodeModel
 from app.storage.database import init_database
-from app.core.settings import settings
+from sqlalchemy import select
 
 
 def resolve_sqlite_path(database_url: str):
@@ -12,6 +13,7 @@ def resolve_sqlite_path(database_url: str):
         if len(parts) == 2:
             return parts[1]
     return None
+
 
 async def main():
     session_factory = await init_database(create_schema=False)
@@ -22,5 +24,6 @@ async def main():
         for r in rows:
             print(f"- id={r.id} type={r.type} name={r.name}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     raise SystemExit(asyncio.run(main()))

@@ -26,10 +26,18 @@ class AuthSessionModel(Base):
 
     session_token_hash: Mapped[str] = mapped_column(String(512), nullable=False)
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
-    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    last_seen_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+    expires_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_seen_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    revoked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     ip_address: Mapped[str | None] = mapped_column(String(64), nullable=True)
     user_agent: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -38,8 +46,8 @@ class AuthSessionModel(Base):
 
     authentication_method: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
-    schema_version: Mapped[str] = mapped_column(String(16), nullable=False, default="1.0")
-
-    __table_args__ = (
-        Index("ix_auth_sessions_user_id", "user_id"),
+    schema_version: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="1.0"
     )
+
+    __table_args__ = (Index("ix_auth_sessions_user_id", "user_id"),)

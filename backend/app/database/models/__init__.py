@@ -8,22 +8,22 @@ and association tables used by Alembic and runtime schema generation.
 
 # Import model modules that register tables on Base.metadata.
 # Keep imports explicit so static analysis tools can follow them.
-from .user import UserModel  # noqa: F401
-from .auth_session import AuthSessionModel  # noqa: F401
-from .user_preference import UserPreferenceModel  # noqa: F401
+from .auth_session import AuthSessionModel
+from .user import UserModel
+from .user_preference import UserPreferenceModel
 from .user_role import (
-	RoleModel,
-	PermissionModel,
-	UserRoleModel,
-	RolePermissionModel,
+    PermissionModel,
+    RoleModel,
+    RolePermissionModel,
+    UserRoleModel,
 )
 
 __all__ = [
-	"UserModel",
-	"AuthSessionModel",
-	"UserPreferenceModel",
-	"RoleModel",
-	"PermissionModel",
-	"UserRoleModel",
-	"RolePermissionModel",
+    "AuthSessionModel",
+    "PermissionModel",
+    "RoleModel",
+    "RolePermissionModel",
+    "UserModel",
+    "UserPreferenceModel",
+    "UserRoleModel",
 ]

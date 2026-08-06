@@ -14,9 +14,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import (
     SchemaError,
 )
-from jsonschema.exceptions import (
-    ValidationError as JsonSchemaValidationError,
-)
+from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import JsonValue
 
 TOOL_CONTRACT_VERSION: Final[str] = "1.0"

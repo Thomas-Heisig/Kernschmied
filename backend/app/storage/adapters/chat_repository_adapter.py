@@ -3,12 +3,12 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
-from app.storage.models.chat import Chat as ChatModel
-from app.storage.models.chat import Message as MessageModel
 from app.services.chat_service import (
     ChatHierarchyNodeNotFoundError,
     ChatHierarchyNodeRequiredError,
 )
+from app.storage.models.chat import Chat as ChatModel
+from app.storage.models.chat import Message as MessageModel
 from app.storage.repositories.chat import ChatRepository as StorageChatRepository
 from app.storage.repositories.hierarchy import (
     HierarchyRepository as StorageHierarchyRepository,

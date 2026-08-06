@@ -28,7 +28,6 @@ class CurrentUserResponse(BaseModel):
     last_login_at: datetime | None = None
 
 
-
 class UserSessionResponse(BaseModel):
     schema_version: Literal["1.0"] = "1.0"
 
@@ -44,4 +43,3 @@ class UserSessionResponse(BaseModel):
 
     ip_address: str | None = None
     user_agent: str | None = None
-

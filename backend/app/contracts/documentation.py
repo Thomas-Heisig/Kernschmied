@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from typing import Literal, List, cast
+from typing import Literal, cast
+
 from pydantic import BaseModel, Field
+
 
 class DocumentationPageSummary(BaseModel):
     schema_version: Literal["1.0"] = "1.0"
@@ -10,19 +12,26 @@ class DocumentationPageSummary(BaseModel):
     section_id: str
     order: int = 0
 
+
 class DocumentationSection(BaseModel):
     schema_version: Literal["1.0"] = "1.0"
     id: str
     title: str
     order: int = 0
-    pages: List["DocumentationPageSummary"] = Field(default_factory=lambda: cast(List["DocumentationPageSummary"], []))
+    pages: list[DocumentationPageSummary] = Field(
+        default_factory=lambda: cast(list["DocumentationPageSummary"], [])
+    )
+
 
 class DocumentationNavigationResponse(BaseModel):
     schema_version: Literal["1.0"] = "1.0"
     documentation_version: str
     # field expected by frontend: `default_page_id`
     default_page_id: str
-    sections: List["DocumentationSection"] = Field(default_factory=lambda: cast(List["DocumentationSection"], []))
+    sections: list[DocumentationSection] = Field(
+        default_factory=lambda: cast(list["DocumentationSection"], [])
+    )
+
 
 class DocumentationPageResponse(BaseModel):
     schema_version: Literal["1.0"] = "1.0"

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from typing import Any
+
 from passlib.context import CryptContext  # type: ignore[import]
-from typing import Tuple
 
 
 class PasswordPolicyError(ValueError):
@@ -19,7 +20,8 @@ class PasswordService:
     """
 
     def __init__(self) -> None:
-        self._ctx = CryptContext(
+        # CryptContext lacks distributed type stubs; treat as Any for typing
+        self._ctx: Any = CryptContext(
             schemes=["argon2"],
             deprecated="auto",
             # Defaults are safe for MVP; tuning can be done in configuration
@@ -36,15 +38,22 @@ class PasswordService:
 
     def validate_password_policy(self, username: str, password: str) -> None:
         if not password:
-            raise PasswordPolicyError("PASSWORD_TOO_SHORT", "Ein Passwort darf nicht leer sein.")
+            raise PasswordPolicyError(
+                "PASSWORD_TOO_SHORT", "Ein Passwort darf nicht leer sein."
+            )
 
         if len(password) < 12:
-            raise PasswordPolicyError("PASSWORD_TOO_SHORT", "Das Passwort ist zu kurz (min. 12 Zeichen).")
+            raise PasswordPolicyError(
+                "PASSWORD_TOO_SHORT", "Das Passwort ist zu kurz (min. 12 Zeichen)."
+            )
 
         if len(password) > 4096:
             raise PasswordPolicyError("PASSWORD_TOO_LONG", "Das Passwort ist zu lang.")
 
         if password.strip().lower() == username.strip().lower():
-            raise PasswordPolicyError("PASSWORD_EQUALS_USERNAME", "Das Passwort darf nicht mit dem Benutzernamen übereinstimmen.")
+            raise PasswordPolicyError(
+                "PASSWORD_EQUALS_USERNAME",
+                "Das Passwort darf nicht mit dem Benutzernamen übereinstimmen.",
+            )
 
         # Additional checks (dictionary, entropy) can be added later.

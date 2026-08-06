@@ -73,12 +73,26 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
   // Request schema/hierarchy only when authenticated. Hook handles single-load semantics.
   const schemaHook = useAppSchema(auth.status === 'authenticated', bootstrap ?? null);
 
-  const { schema: loadedSchema, hierarchy: loadedHierarchy, hierarchyTree: loadedHierarchyTree, status: schemaStatus, error: schemaError, isLoading, isReady, reload, reloadHierarchy } = schemaHook;
+  const {
+    schema: loadedSchema,
+    hierarchy: loadedHierarchy,
+    hierarchyTree: loadedHierarchyTree,
+    status: schemaStatus,
+    error: schemaError,
+    isLoading,
+    isReady,
+    reload,
+    reloadHierarchy,
+  } = schemaHook;
 
   const state = useAppStoreState();
   const { beginLoading, setLoadedData, setError } = useAppStoreCommands();
 
-  const appBootstrap = useAppBootstrap({ bootstrap: bootstrap ?? null, reload: reload, reloadHierarchy: reloadHierarchy });
+  const appBootstrap = useAppBootstrap({
+    bootstrap: bootstrap ?? null,
+    reload: reload,
+    reloadHierarchy: reloadHierarchy,
+  });
 
   const {
     reloadApplication,
@@ -141,7 +155,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
   }, []);
 
   // Single debug output for startup state
-  console.debug("[Kernschmied startup state]", {
+  console.debug('[Kernschmied startup state]', {
     bootstrapStatus,
     authStatus: auth.status,
     schemaStatus,
@@ -284,7 +298,10 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       } as any);
       push('success', `Public-Bereich '${name}' erstellt.`);
     } catch (err: unknown) {
-      push('error', err instanceof Error ? err.message : 'Fehler beim Erstellen des Public-Bereichs');
+      push(
+        'error',
+        err instanceof Error ? err.message : 'Fehler beim Erstellen des Public-Bereichs',
+      );
     } finally {
       setIsMutating(false);
     }
@@ -302,7 +319,10 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       } as any);
       push('success', `Interner Bereich '${name}' erstellt.`);
     } catch (err: unknown) {
-      push('error', err instanceof Error ? err.message : 'Fehler beim Erstellen des internen Bereichs');
+      push(
+        'error',
+        err instanceof Error ? err.message : 'Fehler beim Erstellen des internen Bereichs',
+      );
     } finally {
       setIsMutating(false);
     }
@@ -427,8 +447,8 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       <AppWorkspace
         schema={schema}
         root={root}
-          selectedHierarchyNode={selectedHierarchyNode}
-          selectedNode={selectedNode}
+        selectedHierarchyNode={selectedHierarchyNode}
+        selectedNode={selectedNode}
         selectedNodeId={selectSelectedNodeId(state)}
         expandedNodeIds={selectExpandedNodeIds(state)}
         theme={theme}
@@ -467,7 +487,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
             switch (modalKind) {
               case 'create_child':
               case 'create_child':
-                case 'create_chat': {
+              case 'create_chat': {
                 // Determine the child type and default name based on parent type
                 const chosen = chooseChildTypeForParent((modalNode as any)?.type);
                 const childType = modalKind === 'create_chat' ? 'chat' : chosen.type;
@@ -484,13 +504,17 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
                   name,
                   parent_id: modalNode.id ?? null,
                   system_prompt:
-                    (modalNode as any)?.system_prompt ?? (modalNode as any)?.metadata?.prompt ??
+                    (modalNode as any)?.system_prompt ??
+                    (modalNode as any)?.metadata?.prompt ??
                     undefined,
                   tool_policy: {},
                   config_overrides: {},
                   metadata: inheritedMetadata,
                 } as any);
-                push('success', `${childType === 'chat' ? 'Chat' : 'Unterelement'} '${name}' erstellt.`);
+                push(
+                  'success',
+                  `${childType === 'chat' ? 'Chat' : 'Unterelement'} '${name}' erstellt.`,
+                );
                 break;
               }
               case 'rename': {

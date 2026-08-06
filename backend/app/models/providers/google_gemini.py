@@ -9,7 +9,7 @@ from collections.abc import (
     Mapping,
     Sequence,
 )
-from typing import Protocol, TypeAlias, cast, TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Protocol, TypeAlias, cast
 
 if TYPE_CHECKING:
     # Provide names for static type checkers without requiring installed stubs
@@ -82,6 +82,7 @@ class GeminiClientProtocol(Protocol):
     aio: GeminiAioClientProtocol
 
     def close(self) -> None: ...
+
 
 # Prefer the explicit protocol when possible; fall back to Any if needed.
 ClientType: TypeAlias = GeminiClientProtocol | Any
@@ -539,7 +540,10 @@ class GoogleGeminiProvider(BaseModelBackend):
             )
 
         if http_options is not None:
-            client = cast(ClientType, ClientConstructor(api_key=self._api_key, http_options=http_options))
+            client = cast(
+                ClientType,
+                ClientConstructor(api_key=self._api_key, http_options=http_options),
+            )
         else:
             client = cast(ClientType, ClientConstructor(api_key=self._api_key))
 

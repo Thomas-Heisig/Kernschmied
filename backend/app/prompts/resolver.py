@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Literal, cast
+from collections.abc import Iterable
+from typing import Literal, cast
 
-from app.prompts.models import PromptFragment, ResolvedPrompt, PROMPT_SCHEMA_VERSION
-from app.prompts.errors import UnsupportedPromptModeError
 from app.hierarchy.models import HierarchyActor
+from app.hierarchy.permissions import READ_ACTION, HierarchyPermissionService
 from app.hierarchy.repository import HierarchyRepository
-from app.hierarchy.permissions import HierarchyPermissionService, READ_ACTION
-
+from app.prompts.errors import UnsupportedPromptModeError
+from app.prompts.models import PROMPT_SCHEMA_VERSION, PromptFragment, ResolvedPrompt
 
 PROMPT_SEPARATOR = "\n\n"
 
@@ -37,7 +37,7 @@ class PromptResolver:
         Returns a ResolvedPrompt with a single composed `content` and
         the list of contributing fragments in deterministic order.
         """
-        fragments: List[PromptFragment] = []
+        fragments: list[PromptFragment] = []
 
         # Settings-level system prompt comes first with very low priority
         if settings_system_prompt and settings_system_prompt.strip():
@@ -82,29 +82,38 @@ class PromptResolver:
             if not text:
                 continue
 
+            node_id_str = str(getattr(node, "id", ""))
             fragments.append(
                 PromptFragment(
                     source_type=str(getattr(node, "type", "node")),
-                    source_id=str(getattr(node, "id")),
+                    source_id=node_id_str,
                     source_name=getattr(node, "name", None),
-                    mode=cast(Literal["append", "prepend", "replace", "disabled"], mode),
+                    mode=cast(
+                        Literal["append", "prepend", "replace", "disabled"], mode
+                    ),
                     priority=int(getattr(node, "prompt_priority", 0)),
                     prompt=text,
                     enabled=True,
                     hierarchy_depth=idx,
                 )
             )
-            last_node_id = str(getattr(node, "id"))
+            last_node_id = node_id_str
 
         # deterministic ordering:
         # primary: hierarchy depth (settings=-1, root=0, ...)
         # secondary: prompt_priority ascending
         # tertiary: source_id as tie-breaker
-        fragments.sort(key=lambda f: (int(getattr(f, "hierarchy_depth", 0)), int(getattr(f, "priority", 0)), str(getattr(f, "source_id", ""))))
+        fragments.sort(
+            key=lambda f: (
+                int(getattr(f, "hierarchy_depth", 0)),
+                int(getattr(f, "priority", 0)),
+                str(getattr(f, "source_id", "")),
+            )
+        )
 
         # apply replace semantics: when encountering a 'replace' fragment,
         # discard previously accumulated fragments
-        applied: List[PromptFragment] = []
+        applied: list[PromptFragment] = []
         for frag in fragments:
             if frag.mode == "replace":
                 applied = [frag]
@@ -139,14 +148,20 @@ class PromptResolver:
         settings_system_prompt: str | None = None,
     ) -> ResolvedPrompt:
         if actor is None:
-            raise ValueError("HierarchyActor must be provided to PromptResolver.resolve")
+            raise ValueError(
+                "HierarchyActor must be provided to PromptResolver.resolve"
+            )
 
         # require read permission for the target node when permission service provided
         if self._permissions is not None:
             node = await repository.get_node(node_id)
             if node is None:
-                raise LookupError(f"Der Hierarchieknoten '{node_id}' wurde nicht gefunden.")
+                raise LookupError(
+                    f"Der Hierarchieknoten '{node_id}' wurde nicht gefunden."
+                )
             self._permissions.require(actor, READ_ACTION, node)
 
         chain = await repository.get_ancestor_chain(node_id)
-        return self.resolve_from_chain(chain=chain, settings_system_prompt=settings_system_prompt)
+        return self.resolve_from_chain(
+            chain=chain, settings_system_prompt=settings_system_prompt
+        )

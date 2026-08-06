@@ -5,7 +5,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Protocol, cast
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # Ensure backend package is importable when tests run from repo root
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,16 +48,22 @@ def test_calendar_and_event_crud() -> None:
         async with engine.begin() as conn:
             await conn.run_sync(StorageBase.metadata.create_all)
 
-        session_factory = async_sessionmaker[AsyncSession](engine, expire_on_commit=False)
+        session_factory = async_sessionmaker[AsyncSession](
+            engine, expire_on_commit=False
+        )
 
         async with session_factory() as session:
             # Dummy request with user in state
-            user = cast(UserProto, SimpleNamespace(id="test-user", roles=(), permissions=()))
+            user = cast(
+                UserProto, SimpleNamespace(id="test-user", roles=(), permissions=())
+            )
             state = SimpleNamespace(user=user)
             request = SimpleNamespace(state=state)
 
             # Create calendar
-            payload = SimpleNamespace(name="My Cal", color="#ff0000", description="desc")
+            payload = SimpleNamespace(
+                name="My Cal", color="#ff0000", description="desc"
+            )
             cal = cast(CalendarOutProto, await create_calendar(request, payload, session=session))  # type: ignore[arg-type]
             assert cal.owner_id == "test-user"
             assert cal.name == "My Cal"
@@ -73,7 +79,7 @@ def test_calendar_and_event_crud() -> None:
                 description="",
                 start=now,
                 end=now + timedelta(hours=1),
-                all_day=False
+                all_day=False,
             )
             ev = cast(EventOutProto, await create_event(cal.id, ev_payload, request, session=session))  # type: ignore[arg-type]
             assert ev.calendar_id == cal.id

@@ -7,9 +7,7 @@ from jsonschema import Draft202012Validator
 from jsonschema.exceptions import (
     SchemaError,
 )
-from jsonschema.exceptions import (
-    ValidationError as JsonSchemaValidationError,
-)
+from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -983,9 +981,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="identity",
         key="tone",
         display_name="Tonalität",
-        description=(
-            "Bevorzugter Kommunikationsstil von Kernschmied."
-        ),
+        description=("Bevorzugter Kommunikationsstil von Kernschmied."),
         value_schema={
             "type": "string",
             "enum": [
@@ -1146,9 +1142,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="identity",
         key="autonomy_level",
         display_name="Autonomiegrad",
-        description=(
-            "Allgemeiner Standard für selbstständige Planung und Ausführung."
-        ),
+        description=("Allgemeiner Standard für selbstständige Planung und Ausführung."),
         value_schema={
             "type": "string",
             "enum": ["advisory", "draft", "prepare", "execute_approved"],
@@ -1166,7 +1160,9 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
                 ConfigOption(value="advisory", label="Nur beraten"),
                 ConfigOption(value="draft", label="Entwürfe erstellen"),
                 ConfigOption(value="prepare", label="Änderungen vorbereiten"),
-                ConfigOption(value="execute_approved", label="Freigegebene Aktionen ausführen"),
+                ConfigOption(
+                    value="execute_approved", label="Freigegebene Aktionen ausführen"
+                ),
             ),
         ),
         tags={"identity", "autonomy"},
@@ -1507,7 +1503,12 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         default_value=False,
         allowed_scopes={ConfigScope.SYSTEM, ConfigScope.USER},
         value_type=ConfigValueType.BOOLEAN,
-        ui=ConfigUIMetadata(component=ConfigUIComponent.CHECKBOX, category="Darstellung und Ausgabe", section="Oberfläche", order=30),
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.CHECKBOX,
+            category="Darstellung und Ausgabe",
+            section="Oberfläche",
+            order=30,
+        ),
     ),
     config_definition(
         group="appearance",
@@ -1518,7 +1519,12 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         default_value=False,
         allowed_scopes={ConfigScope.SYSTEM, ConfigScope.USER},
         value_type=ConfigValueType.BOOLEAN,
-        ui=ConfigUIMetadata(component=ConfigUIComponent.CHECKBOX, category="Darstellung und Ausgabe", section="Oberfläche", order=40),
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.CHECKBOX,
+            category="Darstellung und Ausgabe",
+            section="Oberfläche",
+            order=40,
+        ),
     ),
     config_definition(
         group="appearance",
@@ -1529,7 +1535,12 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         default_value="when_available",
         allowed_scopes={ConfigScope.SYSTEM, ConfigScope.USER},
         value_type=ConfigValueType.STRING,
-        ui=ConfigUIMetadata(component=ConfigUIComponent.SELECT, category="Darstellung und Ausgabe", section="Oberfläche", order=50),
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.SELECT,
+            category="Darstellung und Ausgabe",
+            section="Oberfläche",
+            order=50,
+        ),
     ),
     config_definition(
         group="appearance",
@@ -1540,7 +1551,12 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         default_value=False,
         allowed_scopes={ConfigScope.SYSTEM, ConfigScope.USER},
         value_type=ConfigValueType.BOOLEAN,
-        ui=ConfigUIMetadata(component=ConfigUIComponent.CHECKBOX, category="Darstellung und Ausgabe", section="Ergebnisdarstellung", order=20),
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.CHECKBOX,
+            category="Darstellung und Ausgabe",
+            section="Ergebnisdarstellung",
+            order=20,
+        ),
     ),
     config_definition(
         group="appearance",
@@ -1551,7 +1567,12 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         default_value=False,
         allowed_scopes={ConfigScope.SYSTEM, ConfigScope.USER},
         value_type=ConfigValueType.BOOLEAN,
-        ui=ConfigUIMetadata(component=ConfigUIComponent.CHECKBOX, category="Darstellung und Ausgabe", section="Ergebnisdarstellung", order=30),
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.CHECKBOX,
+            category="Darstellung und Ausgabe",
+            section="Ergebnisdarstellung",
+            order=30,
+        ),
     ),
     config_definition(
         group="appearance",
@@ -1562,9 +1583,13 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         default_value=True,
         allowed_scopes={ConfigScope.SYSTEM, ConfigScope.USER},
         value_type=ConfigValueType.BOOLEAN,
-        ui=ConfigUIMetadata(component=ConfigUIComponent.CHECKBOX, category="Darstellung und Ausgabe", section="Ergebnisdarstellung", order=10),
+        ui=ConfigUIMetadata(
+            component=ConfigUIComponent.CHECKBOX,
+            category="Darstellung und Ausgabe",
+            section="Ergebnisdarstellung",
+            order=10,
+        ),
     ),
-
     # Artifacts / Data
     config_definition(
         group="artifacts",
@@ -1636,7 +1661,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.BOOLEAN,
     ),
-
     # Communication
     config_definition(
         group="communication",
@@ -1698,7 +1722,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.INTEGER,
     ),
-
     # Knowledge (many keys)
     config_definition(
         group="knowledge",
@@ -1760,7 +1783,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.BOOLEAN,
     ),
-
     # Prompts
     config_definition(
         group="prompts",
@@ -1822,7 +1844,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.BOOLEAN,
     ),
-
     # Models: use conservative defaults
     # removed duplicate models.default_model_id; prefer `models.default_model`
     config_definition(
@@ -1907,7 +1928,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.INTEGER,
     ),
-
     # Remaining placeholders
     config_definition(
         group="data",
@@ -1919,7 +1939,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.STRING,
     ),
-
     # Knowledge
     config_definition(
         group="knowledge",
@@ -1991,7 +2010,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.BOOLEAN,
     ),
-
     # Learning
     config_definition(
         group="learning",
@@ -2073,7 +2091,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.BOOLEAN,
     ),
-
     # Models extras
     config_definition(
         group="models",
@@ -2105,7 +2122,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.INTEGER,
     ),
-
     # Planning
     config_definition(
         group="planning",
@@ -2247,7 +2263,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.BOOLEAN,
     ),
-
     # Prompts fallback
     config_definition(
         group="prompts",
@@ -2259,7 +2274,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.BOOLEAN,
     ),
-
     # Security
     config_definition(
         group="security",
@@ -2321,7 +2335,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.BOOLEAN,
     ),
-
     # Tools
     config_definition(
         group="tools",
@@ -2473,7 +2486,6 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         allowed_scopes={ConfigScope.SYSTEM},
         value_type=ConfigValueType.BOOLEAN,
     ),
-
     # Tools & Planning & Security & Learning & others are intentionally left with
     # conservative placeholders. Add more specific schemas as needed.
     # ============================================================
@@ -3120,9 +3132,7 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
         group="ui",
         key="autosave_enabled",
         display_name="Autosave",
-        description=(
-            "Änderungen automatisch speichern (Frontend-Autosave)."
-        ),
+        description=("Änderungen automatisch speichern (Frontend-Autosave)."),
         value_schema={
             "type": "boolean",
         },

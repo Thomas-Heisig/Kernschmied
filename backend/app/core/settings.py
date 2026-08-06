@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from enum import Enum
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, Final
-from collections.abc import Sequence
 from urllib.parse import urlparse
 
 from pydantic import (
@@ -1100,7 +1100,9 @@ class Settings(BaseSettings):
         """
 
         # If a URL is explicitly configured, normalize sqlite relative paths
-        url = resolve_database_url(self.database_url, backend_directory=BACKEND_DIRECTORY)
+        url = resolve_database_url(
+            self.database_url, backend_directory=BACKEND_DIRECTORY
+        )
         if url:
             return url
 

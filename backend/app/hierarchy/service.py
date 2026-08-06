@@ -28,7 +28,6 @@ class HierarchyChildTypeNotAllowedError(ValueError):
     code = "HIERARCHY_CHILD_TYPE_NOT_ALLOWED"
 
 
-
 class HierarchyService:
     def __init__(
         self,
@@ -229,7 +228,9 @@ class HierarchyService:
         for node_id, new_parent_id, _ in moves:
             node = await self._require_node(node_id)
             # Protect immovable/system nodes from being reordered under a different parent
-            if getattr(node, "is_system", False) or not getattr(node, "is_movable", True):
+            if getattr(node, "is_system", False) or not getattr(
+                node, "is_movable", True
+            ):
                 raise PermissionError(
                     "Dieser Hierarchieknoten darf nicht verschoben/neu angeordnet werden."
                 )
@@ -237,7 +238,9 @@ class HierarchyService:
             self._permissions.require(actor, MOVE_ACTION, node)
 
             if new_parent_id == node.id:
-                raise ValueError("Ein Knoten kann nicht sein eigener Elternknoten sein.")
+                raise ValueError(
+                    "Ein Knoten kann nicht sein eigener Elternknoten sein."
+                )
 
             if new_parent_id is not None:
                 new_parent = await self._require_node(new_parent_id)
@@ -273,9 +276,7 @@ class HierarchyService:
         node = await self._require_node(node_id)
         # Protect system and non-deletable nodes
         if getattr(node, "is_system", False) or not getattr(node, "is_deletable", True):
-            raise PermissionError(
-                "Dieser Hierarchieknoten darf nicht gelöscht werden."
-            )
+            raise PermissionError("Dieser Hierarchieknoten darf nicht gelöscht werden.")
 
         self._permissions.require(actor, DELETE_ACTION, node)
 

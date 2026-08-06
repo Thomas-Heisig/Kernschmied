@@ -1,28 +1,28 @@
-from typing import Any, AsyncGenerator, Dict, List, cast
-
 import asyncio
+from collections.abc import AsyncGenerator
+from typing import Any, cast
 
-from app.services.chat_service import (
-    ChatService,
-    ChatRequest,
-    ChatServiceContext,
-    ChatEventType,
-    ChatStreamEvent,
-)
 from app.contracts.model_backend import (
     StreamEvent,
     StreamEventType,
     Usage,
 )
 from app.models.service import ModelAccessContext, ModelService
+from app.services.chat_service import (
+    ChatEventType,
+    ChatRequest,
+    ChatService,
+    ChatServiceContext,
+    ChatStreamEvent,
+)
 
 
 class FakeRepo:
     def __init__(self) -> None:
-        self.user_calls: List[Dict[str, Any]] = []
-        self.assistant_calls: List[Dict[str, Any]] = []
-        self.failed_calls: List[Dict[str, Any]] = []
-        self.conversation: Dict[str, Any] | None = None
+        self.user_calls: list[dict[str, Any]] = []
+        self.assistant_calls: list[dict[str, Any]] = []
+        self.failed_calls: list[dict[str, Any]] = []
+        self.conversation: dict[str, Any] | None = None
 
     async def create_conversation(self, **kwargs: Any) -> None:
         # store a typed copy
@@ -69,7 +69,9 @@ class FakeModelService:
     ) -> AsyncGenerator[StreamEvent, None]:
         # streaming generator that yields one MESSAGE then COMPLETE
         yield StreamEvent(type=StreamEventType.MESSAGE, content=self.content)
-        yield StreamEvent(type=StreamEventType.COMPLETE, content=None, usage=Usage(1, 1))
+        yield StreamEvent(
+            type=StreamEventType.COMPLETE, content=None, usage=Usage(1, 1)
+        )
 
 
 def test_user_message_is_persisted_once() -> None:
@@ -77,7 +79,9 @@ def test_user_message_is_persisted_once() -> None:
     model = cast(ModelService, FakeModelService(content="persisted text"))
     service = ChatService(model_service=model, repository=repo, default_model_id="m")
 
-    context = ChatServiceContext(request_id="r1", access=ModelAccessContext(), user_id="u1")
+    context = ChatServiceContext(
+        request_id="r1", access=ModelAccessContext(), user_id="u1"
+    )
     req = ChatRequest(message="hello", stream=False, hierarchy_node_id="node-x")
 
     asyncio.run(service.generate(req, context=context))
@@ -95,11 +99,13 @@ def test_successful_stream_marks_message_complete() -> None:
     model = cast(ModelService, FakeModelService(content="streamed full"))
     service = ChatService(model_service=model, repository=repo, default_model_id="m")
 
-    context = ChatServiceContext(request_id="r2", access=ModelAccessContext(), user_id="u2")
+    context = ChatServiceContext(
+        request_id="r2", access=ModelAccessContext(), user_id="u2"
+    )
     req = ChatRequest(message="hi", stream=True, hierarchy_node_id="node-x")
 
-    async def _collect() -> List[ChatStreamEvent]:
-        events: List[ChatStreamEvent] = []
+    async def _collect() -> list[ChatStreamEvent]:
+        events: list[ChatStreamEvent] = []
         async for e in service.stream(req, context=context):
             events.append(e)
         return events

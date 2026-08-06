@@ -1,5 +1,6 @@
-from pathlib import Path
 import sqlite3
+from pathlib import Path
+
 p=Path('F:/Kernschmied/backend/data/chat.db')
 print('DB exists:', p.exists())
 conn=sqlite3.connect(str(p))

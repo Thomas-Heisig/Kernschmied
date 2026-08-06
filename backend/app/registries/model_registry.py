@@ -37,11 +37,11 @@ from __future__ import annotations
 import asyncio
 import logging
 import time
-from collections.abc import Iterable, Sequence
+from collections.abc import Awaitable, Callable, Iterable, Sequence
 from dataclasses import dataclass, field
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Final, Optional, Callable, Awaitable, Sequence
+from typing import Any, Final
 
 from app.models.errors import (
     DuplicateModelManifestError,
@@ -298,7 +298,9 @@ class ModelRegistry:
             self._default_model_id = self._normalize_model_id(default_model_id)
         # Optional async availability checker: Callable[[ModelRegistryEntry], Awaitable[tuple[bool, bool]]]
         # returns (available, selectable). If None, registry uses manifest.is_enabled as availability.
-        self._availability_checker: Optional[Callable[[ModelRegistryEntry], Awaitable[tuple[bool, bool]]]] = None
+        self._availability_checker: (
+            Callable[[ModelRegistryEntry], Awaitable[tuple[bool, bool]]] | None
+        ) = None
         # cache: model_id -> (available, selectable, timestamp)
         self._availability_cache: dict[str, tuple[bool, bool, float]] = {}
         # TTL for availability cache in seconds
@@ -446,7 +448,9 @@ class ModelRegistry:
 
         return tuple(filtered)
 
-    async def _refresh_availabilities(self, entries: Sequence[ModelRegistryEntry]) -> None:
+    async def _refresh_availabilities(
+        self, entries: Sequence[ModelRegistryEntry]
+    ) -> None:
         """
         Runs availability checks for the given entries concurrently and updates the cache.
         The availability checker is provided by the application and must be async.
@@ -485,7 +489,7 @@ class ModelRegistry:
 
     def set_availability_checker(
         self,
-        checker: Optional[Callable[[ModelRegistryEntry], Awaitable[tuple[bool, bool]]]],
+        checker: Callable[[ModelRegistryEntry], Awaitable[tuple[bool, bool]]] | None,
         *,
         ttl: float | None = None,
     ) -> None:

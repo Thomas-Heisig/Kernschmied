@@ -27,8 +27,10 @@ class DevelopmentIdentityMiddleware(BaseHTTPMiddleware):
         call_next: Callable[[Request], Awaitable[Response]],
     ) -> Response:
         if self._enabled and not hasattr(request.state, "principal"):
+            # Provide canonical principal mapping for development identity
             request.state.principal = {
                 "id": self._user_id,
+                "user_id": self._user_id,
                 "authentication_method": "development",
             }
 

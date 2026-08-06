@@ -26,6 +26,7 @@ from app.core.bootstrap import (
 )
 from app.core.exceptions import ApplicationError
 from app.core.settings import settings
+from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 from fastapi import (
     FastAPI,
     HTTPException,
@@ -33,7 +34,6 @@ from fastapi import (
     Response,
     status,
 )
-from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -1148,8 +1148,8 @@ def register_exception_handlers(
             runtime_cfg = get_runtime_config(request.app)
             is_dev = runtime_cfg.environment == ApplicationEnvironment.DEVELOPMENT
             # Allow an explicit bootstrap setting to enable tracebacks in dev.
-            include_traceback = (
-                is_dev and setting_as_bool("include_traceback_in_error_responses", False)
+            include_traceback = is_dev and setting_as_bool(
+                "include_traceback_in_error_responses", False
             )
         except Exception:
             include_traceback = False

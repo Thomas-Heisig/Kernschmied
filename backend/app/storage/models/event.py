@@ -63,6 +63,4 @@ class Event(Base):
         onupdate=utc_now,
     )
 
-    __table_args__ = (
-        Index("ix_events_calendar_start", "calendar_id", "start"),
-    )
+    __table_args__ = (Index("ix_events_calendar_start", "calendar_id", "start"),)

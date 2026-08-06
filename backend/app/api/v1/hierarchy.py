@@ -4,8 +4,7 @@ from __future__ import annotations
 
 import inspect
 from collections.abc import Awaitable, Mapping, Sequence
-from typing import Protocol, cast, runtime_checkable, Any, Optional
-from typing import List
+from typing import Any, Protocol, cast, runtime_checkable
 
 from fastapi import (
     APIRouter,
@@ -29,8 +28,7 @@ from app.contracts.hierarchy import (
     HierarchyNodeUpdate,
 )
 from app.hierarchy.models import HierarchyActor
-from app.hierarchy.repository import HierarchyRepository
-from app.hierarchy.repository import HierarchyParentNotFoundError
+from app.hierarchy.repository import HierarchyParentNotFoundError, HierarchyRepository
 from app.hierarchy.service import HierarchyChildTypeNotAllowedError
 from app.services.hierarchy_service import create_hierarchy_service
 
@@ -293,7 +291,7 @@ def normalize_hierarchy(
     return normalized
 
 
-def _map_backend_tree_to_frontend(value: JSONDict | List[Any]) -> JSONDict | List[Any]:
+def _map_backend_tree_to_frontend(value: JSONDict | list[Any]) -> JSONDict | list[Any]:
     """Map backend HierarchyTree (config_revision + roots) to frontend root shape.
 
     The serializer/service may return a model or dict with
@@ -321,11 +319,11 @@ def _map_backend_tree_to_frontend(value: JSONDict | List[Any]) -> JSONDict | Lis
     if "roots" in as_dict and ("config_revision" in as_dict or "roots" in as_dict):
         roots_raw: Any = as_dict.get("roots")
         if isinstance(roots_raw, list):
-            roots = cast(List[Any], roots_raw)
+            roots = cast(list[Any], roots_raw)
         else:
             roots = []
 
-        root_node: Optional[Any] = None
+        root_node: Any | None = None
 
         if len(roots) > 0:
             root_node = roots[0]
@@ -340,7 +338,7 @@ def _map_backend_tree_to_frontend(value: JSONDict | List[Any]) -> JSONDict | Lis
     return value
 
 
-def _publicize_node(node: object) -> JSONDict | List[Any]:
+def _publicize_node(node: object) -> JSONDict | list[Any]:
     """Recursively normalize a node to the public API shape.
 
     - Rename `available_actions` -> `actions`
@@ -359,7 +357,7 @@ def _publicize_node(node: object) -> JSONDict | List[Any]:
         obj_any = node
 
     if not isinstance(obj_any, dict):
-        return cast(JSONDict | List[Any], obj_any)
+        return cast(JSONDict | list[Any], obj_any)
 
     obj: JSONDict = cast(JSONDict, obj_any)
 
@@ -391,7 +389,7 @@ def _publicize_node(node: object) -> JSONDict | List[Any]:
     if actions_any is None or not isinstance(actions_any, list):
         out["actions"] = []
     else:
-        actions_list = cast(List[Any], actions_any)
+        actions_list = cast(list[Any], actions_any)
         out["actions"] = [a for a in actions_list]
 
     # Children: ensure list and recursively publicize
@@ -399,8 +397,8 @@ def _publicize_node(node: object) -> JSONDict | List[Any]:
     if raw_children_any is None or not isinstance(raw_children_any, list):
         out["children"] = []
     else:
-        raw_children = cast(List[Any], raw_children_any)
-        children: List[object] = []
+        raw_children = cast(list[Any], raw_children_any)
+        children: list[object] = []
         for child_any in raw_children:
             try:
                 children.append(_publicize_node(child_any))
@@ -515,16 +513,16 @@ async def hierarchy(
 
     try:
         raw_tree_any = await service.get_tree(
-                actor=actor,
-                root_id=root_id,
-                max_depth=max_depth,
-            )
+            actor=actor,
+            root_id=root_id,
+            max_depth=max_depth,
+        )
 
         # Type: service implementations may return pydantic/ORM models or
         # plain dicts. Cast to a JSON-shaped dict or list for downstream
         # processing so the type checker can reason about `.get()` and
         # indexing operations.
-        raw_tree = cast(JSONDict | List[Any], raw_tree_any)
+        raw_tree = cast(JSONDict | list[Any], raw_tree_any)
 
         # Map internal backend tree shape (config_revision + roots)
         # to the frontend-expected single `root` node shape.
@@ -558,16 +556,18 @@ async def hierarchy(
                 # Admins may request the system nodes explicitly
                 if include_system_nodes:
                     if not getattr(actor, "is_admin", False):
-                        raise PermissionError("Nur Administratoren dürfen system-interne Knoten anfordern.")
+                        raise PermissionError(
+                            "Nur Administratoren dürfen system-interne Knoten anfordern."
+                        )
                     # leave system-root as-is for admins
                 else:
                     # Try to pick the caller's user node if available
                     selected: JSONDict | None = None
                     children_any = raw_tree_dict.get("children", [])
                     if not isinstance(children_any, list):
-                        children: List[Any] = []
+                        children: list[Any] = []
                     else:
-                        children = cast(List[Any], children_any)
+                        children = cast(list[Any], children_any)
 
                     if getattr(actor, "user_id", None) is not None:
                         for c in children:
@@ -708,13 +708,15 @@ async def create_hierarchy_node(
                 code="INVALID_HIERARCHY_NODE",
                 message=str(exc),
             ) from exc
-        except HierarchyParentNotFoundError as exc:
+        except HierarchyParentNotFoundError:
             raise structured_http_error(
                 request=request,
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 code="HIERARCHY_PARENT_REQUIRED",
                 message="Für den neuen Hierarchieknoten ist ein übergeordneter Knoten erforderlich.",
-                details={"node_type": payload.type if hasattr(payload, "type") else "unknown"},
+                details={
+                    "node_type": payload.type if hasattr(payload, "type") else "unknown"
+                },
             )
 
 

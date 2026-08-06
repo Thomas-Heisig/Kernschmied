@@ -1,19 +1,23 @@
 from __future__ import annotations
 
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
-from app.hierarchy.repository import HierarchyRepository
+import logging
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+
 from app.contracts.hierarchy import HierarchyNodeCreate
 from app.core.settings import settings
-import logging
-from sqlalchemy import select
-from app.storage.repositories.user import UserRepository
 from app.database.models.user import UserModel
 from app.database.models.user_role import RoleModel, UserRoleModel
+from app.hierarchy.repository import HierarchyRepository
+from app.storage.repositories.user import UserRepository
 
 logger = logging.getLogger(__name__)
 
 
-async def seed_development_hierarchy(session_factory: async_sessionmaker[AsyncSession]) -> None:
+async def seed_development_hierarchy(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
     """
     Idempotenter Development-Seed für die Hierarchie.
 
@@ -107,9 +111,13 @@ async def seed_development_hierarchy(session_factory: async_sessionmaker[AsyncSe
                     user_repo = UserRepository(session)
 
                     # Try find by configured id or username
-                    admin: UserModel | None = await user_repo.get_by_id(settings.development_admin_user_id)
+                    admin: UserModel | None = await user_repo.get_by_id(
+                        settings.development_admin_user_id
+                    )
                     if admin is None:
-                        admin = await user_repo.get_by_username(settings.development_admin_username)
+                        admin = await user_repo.get_by_username(
+                            settings.development_admin_username
+                        )
 
                     if admin is None:
                         user_data: dict[str, object | None] = {
@@ -128,7 +136,9 @@ async def seed_development_hierarchy(session_factory: async_sessionmaker[AsyncSe
                     result = await session.execute(q)
                     admin_role = result.scalar_one_or_none()
                     if admin_role is None:
-                        admin_role = RoleModel(name="admin", display_name="Administrator")
+                        admin_role = RoleModel(
+                            name="admin", display_name="Administrator"
+                        )
                         session.add(admin_role)
                         await session.flush()
 

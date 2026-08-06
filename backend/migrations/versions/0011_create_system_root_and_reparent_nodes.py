@@ -4,9 +4,9 @@ Revision ID: 0011_create_system_root_and_reparent_nodes
 Revises: 0010_add_hierarchy_policy_fields
 Create Date: 2026-08-03 12:30:00.000000
 """
-from alembic import op
-import sqlalchemy as sa
 
+import sqlalchemy as sa
+from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0011_create_system_root_and_reparent_nodes"
@@ -19,9 +19,7 @@ def upgrade() -> None:
     conn = op.get_bind()
 
     # 1) Insert system-root if missing
-    conn.execute(
-        sa.text(
-            """
+    conn.execute(sa.text("""
             INSERT INTO hierarchy_nodes (
                 id,
                 parent_id,
@@ -64,14 +62,10 @@ def upgrade() -> None:
             WHERE NOT EXISTS (
                 SELECT 1 FROM hierarchy_nodes WHERE id = 'system-root'
             );
-            """
-        )
-    )
+            """))
 
     # 2) Repair protective flags on system-root if it already exists
-    conn.execute(
-        sa.text(
-            """
+    conn.execute(sa.text("""
             UPDATE hierarchy_nodes
             SET
                 parent_id = NULL,
@@ -83,21 +77,15 @@ def upgrade() -> None:
                 prompt_priority = -1000,
                 prompt_mode = 'append'
             WHERE id = 'system-root';
-            """
-        )
-    )
+            """))
 
     # 3) Reparent existing top-level nodes (except system-root) under system-root
-    conn.execute(
-        sa.text(
-            """
+    conn.execute(sa.text("""
             UPDATE hierarchy_nodes
             SET parent_id = 'system-root'
             WHERE parent_id IS NULL
               AND id <> 'system-root';
-            """
-        )
-    )
+            """))
 
     # 4) Optional: ensure deterministic ordering for children of system-root
     # If desired, this could set positions based on previous rowid or created_at.

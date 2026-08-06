@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from typing import Any
-from fastapi import Request
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from fastapi import Request
 
 from app.schemas.settings_catalog import (
     SettingsControl,
@@ -12,15 +13,18 @@ from app.schemas.settings_catalog import (
 from .configs_service import get_config_field_descriptor
 
 
-def validate_confirmation_requirement(*, descriptor: SettingsFieldDescriptor, payload: Any, request: Request) -> None:
+def validate_confirmation_requirement(
+    *, descriptor: SettingsFieldDescriptor, payload: Any, request: Request
+) -> None:
     if not descriptor.requires_confirmation:
         return
 
     if getattr(payload, "reason", None) is not None:
         return
 
-    from .configs import structured_http_error
     from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
+
+    from .configs import structured_http_error
 
     raise structured_http_error(
         request=request,
@@ -38,9 +42,16 @@ def validate_confirmation_requirement(*, descriptor: SettingsFieldDescriptor, pa
     )
 
 
-def raise_invalid_type(*, descriptor: SettingsFieldDescriptor, expected_type: str, value: Any, request: Request) -> None:
-    from .configs import structured_http_error
+def raise_invalid_type(
+    *,
+    descriptor: SettingsFieldDescriptor,
+    expected_type: str,
+    value: Any,
+    request: Request,
+) -> None:
     from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
+
+    from .configs import structured_http_error
 
     raise structured_http_error(
         request=request,
@@ -56,17 +67,33 @@ def raise_invalid_type(*, descriptor: SettingsFieldDescriptor, expected_type: st
     )
 
 
-def validate_control_type(*, descriptor: SettingsFieldDescriptor, value: Any, request: Request) -> None:
+def validate_control_type(
+    *, descriptor: SettingsFieldDescriptor, value: Any, request: Request
+) -> None:
     control = descriptor.control
 
-    if control in {SettingsControl.TEXT, SettingsControl.TEXTAREA, SettingsControl.SELECT}:
+    if control in {
+        SettingsControl.TEXT,
+        SettingsControl.TEXTAREA,
+        SettingsControl.SELECT,
+    }:
         if not isinstance(value, str):
-            raise_invalid_type(descriptor=descriptor, expected_type="string", value=value, request=request)
+            raise_invalid_type(
+                descriptor=descriptor,
+                expected_type="string",
+                value=value,
+                request=request,
+            )
         return
 
     if control is SettingsControl.BOOLEAN:
         if not isinstance(value, bool):
-            raise_invalid_type(descriptor=descriptor, expected_type="boolean", value=value, request=request)
+            raise_invalid_type(
+                descriptor=descriptor,
+                expected_type="boolean",
+                value=value,
+                request=request,
+            )
         return
 
     if control is SettingsControl.NUMBER:
@@ -74,18 +101,29 @@ def validate_control_type(*, descriptor: SettingsFieldDescriptor, value: Any, re
 
         numeric_value = normalize_config_number(value)
         if numeric_value is None:
-            raise_invalid_type(descriptor=descriptor, expected_type="number", value=value, request=request)
+            raise_invalid_type(
+                descriptor=descriptor,
+                expected_type="number",
+                value=value,
+                request=request,
+            )
         return
 
     if control is SettingsControl.MULTISELECT:
         from .configs import is_config_string_list
 
         if not is_config_string_list(value):
-            raise_invalid_type(descriptor=descriptor, expected_type="array[string]", value=value, request=request)
+            raise_invalid_type(
+                descriptor=descriptor,
+                expected_type="array[string]",
+                value=value,
+                request=request,
+            )
         return
 
-    from .configs import structured_http_error
     from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
+
+    from .configs import structured_http_error
 
     raise structured_http_error(
         request=request,
@@ -104,7 +142,9 @@ def validate_control_type(*, descriptor: SettingsFieldDescriptor, value: Any, re
     )
 
 
-def validate_allowed_options(*, descriptor: SettingsFieldDescriptor, value: Any, request: Request) -> None:
+def validate_allowed_options(
+    *, descriptor: SettingsFieldDescriptor, value: Any, request: Request
+) -> None:
     options = tuple(descriptor.options or ())
     if not options:
         return
@@ -113,8 +153,9 @@ def validate_allowed_options(*, descriptor: SettingsFieldDescriptor, value: Any,
 
     if descriptor.control is SettingsControl.SELECT:
         if not isinstance(value, str) or value not in allowed_values:
-            from .configs import structured_http_error
             from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
+
+            from .configs import structured_http_error
 
             raise structured_http_error(
                 request=request,
@@ -137,14 +178,17 @@ def validate_allowed_options(*, descriptor: SettingsFieldDescriptor, value: Any,
 
         invalid_values = [item for item in value if item not in allowed_values]
         if invalid_values:
-            from .configs import structured_http_error
             from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
+
+            from .configs import structured_http_error
 
             raise structured_http_error(
                 request=request,
                 status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="CONFIG_OPTIONS_INVALID",
-                message=("Mindestens ein ausgewählter Konfigurationswert ist nicht zulässig."),
+                message=(
+                    "Mindestens ein ausgewählter Konfigurationswert ist nicht zulässig."
+                ),
                 details={
                     "group": descriptor.config_group,
                     "key": descriptor.config_key,
@@ -154,7 +198,9 @@ def validate_allowed_options(*, descriptor: SettingsFieldDescriptor, value: Any,
             )
 
 
-def validate_numeric_range(*, descriptor: SettingsFieldDescriptor, value: Any, request: Request) -> None:
+def validate_numeric_range(
+    *, descriptor: SettingsFieldDescriptor, value: Any, request: Request
+) -> None:
     if descriptor.control is not SettingsControl.NUMBER:
         return
 
@@ -168,14 +214,17 @@ def validate_numeric_range(*, descriptor: SettingsFieldDescriptor, value: Any, r
     maximum = descriptor.maximum
 
     if minimum is not None and numeric_value < minimum:
-        from .configs import structured_http_error
         from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
+
+        from .configs import structured_http_error
 
         raise structured_http_error(
             request=request,
             status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
             code="CONFIG_VALUE_BELOW_MINIMUM",
-            message=("Der Konfigurationswert unterschreitet den erlaubten Mindestwert."),
+            message=(
+                "Der Konfigurationswert unterschreitet den erlaubten Mindestwert."
+            ),
             details={
                 "group": descriptor.config_group,
                 "key": descriptor.config_key,
@@ -185,8 +234,9 @@ def validate_numeric_range(*, descriptor: SettingsFieldDescriptor, value: Any, r
         )
 
     if maximum is not None and numeric_value > maximum:
-        from .configs import structured_http_error
         from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
+
+        from .configs import structured_http_error
 
         raise structured_http_error(
             request=request,
@@ -205,8 +255,13 @@ def validate_numeric_range(*, descriptor: SettingsFieldDescriptor, value: Any, r
 def validate_identity_value(*, key: str, value: Any, request: Request) -> Any:
     validated_value: Any = value
 
-    from .configs import IDENTITY_STRING_LIMITS, LANGUAGE_CODE_PATTERN, structured_http_error
     from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
+
+    from .configs import (
+        IDENTITY_STRING_LIMITS,
+        LANGUAGE_CODE_PATTERN,
+        structured_http_error,
+    )
 
     limits = IDENTITY_STRING_LIMITS.get(key)
     if limits is not None:
@@ -256,7 +311,9 @@ def validate_identity_value(*, key: str, value: Any, request: Request) -> Any:
                 request=request,
                 status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="IDENTITY_LANGUAGE_INVALID",
-                message=("Die Standardsprache muss als gültiger Sprachcode angegeben werden."),
+                message=(
+                    "Die Standardsprache muss als gültiger Sprachcode angegeben werden."
+                ),
                 details={"key": key, "value": validated_value, "example": "de"},
             )
 
@@ -278,26 +335,40 @@ def validate_identity_value(*, key: str, value: Any, request: Request) -> Any:
                 status_code=(HTTP_422_UNPROCESSABLE_CONTENT),
                 code="IDENTITY_TIMEZONE_INVALID",
                 message=("Die angegebene Zeitzone ist keine gültige IANA-Zeitzone."),
-                details={"key": key, "value": validated_value, "example": "Europe/Berlin"},
+                details={
+                    "key": key,
+                    "value": validated_value,
+                    "example": "Europe/Berlin",
+                },
             ) from exc
 
     return validated_value
 
 
-def validate_catalog_config_value(*, group: str, key: str, payload: Any, request: Request) -> tuple[SettingsFieldDescriptor, Any]:
-    descriptor: SettingsFieldDescriptor = get_config_field_descriptor(group=group, key=key, request=request)
+def validate_catalog_config_value(
+    *, group: str, key: str, payload: Any, request: Request
+) -> tuple[SettingsFieldDescriptor, Any]:
+    descriptor: SettingsFieldDescriptor = get_config_field_descriptor(
+        group=group, key=key, request=request
+    )
 
-    validate_confirmation_requirement(descriptor=descriptor, payload=payload, request=request)
+    validate_confirmation_requirement(
+        descriptor=descriptor, payload=payload, request=request
+    )
 
     validate_control_type(descriptor=descriptor, value=payload.value, request=request)
 
-    validate_allowed_options(descriptor=descriptor, value=payload.value, request=request)
+    validate_allowed_options(
+        descriptor=descriptor, value=payload.value, request=request
+    )
 
     validate_numeric_range(descriptor=descriptor, value=payload.value, request=request)
 
     validated_value = payload.value
 
     if group == "identity":
-        validated_value = validate_identity_value(key=key, value=validated_value, request=request)
+        validated_value = validate_identity_value(
+            key=key, value=validated_value, request=request
+        )
 
     return (descriptor, validated_value)

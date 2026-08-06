@@ -3,24 +3,30 @@ import os
 import tempfile
 from typing import Any
 
-from sqlalchemy import event, select
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
-
-from app.storage.models.base import Base as StorageBase
-from app.storage.models.chat import Chat as ChatModel
 from app.database.models.hierarchy_node import HierarchyNodeModel
-from app.storage.adapters.chat_repository_adapter import ChatRepositoryAdapter
 from app.services.chat_service import (
     ChatHierarchyNodeNotFoundError,
     ChatHierarchyNodeRequiredError,
+)
+from app.storage.adapters.chat_repository_adapter import ChatRepositoryAdapter
+from app.storage.models.base import Base as StorageBase
+from app.storage.models.chat import Chat as ChatModel
+from sqlalchemy import event, select
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
 )
 
 
 def test_chat_adapter_hierarchy_behaviour() -> None:
     async def _run() -> None:
-        db_file = tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False)
+        fd, db_path = tempfile.mkstemp(suffix=".sqlite")
+        os.close(fd)
+        engine: AsyncEngine | None = None
         try:
-            url = f"sqlite+aiosqlite:///{db_file.name}"
+            url = f"sqlite+aiosqlite:///{db_path}"
             engine = create_async_engine(url, echo=False)
 
             # enable foreign keys for SQLite
@@ -33,7 +39,10 @@ def test_chat_adapter_hierarchy_behaviour() -> None:
             async with engine.begin() as conn:
                 await conn.run_sync(StorageBase.metadata.create_all)
 
-            session_factory = async_sessionmaker[AsyncSession](engine, expire_on_commit=False)
+            session_factory = async_sessionmaker[AsyncSession](
+                engine,
+                expire_on_commit=False,
+            )
 
             adapter = ChatRepositoryAdapter(session_factory)
 
@@ -66,7 +75,12 @@ def test_chat_adapter_hierarchy_behaviour() -> None:
 
             # 3) Provided existing hierarchy_node -> chat created and no extra hierarchy node created
             async with session_factory() as session:
-                node = HierarchyNodeModel(id="node-1", parent_id=None, type="chat", name="Node 1")
+                node = HierarchyNodeModel(
+                    id="node-1",
+                    parent_id=None,
+                    type="chat",
+                    name="Node 1",
+                )
                 session.add(node)
                 await session.flush()
                 await session.commit()
@@ -87,21 +101,21 @@ def test_chat_adapter_hierarchy_behaviour() -> None:
                 assert res is not None and res.node_id == "node-1"
 
                 # ensure no hierarchy node named 'Conversation conv-ok' exists
-                q2 = select(HierarchyNodeModel).where(HierarchyNodeModel.name.like("Conversation conv-ok%"))
+                q2 = select(HierarchyNodeModel).where(
+                    HierarchyNodeModel.name.like("Conversation conv-ok%")
+                )
                 res2 = (await session.execute(q2)).scalars().all()
                 assert len(res2) == 0
 
         finally:
-            try:
-                try:
+            if engine is not None:
+                import contextlib
+
+                with contextlib.suppress(Exception):
                     await engine.dispose()
-                except Exception:
-                    pass
-            except NameError:
-                pass
+
             try:
-                db_file.close()
-                os.unlink(db_file.name)
+                os.remove(db_path)
             except Exception:
                 pass
 

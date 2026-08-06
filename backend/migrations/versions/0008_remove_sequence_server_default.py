@@ -4,12 +4,14 @@ Revision ID: 0008_remove_sequence_server_default
 Revises: 0007_consolidate_message_schema
 Create Date: 2026-08-02 12:55:00.000000
 """
-from alembic import op
+
 from typing import Any, cast
 
+from alembic import op
+
 # revision identifiers, used by Alembic.
-revision = '0008_remove_sequence_server_default'
-down_revision = '0007_consolidate_message_schema'
+revision = "0008_remove_sequence_server_default"
+down_revision = "0007_consolidate_message_schema"
 branch_labels = None
 depends_on = None
 
@@ -17,11 +19,11 @@ depends_on = None
 def upgrade() -> None:
     conn = op.get_bind()
     # Only perform the table-copy maneuver on SQLite; other DBs can ALTER
-    if conn.dialect.name == 'sqlite':
+    if conn.dialect.name == "sqlite":
         # create new table without server_default for sequence_number
         raw_conn = cast(Any, conn.engine.raw_connection())
         try:
-            sql = '''
+            sql = """
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS messages_new (
@@ -47,7 +49,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_messages_conversation_sequence ON messages(
 CREATE INDEX IF NOT EXISTS ix_messages_conversation_sequence ON messages(conversation_id, sequence_number);
 COMMIT;
 PRAGMA foreign_keys=ON;
-'''
+"""
             raw_conn.executescript(sql)
             raw_conn.commit()
         finally:
@@ -58,7 +60,9 @@ PRAGMA foreign_keys=ON;
     else:
         # For other dialects attempt a safe ALTER (best-effort)
         try:
-            op.alter_column('messages', 'sequence_number', server_default=cast(Any, None))
+            op.alter_column(
+                "messages", "sequence_number", server_default=cast(Any, None)
+            )
         except Exception:
             pass
 

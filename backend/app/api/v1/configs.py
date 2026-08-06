@@ -5,6 +5,7 @@ from __future__ import annotations
 import inspect
 import logging
 import math
+import os
 import re
 from collections.abc import (
     Callable,
@@ -16,8 +17,8 @@ from functools import lru_cache
 from typing import (
     Literal,
     TypeAlias,
-    TypeGuard,
     TypedDict,
+    TypeGuard,
     cast,
 )
 from zoneinfo import (
@@ -32,32 +33,19 @@ from fastapi import (
     Response,
     status,
 )
-import os
-
-# Use a typed compatibility constant for the problematic 422 name so
-# Pylance can statically resolve the type. The actual integer value is
-# exported from `app.status_compat`.
-from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
 from pydantic import (
     JsonValue,
 )
 
+from app.config.definitions import get_config_definition
 from app.config.service import (
-    ConfigValidationError,
-    ConfigServiceError,
-    ConfigService,
     ConfigDefinitionNotFoundError,
     ConfigPersistenceError,
+    ConfigService,
+    ConfigServiceError,
+    ConfigValidationError,
 )
 from app.core.security_profile import get_security_profile
-from app.schemas.settings_catalog import (
-    SettingsControl,
-    SettingsFieldDescriptor,
-    SettingsSource,
-    SettingsAvailability,
-)
-from app.services.settings_catalog import build_settings_catalog
-from app.config.definitions import get_config_definition
 from app.schemas.configuration import (
     ConfigDynamicOptionsResponse,
     ConfigEntryResponse,
@@ -66,32 +54,42 @@ from app.schemas.configuration import (
     ConfigOptionResponse,
     ConfigUIResponse,
 )
+from app.schemas.settings_catalog import (
+    SettingsAvailability,
+    SettingsControl,
+    SettingsFieldDescriptor,
+    SettingsSource,
+)
+from app.services.settings_catalog import build_settings_catalog
 
-# small utilities reused across api modules
-from .tools import read_mapping_value
+# Use a typed compatibility constant for the problematic 422 name so
+# Pylance can statically resolve the type. The actual integer value is
+# exported from `app.status_compat`.
+from app.status_compat import HTTP_422_UNPROCESSABLE_CONTENT
+
+# Validation helpers are defined in this module (kept local for clarity)
+# Service helpers moved to configs_service module
+# Service helpers are implemented within this module; avoid importing
+# duplicate symbols from `configs_service` which would shadow local
+# definitions and confuse static analysis.
+# Import request/response schema models from local module
+from .configs_schema import (
+    BulkConfigUpdateRequest,
+    ConfigChangeItem,
+    ConfigUpdateRequest,
+    ConfigUpdateResponse,
+)
 
 # Import a small set of service helpers used by this module. We avoid
 # importing symbols that are implemented locally to prevent shadowing.
 from .configs_service import (
     get_config_service,
-    resolve_maybe_awaitable,
     get_service_revision,
+    resolve_maybe_awaitable,
 )
 
-# Validation helpers are defined in this module (kept local for clarity)
-
-# Service helpers moved to configs_service module
-# Service helpers are implemented within this module; avoid importing
-# duplicate symbols from `configs_service` which would shadow local
-# definitions and confuse static analysis.
-
-# Import request/response schema models from local module
-from .configs_schema import (
-    ConfigUpdateRequest,
-    ConfigUpdateResponse,
-    ConfigChangeItem,
-    BulkConfigUpdateRequest,
-)
+# small utilities reused across api modules
+from .tools import read_mapping_value
 
 logger = logging.getLogger(__name__)
 
@@ -103,8 +101,11 @@ router = APIRouter()
 # attribute only if it's missing and log failures to help
 # diagnose reload/import issues.
 try:
-    if not hasattr(status, "HTTP_422_UNPROCESSABLE_CONTENT"):
-        setattr(status, "HTTP_422_UNPROCESSABLE_CONTENT", HTTP_422_UNPROCESSABLE_CONTENT)
+    # Use `setattr` to avoid static attribute access checks by type checkers
+    # (some starlette versions do not expose the legacy constant).
+    # Some static type checkers may not know this legacy attribute exists
+    # on `starlette.status`. Silence attribute-defined diagnostics here.
+    status.HTTP_422_UNPROCESSABLE_CONTENT = HTTP_422_UNPROCESSABLE_CONTENT  # type: ignore[attr-defined]
 except Exception as exc:
     logger.debug(
         "Could not assign status.HTTP_422_UNPROCESSABLE_CONTENT: %s",
@@ -327,7 +328,7 @@ def structured_http_error(
     message: str,
     details: Mapping[str, object] | None = None,
 ) -> HTTPException:
-    normalized_details: dict[str, object] = (dict(details) if details is not None else {})
+    normalized_details: dict[str, object] = dict(details) if details is not None else {}
 
     request_id = get_request_id(request) if request is not None else None
 
@@ -373,7 +374,9 @@ def normalize_optional_identifier(value: object) -> str | None:
     return normalized or None
 
 
-def validate_config_name(value: object, *, field_name: str = "value", request: Request | None = None) -> str:
+def validate_config_name(
+    value: object, *, field_name: str = "value", request: Request | None = None
+) -> str:
     if not isinstance(value, str):
         raise structured_http_error(
             request=request,
@@ -409,11 +412,7 @@ def is_sensitive_key(group: str, key: str) -> bool:
 
     lowered = key.strip().lower()
 
-    for part in SENSITIVE_KEY_PARTS:
-        if part in lowered:
-            return True
-
-    return False
+    return any(part in lowered for part in SENSITIVE_KEY_PARTS)
 
 
 def get_actor_id(
@@ -426,7 +425,16 @@ def get_actor_id(
     if principal is None:
         return None
 
+    actor = getattr(request.state, "user", None)
+
+    # Prefer fully normalized UserContext
+    from app.auth.models import UserContext
+
+    if isinstance(actor, UserContext):
+        return actor.id
+
     from typing import cast
+
     actor_id = read_mapping_value(
         cast(Mapping[object, object], principal),
         "id",
@@ -529,6 +537,7 @@ def get_permissions(
         return set()
 
     from typing import cast
+
     raw_permissions = read_mapping_value(
         cast(Mapping[object, object], principal),
         "permissions",
@@ -1708,7 +1717,14 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                 if definition is not None:
                     # build options from definition UI
                     options = [
-                        ConfigOptionResponse(value=o.value, label=o.label, description=(o.description if hasattr(o, "description") else None), disabled=False)
+                        ConfigOptionResponse(
+                            value=o.value,
+                            label=o.label,
+                            description=(
+                                o.description if hasattr(o, "description") else None
+                            ),
+                            disabled=False,
+                        )
                         for o in getattr(definition.ui, "options", ())
                     ]
 
@@ -1717,13 +1733,23 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                     d = getattr(definition.ui, "dynamic_options", None)
                     if d is not None:
                         src = getattr(d, "source", None)
-                        src_val = src.value if (src is not None and hasattr(src, "value")) else "server"
+                        src_val = (
+                            src.value
+                            if (src is not None and hasattr(src, "value"))
+                            else "server"
+                        )
                         endpoint_val = getattr(d, "endpoint", None)
-                        dyn = ConfigDynamicOptionsResponse(source=src_val, endpoint=endpoint_val)
+                        dyn = ConfigDynamicOptionsResponse(
+                            source=src_val, endpoint=endpoint_val
+                        )
 
                     # UI fields (safe access and fallbacks)
                     comp = getattr(definition.ui, "component", None)
-                    comp_val = comp.value if (comp is not None and hasattr(comp, "value")) else None
+                    comp_val = (
+                        comp.value
+                        if (comp is not None and hasattr(comp, "value"))
+                        else None
+                    )
                     category_val = definition.ui.category or g.id
                     section_val = definition.ui.section or section.id
                     order_val = getattr(definition.ui, "order", None)
@@ -1757,11 +1783,18 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                         full_key=f"{cfg_group}.{cfg_key}",
                         display_name=definition.display_name,
                         description=definition.description or "",
-                        value=(value if not is_sensitive_key(cfg_group, cfg_key) else None),
+                        value=(
+                            value if not is_sensitive_key(cfg_group, cfg_key) else None
+                        ),
                         default_value=definition.default_value,
-                        schema_version=definition.schema_version or CONFIG_API_SCHEMA_VERSION,
+                        schema_version=definition.schema_version
+                        or CONFIG_API_SCHEMA_VERSION,
                         # safe access to optional value_type
-                        value_type=(getattr(definition.value_type, "name", None) if getattr(definition, "value_type", None) is not None else None),
+                        value_type=(
+                            getattr(definition.value_type, "name", None)
+                            if getattr(definition, "value_type", None) is not None
+                            else None
+                        ),
                         value_schema=(definition.value_schema or {}),
                         editable=definition.runtime_editable,
                         sensitive=definition.is_secret,
@@ -1769,19 +1802,30 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                         requires_restart=definition.requires_restart,
                         runtime_editable=definition.runtime_editable,
                         nullable=definition.nullable,
-                        visibility=(getattr(definition.visibility, "value", "") if getattr(definition, "visibility", None) is not None else ""),
-                        allowed_scopes=[(s.value if hasattr(s, "value") else s) for s in getattr(definition, "allowed_scopes", [])],
+                        visibility=(
+                            getattr(definition.visibility, "value", "")
+                            if getattr(definition, "visibility", None) is not None
+                            else ""
+                        ),
+                        allowed_scopes=[
+                            (s.value if hasattr(s, "value") else s)
+                            for s in getattr(definition, "allowed_scopes", [])
+                        ],
                         current_scope="application",
                         ui=ui,
                         permissions=(
                             ConfigEntryResponse.ConfigPermissionsResponse(
-                                read=getattr(definition.permissions, "read"),
-                                write=getattr(definition.permissions, "write"),
-                                reveal_secret=getattr(definition.permissions, "reveal_secret", None),
+                                read=definition.permissions.read,
+                                write=definition.permissions.write,
+                                reveal_secret=getattr(
+                                    definition.permissions, "reveal_secret", None
+                                ),
                             )
                             if getattr(definition, "permissions", None) is not None
-                            and getattr(definition.permissions, "read", None) is not None
-                            and getattr(definition.permissions, "write", None) is not None
+                            and getattr(definition.permissions, "read", None)
+                            is not None
+                            and getattr(definition.permissions, "write", None)
+                            is not None
                             else None
                         ),
                         deprecated=definition.deprecated,
@@ -1827,7 +1871,9 @@ def build_config_groups(entries: ConfigEntries) -> list[ConfigGroupResponse]:
                         full_key=f"{cfg_group}.{cfg_key}",
                         display_name=field.title,
                         description=field.description or "",
-                        value=(value if not is_sensitive_key(cfg_group, cfg_key) else None),
+                        value=(
+                            value if not is_sensitive_key(cfg_group, cfg_key) else None
+                        ),
                         default_value=None,
                         schema_version=CONFIG_API_SCHEMA_VERSION,
                         value_type=None,
@@ -2109,7 +2155,9 @@ async def call_config_set(
             request=request,
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             code="INTERNAL_SERVER_ERROR",
-            message=("Bei der Verarbeitung der Anfrage ist ein interner Fehler aufgetreten."),
+            message=(
+                "Bei der Verarbeitung der Anfrage ist ein interner Fehler aufgetreten."
+            ),
             details={
                 "group": group,
                 "key": key,
@@ -2196,7 +2244,9 @@ async def bulk_update_config(
     changes_list: list[ConfigChangeItem] = payload.changes
     if changes_list:
         for change in changes_list:
-            updates[(change.group.strip().lower(), change.key.strip().lower())] = change.value
+            updates[(change.group.strip().lower(), change.key.strip().lower())] = (
+                change.value
+            )
     else:
         for raw_group, raw_group_value in payload.values.items():
             # Payload is already validated to Mapping[str, Mapping[str, ConfigValue]]
@@ -2225,7 +2275,10 @@ async def bulk_update_config(
             status_code=status.HTTP_404_NOT_FOUND,
             code="CONFIG_NOT_DEFINED",
             message=str(exc),
-            details={"group": getattr(exc, "group", None), "key": getattr(exc, "key", None)},
+            details={
+                "group": getattr(exc, "group", None),
+                "key": getattr(exc, "key", None),
+            },
         ) from exc
     except ConfigPersistenceError as exc:
         # Persistence failures are server errors but return structured details

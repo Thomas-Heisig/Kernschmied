@@ -1,10 +1,14 @@
 import sqlite3
 from pathlib import Path
 
-p = Path(__file__).resolve().parents[1] / 'data' / 'kernschmied.hierarchy-migration-test.db'
-print('test db:', p)
+p = (
+    Path(__file__).resolve().parents[1]
+    / "data"
+    / "kernschmied.hierarchy-migration-test.db"
+)
+print("test db:", p)
 if not p.exists():
-    print('ERROR: test DB not found')
+    print("ERROR: test DB not found")
     raise SystemExit(2)
 
 conn = sqlite3.connect(str(p))
@@ -12,11 +16,11 @@ cur = conn.cursor()
 
 try:
     inspector_cols = [r for r in cur.execute("PRAGMA table_info('hierarchy_nodes')")]
-    print('existing hierarchy_nodes columns:', [c[1] for c in inspector_cols])
+    print("existing hierarchy_nodes columns:", [c[1] for c in inspector_cols])
 
     # Run rebuild similar to migration 0009_consolidate_hierarchy_node_schema
-    print('Running safe rebuild...')
-    sql = '''
+    print("Running safe rebuild...")
+    sql = """
 PRAGMA foreign_keys=OFF;
 BEGIN TRANSACTION;
 CREATE TABLE IF NOT EXISTS hierarchy_nodes_new (
@@ -71,27 +75,29 @@ ALTER TABLE hierarchy_nodes_new RENAME TO hierarchy_nodes;
 CREATE INDEX IF NOT EXISTS ix_hierarchy_nodes_parent_position ON hierarchy_nodes(parent_id, position);
 COMMIT;
 PRAGMA foreign_keys=ON;
-'''
+"""
     try:
         cur.executescript(sql)
         conn.commit()
-        print('Rebuild completed')
+        print("Rebuild completed")
     except Exception as e:
-        print('Rebuild failed:', e)
+        print("Rebuild failed:", e)
         conn.rollback()
         raise
 
-    print('\nPost-migration checks:')
+    print("\nPost-migration checks:")
     for row in cur.execute("PRAGMA table_info('hierarchy_nodes')"):
         print(row)
-    print('\nPRAGMA integrity_check:')
-    for row in cur.execute('PRAGMA integrity_check'):
+    print("\nPRAGMA integrity_check:")
+    for row in cur.execute("PRAGMA integrity_check"):
         print(row)
-    print('\nPRAGMA foreign_key_check:')
-    for row in cur.execute('PRAGMA foreign_key_check'):
+    print("\nPRAGMA foreign_key_check:")
+    for row in cur.execute("PRAGMA foreign_key_check"):
         print(row)
-    print('\nSample rows:')
-    for row in cur.execute("SELECT id, parent_id, type, name, position FROM hierarchy_nodes ORDER BY position, id LIMIT 50"):
+    print("\nSample rows:")
+    for row in cur.execute(
+        "SELECT id, parent_id, type, name, position FROM hierarchy_nodes ORDER BY position, id LIMIT 50"
+    ):
         print(row)
 finally:
     conn.close()

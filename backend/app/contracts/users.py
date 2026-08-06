@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field, EmailStr, ConfigDict
 from datetime import datetime
 from typing import Literal
+
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class BaseContract(BaseModel):

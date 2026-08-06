@@ -7,20 +7,20 @@ Usage:
 Prints node details recursively and lists chats/messages summary for chats
 whose node_id is the orphan or any descendant.
 """
+
 from __future__ import annotations
 
 import argparse
 import asyncio
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
-from sqlalchemy import select
-
+from app.core.settings import settings
 from app.database.models.hierarchy_node import HierarchyNodeModel
+from app.storage.database import init_database
 from app.storage.models.chat import Chat as ChatModel
 from app.storage.models.chat import Message as MessageModel
-from app.storage.database import init_database
-from app.core.settings import settings
+from sqlalchemy import select
 
 
 def resolve_sqlite_path(database_url: str) -> Path | None:
@@ -31,7 +31,7 @@ def resolve_sqlite_path(database_url: str) -> Path | None:
     return None
 
 
-async def gather_subtree(session, root_id: str) -> List[HierarchyNodeModel]:
+async def gather_subtree(session: Any, root_id: str) -> list[HierarchyNodeModel]:
     # simple BFS
     nodes_by_id: dict[str, HierarchyNodeModel] = {}
     q = select(HierarchyNodeModel).where(HierarchyNodeModel.id == root_id)
@@ -44,7 +44,9 @@ async def gather_subtree(session, root_id: str) -> List[HierarchyNodeModel]:
     nodes_by_id[root.id] = root
     while queue:
         current = queue.pop(0)
-        q2 = select(HierarchyNodeModel).where(HierarchyNodeModel.parent_id == current.id)
+        q2 = select(HierarchyNodeModel).where(
+            HierarchyNodeModel.parent_id == current.id
+        )
         rows = (await session.execute(q2)).scalars().all()
         for child in rows:
             if child.id not in nodes_by_id:
@@ -54,7 +56,9 @@ async def gather_subtree(session, root_id: str) -> List[HierarchyNodeModel]:
 
 
 async def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Inspect orphan subtree and linked chats/messages")
+    parser = argparse.ArgumentParser(
+        description="Inspect orphan subtree and linked chats/messages"
+    )
     parser.add_argument("--node-id", required=True)
     args = parser.parse_args(argv)
 
@@ -76,11 +80,15 @@ async def main(argv: list[str] | None = None) -> int:
             return 1
 
         # Print nodes sorted by parent_id then position
-        nodes_sorted = sorted(nodes, key=lambda n: (n.parent_id or "", n.position or 0, n.id))
+        nodes_sorted = sorted(
+            nodes, key=lambda n: (n.parent_id or "", n.position or 0, n.id)
+        )
 
         print("Nodes in subtree:")
         for n in nodes_sorted:
-            print(f"- id={n.id} parent_id={n.parent_id} type={n.type} name={n.name} position={n.position} is_system={n.is_system} is_active={n.is_active} prompt_enabled={n.prompt_enabled} prompt_priority={n.prompt_priority} prompt_mode={n.prompt_mode} created_at={n.created_at} updated_at={n.updated_at} metadata={n.node_metadata}")
+            print(
+                f"- id={n.id} parent_id={n.parent_id} type={n.type} name={n.name} position={n.position} is_system={n.is_system} is_active={n.is_active} prompt_enabled={n.prompt_enabled} prompt_priority={n.prompt_priority} prompt_mode={n.prompt_mode} created_at={n.created_at} updated_at={n.updated_at} metadata={n.node_metadata}"
+            )
 
         descendant_ids = [n.id for n in nodes]
 
@@ -92,9 +100,20 @@ async def main(argv: list[str] | None = None) -> int:
             # count messages
             mq = select(MessageModel).where(MessageModel.conversation_id == c.id)
             msgs = (await session.execute(mq)).scalars().all()
-            print(f"- chat id={c.id} node_id={c.node_id} user_id={c.user_id} title={c.title} created_at={c.created_at} updated_at={c.updated_at} messages={len(msgs)}")
+            # Use safe attribute access to satisfy static analysis for ORM models
+            node_id = getattr(c, "node_id", None)
+            user_id = getattr(c, "user_id", None)
+            title = getattr(c, "title", None)
+            created_at = getattr(c, "created_at", None)
+            updated_at = getattr(c, "updated_at", None)
+            print(
+                f"- chat id={getattr(c, 'id', None)} node_id={node_id} user_id={user_id} title={title} created_at={created_at} updated_at={updated_at} messages={len(msgs)}"
+            )
             for m in msgs:
-                print(f"    message seq={m.sequence_number} role={m.role} type={m.message_type} status={m.status} length={len(m.content) if m.content is not None else 0} created_at={m.created_at}")
+                content_len = len(m.content or "")
+                print(
+                    f"    message seq={getattr(m, 'sequence_number', None)} role={getattr(m, 'role', None)} type={getattr(m, 'message_type', None)} status={getattr(m, 'status', None)} length={content_len} created_at={getattr(m, 'created_at', None)}"
+                )
 
     return 0
 

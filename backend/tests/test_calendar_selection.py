@@ -7,7 +7,7 @@ from typing import cast
 
 from fastapi import Request
 from sqlalchemy import select
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine, AsyncSession
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 # Ensure backend package is importable when tests run from repo root
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,7 +25,9 @@ def test_calendar_selection_user_binding() -> None:
         async with engine.begin() as conn:
             await conn.run_sync(StorageBase.metadata.create_all)
 
-        session_factory = async_sessionmaker[AsyncSession](engine, expire_on_commit=False)
+        session_factory = async_sessionmaker[AsyncSession](
+            engine, expire_on_commit=False
+        )
 
         async with session_factory() as session:
             # Dummy request with user in state
@@ -34,7 +36,10 @@ def test_calendar_selection_user_binding() -> None:
             request = cast(Request, SimpleNamespace(state=state))
 
             from app.api.v1.calendar import CalendarSelectionIn
-            payload = CalendarSelectionIn(selected=datetime.now(UTC), note="a test note")
+
+            payload = CalendarSelectionIn(
+                selected=datetime.now(UTC), note="a test note"
+            )
 
             res = await select_date(payload, request, session=session)
 

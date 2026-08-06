@@ -401,14 +401,20 @@ def as_object_sequence(
 
 
 def read_mapping_value(
-    source: Mapping[object, object],
+    source: object,
     key: str,
-    default: object = None,
-) -> object:
-    if key not in source:
+    default: object | None = None,
+) -> object | None:
+    """Read `key` from `source` when it's a mapping with string keys.
+
+    Returns `default` when `source` is not a mapping or key missing.
+    """
+    # Use a Mapping with string keys so static checkers know `.get`'s signature
+    if not isinstance(source, Mapping):
         return default
 
-    return source[key]
+    mapping = cast(Mapping[str, object], source)
+    return mapping.get(key, default)
 
 
 def read_value(

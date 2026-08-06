@@ -97,18 +97,18 @@ export default function UserMenu() {
 
       {open ? (
         <div role="menu" className="absolute right-0 mt-2 w-56 bg-white dark:bg-slate-800 border border-border shadow-lg rounded-md py-1 z-50">
-          <button ref={(el) => (itemsRef.current[0] = el)} role="menuitem" onClick={() => { panels?.openPanel('profile'); setOpen(false); toggleRef.current?.focus(); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">Profil</button>
-          <button ref={(el) => (itemsRef.current[1] = el)} role="menuitem" onClick={() => { panels?.openPanel('settings'); setOpen(false); toggleRef.current?.focus(); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">Persönliche Einstellungen</button>
-          <button ref={(el) => (itemsRef.current[2] = el)} role="menuitem" onClick={() => { panels?.openPanel('sessions'); setOpen(false); toggleRef.current?.focus(); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">Sessions</button>
+          <button type="button" ref={(el) => { itemsRef.current[0] = el }} role="menuitem" onClick={() => { panels?.openPanel('profile'); setOpen(false); toggleRef.current?.focus(); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">Profil</button>
+          <button type="button" ref={(el) => { itemsRef.current[1] = el }} role="menuitem" onClick={() => { panels?.openPanel('settings'); setOpen(false); toggleRef.current?.focus(); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">Persönliche Einstellungen</button>
+          <button type="button" ref={(el) => { itemsRef.current[2] = el }} role="menuitem" onClick={() => { panels?.openPanel('sessions'); setOpen(false); toggleRef.current?.focus(); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">Sessions</button>
           {user?.passwordLoginAvailable ? (
-            <button ref={(el) => (itemsRef.current[3] = el)} role="menuitem" onClick={() => { panels?.openPanel('change-password'); setOpen(false); toggleRef.current?.focus(); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">Passwort ändern</button>
+            <button type="button" ref={(el) => { itemsRef.current[3] = el }} role="menuitem" onClick={() => { panels?.openPanel('change-password'); setOpen(false); toggleRef.current?.focus(); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">Passwort ändern</button>
           ) : null}
           <div className="border-t my-1" />
           {user?.developmentSession ? (
             <div className="px-3 py-2 text-sm text-amber-700">Development-Modus (aktiv)</div>
           ) : null}
           <div className="border-t my-1" />
-          <button ref={(el) => (itemsRef.current[4] = el)} role="menuitem" onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">
+          <button type="button" ref={(el) => { itemsRef.current[4] = el }} role="menuitem" onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">
             Abmelden
           </button>
         </div>

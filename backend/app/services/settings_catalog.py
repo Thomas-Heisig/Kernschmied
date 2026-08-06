@@ -3441,9 +3441,7 @@ def _build_security_group() -> SettingsGroupDescriptor:
                     _config_field(
                         "security.authentication.self_registration_enabled",
                         "Selbstregistrierung aktiv",
-                        description=(
-                            "Erlaubt Benutzern, sich selbst zu registrieren."
-                        ),
+                        description=("Erlaubt Benutzern, sich selbst zu registrieren."),
                         group="security",
                         key="self_registration_enabled",
                         control=SettingsControl.BOOLEAN,

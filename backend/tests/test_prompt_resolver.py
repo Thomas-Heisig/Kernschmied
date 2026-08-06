@@ -1,15 +1,15 @@
 from __future__ import annotations
 
+from typing import cast
+
 import pytest
 
-from typing import Optional, cast
-
-from app.prompts.resolver import PromptResolver
-from app.prompts.errors import UnsupportedPromptModeError
 # PromptFragment not required in these tests
 from app.hierarchy.models import HierarchyActor
 from app.hierarchy.permissions import HierarchyPermissionService
 from app.hierarchy.repository import HierarchyRepository
+from app.prompts.errors import UnsupportedPromptModeError
+from app.prompts.resolver import PromptResolver
 
 
 class FakeNode:
@@ -17,14 +17,14 @@ class FakeNode:
         self,
         id: str,
         type: str,
-        system_prompt: Optional[str] = None,
+        system_prompt: str | None = None,
         prompt_enabled: bool = True,
         prompt_priority: int = 0,
         prompt_mode: str = "append",
     ) -> None:
         self.id: str = id
         self.type: str = type
-        self.system_prompt: Optional[str] = system_prompt
+        self.system_prompt: str | None = system_prompt
         self.prompt_enabled: bool = prompt_enabled
         self.prompt_priority: int = prompt_priority
         self.prompt_mode: str = prompt_mode
@@ -41,7 +41,11 @@ def test_full_ancestor_chain_order():
     ]
 
     resolver = PromptResolver()
-    resolved = resolver.resolve_from_chain(chain=chain, settings_system_prompt="SETTINGS")
+    settings_system_prompt = "SETTINGS"
+    resolved = resolver.resolve_from_chain(
+        chain=chain,
+        settings_system_prompt=settings_system_prompt,
+    )
 
     # fragments should be present in deterministic order by priority
     ids: list[str] = [f.source_id for f in resolved.fragments]
@@ -69,7 +73,13 @@ def test_disabled_fragments_ignored():
 def test_replace_discards_previous():
     chain = [
         FakeNode("system-root", "system", system_prompt="S0", prompt_priority=-100),
-        FakeNode("user-a", "user", system_prompt="U0", prompt_mode="replace", prompt_priority=0),
+        FakeNode(
+            "user-a",
+            "user",
+            system_prompt="U0",
+            prompt_mode="replace",
+            prompt_priority=0,
+        ),
         FakeNode("chat-1", "chat", system_prompt="C0", prompt_priority=10),
     ]
 
@@ -117,9 +127,17 @@ async def test_resolve_requires_read_permission():
             ]
 
     repo = Repo()
-    actor = HierarchyActor(user_id="someone", roles=frozenset(), permissions=frozenset())
+    actor = HierarchyActor(
+        user_id="someone",
+        roles=frozenset(),
+        permissions=frozenset(),
+    )
     permission_service = HierarchyPermissionService()
     resolver = PromptResolver(permission_service=permission_service)
 
     with pytest.raises(PermissionError):
-        await resolver.resolve("chat-1", repository=cast(HierarchyRepository, repo), actor=actor)
+        await resolver.resolve(
+            "chat-1",
+            repository=cast(HierarchyRepository, repo),
+            actor=actor,
+        )

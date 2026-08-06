@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import contextlib
+import logging
+from collections.abc import Mapping
 from datetime import datetime
-from typing import Optional, Mapping
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models.auth_session import AuthSessionModel
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +22,7 @@ class AuthSessionRepository:
         self.session.add(obj)
         await self.session.flush()
         await self.session.refresh(obj)
-        try:
+        with contextlib.suppress(Exception):
             # Avoid logging sensitive token hashes. Keep only non-sensitive identifiers.
             logger.debug(
                 "Created auth session",
@@ -29,21 +31,18 @@ class AuthSessionRepository:
                     "user_id": getattr(obj, "user_id", None),
                 },
             )
-        except Exception:
-            # Logging must never raise in production flows
-            pass
         return obj
 
-    async def get_by_token_hash(self, token_hash: str) -> Optional[AuthSessionModel]:
-        try:
+    async def get_by_token_hash(self, token_hash: str) -> AuthSessionModel | None:
+        with contextlib.suppress(Exception):
             # Do not log token hashes or previews to avoid leaking sensitive data.
             logger.debug("Looking up auth session by token hash")
-        except Exception:
-            pass
-        stmt = select(AuthSessionModel).where(AuthSessionModel.session_token_hash == token_hash)
+        stmt = select(AuthSessionModel).where(
+            AuthSessionModel.session_token_hash == token_hash
+        )
         result = await self.session.execute(stmt)
         obj = result.scalar_one_or_none()
-        try:
+        with contextlib.suppress(Exception):
             if obj is None:
                 logger.debug("Auth session lookup returned no row")
             else:
@@ -56,8 +55,6 @@ class AuthSessionRepository:
                         "expires_at": getattr(obj, "expires_at", None),
                     },
                 )
-        except Exception:
-            pass
         return obj
 
     async def revoke(self, obj: AuthSessionModel, when: datetime | None = None) -> None:
@@ -70,12 +67,20 @@ class AuthSessionRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_for_user(self, session_id: str, user_id: str) -> AuthSessionModel | None:
-        stmt = select(AuthSessionModel).where(AuthSessionModel.id == session_id).where(AuthSessionModel.user_id == user_id)
+    async def get_for_user(
+        self, session_id: str, user_id: str
+    ) -> AuthSessionModel | None:
+        stmt = (
+            select(AuthSessionModel)
+            .where(AuthSessionModel.id == session_id)
+            .where(AuthSessionModel.user_id == user_id)
+        )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def revoke_by_id(self, session_id: str, user_id: str, revoked_at: datetime) -> bool:
+    async def revoke_by_id(
+        self, session_id: str, user_id: str, revoked_at: datetime
+    ) -> bool:
         obj = await self.get_for_user(session_id, user_id)
         if obj is None:
             return False
@@ -87,7 +92,13 @@ class AuthSessionRepository:
         await self.session.flush()
         return True
 
-    async def revoke_all_for_user(self, user_id: str, revoked_at: datetime, *, except_session_id: str | None = None) -> int:
+    async def revoke_all_for_user(
+        self,
+        user_id: str,
+        revoked_at: datetime,
+        *,
+        except_session_id: str | None = None,
+    ) -> int:
         stmt = select(AuthSessionModel).where(AuthSessionModel.user_id == user_id)
         if except_session_id is not None:
             stmt = stmt.where(AuthSessionModel.id != except_session_id)

@@ -1,15 +1,16 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from typing import List
+from datetime import UTC, datetime
+from typing import Any
 
-from app.storage.repositories.auth_session import AuthSessionRepository
-from app.contracts.auth import UserSessionResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.contracts.auth import UserSessionResponse
+from app.storage.repositories.auth_session import AuthSessionRepository
 
-def _is_active(session_model) -> bool:
-    now = datetime.now(timezone.utc)
+
+def _is_active(session_model: Any) -> bool:
+    now = datetime.now(UTC)
     if session_model.revoked_at is not None:
         return False
     if session_model.expires_at is None:
@@ -17,11 +18,13 @@ def _is_active(session_model) -> bool:
     return session_model.expires_at > now
 
 
-async def list_sessions(session: AsyncSession, user_id: str, current_session_id: str | None) -> List[UserSessionResponse]:
+async def list_sessions(
+    session: AsyncSession, user_id: str, current_session_id: str | None
+) -> list[UserSessionResponse]:
     repo = AuthSessionRepository(session)
-    rows = await repo.list_for_user(user_id)
+    rows: list[Any] = await repo.list_for_user(user_id)
 
-    mapped = []
+    mapped: list[UserSessionResponse] = []
     for r in rows:
         active = _is_active(r)
         mapped.append(
@@ -29,7 +32,7 @@ async def list_sessions(session: AsyncSession, user_id: str, current_session_id:
                 id=r.id,
                 authentication_method=r.authentication_method or "",
                 created_at=r.created_at,
-                expires_at=r.expires_at or datetime.fromtimestamp(0, tz=timezone.utc),
+                expires_at=r.expires_at or datetime.fromtimestamp(0, tz=UTC),
                 last_seen_at=r.last_seen_at,
                 revoked_at=r.revoked_at,
                 current=(r.id == current_session_id),
@@ -40,17 +43,24 @@ async def list_sessions(session: AsyncSession, user_id: str, current_session_id:
         )
 
     # sort: current first, then created_at desc
-    mapped.sort(key=lambda x: (not x.current, getattr(x, 'created_at', datetime.min)), reverse=True)
+    mapped.sort(
+        key=lambda x: (not x.current, getattr(x, "created_at", datetime.min)),
+        reverse=True,
+    )
     return mapped
 
 
 async def revoke_session(session: AsyncSession, user_id: str, session_id: str) -> bool:
     repo = AuthSessionRepository(session)
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     return await repo.revoke_by_id(session_id, user_id, now)
 
 
-async def revoke_all_sessions(session: AsyncSession, user_id: str, *, except_session_id: str | None = None) -> int:
+async def revoke_all_sessions(
+    session: AsyncSession, user_id: str, *, except_session_id: str | None = None
+) -> int:
     repo = AuthSessionRepository(session)
-    now = datetime.now(timezone.utc)
-    return await repo.revoke_all_for_user(user_id, now, except_session_id=except_session_id)
+    now = datetime.now(UTC)
+    return await repo.revoke_all_for_user(
+        user_id, now, except_session_id=except_session_id
+    )

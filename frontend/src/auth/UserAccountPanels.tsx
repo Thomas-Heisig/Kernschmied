@@ -66,9 +66,10 @@ export function UserAccountPanelsProvider({ children }: { children: React.ReactN
       {active === 'profile' && (
         <div className="fixed inset-0 z-1000 flex items-start justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setActive(null)} />
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded shadow-lg max-h-screen overflow-auto">
+          <div role="dialog" aria-modal="true" aria-labelledby="user-panel-profile-title" className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded shadow-lg max-h-screen overflow-auto">
             <div className="p-4">
-              <button className="float-right" onClick={() => value.closePanel()}>Schließen</button>
+              <button type="button" className="float-right" onClick={() => value.closePanel()}>Schließen</button>
+              <h2 id="user-panel-profile-title" className="sr-only">Profil</h2>
               <UserProfilePanel />
             </div>
           </div>
@@ -78,9 +79,10 @@ export function UserAccountPanelsProvider({ children }: { children: React.ReactN
       {active === 'settings' && (
         <div className="fixed inset-0 z-1000 flex items-start justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setActive(null)} />
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded shadow-lg max-h-screen overflow-auto">
+          <div role="dialog" aria-modal="true" aria-labelledby="user-panel-settings-title" className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded shadow-lg max-h-screen overflow-auto">
             <div className="p-4">
-              <button className="float-right" onClick={() => value.closePanel()}>Schließen</button>
+              <button type="button" className="float-right" onClick={() => value.closePanel()}>Schließen</button>
+              <h2 id="user-panel-settings-title" className="sr-only">Einstellungen</h2>
               <UserSettingsPanel />
             </div>
           </div>
@@ -90,9 +92,10 @@ export function UserAccountPanelsProvider({ children }: { children: React.ReactN
       {active === 'sessions' && (
         <div className="fixed inset-0 z-1000 flex items-start justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setActive(null)} />
-          <div className="relative w-full max-w-2xl bg-white dark:bg-slate-800 rounded shadow-lg max-h-screen overflow-auto">
+          <div role="dialog" aria-modal="true" aria-labelledby="user-panel-sessions-title" className="relative w-full max-w-2xl bg-white dark:bg-slate-800 rounded shadow-lg max-h-screen overflow-auto">
             <div className="p-4">
-              <button className="float-right" onClick={() => value.closePanel()}>Schließen</button>
+              <button type="button" className="float-right" onClick={() => value.closePanel()}>Schließen</button>
+              <h2 id="user-panel-sessions-title" className="sr-only">Sitzungen</h2>
               <UserSessionsPanel onClose={() => value.closePanel()} />
             </div>
           </div>
@@ -102,9 +105,10 @@ export function UserAccountPanelsProvider({ children }: { children: React.ReactN
       {active === 'change-password' && (
         <div className="fixed inset-0 z-1000 flex items-start justify-center p-4">
           <div className="absolute inset-0 bg-black/40" onClick={() => setActive(null)} />
-          <div className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded shadow-lg max-h-screen overflow-auto">
+          <div role="dialog" aria-modal="true" aria-labelledby="user-panel-change-password-title" className="relative w-full max-w-md bg-white dark:bg-slate-800 rounded shadow-lg max-h-screen overflow-auto">
             <div className="p-4">
-              <button className="float-right" onClick={() => value.closePanel()}>Schließen</button>
+              <button type="button" className="float-right" onClick={() => value.closePanel()}>Schließen</button>
+              <h2 id="user-panel-change-password-title" className="sr-only">Passwort ändern</h2>
               <UserChangePasswordPanel onClose={() => value.closePanel()} />
             </div>
           </div>

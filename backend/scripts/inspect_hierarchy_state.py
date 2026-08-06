@@ -7,6 +7,7 @@ chat state. It never writes or modifies the DB.
 Run from repo backend folder:
   .\\.venv\\Scripts\\python.exe scripts\\inspect_hierarchy_state.py
 """
+
 from __future__ import annotations
 
 import json
@@ -14,12 +15,16 @@ import os
 import re
 import sqlite3
 import sys
+
 # Path not required here; keep imports minimal
 
 try:
     from app.core.settings import settings
-except Exception as exc:  # pragma: no cover - best-effort diagnostics
-    print("ERROR: could not import app.core.settings — is PYTHONPATH set to backend?", file=sys.stderr)
+except Exception:  # pragma: no cover - best-effort diagnostics
+    print(
+        "ERROR: could not import app.core.settings — is PYTHONPATH set to backend?",
+        file=sys.stderr,
+    )
     raise
 
 
@@ -57,7 +62,11 @@ def run_queries(conn: sqlite3.Connection) -> None:
             print("\n--- QUERY:\n", sql)
             if cur.description:
                 cols = [c[0] for c in cur.description]
-                print(json.dumps([dict(zip(cols, r)) for r in rows], indent=2, default=str))
+                print(
+                    json.dumps(
+                        [dict(zip(cols, r)) for r in rows], indent=2, default=str
+                    )
+                )
             else:
                 print(json.dumps(rows, indent=2, default=str))
         except Exception as exc:  # pragma: no cover - best-effort
@@ -99,7 +108,9 @@ def run_queries(conn: sqlite3.Connection) -> None:
     """)
 
     # chats
-    q("SELECT id, conversation_id, node_id, user_id, created_at FROM chats ORDER BY created_at;")
+    q(
+        "SELECT id, conversation_id, node_id, user_id, created_at FROM chats ORDER BY created_at;"
+    )
 
     # roots without parent
     q("SELECT id, type, name FROM hierarchy_nodes WHERE parent_id IS NULL;")

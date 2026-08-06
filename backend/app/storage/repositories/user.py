@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Optional, Mapping
+from collections.abc import Mapping
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,17 +17,17 @@ class UserRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def get_by_id(self, user_id: str) -> Optional[UserModel]:
+    async def get_by_id(self, user_id: str) -> UserModel | None:
         stmt = select(UserModel).where(UserModel.id == user_id)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_username(self, username: str) -> Optional[UserModel]:
+    async def get_by_username(self, username: str) -> UserModel | None:
         stmt = select(UserModel).where(UserModel.username == username)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_email(self, email: str) -> Optional[UserModel]:
+    async def get_by_email(self, email: str) -> UserModel | None:
         stmt = select(UserModel).where(UserModel.email == email)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()

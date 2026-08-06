@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pydantic import BaseModel, Field
-from typing import Literal, Tuple, Final
+from typing import Final, Literal
 
+from pydantic import BaseModel
 
 PROMPT_SCHEMA_VERSION: Final[Literal["1.0"]] = "1.0"
 
@@ -25,7 +25,7 @@ class ResolvedPrompt(BaseModel):
     hierarchy_node_id: str | None
     config_revision: int | None = None
     hierarchy_revision: int | None = None
-    fragments: Tuple[PromptFragment, ...] = ()
+    fragments: tuple[PromptFragment, ...] = ()
     system_prompt: str = ""
 
 

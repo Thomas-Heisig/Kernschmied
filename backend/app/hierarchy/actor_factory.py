@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from app.hierarchy.models import HierarchyActor
 from app.auth.models import UserContext
+from app.hierarchy.models import HierarchyActor
 
 
 def hierarchy_actor_from_user_context(user: UserContext | None) -> HierarchyActor:

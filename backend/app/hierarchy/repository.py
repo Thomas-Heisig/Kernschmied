@@ -1,20 +1,20 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Optional, Any
+from typing import Any
+from uuid import uuid4
 
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts.hierarchy import HierarchyNodeCreate, HierarchyNodeUpdate
 from app.database.models.hierarchy_node import HierarchyNodeModel
-from uuid import uuid4
 from app.prompts.errors import (
-    PromptHierarchyNodeNotFoundError,
     BrokenPromptHierarchyError,
+    InactivePromptHierarchyNodeError,
     PromptHierarchyCycleError,
     PromptHierarchyDepthError,
-    InactivePromptHierarchyNodeError,
+    PromptHierarchyNodeNotFoundError,
 )
 
 MAX_HIERARCHY_DEPTH = 64
@@ -50,7 +50,7 @@ class HierarchyRepository:
         result = await self._session.scalars(statement)
         return result.all()
 
-    async def get_node(self, node_id: str) -> Optional[HierarchyNodeModel]:
+    async def get_node(self, node_id: str) -> HierarchyNodeModel | None:
         return await self._session.get(HierarchyNodeModel, node_id)
 
     async def list_children(
@@ -154,7 +154,9 @@ class HierarchyRepository:
         affected_parents = {m[1] for m in moves}
 
         # Load all involved nodes
-        statement = select(HierarchyNodeModel).where(HierarchyNodeModel.id.in_(list(node_ids)))
+        statement = select(HierarchyNodeModel).where(
+            HierarchyNodeModel.id.in_(list(node_ids))
+        )
         result = await self._session.scalars(statement)
         nodes = {n.id: n for n in result.all()}
 
@@ -175,7 +177,9 @@ class HierarchyRepository:
             if target_list is None:
                 # if parent had no children previously and not in dict, initialize
                 children = await self.list_children(new_parent_id)
-                parent_children[new_parent_id] = [c for c in children if c.id not in node_ids]
+                parent_children[new_parent_id] = [
+                    c for c in children if c.id not in node_ids
+                ]
                 target_list = parent_children[new_parent_id]
 
             # clamp position
@@ -216,10 +220,14 @@ class HierarchyRepository:
                 raise PromptHierarchyCycleError("Zyklische Hierarchie erkannt.")
 
             if depth > MAX_HIERARCHY_DEPTH:
-                raise PromptHierarchyDepthError("Maximale Hierarchietiefe überschritten.")
+                raise PromptHierarchyDepthError(
+                    "Maximale Hierarchietiefe überschritten."
+                )
 
             if not current.is_active:
-                raise InactivePromptHierarchyNodeError(f"Node '{current.id}' is inactive")
+                raise InactivePromptHierarchyNodeError(
+                    f"Node '{current.id}' is inactive"
+                )
 
             visited.add(current.id)
             chain.append(current)
@@ -229,7 +237,9 @@ class HierarchyRepository:
 
             maybe_parent: Any = await self.get_node(current.parent_id)
             if maybe_parent is None:
-                raise BrokenPromptHierarchyError(f"Parent '{current.parent_id}' not found for node '{current.id}'")
+                raise BrokenPromptHierarchyError(
+                    f"Parent '{current.parent_id}' not found for node '{current.id}'"
+                )
 
             parent: HierarchyNodeModel = maybe_parent
 

@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from app.contracts.model_backend import ChatMessage, MessageRole
-from app.services.chat_service import ChatHistoryProvider, ChatServiceContext
+from app.services.chat_service import ChatServiceContext
 from app.storage.repositories.chat import ChatRepository as StorageChatRepository
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 

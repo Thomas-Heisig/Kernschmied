@@ -45,6 +45,4 @@ class CalendarSelection(Base):
         default=utc_now,
     )
 
-    __table_args__ = (
-        Index("ix_calendar_selected_at", "selected_at"),
-    )
+    __table_args__ = (Index("ix_calendar_selected_at", "selected_at"),)

@@ -1,5 +1,4 @@
-from functools import lru_cache
-from typing import Any, Dict, Optional
+from typing import Any, cast
 
 
 class PermissionEvaluator:
@@ -15,7 +14,13 @@ class PermissionEvaluator:
     def __init__(self):
         pass
 
-    def can(self, actor: Dict[str, Any], permission: str, scope: Dict[str, Any], context: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def can(
+        self,
+        actor: dict[str, Any],
+        permission: str,
+        scope: dict[str, Any],
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         """Evaluate whether `actor` may perform `permission` in `scope`.
 
         Simple semantics for reference:
@@ -26,9 +31,13 @@ class PermissionEvaluator:
         """
         context = context or {}
 
-        granted = context.get("granted_permissions") or []
+        granted = cast(list[str], context.get("granted_permissions") or [])
         if permission in granted:
-            return {"allowed": True, "reason": "explicit allow via context", "via": {"direct": True}}
+            return {
+                "allowed": True,
+                "reason": "explicit allow via context",
+                "via": {"direct": True},
+            }
 
         # Fallback deny
         return {"allowed": False, "reason": "no grant found", "via": {}}

@@ -93,7 +93,7 @@ export default function UserSessionsPanel({ onClose }: { onClose?: () => void })
               </div>
               <div className="flex flex-col items-end space-y-2">
                 <div className="text-xs font-medium text-sky-700">{s.current ? 'Aktuelle Sitzung' : ''}</div>
-                <button onClick={() => handleRevoke(s.id, !!s.current)} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Widerrufen</button>
+                <button type="button" aria-label={s.current ? 'Aktuelle Sitzung widerrufen' : 'Sitzung widerrufen'} onClick={() => handleRevoke(s.id, !!s.current)} className="px-3 py-1 bg-red-600 text-white rounded text-sm">Widerrufen</button>
               </div>
             </div>
           </div>
@@ -101,17 +101,17 @@ export default function UserSessionsPanel({ onClose }: { onClose?: () => void })
       </div>
 
       <div className="mt-4">
-        {!confirmLogoutAll ? (
-          <button onClick={() => setConfirmLogoutAll(true)} className="px-3 py-1 bg-red-700 text-white rounded">Alle Sitzungen abmelden</button>
+        { !confirmLogoutAll ? (
+          <button type="button" onClick={() => setConfirmLogoutAll(true)} className="px-3 py-1 bg-red-700 text-white rounded">Alle Sitzungen abmelden</button>
         ) : (
           <div className="inline-flex items-center gap-2">
             <span className="text-sm">Wirklich alle Sitzungen abmelden?</span>
-            <button onClick={() => void handleLogoutAll()} className="px-3 py-1 bg-red-700 text-white rounded">Ja, abmelden</button>
-            <button onClick={() => setConfirmLogoutAll(false)} className="px-3 py-1 bg-slate-200 rounded">Abbrechen</button>
+            <button type="button" onClick={() => void handleLogoutAll()} className="px-3 py-1 bg-red-700 text-white rounded">Ja, abmelden</button>
+            <button type="button" onClick={() => setConfirmLogoutAll(false)} className="px-3 py-1 bg-slate-200 rounded">Abbrechen</button>
           </div>
         )}
 
-        <button onClick={() => onClose && onClose()} className="ml-2 px-3 py-1 bg-slate-200 rounded">Schließen</button>
+        <button type="button" onClick={() => onClose && onClose()} className="ml-2 px-3 py-1 bg-slate-200 rounded">Schließen</button>
       </div>
     </div>
   );

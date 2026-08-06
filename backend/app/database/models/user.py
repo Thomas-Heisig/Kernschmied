@@ -29,20 +29,36 @@ class UserModel(Base):
     password_hash: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    is_system_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
-    must_change_password: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    is_system_admin: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    must_change_password: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
 
-    failed_login_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    locked_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    last_login_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    failed_login_attempts: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0
+    )
+    locked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    last_login_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now)
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, default=utc_now, onupdate=utc_now
+    )
 
     created_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
     updated_by: Mapped[str | None] = mapped_column(String(36), nullable=True)
 
-    schema_version: Mapped[str] = mapped_column(String(16), nullable=False, default="1.0")
+    schema_version: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="1.0"
+    )
 
     __table_args__ = (
         Index("ix_users_username", "username", unique=True),

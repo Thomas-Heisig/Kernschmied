@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from pydantic import (
+from pydantic import (  # NEU: Pydantic's JsonValue
     BaseModel,
     ConfigDict,
     Field,
     JsonValue,
-)  # NEU: Pydantic's JsonValue
+)
 
 # Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
 JsonScalar = str | int | float | bool | None

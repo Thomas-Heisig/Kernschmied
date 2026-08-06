@@ -788,6 +788,7 @@ async function parseErrorResponse(response: Response): Promise<ApiErrorResponse>
 async function parseSuccessResponse<T>(
   response: Response,
   responseType: ApiResponseType,
+  signal?: AbortSignal,
 ): Promise<T> {
   if (responseType === 'void' || response.status === 204 || response.status === 205) {
     return undefined as T;
@@ -824,6 +825,41 @@ async function parseSuccessResponse<T>(
     try {
       return (await response.json()) as T;
     } catch (error) {
+      // If the failure was due to an abort, normalize to an aborted request error
+      if (isAbortLikeError(error, signal ?? new AbortController().signal)) {
+        const abortDetails = getAbortErrorDetails(signal ?? new AbortController().signal);
+
+        throw new ApiError({
+          message: abortDetails.message,
+          status: 0,
+          statusText: abortDetails.statusText,
+          code: abortDetails.code,
+          details: {
+            reason: abortDetails.reason,
+          },
+          requestId: normalizeRequestId(response.headers.get(SERVER_REQUEST_ID_HEADER)),
+          url: response.url,
+          cause: error,
+        });
+      }
+
+      logDeveloperStep('warn', 'success-response-json-parse-failed', {
+        status: response.status,
+        contentType,
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      // Fall back to returning the raw text when JSON parsing fails
+      try {
+        const text = await response.text();
+
+        if (text && text.trim()) {
+          return text as unknown as T;
+        }
+      } catch {
+        // ignore text read errors and throw below
+      }
+
       throw new ApiError({
         message: 'Die API-Antwort wurde als JSON angekündigt, enthält jedoch kein gültiges JSON.',
         status: response.status,
@@ -1090,7 +1126,11 @@ export async function apiRequest<TResponse, TBody = unknown>(
       });
     }
 
-    const result = await parseSuccessResponse<TResponse>(response, options.responseType ?? 'auto');
+    const result = await parseSuccessResponse<TResponse>(
+      response,
+      options.responseType ?? 'auto',
+      prepared.signal,
+    );
 
     logDeveloperStep('info', 'response-parsed', {
       method: prepared.method,

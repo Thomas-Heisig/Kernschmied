@@ -5,7 +5,6 @@ from typing import Any
 from app.database.models.hierarchy_node import HierarchyNodeModel
 from app.hierarchy.repository import HierarchyRepository
 
-
 SYSTEM_ROOT_ID = "system-root"
 
 

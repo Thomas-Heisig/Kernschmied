@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from enum import Enum
-from typing import Any, Literal, Final
+from typing import Any, Final, Literal
 
 from pydantic import (
     BaseModel,

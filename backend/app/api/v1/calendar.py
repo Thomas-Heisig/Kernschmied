@@ -25,8 +25,16 @@ class CalendarSelectionOut(BaseModel):
     created_at: datetime
 
 
-@router.post("/selection", response_model=CalendarSelectionOut, status_code=status.HTTP_201_CREATED)
-async def select_date(payload: CalendarSelectionIn, request: Request, session: AsyncSession = Depends(get_session)):
+@router.post(
+    "/selection",
+    response_model=CalendarSelectionOut,
+    status_code=status.HTTP_201_CREATED,
+)
+async def select_date(
+    payload: CalendarSelectionIn,
+    request: Request,
+    session: AsyncSession = Depends(get_session),
+):
     """Persist a selected calendar date. Integration point for frontend calendar."""
     try:
         user = getattr(request.state, "user", None)
@@ -51,4 +59,10 @@ async def select_date(payload: CalendarSelectionIn, request: Request, session: A
 
     except Exception as exc:
         await session.rollback()
-        raise HTTPException(status_code=500, detail={"message": "Failed to persist calendar selection", "error": str(exc)})
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Failed to persist calendar selection",
+                "error": str(exc),
+            },
+        )

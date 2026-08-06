@@ -71,11 +71,13 @@ class DatabaseManager:
         # Log the configured and effective database URLs and ensure parent
         # directory exists for SQLite. This helps diagnosing mismatches
         # between Alembic and the application at startup.
-        try:
-            logger.info("Configured DATABASE_URL: %s", getattr(settings, "database_url", None))
+        from contextlib import suppress
+
+        with suppress(Exception):
+            logger.info(
+                "Configured DATABASE_URL: %s", getattr(settings, "database_url", None)
+            )
             logger.info("Effective database URL: %s", self._database_url)
-        except Exception:
-            pass
 
         if self._database_url.startswith("sqlite"):
             # Extract file path for sqlite( + aiosqlite ) scheme
@@ -86,9 +88,15 @@ class DatabaseManager:
                 parent = db_path.parent
                 try:
                     parent.mkdir(parents=True, exist_ok=True)
-                    logger.info("Ensured SQLite parent directory exists: %s", str(parent))
+                    logger.info(
+                        "Ensured SQLite parent directory exists: %s", str(parent)
+                    )
                 except Exception as e:
-                    logger.exception("Failed to ensure SQLite parent directory %s: %s", str(parent), e)
+                    logger.exception(
+                        "Failed to ensure SQLite parent directory %s: %s",
+                        str(parent),
+                        e,
+                    )
 
             # If configured, attempt to run Alembic migrations before initializing the
             # SQLAlchemy engine. This upgrades the schema to the latest revision and
@@ -121,14 +129,22 @@ class DatabaseManager:
                                 heads = script.get_heads()
                                 logger.info("Alembic available heads: %s", heads)
                             except Exception:
-                                logger.debug("Could not enumerate Alembic heads", exc_info=True)
+                                logger.debug(
+                                    "Could not enumerate Alembic heads", exc_info=True
+                                )
 
-                            logger.info("Running Alembic upgrade head using %s", str(alembic_ini))
+                            logger.info(
+                                "Running Alembic upgrade head using %s",
+                                str(alembic_ini),
+                            )
                             # If Alembic fails here we must NOT continue with create_all()
                             # because that can hide migration problems and lead to FK errors.
                             command.upgrade(alembic_cfg, "head")
                         else:
-                            logger.info("Alembic config not found at %s, skipping migrations", str(alembic_ini))
+                            logger.info(
+                                "Alembic config not found at %s, skipping migrations",
+                                str(alembic_ini),
+                            )
                     except Exception:
                         # Structured logging and re-raise to abort startup instead of
                         # silently continuing and letting SQLAlchemy create missing tables.
@@ -143,7 +159,7 @@ class DatabaseManager:
         # Use NullPool for SQLite to avoid holding file handles open between
         # tests; helps on Windows where tempfile cleanup can fail with
         # PermissionError if the DB file is still open.
-        engine_kwargs = dict(echo=echo, pool_pre_ping=True)
+        engine_kwargs: dict[str, object] = dict(echo=echo, pool_pre_ping=True)
         if self._database_url.startswith("sqlite"):
             engine_kwargs["poolclass"] = NullPool
 
@@ -159,12 +175,13 @@ class DatabaseManager:
             if self._database_url.startswith("sqlite"):
                 from sqlalchemy import event
 
-                def _enable_sqlite_fk(dbapi_connection: Any, connection_record: Any) -> None:
-                    try:
+                def _enable_sqlite_fk(
+                    dbapi_connection: Any, connection_record: Any
+                ) -> None:
+                    from contextlib import suppress
+
+                    with suppress(Exception):
                         dbapi_connection.execute("PRAGMA foreign_keys = ON")
-                    except Exception:
-                        # best-effort, do not fail initialization
-                        pass
 
                 event.listen(self._engine.sync_engine, "connect", _enable_sqlite_fk)
         except Exception:
@@ -181,12 +198,10 @@ class DatabaseManager:
             async with self._engine.begin() as connection:
                 # Create tables for both ORM bases used in the project.
                 await connection.run_sync(Base.metadata.create_all)
-                try:
+                from contextlib import suppress
+
+                with suppress(Exception):
                     await connection.run_sync(StorageBase.metadata.create_all)
-                except Exception:
-                    # StorageBase may be empty in some contexts; ignore errors here
-                    # and let later steps surface real issues.
-                    pass
 
         return self._session_factory
 
@@ -203,21 +218,30 @@ class DatabaseManager:
         temporary SQLite files)."""
         try:
             if self._engine is not None:
-                try:
+                from contextlib import suppress
+
+                with suppress(Exception):
                     # Close the underlying sync engine to release file handles.
                     self._engine.sync_engine.dispose()
-                except Exception:
-                    pass
         finally:
             self._engine = None
             self._session_factory = None
 
+    def dispose_sync(self) -> None:
+        """Public wrapper for synchronous disposal used by external shutdown hooks.
+
+        This forwards to the internal `_dispose_sync` implementation while
+        providing a public, non-protected attribute that can be safely
+        referenced by external registrars (e.g. `atexit.register`).
+        """
+        self._dispose_sync()
+
     def __del__(self) -> None:
         # Best-effort synchronous cleanup when object is garbage-collected.
-        try:
+        from contextlib import suppress
+
+        with suppress(Exception):
             self._dispose_sync()
-        except Exception:
-            pass
 
 
 # Ensure runtime directories exist before constructing the database URL/manager.
@@ -231,12 +255,15 @@ _database_manager = DatabaseManager(settings.effective_database_url)
 
 # Ensure we attempt synchronous cleanup at process exit to release any
 # lingering SQLite file handles (helps Windows tempfile cleanup).
-try:
+from contextlib import suppress
+
+with suppress(Exception):
     import atexit
 
-    atexit.register(_database_manager._dispose_sync)
-except Exception:
-    pass
+    # Register the public synchronous disposal wrapper to avoid referencing
+    # a protected member from outside the class (Pylance warns about this).
+    atexit.register(_database_manager.dispose_sync)
+
 
 def get_database_manager() -> DatabaseManager:
     return _database_manager

@@ -13,7 +13,7 @@ from pydantic import (
     field_validator,
 )
 
-# Keine eigene rekursive JsonValue-Definition mehr – importiert aus pydantic
+# Keine eigene rekursive JsonValue-Definition mehr - importiert aus pydantic
 JsonScalar = str | int | float | bool | None
 JsonObject = dict[str, JsonValue]
 
@@ -299,6 +299,7 @@ class UserContext(BaseModel):
 
     authenticated: bool = False
     active: bool = True
+    is_system_admin: bool = False
 
     roles: tuple[str, ...] = ()
     permissions: tuple[str, ...] = ()
@@ -395,6 +396,7 @@ class UserContext(BaseModel):
     def anonymous(
         cls,
     ) -> UserContext:
+        # Return an unauthenticated placeholder user context.
         return cls(
             id="anonymous",
             name="Nicht angemeldet",
@@ -551,6 +553,20 @@ class UserContext(BaseModel):
             default={},
         )
 
+        # Build normalized roles sequence and inject admin when indicated.
+        _normalized_roles = normalize_string_collection_value(raw_roles)
+        if normalize_bool(raw_is_system_admin, default=False):
+            roles = ("admin", *_normalized_roles)
+        else:
+            roles = _normalized_roles
+
+        # Determine explicit system admin flag: either explicit principal flag
+        # or presence of an admin role.
+        final_is_system_admin = bool(
+            normalize_bool(raw_is_system_admin, default=False)
+            or ("admin" in roles)
+        )
+
         return cls(
             id=normalized_user_id,
             name=normalized_name,
@@ -562,13 +578,10 @@ class UserContext(BaseModel):
                 raw_active,
                 default=True,
             ),
+            is_system_admin=final_is_system_admin,
             # Normalize roles/permissions and inject the `admin` role when the
             # backing principal indicates a system/admin user.
-            roles=(
-                ("admin",) + normalize_string_collection_value(raw_roles)
-                if normalize_bool(raw_is_system_admin, default=False)
-                else normalize_string_collection_value(raw_roles)
-            ),
+            roles=roles,
             permissions=normalize_string_collection_value(raw_permissions),
             tenant_id=normalize_optional_string(
                 raw_tenant_id,

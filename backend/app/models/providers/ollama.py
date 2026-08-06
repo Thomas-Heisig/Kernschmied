@@ -337,7 +337,9 @@ class OllamaProvider(BaseModelBackend):
                 # Now `m` is `dict[str, object]` and `.get()` is known.
                 message_roles = [m.get("role") for m in messages]
                 message_lengths = [len(str(m.get("content", ""))) for m in messages]
-                system_message_count = sum(1 for m in messages if (m.get("role") == "system"))
+                system_message_count = sum(
+                    1 for m in messages if (m.get("role") == "system")
+                )
 
                 logger.info(
                     "Ollama chat payload prepared",

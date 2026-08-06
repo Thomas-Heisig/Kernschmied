@@ -67,11 +67,17 @@ class MemoryService:
 
         return await self._repo.get_message(message_id)
 
-    async def list_messages(self, conversation_id: str, limit: int | None = None, after: int | None = None) -> Sequence[Message]:
-        return await self._repo.list_messages(conversation_id, limit=limit, after_sequence=after)
+    async def list_messages(
+        self, conversation_id: str, limit: int | None = None, after: int | None = None
+    ) -> Sequence[Message]:
+        return await self._repo.list_messages(
+            conversation_id, limit=limit, after_sequence=after
+        )
 
     async def mark_message_complete(self, message_id: str) -> None:
         await self._repo.mark_message_complete(message_id, completed_at=utc_now())
 
-    async def mark_message_failed(self, message_id: str, metadata: dict[str, Any] | None = None) -> None:
+    async def mark_message_failed(
+        self, message_id: str, metadata: dict[str, Any] | None = None
+    ) -> None:
         await self._repo.mark_message_failed(message_id, metadata=metadata)

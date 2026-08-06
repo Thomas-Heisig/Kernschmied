@@ -16,7 +16,6 @@ from fastapi import (
     APIRouter,
     Request,
     Response,
-    
 )
 from pydantic import (
     BaseModel,
@@ -24,7 +23,7 @@ from pydantic import (
     Field,
 )
 
-from app.core.security_profile import get_security_profile, SecurityProfile
+from app.core.security_profile import SecurityProfile, get_security_profile
 from app.core.settings import settings
 
 router = APIRouter()
@@ -957,9 +956,10 @@ def _resolve_capabilities(
         },
     )
 
-    development_login_enabled = (
-        str(getattr(settings, "app_environment", "development")).lower() == "development"
-        and bool(getattr(settings, "development_admin_login_enabled", False))
+    development_login_enabled = str(
+        getattr(settings, "app_environment", "development")
+    ).lower() == "development" and bool(
+        getattr(settings, "development_admin_login_enabled", False)
     )
 
     return BootstrapCapabilities(
@@ -983,14 +983,20 @@ def _resolve_features(
 ) -> BootstrapFeatures:
     # Determine registration and development-login features based on settings
     app_env = str(getattr(settings, "app_environment", "development")).lower()
-    development_admin_login = app_env == "development" and bool(getattr(settings, "development_admin_login_enabled", False))
+    development_admin_login = app_env == "development" and bool(
+        getattr(settings, "development_admin_login_enabled", False)
+    )
 
     if app_env == "development":
-        self_registration = bool(getattr(settings, "development_self_registration_enabled", False))
+        self_registration = bool(
+            getattr(settings, "development_self_registration_enabled", False)
+        )
     else:
         self_registration = bool(getattr(settings, "self_registration_enabled", False))
 
-    registration_requires_invitation = bool(getattr(settings, "registration_requires_invitation", False))
+    registration_requires_invitation = bool(
+        getattr(settings, "registration_requires_invitation", False)
+    )
 
     return BootstrapFeatures(
         schema_driven_ui=True,
@@ -1106,7 +1112,9 @@ async def _resolve_revisions(
     )
 
 
-def _serialize_security_profile(security_profile: SecurityProfile | None = None) -> dict[str, object]:
+def _serialize_security_profile(
+    security_profile: SecurityProfile | None = None,
+) -> dict[str, object]:
     if security_profile is None:
         security_profile = get_security_profile()
 
@@ -1130,17 +1138,21 @@ def _enhanced_security_profile() -> dict[str, object]:
     # Canonical profile name
     result["profile"] = str(getattr(settings, "app_environment", "development")).lower()
 
-    result["authentication_required"] = bool(getattr(security_profile, "auth_required", True))
+    result["authentication_required"] = bool(
+        getattr(security_profile, "auth_required", True)
+    )
 
     # Development identity active only in development when explicitly enabled
     app_env = str(getattr(settings, "app_environment", "development")).lower()
-    result["development_identity_active"] = (
-        app_env == "development" and bool(getattr(settings, "development_admin_login_enabled", False))
+    result["development_identity_active"] = app_env == "development" and bool(
+        getattr(settings, "development_admin_login_enabled", False)
     )
 
     # Compute available login methods conservatively from security profile and settings
     methods: list[str] = []
-    allowed_auth_modes: set[object] = getattr(security_profile, "allowed_auth_modes", set())
+    allowed_auth_modes: set[object] = getattr(
+        security_profile, "allowed_auth_modes", set()
+    )
     # session -> password-based login
     from app.core.security_profile import AuthMode
 
@@ -1151,15 +1163,21 @@ def _enhanced_security_profile() -> dict[str, object]:
         methods.append("api_key")
 
     # development-admin only in development and when enabled
-    if app_env == "development" and bool(getattr(settings, "development_admin_login_enabled", False)):
+    if app_env == "development" and bool(
+        getattr(settings, "development_admin_login_enabled", False)
+    ):
         methods.append("development_admin")
 
     # registration availability
     registration_allowed = False
     if app_env == "development":
-        registration_allowed = bool(getattr(settings, "development_self_registration_enabled", False))
+        registration_allowed = bool(
+            getattr(settings, "development_self_registration_enabled", False)
+        )
     else:
-        registration_allowed = bool(getattr(settings, "self_registration_enabled", False))
+        registration_allowed = bool(
+            getattr(settings, "self_registration_enabled", False)
+        )
 
     if registration_allowed:
         methods.append("registration")
@@ -1167,13 +1185,19 @@ def _enhanced_security_profile() -> dict[str, object]:
     result["available_login_methods"] = methods
 
     # Explicit runtime flags for authentication/settings UI
-    result["development_fallback_enabled"] = (
-        app_env == "development" and bool(getattr(settings, "development_auth_fallback_enabled", False))
+    result["development_fallback_enabled"] = app_env == "development" and bool(
+        getattr(settings, "development_auth_fallback_enabled", False)
     )
-    result["development_admin_login_enabled"] = bool(getattr(settings, "development_admin_login_enabled", False))
+    result["development_admin_login_enabled"] = bool(
+        getattr(settings, "development_admin_login_enabled", False)
+    )
     result["self_registration"] = registration_allowed
-    result["development_self_registration"] = bool(getattr(settings, "development_self_registration_enabled", False))
-    result["registration_requires_invitation"] = bool(getattr(settings, "registration_requires_invitation", False))
+    result["development_self_registration"] = bool(
+        getattr(settings, "development_self_registration_enabled", False)
+    )
+    result["registration_requires_invitation"] = bool(
+        getattr(settings, "registration_requires_invitation", False)
+    )
 
     return result
 

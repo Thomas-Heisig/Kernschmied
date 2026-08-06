@@ -1,35 +1,34 @@
 from __future__ import annotations
 
+from typing import cast
+
 from fastapi import Request, Response, status
+from pydantic import JsonValue
+
+from app.schemas.configuration import ConfigEntryResponse, ConfigListResponse
 
 from .configs import (
-    router,
-    require_config_permission,
-    validate_config_name,
+    build_config_groups,
+    get_request_id,
     is_reserved_group,
     is_sensitive_key,
+    require_config_permission,
+    router,
     validate_catalog_config_value,
-    get_request_id,
-    build_config_groups,
+    validate_config_name,
 )
-
-from .configs_service import (
-    get_config_service,
-    get_service_revision,
-    read_config_entries,
-    call_config_set,
-)
-
 from .configs_schema import (
     BulkConfigUpdateRequest,
     ConfigChangeItem,
     ConfigUpdateRequest,
     ConfigUpdateResponse,
 )
-
-from app.schemas.configuration import ConfigListResponse, ConfigEntryResponse
-from typing import cast
-from pydantic import JsonValue
+from .configs_service import (
+    call_config_set,
+    get_config_service,
+    get_service_revision,
+    read_config_entries,
+)
 
 
 @router.get(
@@ -80,7 +79,6 @@ async def list_config(request: Request, response: Response) -> ConfigListRespons
     )
 
 
-
 @router.put(
     "",
     summary="Mehrere Konfigurationswerte ändern (Bulk)",
@@ -88,7 +86,9 @@ async def list_config(request: Request, response: Response) -> ConfigListRespons
         "Nimmt ein gruppiertes `values`-Objekt entgegen und speichert alle enthaltenen Werte in einer Transaktion."
     ),
 )
-async def bulk_update_config(payload: BulkConfigUpdateRequest, request: Request, response: Response) -> dict[str, object]:
+async def bulk_update_config(
+    payload: BulkConfigUpdateRequest, request: Request, response: Response
+) -> dict[str, object]:
     require_config_permission(request, "config:write")
 
     service = get_config_service(request)
@@ -97,10 +97,10 @@ async def bulk_update_config(payload: BulkConfigUpdateRequest, request: Request,
 
     changes_list: list[ConfigChangeItem] = payload.changes
     if changes_list:
-            for change in changes_list:
-                g = change.group
-                k = change.key
-                updates[(g.strip().lower(), k.strip().lower())] = change.value
+        for change in changes_list:
+            g = change.group
+            k = change.key
+            updates[(g.strip().lower(), k.strip().lower())] = change.value
     else:
         for raw_group, raw_group_value in payload.values.items():
             normalized_group = str(raw_group).strip().lower()
@@ -112,9 +112,9 @@ async def bulk_update_config(payload: BulkConfigUpdateRequest, request: Request,
     except Exception as exc:
         # forward known service-level exceptions as structured HTTP errors
         from app.config.service import (
-            ConfigValidationError,
             ConfigPersistenceError,
             ConfigServiceError,
+            ConfigValidationError,
         )
 
         from .configs import structured_http_error
@@ -164,7 +164,6 @@ async def bulk_update_config(payload: BulkConfigUpdateRequest, request: Request,
     return {"values": grouped, "revision": revision}
 
 
-
 @router.put(
     "/{group}/{key}",
     response_model=ConfigUpdateResponse,
@@ -175,7 +174,13 @@ async def bulk_update_config(payload: BulkConfigUpdateRequest, request: Request,
         "Settings-Katalogs validiert, versioniert und protokolliert."
     ),
 )
-async def update_config(group: str, key: str, payload: ConfigUpdateRequest, request: Request, response: Response) -> ConfigUpdateResponse:
+async def update_config(
+    group: str,
+    key: str,
+    payload: ConfigUpdateRequest,
+    request: Request,
+    response: Response,
+) -> ConfigUpdateResponse:
     require_config_permission(request, "config:write")
 
     normalized_group = validate_config_name(group, field_name="group", request=request)
@@ -184,25 +189,65 @@ async def update_config(group: str, key: str, payload: ConfigUpdateRequest, requ
     if is_reserved_group(normalized_group):
         from .configs import structured_http_error
 
-        raise structured_http_error(request=request, status_code=status.HTTP_403_FORBIDDEN, code="CONFIG_GROUP_NOT_RUNTIME_EDITABLE", message=("Diese Konfigurationsgruppe darf nicht zur Laufzeit bearbeitet werden."), details={"group": normalized_group, "key": normalized_key})
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="CONFIG_GROUP_NOT_RUNTIME_EDITABLE",
+            message=(
+                "Diese Konfigurationsgruppe darf nicht zur Laufzeit bearbeitet werden."
+            ),
+            details={"group": normalized_group, "key": normalized_key},
+        )
 
     if is_sensitive_key(normalized_group, normalized_key):
         from .configs import structured_http_error
 
-        raise structured_http_error(request=request, status_code=status.HTTP_403_FORBIDDEN, code="SENSITIVE_CONFIG_NOT_ALLOWED", message=("Sensible Werte dürfen nicht über die Fachkonfiguration gespeichert werden."), details={"group": normalized_group, "key": normalized_key})
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="SENSITIVE_CONFIG_NOT_ALLOWED",
+            message=(
+                "Sensible Werte dürfen nicht über die Fachkonfiguration gespeichert werden."
+            ),
+            details={"group": normalized_group, "key": normalized_key},
+        )
 
-    descriptor, validated_value = validate_catalog_config_value(group=normalized_group, key=normalized_key, payload=payload, request=request)
+    descriptor, validated_value = validate_catalog_config_value(
+        group=normalized_group, key=normalized_key, payload=payload, request=request
+    )
 
     service = get_config_service(request)
 
     current_revision = await get_service_revision(service)
 
-    if payload.expected_revision is not None and (payload.expected_revision != current_revision):
+    if payload.expected_revision is not None and (
+        payload.expected_revision != current_revision
+    ):
         from .configs import structured_http_error
 
-        raise structured_http_error(request=request, status_code=status.HTTP_409_CONFLICT, code="CONFIG_REVISION_CONFLICT", message=("Die Konfiguration wurde zwischenzeitlich geändert. Bitte laden Sie die aktuellen Werte erneut."), details={"group": normalized_group, "key": normalized_key, "expected_revision": (payload.expected_revision), "current_revision": current_revision})
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_409_CONFLICT,
+            code="CONFIG_REVISION_CONFLICT",
+            message=(
+                "Die Konfiguration wurde zwischenzeitlich geändert. Bitte laden Sie die aktuellen Werte erneut."
+            ),
+            details={
+                "group": normalized_group,
+                "key": normalized_key,
+                "expected_revision": (payload.expected_revision),
+                "current_revision": current_revision,
+            },
+        )
 
-    await call_config_set(service=service, group=normalized_group, key=normalized_key, value=validated_value, payload=payload, request=request)
+    await call_config_set(
+        service=service,
+        group=normalized_group,
+        key=normalized_key,
+        value=validated_value,
+        payload=payload,
+        request=request,
+    )
 
     new_revision = await get_service_revision(service, default=(current_revision + 1))
     if new_revision <= current_revision:
@@ -214,7 +259,7 @@ async def update_config(group: str, key: str, payload: ConfigUpdateRequest, requ
     response.headers["X-Config-Schema-Version"] = "2.0"
 
     # log update
-    from .configs import logger, get_actor_id
+    from .configs import get_actor_id, logger
 
     logger.info(
         "Configuration value updated",
@@ -230,4 +275,9 @@ async def update_config(group: str, key: str, payload: ConfigUpdateRequest, requ
         },
     )
 
-    return ConfigUpdateResponse(group=normalized_group, key=normalized_key, revision=new_revision, request_id=get_request_id(request))
+    return ConfigUpdateResponse(
+        group=normalized_group,
+        key=normalized_key,
+        revision=new_revision,
+        request_id=get_request_id(request),
+    )

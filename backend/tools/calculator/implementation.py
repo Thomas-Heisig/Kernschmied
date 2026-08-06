@@ -124,11 +124,11 @@ def evaluate(
         node,
         ast.BinOp,
     ):
-        operation = BINARY_OPERATIONS.get(
+        bin_operation: BinaryOperation | None = BINARY_OPERATIONS.get(
             type(node.op),
         )
 
-        if operation is None:
+        if bin_operation is None:
             raise ValueError(
                 f"Der Operator '{type(node.op).__name__}' ist nicht erlaubt.",
             )
@@ -143,7 +143,12 @@ def evaluate(
             depth=depth + 1,
         )
 
-        result = operation(
+        if bin_operation is None:
+            raise ValueError(
+                f"Der Operator '{type(node.op).__name__}' ist nicht erlaubt.",
+            )
+
+        result = bin_operation(
             left,
             right,
         )
@@ -158,11 +163,11 @@ def evaluate(
         node,
         ast.UnaryOp,
     ):
-        operation = UNARY_OPERATIONS.get(
+        unary_operation: UnaryOperation | None = UNARY_OPERATIONS.get(
             type(node.op),
         )
 
-        if operation is None:
+        if unary_operation is None:
             raise ValueError(
                 f"Der unäre Operator '{type(node.op).__name__}' ist nicht erlaubt.",
             )
@@ -172,7 +177,7 @@ def evaluate(
             depth=depth + 1,
         )
 
-        result = operation(
+        result = unary_operation(
             operand,
         )
 

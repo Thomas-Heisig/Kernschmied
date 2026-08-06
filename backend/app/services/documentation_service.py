@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from pathlib import Path
-from typing import Any, Dict, List, Optional, cast
 import json
-from pydantic import BaseModel, ValidationError
-from app.contracts import documentation as contracts
 import re
+from pathlib import Path
+from typing import Any, cast
+
+from pydantic import BaseModel, ValidationError
+
+from app.contracts import documentation as contracts
 
 
 def resolve_default_documentation_root() -> Path:
@@ -27,9 +29,9 @@ class DocumentationManifestError(RuntimeError):
 
 class ManifestSchema(BaseModel):
     schema_version: str
-    documentation_version: Optional[str] = "0.1.0"
-    home_page: Optional[str]
-    sections: List[Dict[str, Any]]
+    documentation_version: str | None = "0.1.0"
+    home_page: str | None
+    sections: list[dict[str, Any]]
 
 
 def _safe_id_from_file(file_path: str) -> str:
@@ -47,9 +49,9 @@ class DocumentationService:
             else resolve_default_documentation_root()
         )
         self._manifest_path = self._root / "manifest.json"
-        self._manifest: Optional[ManifestSchema] = None
+        self._manifest: ManifestSchema | None = None
         # mapping page id -> relative file path from root
-        self._page_map: Dict[str, str] = {}
+        self._page_map: dict[str, str] = {}
 
     @property
     def root(self) -> Path:
@@ -66,18 +68,26 @@ class DocumentationService:
                 f"Dokumentationsmanifest konnte nicht gelesen werden: {exc}"
             ) from exc
 
-        if isinstance(raw, dict) and "sections" in raw and isinstance(raw["sections"], list):
+        if (
+            isinstance(raw, dict)
+            and "sections" in raw
+            and isinstance(raw["sections"], list)
+        ):
             try:
                 raw_dict = cast(dict[str, Any], raw)
 
                 schema_version: str = str(raw_dict.get("schema_version") or "1.0")
-                documentation_version: Optional[str] = (
-                    raw_dict.get("documentation_version") or raw_dict.get("version") or "0.1.0"
+                documentation_version: str | None = (
+                    raw_dict.get("documentation_version")
+                    or raw_dict.get("version")
+                    or "0.1.0"
                 )
-                home_page: Optional[str] = (
+                home_page: str | None = (
                     raw_dict.get("home_page") or raw_dict.get("default_page_id") or None
                 )
-                sections_typed: List[Dict[str, Any]] = cast(List[Dict[str, Any]], raw_dict["sections"])
+                sections_typed: list[dict[str, Any]] = cast(
+                    list[dict[str, Any]], raw_dict["sections"]
+                )
 
                 m = ManifestSchema(
                     schema_version=schema_version,
@@ -91,11 +101,11 @@ class DocumentationService:
             raise DocumentationManifestError("Unsupported manifest format")
 
         # build page map for safe resolution
-        page_map: Dict[str, str] = {}
+        page_map: dict[str, str] = {}
         for sec in m.sections:
             sec_dict = sec
             for p in sec_dict.get("pages", []):
-                p_dict = cast(Dict[str, Any], p)
+                p_dict = cast(dict[str, Any], p)
                 file = p_dict.get("file") or p_dict.get("path") or p_dict.get("href")
                 if not file:
                     continue
@@ -111,15 +121,19 @@ class DocumentationService:
         if not manifest.sections:
             raise DocumentationManifestError("DOCUMENTATION_MANIFEST_EMPTY")
 
-        sections_out: List[contracts.DocumentationSection] = []
+        sections_out: list[contracts.DocumentationSection] = []
         home_page_id = manifest.home_page or ""
 
         for sec in manifest.sections:
             sec_dict = sec
-            title = sec_dict.get("title") or sec_dict.get("name") or str(sec_dict.get("id", "section"))
+            title = (
+                sec_dict.get("title")
+                or sec_dict.get("name")
+                or str(sec_dict.get("id", "section"))
+            )
             pages: list[contracts.DocumentationPageSummary] = []
             for p in sec_dict.get("pages", []):
-                p_dict = cast(Dict[str, Any], p)
+                p_dict = cast(dict[str, Any], p)
                 file = p_dict.get("file") or p_dict.get("path") or p_dict.get("href")
                 if not file:
                     continue
@@ -166,13 +180,17 @@ class DocumentationService:
         try:
             candidate.relative_to(self._root)
         except Exception as exc:
-            raise DocumentationManifestError("Die Dokumentationsseite liegt außerhalb des Dokumentationsroots.") from exc
+            raise DocumentationManifestError(
+                "Die Dokumentationsseite liegt außerhalb des Dokumentationsroots."
+            ) from exc
 
         if not candidate.is_file():
             raise FileNotFoundError(str(candidate))
 
         if candidate.suffix.lower() not in {".md", ".markdown"}:
-            raise DocumentationManifestError(f"Nicht unterstützter Dokumentationstyp: {candidate.suffix}")
+            raise DocumentationManifestError(
+                f"Nicht unterstützter Dokumentationstyp: {candidate.suffix}"
+            )
 
         return candidate
 
@@ -197,7 +215,11 @@ class DocumentationService:
             section_id=path.parent.name,
             content=content,
             source_path=str(path.relative_to(ROOT)),
-            documentation_version=(self._manifest.documentation_version or "0.1.0") if self._manifest else "0.1.0",
+            documentation_version=(
+                (self._manifest.documentation_version or "0.1.0")
+                if self._manifest
+                else "0.1.0"
+            ),
         )
 
 

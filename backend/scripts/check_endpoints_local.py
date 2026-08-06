@@ -26,4 +26,4 @@ for ep in endpoints:
         except Exception:
             print(r.text[:1000])
     except Exception as e:
-        print(ep, 'ERROR', str(e))
+        print(ep, "ERROR", str(e))

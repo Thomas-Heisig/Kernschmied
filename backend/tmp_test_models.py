@@ -1,7 +1,8 @@
 import sys
+
 sys.path.insert(0, '.')
-from app.storage.models.hierarchy import HierarchyNode
 from app.storage.models.chat import Chat
+from app.storage.models.hierarchy import HierarchyNode
 
 n = HierarchyNode(node_type='conversation_root', name='root', prompt=None, position=0, config={}, is_active=True)
 print('Created node:', n)
