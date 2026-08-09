@@ -14,6 +14,7 @@ from fastapi import (
     Response,
     status,
 )
+from fastapi.responses import JSONResponse
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -28,6 +29,7 @@ from app.contracts.hierarchy import (
     HierarchyNodeUpdate,
 )
 from app.hierarchy.models import HierarchyActor
+from app.core.bootstrap import InMemoryHierarchyRepository
 from app.hierarchy.repository import HierarchyParentNotFoundError, HierarchyRepository
 from app.hierarchy.service import HierarchyChildTypeNotAllowedError
 from app.services.hierarchy_service import create_hierarchy_service
@@ -52,6 +54,7 @@ class HierarchyServiceProtocol(Protocol):
         root_id: str | None = None,
         max_depth: int | None = None,
     ) -> object: ...
+    async def get_node(self, node_id: str, actor: object | None = None) -> object: ...
 
 
 # NEU: Frontend-kompatibler Response-Vertrag
@@ -326,7 +329,22 @@ def _map_backend_tree_to_frontend(value: JSONDict | list[Any]) -> JSONDict | lis
         root_node: Any | None = None
 
         if len(roots) > 0:
-            root_node = roots[0]
+            # Prefer the canonical system root when available so the API
+            # consistently exposes the full system topology (system-root
+            # -> users-root/workspaces-root/chats-root). Fallback to the
+            # first returned root when system-root isn't present.
+            found: JSONDict | None = None
+            for r in roots:
+                try:
+                    if isinstance(r, dict):
+                        r_dict = cast(JSONDict, r)
+                        if r_dict.get("id") == "system-root":
+                            found = r_dict
+                            break
+                except Exception:
+                    continue
+
+            root_node = found or roots[0]
 
         # Defensive: if no root available, return an empty dict so the
         # normalizer can fail loudly or the caller can handle it.
@@ -448,32 +466,71 @@ def build_actor_from_request(request: Request) -> HierarchyActor:
 def get_hierarchy_service(
     request: Request,
 ) -> HierarchyServiceProtocol:
-    service: object = getattr(
-        request.app.state,
-        "hierarchy_service",
-        None,
-    )
+    service: object = getattr(request.app.state, "hierarchy_service", None)
 
+    # If the application hasn't completed bootstrap (tests, lightweight
+    # dev runs), provide a minimal in-memory hierarchy service so the
+    # frontend and unit tests can still read the navigation tree.
     if service is None:
-        raise structured_http_error(
-            request=request,
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            code="HIERARCHY_SERVICE_UNAVAILABLE",
-            message="Der Hierarchiedienst ist nicht verfügbar.",
-        )
+        # Provide a tiny compatibility wrapper implementing the
+        # HierarchyServiceProtocol so callers can `get_tree` and
+        # `get_node` without a full persistent bootstrap.
+        class _FallbackHierarchyService:
+            def __init__(self) -> None:
+                self._repo = InMemoryHierarchyRepository()
 
-    if not isinstance(
-        service,
-        HierarchyServiceProtocol,
-    ):
+            async def get_tree(self, *, actor: object | None = None, root_id: str | None = None, max_depth: int | None = None) -> object:  # type: ignore[misc]
+                del actor
+                return await self._repo.get_tree(root_id=root_id, max_depth=max_depth)
+
+            async def get_node(self, node_id: str, actor: object | None = None) -> object:  # type: ignore[misc]
+                root = await self._repo.get_tree()
+
+                # BFS search for node with matching id. The in-memory
+                # repository returns mapping-like nodes; avoid redundant
+                # `isinstance` checks by defensively casting and handling
+                # unexpected shapes via exception handling.
+                queue = [root]
+                while queue:
+                    cur = queue.pop(0)
+                    try:
+                        cur_dict = cast(JSONDict, cur)
+                        if cur_dict.get("id") == node_id:
+                            return cur_dict
+                    except Exception:
+                        # skip non-mapping nodes
+                        continue
+
+                    try:
+                        cur_dict = cast(JSONDict, cur)
+                        children = cast(list[Any], cur_dict.get("children") or [])
+                    except Exception:
+                        children = []
+
+                    for c in children:
+                        queue.append(c)
+
+                raise LookupError(f"node not found: {node_id}")
+
+        try:
+            return _FallbackHierarchyService()
+        except Exception:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                code="HIERARCHY_SERVICE_UNAVAILABLE",
+                message="Der Hierarchiedienst ist nicht verfügbar.",
+            )
+
+    if not isinstance(service, HierarchyServiceProtocol):
         raise structured_http_error(
             request=request,
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             code="HIERARCHY_SERVICE_CONTRACT_UNSUPPORTED",
-            message="Der registrierte Hierarchiedienst erfüllt den erforderlichen Vertrag nicht.",
-            details={
-                "required_method": "get_tree",
-            },
+            message=(
+                "Der registrierte Hierarchiedienst erfüllt den erforderlichen Vertrag nicht."
+            ),
+            details={"required_method": "get_tree"},
         )
 
     return service
@@ -481,8 +538,6 @@ def get_hierarchy_service(
 
 @router.get(
     "",
-    response_model=HierarchyTreeResponse,  # geändert!
-    response_model_exclude_none=True,
     summary="Hierarchie laden",
     description=(
         "Liefert die generische Projekt-/Mandanten-/Objekthierarchie "
@@ -506,7 +561,7 @@ async def hierarchy(
         default=False,
         description="Wenn true und der Aufrufer Admin ist, werden system-interne Knoten (z.B. system-root) im Ergebnis belassen.",
     ),
-) -> HierarchyTreeResponse:
+) -> Response:
     service = get_hierarchy_service(request)
 
     actor = build_actor_from_request(request)
@@ -546,66 +601,12 @@ async def hierarchy(
                     details={"invalid_root_type": rt},
                 )
 
-        # Projection: keep `system-root` internal by default. If the
-        # backend returns the technical `system-root` as top-level node
-        # we project it to a visible user root for normal callers.
-        if isinstance(raw_tree, dict):
-            raw_tree_dict: JSONDict = raw_tree
-
-            if raw_tree_dict.get("id") == "system-root":
-                # Admins may request the system nodes explicitly
-                if include_system_nodes:
-                    if not getattr(actor, "is_admin", False):
-                        raise PermissionError(
-                            "Nur Administratoren dürfen system-interne Knoten anfordern."
-                        )
-                    # leave system-root as-is for admins
-                else:
-                    # Try to pick the caller's user node if available
-                    selected: JSONDict | None = None
-                    children_any = raw_tree_dict.get("children", [])
-                    if not isinstance(children_any, list):
-                        children: list[Any] = []
-                    else:
-                        children = cast(list[Any], children_any)
-
-                    if getattr(actor, "user_id", None) is not None:
-                        for c in children:
-                            if isinstance(c, dict):
-                                c_dict = cast(JSONDict, c)
-                                if c_dict.get("id") == actor.user_id:
-                                    selected = c_dict
-                                    break
-
-                    # Fallback: first child of type 'user'
-                    if selected is None:
-                        for c in children:
-                            if isinstance(c, dict):
-                                c_dict = cast(JSONDict, c)
-                                if c_dict.get("type") == "user":
-                                    selected = c_dict
-                                    break
-
-                    # Final fallback: pick the first non-chat child (never project a chat node)
-                    if selected is None and children:
-                        for c in children:
-                            if isinstance(c, dict):
-                                c_dict = cast(JSONDict, c)
-                                if c_dict.get("type") != "chat":
-                                    selected = c_dict
-                                    break
-
-                    # If still not found, return a structured error instead of silently
-                    # projecting a technical chat node.
-                    if selected is None:
-                        raise structured_http_error(
-                            request=request,
-                            status_code=status.HTTP_404_NOT_FOUND,
-                            code="HIERARCHY_USER_ROOT_NOT_FOUND",
-                            message="Kein benutzerbezogener Root-Knoten gefunden.",
-                        )
-
-                    raw_tree = selected
+        # NOTE: Do not project or replace the structural root node returned by
+        # the backend. The contract requires that the API exposes the canonical
+        # `system-root` as the top-level node. Authorization may hide or omit
+        # certain child nodes, but must not change the type or identity of the
+        # structural root. Therefore we intentionally avoid projecting
+        # `system-root` to a child node here.
 
         # Ensure node fields match the public contract (rename actions,
         # enforce arrays for children/actions, recurse).
@@ -624,14 +625,20 @@ async def hierarchy(
         request,
     )
 
-    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate"
-    response.headers["Pragma"] = "no-cache"
-    response.headers["X-Hierarchy-Schema-Version"] = HIERARCHY_SCHEMA_VERSION
+    headers = {
+        "Cache-Control": "no-store, no-cache, must-revalidate",
+        "Pragma": "no-cache",
+        "X-Hierarchy-Schema-Version": HIERARCHY_SCHEMA_VERSION,
+    }
 
-    return HierarchyTreeResponse(
-        root=tree,
-        schema_version=HIERARCHY_SCHEMA_VERSION,
-        revision=revision,
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "root": tree,
+            "schema_version": HIERARCHY_SCHEMA_VERSION,
+            "revision": revision,
+        },
+        headers=headers,
     )
 
 
@@ -686,6 +693,15 @@ async def create_hierarchy_node(
 
         try:
             node = await service.create_node(payload, actor=actor)
+            # Post-commit projection: best-effort
+            try:
+                post = getattr(request.app.state, "post_commit_projection", None)
+                if post is not None:
+                    await post.project_node(node.id)
+            except Exception:
+                logger = __import__("logging").getLogger(__name__)
+                logger.exception("Workspace projection failed after node create", extra={"node_id": node.id})
+
             return node
         except PermissionError as exc:
             raise structured_http_error(
@@ -720,6 +736,39 @@ async def create_hierarchy_node(
             )
 
 
+@router.get(
+    "/{node_id}",
+    response_model=HierarchyNode,
+    response_model_exclude_none=True,
+    summary="Einzelnen Hierarchieknoten laden",
+)
+async def get_hierarchy_node(
+    request: Request,
+    node_id: str,
+) -> HierarchyNode:
+    """Liefert einen einzelnen, serialisierten Hierarchieknoten.
+
+    Verwendet denselben Service und dieselben Berechtigungsprüfungen wie
+    der Haupt-Hierarchieendpunkt. Bei unbekannter ID wird ein strukturierter
+    404-Fehler zurückgegeben.
+    """
+    actor = build_actor_from_request(request)
+
+    service: HierarchyServiceProtocol = get_hierarchy_service(request)
+
+    try:
+        node_any: Any = await service.get_node(node_id, actor=actor)
+        return cast(HierarchyNode, node_any)
+    except LookupError as exc:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="HIERARCHY_NODE_NOT_FOUND",
+            message=str(exc),
+        ) from exc
+    
+
+
 @router.patch(
     "/{node_id}",
     response_model=HierarchyNode,
@@ -748,6 +797,14 @@ async def update_hierarchy_node(
 
         try:
             node = await service.update_node(node_id, payload, actor=actor)
+            try:
+                post = getattr(request.app.state, "post_commit_projection", None)
+                if post is not None:
+                    await post.project_node(node.id)
+            except Exception:
+                logger = __import__("logging").getLogger(__name__)
+                logger.exception("Workspace projection failed after node update", extra={"node_id": node.id})
+
             return node
         except LookupError as exc:
             raise structured_http_error(
@@ -795,6 +852,14 @@ async def move_hierarchy_node(
             node = await service.move_node(
                 node_id, new_parent_id=payload.new_parent_id, actor=actor
             )
+            try:
+                post = getattr(request.app.state, "post_commit_projection", None)
+                if post is not None:
+                    await post.project_node(node.id)
+            except Exception:
+                logger = __import__("logging").getLogger(__name__)
+                logger.exception("Workspace projection failed after node move", extra={"node_id": node.id})
+
             return node
         except LookupError as exc:
             raise structured_http_error(

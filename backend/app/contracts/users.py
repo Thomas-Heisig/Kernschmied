@@ -14,7 +14,22 @@ class UserCreateRequest(BaseContract):
     username: str = Field(..., min_length=1)
     display_name: str = Field(..., min_length=1)
     email: EmailStr | None = None
-    must_change_password: bool | None = False
+
+    # Password handling
+    password: str | None = None
+    generate_password: bool = False
+    require_password_change: bool = Field(default=True)
+
+    # Roles to assign (names)
+    roles: list[str] | None = None
+
+    is_active: bool = True
+
+    preferences: dict[str, object] | None = None
+
+    # Optional default workspace creation
+    create_default_workspace: bool = False
+    default_workspace_name: str | None = None
 
 
 class UserUpdateRequest(BaseContract):
@@ -53,3 +68,13 @@ class UpdateUserPreferencesRequest(BaseContract):
     density: Literal["comfortable", "compact"] | None = None
     default_view: str | None = None
     notifications_enabled: bool | None = None
+
+
+class GeneratedCredentials(BaseContract):
+    temporary_password: str
+
+
+class UserCreateResponse(BaseContract):
+    schema_version: Literal["1.0"] = "1.0"
+    user: UserRead
+    generated_credentials: GeneratedCredentials | None = None

@@ -447,6 +447,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       <AppWorkspace
         schema={schema}
         root={root}
+        bootstrap={bootstrap}
         selectedHierarchyNode={selectedHierarchyNode}
         selectedNode={selectedNode}
         selectedNodeId={selectSelectedNodeId(state)}

@@ -37,24 +37,25 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
 
   function renderContent(msg: ChatMessage) {
     // split on fenced code blocks ```lang\n...```
+    const content = msg.content ?? msg.text ?? '';
     const parts: Array<{ type: 'text' | 'code'; text: string; lang?: string }> = [];
     const re = /```(.*?)\n([\s\S]*?)```/gm;
     let lastIndex = 0;
-    let m;
-    while ((m = re.exec(msg.content)) !== null) {
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(content)) !== null) {
       if (m.index > lastIndex) {
-        parts.push({ type: 'text', text: msg.content.substring(lastIndex, m.index) });
+        parts.push({ type: 'text', text: content.substring(lastIndex, m.index) });
       }
       parts.push({ type: 'code', lang: m[1]?.trim() || undefined, text: m[2] });
       lastIndex = re.lastIndex;
     }
-    if (lastIndex < msg.content.length) {
-      parts.push({ type: 'text', text: msg.content.substring(lastIndex) });
+    if (lastIndex < content.length) {
+      parts.push({ type: 'text', text: content.substring(lastIndex) });
     }
 
     return (
       <div className="space-y-2">
-        {parts.map((p, i) =>
+          {parts.map((p: { type: 'text' | 'code'; text: string; lang?: string }, i: number) =>
           p.type === 'text' ? (
             <div key={i} className="whitespace-pre-wrap text-sm">
               {p.text}
@@ -131,7 +132,7 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
                       <div className="flex items-center gap-1">
                         <button
                           className="text-xs text-gray-500 hover:text-gray-700"
-                          onClick={() => copyText(m.id, m.content)}
+                          onClick={() => copyText(m.id, m.content ?? m.text ?? '')}
                           title="Nachricht kopieren"
                         >
                           {copiedId === m.id ? '✔' : <Copy size={12} />}

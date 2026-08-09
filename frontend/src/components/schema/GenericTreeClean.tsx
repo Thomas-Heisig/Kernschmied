@@ -169,7 +169,12 @@ function TreeNode(props: any) {
     filterText,
     showArchived = false,
   } = props;
-  const nodeDef = isPlainObject(schema.node_types?.[node.type])
+  // Prefer node-id specific definition (e.g. 'users-root') over the generic
+  // node.type definition. This allows container-nodes to have specific
+  // UX rules without introducing bespoke React components.
+  const nodeDef = isPlainObject(schema.node_types?.[node.id])
+    ? schema.node_types[node.id]
+    : isPlainObject(schema.node_types?.[node.type])
     ? schema.node_types[node.type]
     : undefined;
   const children = useMemo(() => getChildren(node), [node]);

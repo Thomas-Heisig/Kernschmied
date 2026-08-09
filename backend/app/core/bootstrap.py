@@ -771,6 +771,18 @@ async def bootstrap_application(
             app=app,
             result=result,
         )
+        # Initialize optional post-commit projection service and publish to app.state
+        try:
+            from app.core.settings import settings as _settings
+            from app.workspace_projection.post_commit import PostCommitProjectionService
+            from app.workspace_projection.contracts import ProjectionConfig
+
+            proj_config = ProjectionConfig(enabled=bool(getattr(_settings, "data_projection_enabled", False)), root_path=str(getattr(_settings, "data_projection_path", "./data")))
+            post_commit = PostCommitProjectionService(session_factory=session_factory, config=proj_config)
+            app.state.post_commit_projection = post_commit
+        except Exception:
+            # If projection initialization fails, log but continue bootstrapping without projection
+            logger.exception("Failed to initialize PostCommitProjectionService; continuing without workspace projection")
 
         app.state.bootstrap_complete = True
         app.state.bootstrap_error = None

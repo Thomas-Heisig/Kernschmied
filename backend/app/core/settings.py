@@ -434,6 +434,23 @@ class Settings(BaseSettings):
         ),
     )
 
+    # Workspace projection (filesystem) - infrastructure flags only
+    data_projection_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices(
+            "DATA_PROJECTION_ENABLED",
+            "data_projection_enabled",
+        ),
+    )
+
+    data_projection_path: Path = Field(
+        default=Path("./data"),
+        validation_alias=AliasChoices(
+            "DATA_PROJECTION_PATH",
+            "data_projection_path",
+        ),
+    )
+
     config_directory: Path = Field(
         default=DEFAULT_CONFIG_DIRECTORY,
         validation_alias=AliasChoices(
@@ -699,7 +716,7 @@ class Settings(BaseSettings):
     )
 
     development_admin_username: str = Field(
-        default="development-admin",
+        default="admin",
         min_length=1,
         validation_alias=AliasChoices(
             "DEVELOPMENT_ADMIN_USERNAME",
@@ -708,11 +725,23 @@ class Settings(BaseSettings):
     )
 
     development_admin_display_name: str = Field(
-        default="Development Administrator",
+        default="Administrator",
         min_length=1,
         validation_alias=AliasChoices(
             "DEVELOPMENT_ADMIN_DISPLAY_NAME",
             "development_admin_display_name",
+        ),
+    )
+
+    # Development-only plain password for the seeded admin. ONLY used in
+    # development environment by the idempotent dev-seed to produce a
+    # reproducible password. Do NOT weaken password policies elsewhere.
+    development_admin_password: str = Field(
+        default="user",
+        min_length=1,
+        validation_alias=AliasChoices(
+            "DEVELOPMENT_ADMIN_PASSWORD",
+            "development_admin_password",
         ),
     )
 

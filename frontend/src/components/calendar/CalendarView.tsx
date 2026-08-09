@@ -4,7 +4,8 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { components } from '../../api/openapi-types';
-import { toast } from 'sonner';
+import { useToast } from '../ui/ToastProvider';
+import Modal from '../ui/Modal';
 
 type Props = {
   events: components['schemas']['EventOut'][];
@@ -14,6 +15,7 @@ type Props = {
 };
 
 export default function CalendarView({ events, onCreate, onUpdate, onRemove }: Props) {
+  const { push } = useToast();
   const fcEvents = useMemo(
     () =>
       events.map((e) => ({
@@ -41,9 +43,9 @@ export default function CalendarView({ events, onCreate, onUpdate, onRemove }: P
         all_day: !!arg.event.allDay,
       };
       const ok = await onUpdate(id, payload);
-      if (ok) toast.success('Ereignis verschoben');
+      if (ok) push('success', 'Ereignis verschoben');
     } catch (err: any) {
-      toast.error('Verschieben fehlgeschlagen: ' + String(err));
+      push('error', 'Verschieben fehlgeschlagen: ' + String(err));
     }
   }
 
@@ -84,7 +86,7 @@ export default function CalendarView({ events, onCreate, onUpdate, onRemove }: P
         };
         const ok = await onCreate(createPayload);
         if (ok) {
-          toast.success('Ereignis erstellt');
+          push('success', 'Ereignis erstellt');
           setEditing(null);
         }
       } else {
@@ -97,24 +99,52 @@ export default function CalendarView({ events, onCreate, onUpdate, onRemove }: P
         };
         const ok = await onUpdate(editing.id, payload);
         if (ok) {
-          toast.success('Ereignis gespeichert');
+          push('success', 'Ereignis gespeichert');
           setEditing(null);
         }
       }
-    } catch (err: any) {
-      toast.error('Speichern fehlgeschlagen: ' + String(err));
+      } catch (err: any) {
+      push('error', 'Speichern fehlgeschlagen: ' + String(err));
     }
   }
 
-  async function handleRemove(id: string) {
-    if (!window.confirm('Ereignis wirklich löschen?')) return;
-    const ok = await onRemove(id);
-    if (ok) toast.success('Ereignis gelöscht');
-    else toast.error('Löschen fehlgeschlagen');
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmEventId, setConfirmEventId] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  function requestRemove(id: string) {
+    setConfirmEventId(id);
+    setConfirmOpen(true);
+  }
+
+  async function confirmRemove() {
+    if (!confirmEventId) return;
+    setIsConfirming(true);
+    try {
+      const ok = await onRemove(confirmEventId);
+      if (ok) push('success', 'Ereignis gelöscht');
+      else push('error', 'Löschen fehlgeschlagen');
+    } catch (err: any) {
+      push('error', 'Löschen fehlgeschlagen: ' + String(err));
+    } finally {
+      setIsConfirming(false);
+      setConfirmOpen(false);
+      setConfirmEventId(null);
+    }
   }
 
   return (
     <div>
+      <Modal
+        isOpen={confirmOpen}
+        title="Ereignis löschen"
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => void confirmRemove()}
+        confirmLabel="Löschen"
+        confirmDisabled={isConfirming}
+      >
+        <div className="text-sm">Soll das Ereignis wirklich gelöscht werden?</div>
+      </Modal>
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
@@ -178,7 +208,7 @@ export default function CalendarView({ events, onCreate, onUpdate, onRemove }: P
                 className="px-3 py-1 text-red-600"
                 onClick={() => {
                   setEditing(null);
-                  void handleRemove(editing.id);
+                  requestRemove(editing.id);
                 }}
               >
                 Löschen

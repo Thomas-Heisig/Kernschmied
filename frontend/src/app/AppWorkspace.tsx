@@ -1,4 +1,5 @@
 import type { ComponentProps } from 'react';
+import type { HierarchyNode } from '../contracts/hierarchy';
 
 import { DocumentationDialog } from '../components/documentation';
 import { AppContextSidebar, AppHierarchySidebar, AppLayout } from '../components/layout';
@@ -20,6 +21,7 @@ interface AppWorkspaceProps {
   theme: LayoutProps['theme'];
   applicationVersion?: string;
   environment?: string;
+  bootstrap?: any | null;
   userName?: string;
   isSettingsOpen: boolean;
   isDocumentationOpen: boolean;
@@ -45,6 +47,7 @@ interface AppWorkspaceProps {
   isHierarchyBusy?: boolean;
   recentlyMovedNodeId?: string | null;
   onAction?: (action: string, node: any) => void;
+  canPerformAction?: (action: string, node: any) => Promise<boolean> | boolean;
 }
 
 export function AppWorkspace({
@@ -57,6 +60,7 @@ export function AppWorkspace({
   theme,
   applicationVersion,
   environment,
+  bootstrap,
   userName,
   isSettingsOpen,
   isDocumentationOpen,
@@ -76,9 +80,59 @@ export function AppWorkspace({
   onUpdateHierarchyNode,
   onDeleteHierarchyNode,
   onAction,
+  canPerformAction,
   isHierarchyBusy,
   recentlyMovedNodeId,
 }: AppWorkspaceProps) {
+  function findPath(root: HierarchyNode | null | undefined, targetId: string | null | undefined): Array<{ id: string; name: string }> | null {
+    if (!root || !targetId) return null;
+    const path: Array<{ id: string; name: string }> = [];
+
+    function dfs(node: HierarchyNode): boolean {
+      path.push({ id: node.id, name: node.name });
+      if (node.id === targetId) return true;
+      if (node.children) {
+        for (const c of node.children) {
+          if (dfs(c)) return true;
+        }
+      }
+      path.pop();
+      return false;
+    }
+
+    // root may not be a HierarchyNode type here; coerce
+    try {
+      if ((root as any).id) {
+        if (dfs(root as unknown as HierarchyNode)) return path;
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  }
+
+  const breadcrumbPath = selectedHierarchyNode ? findPath(root as any, selectedHierarchyNode.id) : null;
+  function findNodeById(root: HierarchyNode | null | undefined, id: string | null | undefined): HierarchyNode | null {
+    if (!root || !id) return null;
+
+    function dfs(node: HierarchyNode): HierarchyNode | null {
+      if (node.id === id) return node;
+      if (node.children) {
+        for (const c of node.children) {
+          const res = dfs(c);
+          if (res) return res;
+        }
+      }
+      return null;
+    }
+
+    try {
+      return dfs(root as HierarchyNode);
+    } catch {
+      return null;
+    }
+  }
   return (
     <>
       <AppLayout
@@ -124,7 +178,18 @@ export function AppWorkspace({
           />
         }
         contextSidebar={
-          <AppContextSidebar node={selectedNode} schemaVersion={schema.schema_version} />
+          <AppContextSidebar
+            node={selectedNode}
+            schemaVersion={schema.schema_version}
+            onAction={onAction}
+            canPerformAction={canPerformAction}
+            path={breadcrumbPath ?? undefined}
+            onNavigateToNode={(id: string) => {
+              const n = findNodeById(root as any, id);
+              if (n) onSelectNode(n);
+            }}
+            systemInfo={bootstrap ?? undefined}
+          />
         }
       >
         <SelectedNodeWorkspace
@@ -133,7 +198,9 @@ export function AppWorkspace({
           onUpdateHierarchyNode={onUpdateHierarchyNode}
         />
       </AppLayout>
-      <SettingsDialog isOpen={isSettingsOpen} onClose={onCloseSettings} />
+      {isSettingsOpen ? (
+        <SettingsDialog isOpen={isSettingsOpen} onClose={onCloseSettings} />
+      ) : null}
       <DocumentationDialog isOpen={isDocumentationOpen} onClose={onCloseDocumentation} />
     </>
   );

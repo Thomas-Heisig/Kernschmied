@@ -65,7 +65,7 @@ function getConfigGroup(
   return candidate as Readonly<Record<string, ConfigValue>>;
 }
 
-export function useSystemConfig(): UseSystemConfigResult {
+export function useSystemConfig({ enabled = true }: { enabled?: boolean } = {}): UseSystemConfigResult {
   const [persistedValues, setPersistedValues] = useState<ConfigObject>({});
   const [persistedEntriesByFullKey, setPersistedEntriesByFullKey] = useState<Record<
     string,
@@ -271,13 +271,17 @@ export function useSystemConfig(): UseSystemConfigResult {
   }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     void reload();
 
     return () => {
       loadAbortController.current?.abort();
       saveAbortController.current?.abort();
     };
-  }, [reload]);
+  }, [reload, enabled]);
 
   return {
     values,

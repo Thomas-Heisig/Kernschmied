@@ -1365,6 +1365,17 @@ export function apiGet<TResponse>(path: string, options?: ApiRequestOptions): Pr
   return apiRequest<TResponse>('GET', path, options);
 }
 
+export function isAbortError(error: unknown): boolean {
+  try {
+    if (error instanceof DOMException && error.name === 'AbortError') return true;
+    if (error && typeof error === 'object' && (error as any).name === 'AbortError') return true;
+  } catch {
+    // ignore
+  }
+
+  return false;
+}
+
 export function apiPost<TResponse, TBody = unknown>(
   path: string,
   body?: TBody,

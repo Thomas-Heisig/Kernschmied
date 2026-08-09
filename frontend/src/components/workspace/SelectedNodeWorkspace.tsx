@@ -1,6 +1,8 @@
 // F:\Kernschmied\frontend\src\components\workspace\SelectedNodeWorkspace.tsx
 
 import { useEffect, useState } from 'react';
+import Modal from '../ui/Modal';
+import { resolveTemplate } from '../../utils/templateResolver';
 import { Globe2, Plus } from 'lucide-react';
 import { DynamicIcon } from '../../registry/iconRegistry';
 
@@ -8,6 +10,7 @@ import { GenericChatView } from '../chat';
 import { SettingsDialog } from '../settings';
 import { WebsiteWorkspace } from '../websites';
 import SchemaRenderer from '../schema/SchemaRenderer';
+import WidgetBadges from '../widgets/WidgetBadges';
 
 /* ============================================================
  * Typen und Konstanten
@@ -105,6 +108,9 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
             }}
           />
         )}
+        <div className="absolute right-4 top-4">
+          <WidgetBadges nodeId={(node as any).id} />
+        </div>
       </section>
     );
   }
@@ -125,6 +131,9 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
         ].join(' ')}
         aria-label={`Chat: ${node.name}`}
       >
+        <div className="absolute right-6 top-6 z-20">
+          <WidgetBadges nodeId={(node as any).id} />
+        </div>
         <GenericChatView title={node.name} hierarchyNodeId={node.id} hierarchyNodeType={normalizedType} />
       </section>
     );
@@ -209,6 +218,9 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
           ].join(' ')}
           aria-label={`Schema view: ${node.name}`}
         >
+            <div className="absolute right-6 top-6 z-20">
+              <WidgetBadges nodeId={(node as any).id} />
+            </div>
           <div className="mx-auto w-full max-w-6xl">
             <SchemaRenderer schema={nodeDef} context={{ nodeId: node.id }} />
           </div>
@@ -235,6 +247,9 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
         ].join(' ')}
         aria-label={`Node type: ${node.name}`}
       >
+        <div className="absolute right-6 top-6 z-20">
+          <WidgetBadges nodeId={(node as any).id} />
+        </div>
         <div className="mx-auto w-full max-w-4xl">
           <div className="flex items-center gap-4">
             <div
@@ -321,6 +336,7 @@ function PromptEditor({
   const [editing, setEditing] = useState(false);
   const [value, setValue] = useState(resolvedPrompt ?? '');
   const [isSaving, setIsSaving] = useState(false);
+  const [showResolvedModal, setShowResolvedModal] = useState(false);
 
   useEffect(() => {
     setValue(resolvedPrompt ?? '');
@@ -348,9 +364,30 @@ function PromptEditor({
         <div className="flex items-start justify-between gap-3">
           <div className="flex-1 min-w-0">
             {value ? (
-              <div className="max-h-48 overflow-auto rounded bg-slate-50 p-2 text-xs text-slate-800 whitespace-pre-wrap wrap-break-word">
-                {String(value)}
-              </div>
+                  <>
+                    <div className="max-h-28 overflow-auto rounded bg-slate-50 p-2 text-xs text-slate-800 whitespace-pre-wrap wrap-break-word">
+                      {String(value)}
+                    </div>
+
+                    <div className="mt-2">
+                      <div className="text-xs text-slate-500">Aufgelöste Vorschau</div>
+                      <div className="mt-1 max-h-20 overflow-auto rounded bg-slate-50 p-2 text-xs text-slate-800 whitespace-pre-wrap">
+                        {resolveTemplate(value, { system: { name: 'Kernschmied' } })}
+                      </div>
+                      <div className="mt-1">
+                        <button
+                          type="button"
+                          className="inline-flex items-center rounded border px-2 py-1 text-xs"
+                          onClick={() => setShowResolvedModal(true)}
+                        >
+                          Voll anzeigen
+                        </button>
+                        <Modal isOpen={showResolvedModal} title="Aufgelöster Prompt" onClose={() => setShowResolvedModal(false)} confirmLabel="Schließen">
+                          <pre className="whitespace-pre-wrap">{resolveTemplate(value, { system: { name: 'Kernschmied' } })}</pre>
+                        </Modal>
+                      </div>
+                    </div>
+                  </>
             ) : (
               <div className="text-xs text-slate-400">Kein Prompt definiert.</div>
             )}

@@ -11,6 +11,7 @@ from app.database.models.user import UserModel
 from app.database.models.user_role import RoleModel, UserRoleModel
 from app.hierarchy.repository import HierarchyRepository
 from app.storage.repositories.user import UserRepository
+from app.auth.password_service import PasswordService
 
 logger = logging.getLogger(__name__)
 
@@ -109,6 +110,7 @@ async def seed_development_hierarchy(
                 # Only in development environment
                 if settings.app_environment.name.lower() == "development":
                     user_repo = UserRepository(session)
+                    pwd = PasswordService()
 
                     # Try find by configured id or username
                     admin: UserModel | None = await user_repo.get_by_id(
@@ -125,11 +127,54 @@ async def seed_development_hierarchy(
                             "username": settings.development_admin_username,
                             "display_name": settings.development_admin_display_name,
                             "email": None,
-                            "password_hash": None,
+                            # For development only: seed a reproducible password
+                            # using the dedicated development password setting.
+                            "password_hash": pwd.hash_password(
+                                settings.development_admin_password
+                            ),
                             "is_active": True,
                             "is_system_admin": True,
+                            "is_system_user": True,
                         }
                         admin = await user_repo.create(user_data)
+                    else:
+                        # If an admin row exists, ensure it has the configured
+                        # username/display_name and a development password hash
+                        updated = False
+                        # If existing username differs, attempt to rename if free
+                        if getattr(admin, "username", None) != settings.development_admin_username:
+                            conflict = await user_repo.get_by_username(
+                                settings.development_admin_username
+                            )
+                            if conflict is None or conflict.id == admin.id:
+                                admin.username = settings.development_admin_username
+                                updated = True
+                            else:
+                                logger.warning(
+                                    "Cannot rename existing dev admin to %s: username conflict",
+                                    settings.development_admin_username,
+                                )
+
+                        if getattr(admin, "display_name", None) != settings.development_admin_display_name:
+                            admin.display_name = settings.development_admin_display_name
+                            updated = True
+
+                        if getattr(admin, "password_hash", None) is None:
+                            admin.password_hash = pwd.hash_password(
+                                settings.development_admin_password
+                            )
+                            updated = True
+
+                        # Ensure system flags are set for the development admin
+                        if not getattr(admin, "is_system_admin", False):
+                            admin.is_system_admin = True
+                            updated = True
+                        if not getattr(admin, "is_system_user", False):
+                            admin.is_system_user = True
+                            updated = True
+
+                        if updated:
+                            await user_repo.update(admin, {})
 
                     # Ensure admin role exists
                     q = select(RoleModel).where(RoleModel.name == "admin")
@@ -137,7 +182,10 @@ async def seed_development_hierarchy(
                     admin_role = result.scalar_one_or_none()
                     if admin_role is None:
                         admin_role = RoleModel(
-                            name="admin", display_name="Administrator"
+                            name="admin",
+                            display_name="Administrator",
+                            is_system=True,
+                            assignable=True,
                         )
                         session.add(admin_role)
                         await session.flush()
@@ -156,6 +204,106 @@ async def seed_development_hierarchy(
                         await session.flush()
 
                     logger.info("Development admin user and role ensured (idempotent)")
+                    # Ensure standard root nodes under system-root
+                    users_root = await repo.get_node("users-root")
+                    if users_root is None:
+                        await repo.create_node(
+                            HierarchyNodeCreate(
+                                node_id="users-root",
+                                type="folder",
+                                name="Users",
+                                parent_id="system-root",
+                                system_prompt=None,
+                                tool_policy={},
+                                config_overrides={},
+                                metadata={"system_managed": True},
+                            )
+                        )
+
+                    workspaces_root = await repo.get_node("workspaces-root")
+                    if workspaces_root is None:
+                        await repo.create_node(
+                            HierarchyNodeCreate(
+                                node_id="workspaces-root",
+                                type="folder",
+                                name="Workspaces",
+                                parent_id="system-root",
+                                system_prompt=None,
+                                tool_policy={},
+                                config_overrides={},
+                                metadata={"system_managed": True},
+                            )
+                        )
+
+                    chats_root = await repo.get_node("chats-root")
+                    if chats_root is None:
+                        await repo.create_node(
+                            HierarchyNodeCreate(
+                                node_id="chats-root",
+                                type="folder",
+                                name="Chats",
+                                parent_id="system-root",
+                                system_prompt=None,
+                                tool_policy={},
+                                config_overrides={},
+                                metadata={"system_managed": True},
+                            )
+                        )
+
+                    # Ensure admin has a dedicated user node under users-root
+                    admin_node_id = f"user-{admin.id}"
+                    existing_admin_node = await repo.get_node(admin_node_id)
+                    if existing_admin_node is None:
+                        await repo.create_node(
+                            HierarchyNodeCreate(
+                                node_id=admin_node_id,
+                                type="user",
+                                name=admin.display_name or admin.username,
+                                parent_id="users-root",
+                                system_prompt=None,
+                                tool_policy={},
+                                config_overrides={},
+                                metadata={
+                                    "entity_type": "user",
+                                    "entity_id": admin.id,
+                                    "display_name": admin.display_name,
+                                },
+                            )
+                        )
+
+                    # Repair: create user nodes for all active users missing them
+                    stmt = select(UserModel).where(UserModel.is_active.is_(True))
+                    res = await session.execute(stmt)
+                    users = res.scalars().all()
+
+                    # Collect existing user-linked entity_ids under users-root
+                    children = await repo.list_children("users-root")
+                    existing_entity_ids = {
+                        str(n.node_metadata.get("entity_id"))
+                        for n in children
+                        if n.node_metadata and n.node_metadata.get("entity_type") == "user"
+                    }
+
+                    for u in users:
+                        if str(u.id) in existing_entity_ids:
+                            continue
+                        node_id = f"user-{u.id}"
+                        await repo.create_node(
+                            HierarchyNodeCreate(
+                                node_id=node_id,
+                                type="user",
+                                name=u.display_name or u.username,
+                                parent_id="users-root",
+                                system_prompt=None,
+                                tool_policy={},
+                                config_overrides={},
+                                metadata={
+                                    "entity_type": "user",
+                                    "entity_id": u.id,
+                                    "display_name": u.display_name,
+                                },
+                            )
+                        )
             except Exception:
                 logger.exception("Development admin seed failed")
                 raise

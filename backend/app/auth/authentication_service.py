@@ -196,7 +196,19 @@ class AuthenticationService:
                 "password_hash": None,
                 "is_active": True,
                 "is_system_admin": True,
+                "is_system_user": True,
             }
             user = await self.user_repo.create(data)
+        else:
+            # Ensure flags are set on existing admin user
+            updated = False
+            if not getattr(user, "is_system_admin", False):
+                user.is_system_admin = True
+                updated = True
+            if not getattr(user, "is_system_user", False):
+                user.is_system_user = True
+                updated = True
+            if updated:
+                await self.user_repo.update(user, {})
 
         return user

@@ -64,6 +64,14 @@ def empty_json_object() -> JsonObject:
     return {}
 
 
+def empty_json_array() -> list[JsonObject]:
+    """
+    Factory für leere JSON-Arrays, z.B. für Widget-Assignments.
+    """
+
+    return []
+
+
 class HierarchyNodeModel(Base):
     """
     Persistentes Modell eines generischen Hierarchieknotens.
@@ -129,6 +137,14 @@ class HierarchyNodeModel(Base):
         JSON,
         nullable=False,
         default=empty_json_object,
+    )
+
+    # Widget-Zuordnungen: Liste konfigurierter Widget-Instanzen (JSON)
+    widget_assignments: Mapped[list[JsonObject]] = mapped_column(
+        "widget_assignments",
+        JSON,
+        nullable=False,
+        default=empty_json_array,
     )
 
     # Policy and system flags

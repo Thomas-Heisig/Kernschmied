@@ -22,6 +22,7 @@ from app.hierarchy.permissions import (
 )
 from app.hierarchy.repository import HierarchyRepository
 from app.hierarchy.serializer import HierarchySerializer
+from app.ui.node_types import create_default_node_types
 
 
 class HierarchyChildTypeNotAllowedError(ValueError):
@@ -96,25 +97,36 @@ class HierarchyService:
     ) -> HierarchyNode:
         # Only the `system-root` may be created without a parent. All other
         # nodes must specify a parent_id. This enforces a single canonical root.
-        if data.parent_id is None:
-            if data.node_id != "system-root":
-                raise ValueError(
-                    "Nur der Systemknoten darf ohne übergeordneten Knoten existieren."
-                )
+        if data.parent_id is None and data.node_id != "system-root":
+            raise ValueError("Nur 'system-root' darf ohne Parent existieren.")
 
         parent = None
         if data.parent_id is not None:
             parent = await self._require_node(data.parent_id)
 
-            # Chat nodes may not have children
-            if getattr(parent, "type", None) == "chat":
+            # Validate allowed child types via the central node-type registry
+            node_types = create_default_node_types()
+            parent_type = getattr(parent, "type", "")
+            normalized_parent_type = (parent_type or "").strip().lower()
+            allowed = ()
+            if normalized_parent_type in node_types:
+                allowed = tuple(
+                    t.strip().lower()
+                    for t in node_types[normalized_parent_type].allowed_child_types
+                )
+
+            child_type = (data.type or "").strip().lower()
+            if allowed and child_type not in allowed:
                 raise HierarchyChildTypeNotAllowedError(
-                    "Ein Chat-Knoten darf keine untergeordneten Hierarchieknoten enthalten."
+                    
+                        f"Der Knotentyp '{parent_type}' erlaubt keine Kinder "
+                        f"vom Typ '{data.type}'."
+                    
                 )
             # Disallow non-admins creating children directly under the system root.
             if parent.id == "system-root" and not getattr(actor, "is_admin", False):
                 raise PermissionError(
-                    "Das Anlegen von Knoten direkt unter dem Systemknoten ist nicht erlaubt."
+                    "Anlegen von Knoten unter 'system-root' ist nicht erlaubt."
                 )
 
         self._permissions.require(actor, CREATE_CHILD_ACTION, parent)
@@ -176,12 +188,27 @@ class HierarchyService:
             raise ValueError(
                 "Ein Knoten kann nicht sein eigener Elternknoten sein.",
             )
-
         if new_parent_id is not None:
             new_parent = await self._require_node(new_parent_id)
-            if getattr(new_parent, "type", None) == "chat":
+            # Validate allowed child types for move target
+            node_types = create_default_node_types()
+            parent_type = getattr(new_parent, "type", "")
+            normalized_parent_type = (parent_type or "").strip().lower()
+            allowed = ()
+            if normalized_parent_type in node_types:
+                allowed = tuple(
+                    t.strip().lower()
+                    for t in node_types[normalized_parent_type].allowed_child_types
+                )
+
+            node_type = getattr(node, "type", "")
+            normalized_node_type = (node_type or "").strip().lower()
+            if allowed and normalized_node_type not in allowed:
                 raise HierarchyChildTypeNotAllowedError(
-                    "Ein Chat-Knoten darf keine untergeordneten Hierarchieknoten enthalten."
+                    
+                        f"Der Knotentyp '{parent_type}' erlaubt keine Kinder "
+                        f"vom Typ '{node_type}'."
+                    
                 )
             self._permissions.require(
                 actor,
@@ -227,13 +254,11 @@ class HierarchyService:
         # Load all nodes to move and verify existence
         for node_id, new_parent_id, _ in moves:
             node = await self._require_node(node_id)
-            # Protect immovable/system nodes from being reordered under a different parent
+            # Protect immovable/system nodes from being reordered
             if getattr(node, "is_system", False) or not getattr(
                 node, "is_movable", True
             ):
-                raise PermissionError(
-                    "Dieser Hierarchieknoten darf nicht verschoben/neu angeordnet werden."
-                )
+                raise PermissionError("Dieser Knoten darf nicht verschoben werden.")
             # require permission to move
             self._permissions.require(actor, MOVE_ACTION, node)
 
@@ -244,9 +269,26 @@ class HierarchyService:
 
             if new_parent_id is not None:
                 new_parent = await self._require_node(new_parent_id)
-                if getattr(new_parent, "type", None) == "chat":
+                # Validate allowed child types for reorder targets
+                node_types = create_default_node_types()
+                parent_type = getattr(new_parent, "type", "")
+                normalized_parent_type = (parent_type or "").strip().lower()
+                allowed = ()
+                if normalized_parent_type in node_types:
+                    allowed = tuple(
+                        t.strip().lower()
+                        for t in node_types[normalized_parent_type].allowed_child_types
+                    )
+
+                node = await self._require_node(node_id)
+                node_type = getattr(node, "type", "")
+                normalized_node_type = (node_type or "").strip().lower()
+                if allowed and normalized_node_type not in allowed:
                     raise HierarchyChildTypeNotAllowedError(
-                        "Ein Chat-Knoten darf keine untergeordneten Hierarchieknoten enthalten."
+                        
+                            f"Der Knotentyp '{parent_type}' erlaubt keine Kinder "
+                            f"vom Typ '{node_type}'."
+                        
                     )
                 # require permission to create child under new parent
                 self._permissions.require(actor, CREATE_CHILD_ACTION, new_parent)
@@ -257,7 +299,7 @@ class HierarchyService:
                 )
                 if is_descendant:
                     raise ValueError(
-                        "Ein Knoten kann nicht unter einen eigenen Nachfahren verschoben werden."
+                        "Verschieben unter eigenen Nachfahren ist nicht erlaubt."
                     )
 
         try:

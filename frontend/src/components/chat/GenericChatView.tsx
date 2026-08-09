@@ -1,11 +1,14 @@
 // F:\Kernschmied\frontend\src\components\chat\GenericChatView.tsx
 
 import { useEffect, useRef, useState } from 'react';
+import { useAppStoreState, selectSelectedNode } from '../../store';
 import { MessageCircle, Send, Square } from 'lucide-react';
 
 import type { FormEvent, KeyboardEvent } from 'react';
 
 import { ApiError, apiPostStream } from '../../api/client';
+import { apiGet } from '../../api/client';
+import { useChatHistory } from '../../hooks/useChatHistory';
 
 import type { ApiStreamHandle } from '../../api/client';
 
@@ -543,6 +546,27 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
 
   const streamHandleRef = useRef<ApiStreamHandle | null>(null);
 
+  const historyFetchControllerRef = useRef<AbortController | null>(null);
+
+  const { fetchHistory } = useChatHistory();
+
+  const historyGenerationRef = useRef(0);
+
+  function mapHistoryMessageToChatMessage(m: any, convId: string | null): ChatMessage {
+    return {
+      id: String(m.id),
+      role: (m.role as ChatRole) ?? 'assistant',
+      content: typeof m.content === 'string' ? m.content : (typeof m.text === 'string' ? m.text : ''),
+      timestamp: m.created_at ? Date.parse(m.created_at) : Date.now(),
+      status: (m.status === 'pending' ? 'pending' : 'completed') as ChatMessageStatus,
+      conversationId: convId ?? undefined,
+      serverMessageId: String(m.id),
+    };
+  }
+
+  // Read app-level store once per render (hook rules).
+  const appState = useAppStoreState();
+
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -554,28 +578,140 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
    * ---------------------------------------------------------- */
 
   useEffect(() => {
-    logDeveloperStep('info', 'chat-context-activated', {
-      hierarchyNodeId,
-      title,
-    });
+    logDeveloperStep('info', 'chat-context-activated', { hierarchyNodeId, title });
 
-    setMessages([]);
-    // restore persisted conversation id for this hierarchy node (if any)
-    try {
-      const map = loadConversationMap();
-      setConversationId(map[hierarchyNodeId] ?? null);
-    } catch {
-      setConversationId(null);
-    }
+    // Reset only transient UI controls. Do not eagerly clear `messages` here
+    // to avoid races where a previous (still-valid) history fetch would
+    // overwrite newer content. `messages` is updated when the authoritative
+    // history for the current generation arrives.
     setInput('');
     setError(null);
     setRequestStatus('idle');
+
+    // Abort any ongoing history fetch for previous node
+    historyFetchControllerRef.current?.abort();
+
+    const controller = new AbortController();
+    historyFetchControllerRef.current = controller;
+
+    const generation = ++historyGenerationRef.current;
+
+    // Try to determine canonical conversation id from the already-loaded
+    // selectedHierarchyNode first. Only if the in-memory tree lacks the node
+    // or metadata, fall back to requesting the single-node endpoint we added
+    // in the backend.
+    (async () => {
+      try {
+        // Prefer in-memory hierarchy node metadata from the AppStore.
+        // This is authoritative for the UI and avoids calling the single-node
+        // backend endpoint in the common case.
+        let canonicalConvId: string | null = null;
+        try {
+          const state = appState;
+          const selected = selectSelectedNode(state);
+          if (selected && selected.id === hierarchyNodeId && isRecord(selected.metadata)) {
+            const md = selected.metadata as Record<string, unknown>;
+            if (typeof md.entity_type === 'string' && md.entity_type === 'conversation' && typeof md.entity_id === 'string') {
+              canonicalConvId = md.entity_id;
+            }
+          }
+        } catch {
+          // If reading the store fails for any reason, continue with fallbacks.
+        }
+
+        // If no fast-path value, attempt to use existing localStorage mapping
+        // as a UI convenience only (not authoritative).
+        if (!canonicalConvId) {
+          try {
+            const map = loadConversationMap();
+            if (map[hierarchyNodeId]) {
+              setConversationId(map[hierarchyNodeId]);
+            } else {
+              setConversationId(null);
+            }
+          } catch {
+            setConversationId(null);
+          }
+        }
+
+        // If we still don't have a canonical id, request the backend's
+        // single-node endpoint as a fallback. This is only used when the
+        // in-memory tree lacks metadata for the node.
+        if (!canonicalConvId) {
+          try {
+            const node = await apiGet<any>(`/hierarchy/${encodeURIComponent(hierarchyNodeId)}`, {
+              signal: controller.signal,
+            });
+
+            if (isRecord(node?.metadata)) {
+              const meta = node.metadata as Record<string, unknown>;
+
+              if (typeof meta.entity_type === 'string' && meta.entity_type === 'conversation') {
+                const candidate = meta.entity_id as unknown;
+                if (typeof candidate === 'string' && candidate.trim()) {
+                  canonicalConvId = candidate;
+                }
+              }
+            }
+          } catch (err) {
+            logDeveloperStep('debug', 'hierarchy-node-fetch-failed', { error: err instanceof Error ? err.message : String(err) });
+          }
+        }
+
+
+        // Prefer canonical conv id from in-memory/backend, otherwise fallback to localStorage map
+        const map = loadConversationMap();
+
+        const convIdToUse = canonicalConvId ?? map[hierarchyNodeId] ?? null;
+
+        if (!convIdToUse) {
+          // nothing to load — clear conversation mapping and return
+          persistAndSetConversationId(null);
+          // reflect cleared conversation in UI
+          setMessages([]);
+          return;
+        }
+
+        // Persist and set the conversation id (canonical if available)
+        persistAndSetConversationId(convIdToUse);
+
+        // Load messages from backend history endpoint
+        const history = await fetchHistory(convIdToUse);
+
+        if (controller.signal.aborted) return;
+
+        // Ensure this fetch result is still relevant for the current view
+        if (generation !== historyGenerationRef.current) {
+          logDeveloperStep('debug', 'history-stale-result-ignored', { generation, current: historyGenerationRef.current });
+          return;
+        }
+
+        if (history && Array.isArray(history)) {
+          const mapped = history.map((m) => mapHistoryMessageToChatMessage(m, convIdToUse));
+
+          logDeveloperStep('debug', 'history-loaded', {
+            nodeId: hierarchyNodeId,
+            conversationId: convIdToUse,
+            itemCount: mapped.length,
+          });
+
+          setMessages(mapped);
+        } else {
+          // no items -> empty list
+          setMessages([]);
+        }
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        logDeveloperStep('error', 'load-history-failed', { error: err instanceof Error ? err.message : String(err) });
+      }
+    })();
 
     return () => {
       logDeveloperStep('info', 'chat-context-deactivated', {
         hierarchyNodeId,
         hasAbortController: abortControllerRef.current !== null,
         hasStreamHandle: streamHandleRef.current !== null,
+        hasHistoryFetch: historyFetchControllerRef.current !== null,
       });
 
       streamHandleRef.current?.cancel();
@@ -584,8 +720,11 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
 
       abortControllerRef.current?.abort();
       abortControllerRef.current = null;
+
+      historyFetchControllerRef.current?.abort();
+      historyFetchControllerRef.current = null;
     };
-  }, [hierarchyNodeId, title]);
+  }, [hierarchyNodeId, title, appState.hierarchyTree, appState.selectedNodeId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
@@ -690,6 +829,7 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
     streamHandle: ApiStreamHandle,
     assistantMessageId: string,
     abortSignal: AbortSignal,
+    streamGeneration: number,
   ): Promise<void> {
     const response = streamHandle.response;
 
@@ -871,6 +1011,43 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
             receivedCharacterCount,
             processedEventCount,
           });
+
+          // Reconcile with server-side history after the stream completed.
+          if (streamEvent.conversationId) {
+            try {
+              const serverHistory = await fetchHistory(streamEvent.conversationId);
+
+              if (abortSignal.aborted) return;
+
+              // ensure still the active history generation
+              if (historyGenerationRef.current && historyGenerationRef.current > 0) {
+                // nothing to do here; generation check below ensures staleness is handled
+              }
+
+              if (serverHistory && Array.isArray(serverHistory)) {
+                const mappedServer = serverHistory.map((m) =>
+                  mapHistoryMessageToChatMessage(m, streamEvent.conversationId),
+                );
+
+                logDeveloperStep('debug', 'history-reloaded-after-complete', {
+                  conversationId: streamEvent.conversationId,
+                  itemCount: mappedServer.length,
+                });
+
+                // Apply only if this fetch is still current
+                if (historyGenerationRef.current === streamGeneration) {
+                  setMessages(mappedServer);
+                } else {
+                  logDeveloperStep('debug', 'history-reload-ignored-stale', {
+                    expectedGeneration: streamGeneration,
+                    currentGeneration: historyGenerationRef.current,
+                  });
+                }
+              }
+            } catch (err) {
+              logDeveloperStep('debug', 'history-reload-failed', { error: err instanceof Error ? err.message : String(err) });
+            }
+          }
 
           break;
         }
@@ -1130,7 +1307,9 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
         status: 'streaming',
       });
 
-      await processSseStream(streamHandle, assistantMessageId, abortController.signal);
+      const streamGeneration = historyGenerationRef.current;
+
+      await processSseStream(streamHandle, assistantMessageId, abortController.signal, streamGeneration);
 
       setMessages((currentMessages) =>
         currentMessages.map((message) => {

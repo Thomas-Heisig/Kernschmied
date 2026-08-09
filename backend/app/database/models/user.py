@@ -29,6 +29,13 @@ class UserModel(Base):
     password_hash: Mapped[str | None] = mapped_column(String(512), nullable=True)
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # Marks a permanently managed system user (cannot be disabled/deleted)
+    is_system_user: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+
+    # Backwards-compatible flag indicating administrator role. Prefer role-based
+    # authorization over hard-coded flags, but keep this for compatibility.
     is_system_admin: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
     )

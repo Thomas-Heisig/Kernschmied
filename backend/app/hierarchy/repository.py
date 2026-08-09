@@ -8,6 +8,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.contracts.hierarchy import HierarchyNodeCreate, HierarchyNodeUpdate
+from app.storage.models.chat import Chat
 from app.database.models.hierarchy_node import HierarchyNodeModel
 from app.prompts.errors import (
     BrokenPromptHierarchyError,
@@ -101,6 +102,21 @@ class HierarchyRepository:
         self._session.add(node)
         await self._session.flush()
         await self._session.refresh(node)
+
+        # If this node represents a chat, create a persistent conversation
+        # (chats table) and annotate the node metadata with the mapping.
+        if node.type == "chat":
+            # Create Chat record tied to this hierarchy node. Use a default
+            # title and empty config; the Chat model has its own id.
+            chat = Chat(node_id=node.id, title=(node.name or "Neuer Chat"))
+            self._session.add(chat)
+            await self._session.flush()
+
+            # Link conversation id into node metadata for canonical mapping
+            md = dict(node.node_metadata or {})
+            md.update({"entity_type": "conversation", "entity_id": chat.id})
+            node.node_metadata = md
+            await self._session.flush()
         return node
 
     async def update_node(

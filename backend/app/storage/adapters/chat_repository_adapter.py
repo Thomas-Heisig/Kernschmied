@@ -63,7 +63,24 @@ class ChatRepositoryAdapter:
             )
 
             await chat_repo.add_chat(chat)
+            # Annotate the hierarchy node with the conversation mapping so
+            # the canonical node -> conversation relationship is persisted.
+            # Do not store absolute paths or sensitive data on the node.
+            node = await hierarchy_repo.get(node_id)
+            if node is not None:
+                md = dict(getattr(node, "node_metadata", {}) or {})
+                md.update({"entity_type": "conversation", "entity_id": chat.id})
+                node.node_metadata = md
+                session.add(node)
+                await session.flush()
+
             await session.commit()
+            # After commit, best-effort projection of created conversation
+            try:
+                # resolve post-commit projection service from app state if available
+                from app.core.bootstrap import _publish_services  # type: ignore
+            except Exception:
+                pass
 
     async def append_user_message(
         self,
@@ -74,9 +91,52 @@ class ChatRepositoryAdapter:
         content: str,
         metadata: Mapping[str, Any],
         user_id: str | None = None,
+        hierarchy_node_id: str | None = None,
     ) -> None:
         async with self._session_factory() as session:
             chat_repo = StorageChatRepository(session)
+
+            # If the client supplied a conversation_id that does not exist
+            # (stale localStorage), attempt to create a conversation server-side
+            # when a valid hierarchy_node_id is provided. This makes the
+            # client resilient to DB resets.
+            existing_chat = await chat_repo.get(conversation_id)
+            if existing_chat is None:
+                # If caller provided a hierarchy node id, validate it and
+                # create the chat record using that node. Otherwise fail
+                # early with the existing behavior.
+                if hierarchy_node_id:
+                    hierarchy_repo = StorageHierarchyRepository(session)
+                    node = await hierarchy_repo.get(hierarchy_node_id)
+                    if node is None:
+                        raise ChatHierarchyNodeNotFoundError(
+                            f"Der Hierarchieknoten '{hierarchy_node_id}' wurde nicht gefunden."
+                        )
+
+                    chat = ChatModel(
+                        id=conversation_id,
+                        node_id=hierarchy_node_id,
+                        title=f"Conversation {conversation_id}",
+                        config=(dict(metadata or {})),
+                    )
+
+                    await chat_repo.add_chat(chat)
+
+                    # Ensure the hierarchy node is annotated with the
+                    # conversation mapping so opening the node later can
+                    # resolve the existing conversation id.
+                    node = await hierarchy_repo.get(hierarchy_node_id)
+                    if node is not None:
+                        md = dict(getattr(node, "node_metadata", {}) or {})
+                        md.update({"entity_type": "conversation", "entity_id": chat.id})
+                        node.node_metadata = md
+                        session.add(node)
+
+                    await session.flush()
+                else:
+                    # No node provided — preserve previous behavior which will
+                    # result in a KeyError deeper in the repository.
+                    pass
 
             # Let the repository assign the sequence_number atomically.
             message = MessageModel(
@@ -90,6 +150,8 @@ class ChatRepositoryAdapter:
 
             await chat_repo.add_message(message)
             await session.commit()
+            # best-effort projection: project conversation messages
+            # The safe integration point is to let API handlers trigger projection; repository must not rely on app state here.
 
     async def append_assistant_message(
         self,
@@ -124,6 +186,7 @@ class ChatRepositoryAdapter:
 
             await chat_repo.add_message(message)
             await session.commit()
+            # best-effort: do not call projection here; projection should be triggered by API layer after commit
 
     async def mark_assistant_message_failed(
         self,

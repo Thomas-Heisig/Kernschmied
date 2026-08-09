@@ -18,6 +18,8 @@ from app.api.v1 import (
     hierarchy,
     models,
     tools,
+    widgets,
+    files,
     ui,
     users,
 )
@@ -97,6 +99,18 @@ api_router.include_router(
     tags=["Registry / Tools"],
 )
 
+api_router.include_router(
+    widgets.router,
+    prefix="/widgets",
+    tags=["Registry / Widgets"],
+)
+
+api_router.include_router(
+    files.router,
+    prefix="/files",
+    tags=["Files / Workspace"],
+)
+
 # ---------------------------------------------------------------------------
 # Fachliche Laufzeitendpunkte
 # ---------------------------------------------------------------------------
@@ -134,6 +148,12 @@ api_router.include_router(
     users.router,
     prefix="/users",
     tags=["Users / Administration"],
+)
+
+api_router.include_router(
+    __import__("app.api.v1.roles", fromlist=["router"]).router,
+    prefix="/roles",
+    tags=["Roles / Administration"],
 )
 
 # Authentication endpoints (local identity provider)

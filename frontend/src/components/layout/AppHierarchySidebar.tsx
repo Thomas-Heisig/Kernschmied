@@ -88,106 +88,41 @@ export function AppHierarchySidebar({
                 Arbeitsbereiche, Projekte und Chats
               </p>
 
-              <div className="mt-3 grid grid-cols-3 gap-2">
-                {/* Bento-style icon grid (icons-only, helptext on hover) */}
-                <button
-                  type="button"
-                  onClick={() => onCreateUser?.()}
-                  className="flex h-10 w-10 items-center justify-center rounded border border-border bg-transparent hover:bg-surface-hover"
-                  title="Neuer Benutzer"
-                  aria-label="Neuer Benutzer"
-                >
-                  <DynamicIcon name="UserCircle" size={16} />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onCreatePublicWorkspace?.()}
-                  className="flex h-10 w-10 items-center justify-center rounded border border-border bg-transparent hover:bg-surface-hover"
-                  title="Neuer Public-Bereich"
-                  aria-label="Neuer Public-Bereich"
-                >
-                  <DynamicIcon name="Building2" size={16} />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => onCreateInternWorkspace?.()}
-                  className="flex h-10 w-10 items-center justify-center rounded border border-border bg-transparent hover:bg-surface-hover"
-                  title="Neuer interner Bereich"
-                  aria-label="Neuer interner Bereich"
-                >
-                  <DynamicIcon name="FolderKanban" size={16} />
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center">
-              <button
-                type="button"
-                onClick={toggleSidebar}
-                className={[
-                  'inline-flex h-9 w-9 shrink-0',
-                  'items-center justify-center rounded-lg',
-                  'text-text-muted transition',
-                  'hover:bg-surface-hover hover:text-text',
-                  'focus-visible:outline-none',
-                  'focus-visible:ring-2',
-                  'focus-visible:ring-primary',
-                  'dark:text-gray-400',
-                  'dark:hover:bg-slate-700/70',
-                  'dark:hover:text-white',
-                ].join(' ')}
-                aria-label={toggleLabel}
-                aria-expanded={open}
-                title={toggleLabel}
-              >
-                <HierarchyToggleIcon open={open} />
-              </button>
+              {/* header action icons removed (moved to permanent footer) */}
             </div>
           </div>
         ) : null}
-        {!open ? (
-          <button
-            type="button"
-            onClick={toggleSidebar}
-            className={[
-              'flex min-h-0 flex-1',
-              'items-center justify-center',
-              'text-text-subtle transition',
-              'hover:bg-surface-hover hover:text-text',
-              'focus-visible:outline-none',
-              'focus-visible:ring-2',
-              'focus-visible:ring-inset',
-              'focus-visible:ring-primary',
-              'dark:text-gray-500',
-              'dark:hover:bg-slate-800',
-              'dark:hover:text-gray-300',
-            ].join(' ')}
-            aria-label="Hierarchie ausklappen"
-            title="Hierarchie ausklappen"
-          >
-            <span
-              className={[
-                'select-none text-[10px]',
-                'font-semibold tracking-[0.18em]',
-                'uppercase',
-                '[writing-mode:vertical-rl]',
-              ].join(' ')}
-              aria-hidden="true"
-            >
-              Hierarchie
-            </span>
-          </button>
-        ) : null}
+
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className={[
+            'inline-flex h-9 w-9 shrink-0',
+            'items-center justify-center rounded-lg',
+            'text-text-muted transition',
+            'hover:bg-surface-hover hover:text-text',
+            'focus-visible:outline-none',
+            'focus-visible:ring-2',
+            'focus-visible:ring-primary',
+            'dark:text-gray-400',
+            'dark:hover:bg-slate-700/70',
+            'dark:hover:text-white',
+          ].join(' ')}
+          aria-label={toggleLabel}
+          aria-expanded={open}
+          title={toggleLabel}
+        >
+          <HierarchyToggleIcon open={open} />
+        </button>
       </header>
 
       {open ? (
-        <nav
-          className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2"
-          aria-label="Hierarchiebaum"
-        >
-          <div className="relative">
+        <>
+          <nav
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2"
+            aria-label="Hierarchiebaum"
+          >
+            <div className="relative">
               <div className="mb-3 px-2 flex items-center gap-2">
                 <input
                   type="search"
@@ -212,39 +147,42 @@ export function AppHierarchySidebar({
                   <DynamicIcon name="Archive" size={16} />
                 </button>
               </div>
-            {isBusy ? (
-              <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/60 dark:bg-slate-900/60">
-                <svg className="h-8 w-8 animate-spin text-text-muted" viewBox="0 0 24 24">
-                  <circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    strokeWidth="4"
-                    stroke="currentColor"
-                    strokeDasharray="60"
-                    strokeLinecap="round"
-                    fill="none"
-                  ></circle>
-                </svg>
-              </div>
-            ) : null}
-            <GenericTree
-              root={root}
-              schema={schema}
-              selectedNodeId={selectedNodeId}
-              expandedNodeIds={expandedNodeIds}
-              onSelect={onSelect}
-              onExpandedNodeIdsChange={onExpandedNodeIdsChange}
-              onAction={onAction}
-              onCreateChat={onCreateChat}
-              onNodeDrop={onNodeDrop}
-              filterText={filterText}
-              showArchived={showArchived}
-              isBusy={isBusy}
-              recentlyMovedNodeId={recentlyMovedNodeId}
-            />
-          </div>
-        </nav>
+              {isBusy ? (
+                <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/60 dark:bg-slate-900/60">
+                  <svg className="h-8 w-8 animate-spin text-text-muted" viewBox="0 0 24 24">
+                    <circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      strokeWidth="4"
+                      stroke="currentColor"
+                      strokeDasharray="60"
+                      strokeLinecap="round"
+                      fill="none"
+                    ></circle>
+                  </svg>
+                </div>
+              ) : null}
+              <GenericTree
+                root={root}
+                schema={schema}
+                selectedNodeId={selectedNodeId}
+                expandedNodeIds={expandedNodeIds}
+                onSelect={onSelect}
+                onExpandedNodeIdsChange={onExpandedNodeIdsChange}
+                onAction={onAction}
+                onCreateChat={onCreateChat}
+                onNodeDrop={onNodeDrop}
+                filterText={filterText}
+                showArchived={showArchived}
+                isBusy={isBusy}
+                recentlyMovedNodeId={recentlyMovedNodeId}
+              />
+            </div>
+          </nav>
+
+          {/* footer moved to permanent area below */}
+        </>
       ) : (
         <button
           type="button"
@@ -278,6 +216,147 @@ export function AppHierarchySidebar({
           </span>
         </button>
       )}
+
+      <footer
+        className={[
+          'flex shrink-0 border-t border-border dark:border-white/10',
+          'dark:bg-slate-800/80 bg-white/80',
+          open ? 'p-3' : 'p-2',
+        ].join(' ')}
+      >
+        {open ? (
+          <div className="flex w-full items-center justify-start gap-2">
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onCreateUser?.()}
+                className="flex h-10 w-10 items-center justify-center rounded border border-border bg-transparent hover:bg-surface-hover"
+                title="Neuer Benutzer"
+                aria-label="Neuer Benutzer"
+              >
+                <DynamicIcon name="UserCircle" size={16} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onCreatePublicWorkspace?.()}
+                className="flex h-10 w-10 items-center justify-center rounded border border-border bg-transparent hover:bg-surface-hover"
+                title="Neuer Public-Bereich"
+                aria-label="Neuer Public-Bereich"
+              >
+                <DynamicIcon name="Building2" size={16} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => onCreateInternWorkspace?.()}
+                className="flex h-10 w-10 items-center justify-center rounded border border-border bg-transparent hover:bg-surface-hover"
+                title="Neuer interner Bereich"
+                aria-label="Neuer interner Bereich"
+              >
+                <DynamicIcon name="FolderKanban" size={16} />
+              </button>
+            
+              <button
+                type="button"
+                onClick={() => {}}
+                className="flex h-10 w-10 items-center justify-center rounded border border-border bg-transparent hover:bg-surface-hover"
+                title="Platzhalter"
+                aria-label="Platzhalter"
+              >
+                <DynamicIcon name="Plus" size={16} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {}}
+                className="flex h-10 w-10 items-center justify-center rounded border border-border bg-transparent hover:bg-surface-hover"
+                title="Platzhalter 2"
+                aria-label="Platzhalter 2"
+              >
+                <DynamicIcon name="Wrench" size={16} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex w-full flex-col items-center gap-2">
+            <div className="group relative">
+              <button
+                type="button"
+                onClick={() => onCreateUser?.()}
+                className="flex h-9 w-9 items-center justify-center rounded hover:bg-surface-hover"
+                title="Neuer Benutzer"
+                aria-label="Neuer Benutzer"
+              >
+                <DynamicIcon name="UserCircle" size={16} />
+              </button>
+              <span className="pointer-events-none absolute left-full ml-2 top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-1 text-xs text-white group-hover:block">
+                Neuer Benutzer
+              </span>
+            </div>
+
+            <div className="group relative">
+              <button
+                type="button"
+                onClick={() => onCreatePublicWorkspace?.()}
+                className="flex h-9 w-9 items-center justify-center rounded hover:bg-surface-hover"
+                title="Neuer Public-Bereich"
+                aria-label="Neuer Public-Bereich"
+              >
+                <DynamicIcon name="Building2" size={16} />
+              </button>
+              <span className="pointer-events-none absolute left-full ml-2 top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-1 text-xs text-white group-hover:block">
+                Neuer Public-Bereich
+              </span>
+            </div>
+
+            <div className="group relative">
+              <button
+                type="button"
+                onClick={() => onCreateInternWorkspace?.()}
+                className="flex h-9 w-9 items-center justify-center rounded hover:bg-surface-hover"
+                title="Neuer interner Bereich"
+                aria-label="Neuer interner Bereich"
+              >
+                <DynamicIcon name="FolderKanban" size={16} />
+              </button>
+              <span className="pointer-events-none absolute left-full ml-2 top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-1 text-xs text-white group-hover:block">
+                Neuer interner Bereich
+              </span>
+            </div>
+
+            <div className="group relative">
+              <button
+                type="button"
+                onClick={() => {}}
+                className="flex h-9 w-9 items-center justify-center rounded hover:bg-surface-hover"
+                title="Platzhalter"
+                aria-label="Platzhalter"
+              >
+                <DynamicIcon name="Plus" size={16} />
+              </button>
+              <span className="pointer-events-none absolute left-full ml-2 top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-1 text-xs text-white group-hover:block">
+                Platzhalter
+              </span>
+            </div>
+
+            <div className="group relative">
+              <button
+                type="button"
+                onClick={() => {}}
+                className="flex h-9 w-9 items-center justify-center rounded hover:bg-surface-hover"
+                title="Platzhalter 2"
+                aria-label="Platzhalter 2"
+              >
+                <DynamicIcon name="Wrench" size={16} />
+              </button>
+              <span className="pointer-events-none absolute left-full ml-2 top-1/2 hidden -translate-y-1/2 whitespace-nowrap rounded bg-black/80 px-2 py-1 text-xs text-white group-hover:block">
+                Platzhalter 2
+              </span>
+            </div>
+          </div>
+        )}
+      </footer>
     </aside>
   );
 }

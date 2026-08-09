@@ -837,6 +837,7 @@ class ChatRepository(Protocol):
             JsonValue,
         ],
         user_id: str | None = None,
+        hierarchy_node_id: str | None = None,
     ) -> Awaitable[None] | None: ...
 
     def append_assistant_message(
@@ -2459,6 +2460,7 @@ class ChatService:
                     "request_id": (context.request_id),
                 },
                 user_id=(context.user_id),
+                hierarchy_node_id=(request.hierarchy_node_id),
             )
 
             await self._await_if_needed(val2)
@@ -2476,6 +2478,8 @@ class ChatService:
                 },
                 cause=exc,
             ) from exc
+
+    
 
     async def _persist_assistant_response(
         self,

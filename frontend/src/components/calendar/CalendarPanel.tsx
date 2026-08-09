@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Toaster, toast } from 'sonner';
+import { useToast } from '../ui/ToastProvider';
+import Modal from '../ui/Modal';
 import type { components } from '../../api/openapi-types';
 import CalendarView from './CalendarView';
 import * as api from '../../api/fetchCalendarClient';
@@ -12,6 +13,11 @@ export default function CalendarPanel({ onClose }: { onClose: () => void }) {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [newCalName, setNewCalName] = useState('');
 
+  const { push } = useToast();
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmActionId, setConfirmActionId] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
   const loadCalendars = async () => {
     setLoadingCals(true);
     try {
@@ -19,7 +25,7 @@ export default function CalendarPanel({ onClose }: { onClose: () => void }) {
       setCalendarsState(c || []);
       if (!selectedCalendarId && c && c.length) setSelectedCalendarId(c[0].id);
     } catch (err) {
-      toast.error('Kalender konnten nicht geladen werden');
+      push('error', 'Kalender konnten nicht geladen werden');
     } finally {
       setLoadingCals(false);
     }
@@ -38,7 +44,7 @@ export default function CalendarPanel({ onClose }: { onClose: () => void }) {
       });
       setEventsState(events || []);
     } catch (err) {
-      toast.error('Ereignisse konnten nicht geladen werden');
+      push('error', 'Ereignisse konnten nicht geladen werden');
     } finally {
       setLoadingEvents(false);
     }
@@ -58,33 +64,43 @@ export default function CalendarPanel({ onClose }: { onClose: () => void }) {
       await api.createCalendar({ name: newCalName.trim() } as any);
       setNewCalName('');
       void loadCalendars();
-      toast.success('Kalender erstellt');
+      push('success', 'Kalender erstellt');
     } catch (err) {
-      toast.error('Kalender konnte nicht erstellt werden');
+      push('error', 'Kalender konnte nicht erstellt werden');
     }
   };
 
   const handleRemoveCalendar = async (id: string) => {
-    if (!window.confirm('Kalender wirklich löschen?')) return;
+    setConfirmActionId(id);
+    setConfirmOpen(true);
+  };
+
+  async function confirmRemoveCalendar() {
+    if (!confirmActionId) return;
+    setIsConfirming(true);
     try {
-      await api.deleteCalendar(id);
-      toast.success('Kalender gelöscht');
-      if (selectedCalendarId === id) setSelectedCalendarId(null);
+      await api.deleteCalendar(confirmActionId);
+      push('success', 'Kalender gelöscht');
+      if (selectedCalendarId === confirmActionId) setSelectedCalendarId(null);
       void loadCalendars();
     } catch (err) {
-      toast.error('Löschen fehlgeschlagen');
+      push('error', 'Löschen fehlgeschlagen');
+    } finally {
+      setIsConfirming(false);
+      setConfirmOpen(false);
+      setConfirmActionId(null);
     }
-  };
+  }
 
   const handleCreateEvent = async (payload: components['schemas']['EventCreate']) => {
     if (!selectedCalendarId) return false;
     try {
       await api.createEvent(selectedCalendarId, payload);
       void loadEvents(selectedCalendarId);
-      toast.success('Ereignis erstellt');
+      push('success', 'Ereignis erstellt');
       return true;
     } catch (err) {
-      toast.error('Ereignis konnte nicht erstellt werden');
+      push('error', 'Ereignis konnte nicht erstellt werden');
       return false;
     }
   };
@@ -94,10 +110,10 @@ export default function CalendarPanel({ onClose }: { onClose: () => void }) {
     try {
       await api.patchEvent(selectedCalendarId, id, payload);
       void loadEvents(selectedCalendarId);
-      toast.success('Ereignis aktualisiert');
+      push('success', 'Ereignis aktualisiert');
       return true;
     } catch (err) {
-      toast.error('Aktualisierung fehlgeschlagen');
+      push('error', 'Aktualisierung fehlgeschlagen');
       return false;
     }
   };
@@ -107,17 +123,27 @@ export default function CalendarPanel({ onClose }: { onClose: () => void }) {
     try {
       await api.deleteEvent(selectedCalendarId, id);
       void loadEvents(selectedCalendarId);
-      toast.success('Ereignis gelöscht');
+      push('success', 'Ereignis gelöscht');
       return true;
     } catch (err) {
-      toast.error('Löschen fehlgeschlagen');
+      push('error', 'Löschen fehlgeschlagen');
       return false;
     }
   };
 
   return (
     <div className="p-4">
-      <Toaster position="bottom-right" />
+      <Modal
+        isOpen={confirmOpen}
+        title="Kalender löschen"
+        onClose={() => setConfirmOpen(false)}
+        onConfirm={() => void confirmRemoveCalendar()}
+        confirmLabel="Löschen"
+        confirmDisabled={isConfirming}
+      >
+        <div className="text-sm">Soll der Kalender wirklich gelöscht werden?</div>
+      </Modal>
+
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold">Kalenderverwaltung</h3>
         <div>

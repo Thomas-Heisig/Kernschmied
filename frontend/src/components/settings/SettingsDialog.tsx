@@ -28,7 +28,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
 
   const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
 
-  const config = useSystemConfig();
+  const config = useSystemConfig({ enabled: isOpen });
 
   const [activeKey, setActiveKey] = useState<string | null>(SETTINGS_CATALOG_KEY);
 
