@@ -11,7 +11,7 @@ from alembic import op
 
 # revision identifiers, used by Alembic.
 revision = "0018_seed_system_widgets"
-down_revision = "0017_add_widget_registry"
+down_revision = "0018_create_files"
 branch_labels = None
 depends_on = None
 

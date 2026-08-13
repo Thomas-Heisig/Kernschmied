@@ -1,0 +1,1987 @@
+I001 [*] Import block is un-sorted or un-formatted
+  --> app\api\v1\widgets.py:1:1
+   |
+ 1 | / from __future__ import annotations
+ 2 | |
+ 3 | | from datetime import datetime
+ 4 | |
+ 5 | | from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
+ 6 | | import traceback
+ 7 | | from pydantic import BaseModel
+ 8 | | from sqlalchemy import select
+ 9 | | from sqlalchemy.ext.asyncio import AsyncSession
+10 | |
+11 | | from app.storage.database import get_session
+12 | | from app.storage.models import HierarchyNode, WidgetRegistry
+13 | | from app.widgets.service import WidgetResolverService
+14 | | import logging
+   | |______________^
+15 |
+16 |   logger = logging.getLogger(__name__)
+   |
+help: Organize imports
+   |
+2  |
+3  + import logging
+4  + import traceback
+5  | from datetime import datetime
+6  |
+7  | from fastapi import APIRouter, Body, Depends, HTTPException, Request, status
+   - import traceback
+8  | from pydantic import BaseModel
+--------------------------------------------------------------------------------
+14 | from app.widgets.service import WidgetResolverService
+   - import logging
+15 |
+   |
+
+B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+  --> app\api\v1\widgets.py:43:49
+   |
+42 | @router.get("/", response_model=list[WidgetRegistryOut])
+43 | async def list_registry(session: AsyncSession = Depends(get_session)):
+   |                                                 ^^^^^^^^^^^^^^^^^^^^
+44 |     try:
+45 |         stmt = select(WidgetRegistry)
+   |
+
+TRY401 Redundant exception object included in `logging.exception` call
+  --> app\api\v1\widgets.py:66:57
+   |
+64 |     except Exception as e:
+65 |         # Log full traceback for debugging purposes
+66 |         logger.exception("Failed in list_registry: %s", e)
+   |                                                         ^
+67 |         tb = traceback.format_exc()
+68 |         logger.error("Traceback: %s", tb)
+   |
+
+TRY400 Use `logging.exception` instead of `logging.error`
+  --> app\api\v1\widgets.py:68:9
+   |
+66 |         logger.exception("Failed in list_registry: %s", e)
+67 |         tb = traceback.format_exc()
+68 |         logger.error("Traceback: %s", tb)
+   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+69 |         # Re-raise to allow FastAPI to return a 500
+70 |         raise
+   |
+help: Replace with `exception`
+
+B008 Do not perform function call `Body` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+  --> app\api\v1\widgets.py:74:55
+   |
+73 | @router.post("/", response_model=WidgetRegistryOut, status_code=status.HTTP_201_CREATED)
+74 | async def create_registry(payload: WidgetRegistryIn = Body(...), session: AsyncSession = Depends(get_session)):
+   |                                                       ^^^^^^^^^
+75 |     obj = WidgetRegistry(
+76 |         name=payload.name,
+   |
+
+E501 Line too long (111 > 88)
+  --> app\api\v1\widgets.py:74:89
+   |
+73 | @router.post("/", response_model=WidgetRegistryOut, status_code=status.HTTP_201_CREATED)
+74 | async def create_registry(payload: WidgetRegistryIn = Body(...), session: AsyncSession = Depends(get_session)):
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+75 |     obj = WidgetRegistry(
+76 |         name=payload.name,
+   |
+
+B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+  --> app\api\v1\widgets.py:74:90
+   |
+73 | @router.post("/", response_model=WidgetRegistryOut, status_code=status.HTTP_201_CREATED)
+74 | async def create_registry(payload: WidgetRegistryIn = Body(...), session: AsyncSession = Depends(get_session)):
+   |                                                                                          ^^^^^^^^^^^^^^^^^^^^
+75 |     obj = WidgetRegistry(
+76 |         name=payload.name,
+   |
+
+B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+   --> app\api\v1\widgets.py:113:89
+    |
+112 | @router.get("/nodes/{node_id}/effective")
+113 | async def get_effective_widgets(node_id: str, request: Request, session: AsyncSession = Depends(get_session)):
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^
+114 |     # Delegate to the resolver service to compute effective widgets consistently
+115 |     resolver = WidgetResolverService(session)
+    |
+
+E501 Line too long (110 > 88)
+   --> app\api\v1\widgets.py:113:89
+    |
+112 | @router.get("/nodes/{node_id}/effective")
+113 | async def get_effective_widgets(node_id: str, request: Request, session: AsyncSession = Depends(get_session)):
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^
+114 |     # Delegate to the resolver service to compute effective widgets consistently
+115 |     resolver = WidgetResolverService(session)
+    |
+
+E501 Line too long (90 > 88)
+   --> app\api\v1\widgets.py:122:89
+    |
+120 |             uid = getattr(user, "id", None)
+121 |             roles = getattr(user, "roles", None) or getattr(user, "roles", [])
+122 |             perms = getattr(user, "permissions", None) or getattr(user, "permissions", [])
+    |                                                                                         ^^
+123 |             is_sys_admin = getattr(user, "is_system_admin", False)
+124 |             logger.debug("widgets.endpoint: actor id=%s roles=%s permissions=%s is_system_admin=%s", uid, roles, perms, is_sys_admin)
+    |
+
+E501 Line too long (133 > 88)
+   --> app\api\v1\widgets.py:124:89
+    |
+122 |             perms = getattr(user, "permissions", None) or getattr(user, "permissions", [])
+123 |             is_sys_admin = getattr(user, "is_system_admin", False)
+124 |             logger.debug("widgets.endpoint: actor id=%s roles=%s permissions=%s is_system_admin=%s", uid, roles, perms, is_sys_admin)
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+125 |     except Exception:
+126 |         logger.debug("widgets.endpoint: failed to introspect actor", exc_info=True)
+    |
+
+E501 Line too long (96 > 88)
+   --> app\api\v1\widgets.py:137:89
+    |
+135 |     # resolver output verbatim so frontend can rely on a consistent API
+136 |     # shape. Provide both snake_case and camelCase top-level keys for compatibility.
+137 |     return {"schema_version": "1.0", "schemaVersion": "1.0", "node_id": node_id, "items": items}
+    |                                                                                         ^^^^^^^^
+
+B008 Do not perform function call `Depends` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+   --> app\api\v1\widgets.py:144:29
+    |
+142 |     node_id: str,
+143 |     request: Request,
+144 |     session: AsyncSession = Depends(get_session),
+    |                             ^^^^^^^^^^^^^^^^^^^^
+145 |     payload: WidgetAssignmentIn = Body(...),
+146 | ):
+    |
+
+B008 Do not perform function call `Body` in argument defaults; instead, perform the call within the function, or read the default from a module-level singleton variable
+   --> app\api\v1\widgets.py:145:35
+    |
+143 |     request: Request,
+144 |     session: AsyncSession = Depends(get_session),
+145 |     payload: WidgetAssignmentIn = Body(...),
+    |                                   ^^^^^^^^^
+146 | ):
+147 |     # Basic auth check: ensure user present
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> app\core\dev_seed.py:1:1
+   |
+ 1 | / from __future__ import annotations
+ 2 | |
+ 3 | | import logging
+ 4 | | from typing import Any, Dict, List
+ 5 | |
+ 6 | | from sqlalchemy import select
+ 7 | | from sqlalchemy.exc import InvalidRequestError
+ 8 | | from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+ 9 | |
+10 | | from app.contracts.hierarchy import HierarchyNodeCreate
+11 | | from app.core.settings import settings
+12 | | from app.database.models.user import UserModel
+13 | | from app.database.models.user_role import RoleModel, UserRoleModel
+14 | | from app.hierarchy.repository import HierarchyRepository
+15 | | from app.storage.models import WidgetRegistry, WidgetAssignment
+16 | | from app.storage.repositories.user import UserRepository
+17 | | from app.auth.password_service import PasswordService
+   | |_____________________________________________________^
+18 |
+19 |   logger = logging.getLogger(__name__)
+   |
+help: Organize imports
+   |
+9  |
+10 + from app.auth.password_service import PasswordService
+11 | from app.contracts.hierarchy import HierarchyNodeCreate
+--------------------------------------------------------------------------------
+15 | from app.hierarchy.repository import HierarchyRepository
+   - from app.storage.models import WidgetRegistry, WidgetAssignment
+16 + from app.storage.models import WidgetAssignment, WidgetRegistry
+17 | from app.storage.repositories.user import UserRepository
+   - from app.auth.password_service import PasswordService
+18 |
+   |
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+ --> app\core\dev_seed.py:4:1
+  |
+3 | import logging
+4 | from typing import Any, Dict, List
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 |
+6 | from sqlalchemy import select
+  |
+
+UP035 `typing.List` is deprecated, use `list` instead
+ --> app\core\dev_seed.py:4:1
+  |
+3 | import logging
+4 | from typing import Any, Dict, List
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+5 |
+6 | from sqlalchemy import select
+  |
+
+SIM117 [*] Use a single `with` statement with multiple contexts instead of nested `with` statements
+  --> app\core\dev_seed.py:39:9
+   |
+37 |       # Step 1: ensure system-root and bootstrap-admin nodes
+38 |       try:
+39 | /         async with session_factory() as s1:
+40 | |             async with s1.begin():
+   | |__________________________________^
+41 |                   repo = HierarchyRepository(s1)
+42 |                   # Ensure system-root exists and protective flags are correct
+   |
+help: Combine `with` statements
+    |
+38  |     try:
+    -         async with session_factory() as s1:
+    -             async with s1.begin():
+    -                 repo = HierarchyRepository(s1)
+    -                 # Ensure system-root exists and protective flags are correct
+    -                 system_root = await repo.get_node("system-root")
+    -                 if system_root is None:
+    -                     await repo.create_node(
+    -                         HierarchyNodeCreate(
+    -                             node_id="system-root",
+    -                             type="system",
+    -                             name="System Root",
+    -                             parent_id=None,
+    -                             system_prompt=None,
+    -                             tool_policy={},
+    -                             config_overrides={},
+    -                             metadata={},
+    -                         )
+39  +         async with session_factory() as s1, s1.begin():
+40  +             repo = HierarchyRepository(s1)
+41  +             # Ensure system-root exists and protective flags are correct
+42  +             system_root = await repo.get_node("system-root")
+43  +             if system_root is None:
+44  +                 await repo.create_node(
+45  +                     HierarchyNodeCreate(
+46  +                         node_id="system-root",
+47  +                         type="system",
+48  +                         name="System Root",
+49  +                         parent_id=None,
+50  +                         system_prompt=None,
+51  +                         tool_policy={},
+52  +                         config_overrides={},
+53  +                         metadata={},
+54  |                     )
+    -                 else:
+    -                     changed = False
+    -                     if not getattr(system_root, "is_system", False):
+    -                         system_root.is_system = True
+    -                         changed = True
+    -                     if getattr(system_root, "is_movable", True):
+    -                         system_root.is_movable = False
+    -                         changed = True
+    -                     if getattr(system_root, "is_deletable", True):
+    -                         system_root.is_deletable = False
+    -                         changed = True
+55  +                 )
+56  +             else:
+57  +                 changed = False
+58  +                 if not getattr(system_root, "is_system", False):
+59  +                     system_root.is_system = True
+60  +                     changed = True
+61  +                 if getattr(system_root, "is_movable", True):
+62  +                     system_root.is_movable = False
+63  +                     changed = True
+64  +                 if getattr(system_root, "is_deletable", True):
+65  +                     system_root.is_deletable = False
+66  +                     changed = True
+67  |
+    -                     if changed:
+    -                         await repo._session.flush()  # type: ignore[attr-defined]
+68  +                 if changed:
+69  +                     await repo._session.flush()  # type: ignore[attr-defined]
+70  |
+    -                 # Bootstrap administrator node
+    -                 admin_node = await repo.get_node("bootstrap-admin")
+    -                 if admin_node is None:
+    -                     await repo.create_node(
+    -                         HierarchyNodeCreate(
+    -                             node_id="bootstrap-admin",
+    -                             type="user",
+    -                             name="Administrator",
+    -                             parent_id="system-root",
+    -                             system_prompt=None,
+    -                             tool_policy={},
+    -                             config_overrides={},
+    -                             metadata={
+    -                                 "bootstrap_admin": True,
+    -                                 "user_id": "local-development-admin",
+    -                                 "display_name": "Administrator",
+    -                             },
+    -                         )
+71  +             # Bootstrap administrator node
+72  +             admin_node = await repo.get_node("bootstrap-admin")
+73  +             if admin_node is None:
+74  +                 await repo.create_node(
+75  +                     HierarchyNodeCreate(
+76  +                         node_id="bootstrap-admin",
+77  +                         type="user",
+78  +                         name="Administrator",
+79  +                         parent_id="system-root",
+80  +                         system_prompt=None,
+81  +                         tool_policy={},
+82  +                         config_overrides={},
+83  +                         metadata={
+84  +                             "bootstrap_admin": True,
+85  +                             "user_id": "local-development-admin",
+86  +                             "display_name": "Administrator",
+87  +                         },
+88  |                     )
+    -                 else:
+    -                     repaired = False
+    -                     if admin_node.type != "user":
+    -                         admin_node.type = "user"
+    -                         repaired = True
+    -                     if admin_node.name != "Administrator":
+    -                         admin_node.name = "Administrator"
+    -                         repaired = True
+    -                     if admin_node.parent_id != "system-root":
+    -                         await repo.move_node(admin_node, new_parent_id="system-root")
+89  +                 )
+90  +             else:
+91  +                 repaired = False
+92  +                 if admin_node.type != "user":
+93  +                     admin_node.type = "user"
+94  +                     repaired = True
+95  +                 if admin_node.name != "Administrator":
+96  +                     admin_node.name = "Administrator"
+97  +                     repaired = True
+98  +                 if admin_node.parent_id != "system-root":
+99  +                     await repo.move_node(admin_node, new_parent_id="system-root")
+100 |
+    -                     if repaired:
+    -                         await repo._session.flush()  # type: ignore[attr-defined]
+101 +                 if repaired:
+102 +                     await repo._session.flush()  # type: ignore[attr-defined]
+103 |         logger.info("Development minimal hierarchy seed applied (idempotent)")
+    |
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> app\core\dev_seed.py:110:9
+    |
+108 |       # Step 2: ensure admin user, roles and basic system children
+109 |       try:
+110 | /         async with session_factory() as s2:
+111 | |             async with s2.begin():
+    | |__________________________________^
+112 |                   repo = HierarchyRepository(s2)
+113 |                   if settings.app_environment.name.lower() == "development":
+    |
+help: Combine `with` statements
+
+E501 Line too long (99 > 88)
+   --> app\core\dev_seed.py:141:89
+    |
+139 |                     else:
+140 |                         updated = False
+141 |                         if getattr(admin, "username", None) != settings.development_admin_username:
+    |                                                                                         ^^^^^^^^^^^
+142 |                             conflict = await user_repo.get_by_username(
+143 |                                 settings.development_admin_username
+    |
+
+E501 Line too long (96 > 88)
+   --> app\core\dev_seed.py:150:89
+    |
+148 | ÔÇª                     else:
+149 | ÔÇª                         logger.warning(
+150 | ÔÇª                             "Cannot rename existing dev admin to %s: username conflict",
+    |                                                                                   ^^^^^^^^
+151 | ÔÇª                             settings.development_admin_username,
+152 | ÔÇª                         )
+    |
+
+E501 Line too long (107 > 88)
+   --> app\core\dev_seed.py:154:89
+    |
+152 |                                 )
+153 |
+154 |                         if getattr(admin, "display_name", None) != settings.development_admin_display_name:
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^
+155 |                             admin.display_name = settings.development_admin_display_name
+156 |                             updated = True
+    |
+
+E501 Line too long (91 > 88)
+   --> app\core\dev_seed.py:274:89
+    |
+272 |                         str(n.node_metadata.get("entity_id"))
+273 |                         for n in children
+274 |                         if n.node_metadata and n.node_metadata.get("entity_type") == "user"
+    |                                                                                         ^^^
+275 |                     }
+    |
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> app\core\dev_seed.py:303:9
+    |
+301 |       # Step 3: ensure widget registry entries (canonical pool)
+302 |       try:
+303 | /         async with session_factory() as s3:
+304 | |             async with s3.begin():
+    | |__________________________________^
+305 |                   widget_pool: List[Dict[str, Any]] = [
+306 |                       {
+    |
+help: Combine `with` statements
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> app\core\dev_seed.py:305:30
+    |
+303 |         async with session_factory() as s3:
+304 |             async with s3.begin():
+305 |                 widget_pool: List[Dict[str, Any]] = [
+    |                              ^^^^
+306 |                     {
+307 |                         "name": "system_health",
+    |
+help: Replace with `list`
+    |
+304 |             async with s3.begin():
+    -                 widget_pool: List[Dict[str, Any]] = [
+305 +                 widget_pool: list[Dict[str, Any]] = [
+306 |                     {
+    |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> app\core\dev_seed.py:305:35
+    |
+303 |         async with session_factory() as s3:
+304 |             async with s3.begin():
+305 |                 widget_pool: List[Dict[str, Any]] = [
+    |                                   ^^^^
+306 |                     {
+307 |                         "name": "system_health",
+    |
+help: Replace with `dict`
+    |
+304 |             async with s3.begin():
+    -                 widget_pool: List[Dict[str, Any]] = [
+305 +                 widget_pool: List[dict[str, Any]] = [
+306 |                     {
+    |
+
+E501 Line too long (122 > 88)
+   --> app\core\dev_seed.py:309:89
+    |
+307 |                         "name": "system_health",
+308 |                         "type": "system_health_widget",
+309 |                         "widget_metadata": {"component_type": "system_health_widget", "supported_node_types": ["system"]},
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+310 |                     },
+311 |                     {
+    |
+
+E501 Line too long (118 > 88)
+   --> app\core\dev_seed.py:314:89
+    |
+312 |                         "name": "audit_log",
+313 |                         "type": "audit_log_widget",
+314 |                         "widget_metadata": {"component_type": "audit_log_widget", "supported_node_types": ["system"]},
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+315 |                     },
+316 |                     {
+    |
+
+E501 Line too long (124 > 88)
+   --> app\core\dev_seed.py:319:89
+    |
+317 |                         "name": "registry_editor",
+318 |                         "type": "registry_editor_widget",
+319 |                         "widget_metadata": {"component_type": "registry_editor_widget", "supported_node_types": ["system"]},
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+320 |                     },
+321 |                     {
+    |
+
+E501 Line too long (157 > 88)
+   --> app\core\dev_seed.py:324:89
+    |
+322 | ÔÇª
+323 | ÔÇª
+324 | ÔÇªpe": "calendar_widget", "supported_node_types": ["user", "workspace", "project", "chat", "folder"]},
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+325 | ÔÇª
+326 | ÔÇª
+    |
+
+E501 Line too long (154 > 88)
+   --> app\core\dev_seed.py:329:89
+    |
+327 | ÔÇª
+328 | ÔÇª
+329 | ÔÇªtype": "files_widget", "supported_node_types": ["workspace", "project", "chat", "user", "folder"]},
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+330 | ÔÇª
+331 | ÔÇª
+    |
+
+E501 Line too long (132 > 88)
+   --> app\core\dev_seed.py:334:89
+    |
+332 |                         "name": "chat",
+333 |                         "type": "chat_widget",
+334 |                         "widget_metadata": {"component_type": "chat_widget", "supported_node_types": ["chat", "user", "workspace"]},
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+335 |                     },
+336 |                 ]
+    |
+
+E501 Line too long (94 > 88)
+   --> app\core\dev_seed.py:344:89
+    |
+342 |                         exists = resw.scalar_one_or_none()
+343 |                     except Exception:
+344 |                         # MultipleResultsFound or other DB anomalies ÔÇö log and skip inserting.
+    |                                                                                         ^^^^^^
+345 |                         logger.warning("Dev seed: ambiguous registry rows exist for %s; skipping insert/update", sw["name"])
+346 |                         exists = None
+    |
+
+E501 Line too long (124 > 88)
+   --> app\core\dev_seed.py:345:89
+    |
+343 |                     except Exception:
+344 |                         # MultipleResultsFound or other DB anomalies ÔÇö log and skip inserting.
+345 |                         logger.warning("Dev seed: ambiguous registry rows exist for %s; skipping insert/update", sw["name"])
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+346 |                         exists = None
+    |
+
+E501 Line too long (111 > 88)
+   --> app\core\dev_seed.py:363:89
+    |
+361 |                         await s3.flush()
+362 |                     else:
+363 |                         # Update missing fields on the existing canonical entry rather than creating duplicates
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+364 |                         updated = False
+365 |                         if getattr(exists, "type", None) != sw.get("type") and sw.get("type"):
+    |
+
+E501 Line too long (94 > 88)
+   --> app\core\dev_seed.py:365:89
+    |
+363 |                         # Update missing fields on the existing canonical entry rather than creating duplicates
+364 |                         updated = False
+365 |                         if getattr(exists, "type", None) != sw.get("type") and sw.get("type"):
+    |                                                                                         ^^^^^^
+366 |                             exists.type = sw.get("type")
+367 |                             updated = True
+    |
+
+E501 Line too long (102 > 88)
+   --> app\core\dev_seed.py:368:89
+    |
+366 |                             exists.type = sw.get("type")
+367 |                             updated = True
+368 |                         if not getattr(exists, "widget_metadata", None) and sw.get("widget_metadata"):
+    |                                                                                         ^^^^^^^^^^^^^^
+369 |                             exists.widget_metadata = sw.get("widget_metadata")
+370 |                             updated = True
+    |
+
+E501 Line too long (100 > 88)
+   --> app\core\dev_seed.py:371:89
+    |
+369 |                             exists.widget_metadata = sw.get("widget_metadata")
+370 |                             updated = True
+371 |                         if not getattr(exists, "default_config", None) and sw.get("default_config"):
+    |                                                                                         ^^^^^^^^^^^^
+372 |                             exists.default_config = sw.get("default_config")
+373 |                             updated = True
+    |
+
+SIM117 Use a single `with` statement with multiple contexts instead of nested `with` statements
+   --> app\core\dev_seed.py:383:9
+    |
+381 |       # Step 4: ensure node-level assignments (JSON legacy + relational rows)
+382 |       try:
+383 | /         async with session_factory() as s4:
+384 | |             async with s4.begin():
+    | |__________________________________^
+385 |                   repo = HierarchyRepository(s4)
+386 |                   sys_node = await repo.get_node("system-root")
+    |
+help: Combine `with` statements
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> app\core\dev_seed.py:388:30
+    |
+386 | ÔÇª     sys_node = await repo.get_node("system-root")
+387 | ÔÇª     if sys_node is not None:
+388 | ÔÇª         assigns: List[Dict[str, Any]] = getattr(sys_node, "widget_assignments", None) or []
+    |                    ^^^^
+389 | ÔÇª         names = {str(a.get("id") or a.get("widget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.getÔÇª
+390 | ÔÇª         additions: List[Dict[str, Any]] = []
+    |
+help: Replace with `list`
+    |
+387 |                 if sys_node is not None:
+    -                     assigns: List[Dict[str, Any]] = getattr(sys_node, "widget_assignments", None) or []
+388 +                     assigns: list[Dict[str, Any]] = getattr(sys_node, "widget_assignments", None) or []
+389 |                     names = {str(a.get("id") or a.get("widget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.get("widget_id"))}
+    |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> app\core\dev_seed.py:388:35
+    |
+386 | ÔÇª     sys_node = await repo.get_node("system-root")
+387 | ÔÇª     if sys_node is not None:
+388 | ÔÇª         assigns: List[Dict[str, Any]] = getattr(sys_node, "widget_assignments", None) or []
+    |                         ^^^^
+389 | ÔÇª         names = {str(a.get("id") or a.get("widget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.getÔÇª
+390 | ÔÇª         additions: List[Dict[str, Any]] = []
+    |
+help: Replace with `dict`
+    |
+387 |                 if sys_node is not None:
+    -                     assigns: List[Dict[str, Any]] = getattr(sys_node, "widget_assignments", None) or []
+388 +                     assigns: List[dict[str, Any]] = getattr(sys_node, "widget_assignments", None) or []
+389 |                     names = {str(a.get("id") or a.get("widget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.get("widget_id"))}
+    |
+
+E501 Line too long (103 > 88)
+   --> app\core\dev_seed.py:388:89
+    |
+386 | ÔÇª     sys_node = await repo.get_node("system-root")
+387 | ÔÇª     if sys_node is not None:
+388 | ÔÇª         assigns: List[Dict[str, Any]] = getattr(sys_node, "widget_assignments", None) or []
+    |                                                                               ^^^^^^^^^^^^^^^
+389 | ÔÇª         names = {str(a.get("id") or a.get("widget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.getÔÇª
+390 | ÔÇª         additions: List[Dict[str, Any]] = []
+    |
+
+E501 Line too long (158 > 88)
+   --> app\core\dev_seed.py:389:89
+    |
+387 | ÔÇª
+388 | ÔÇªtr(sys_node, "widget_assignments", None) or []
+389 | ÔÇªdget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.get("widget_id"))}
+    |                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+390 | ÔÇª
+391 | ÔÇªudit_log", "registry_editor"):
+    |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> app\core\dev_seed.py:390:32
+    |
+388 | ÔÇª     assigns: List[Dict[str, Any]] = getattr(sys_node, "widget_assignments", None) or []
+389 | ÔÇª     names = {str(a.get("id") or a.get("widget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.get("wiÔÇª
+390 | ÔÇª     additions: List[Dict[str, Any]] = []
+    |                  ^^^^
+391 | ÔÇª     for core_name in ("system_health", "audit_log", "registry_editor"):
+392 | ÔÇª         if core_name not in names:
+    |
+help: Replace with `list`
+    |
+389 |                     names = {str(a.get("id") or a.get("widget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.get("widget_id"))}
+    -                     additions: List[Dict[str, Any]] = []
+390 +                     additions: list[Dict[str, Any]] = []
+391 |                     for core_name in ("system_health", "audit_log", "registry_editor"):
+    |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> app\core\dev_seed.py:390:37
+    |
+388 | ÔÇª     assigns: List[Dict[str, Any]] = getattr(sys_node, "widget_assignments", None) or []
+389 | ÔÇª     names = {str(a.get("id") or a.get("widget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.get("wiÔÇª
+390 | ÔÇª     additions: List[Dict[str, Any]] = []
+    |                       ^^^^
+391 | ÔÇª     for core_name in ("system_health", "audit_log", "registry_editor"):
+392 | ÔÇª         if core_name not in names:
+    |
+help: Replace with `dict`
+    |
+389 |                     names = {str(a.get("id") or a.get("widget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.get("widget_id"))}
+    -                     additions: List[Dict[str, Any]] = []
+390 +                     additions: List[dict[str, Any]] = []
+391 |                     for core_name in ("system_health", "audit_log", "registry_editor"):
+    |
+
+PERF401 Use a list comprehension to create a transformed list
+   --> app\core\dev_seed.py:393:29
+    |
+391 |                       for core_name in ("system_health", "audit_log", "registry_editor"):
+392 |                           if core_name not in names:
+393 | /                             additions.append({
+394 | |                                 "id": core_name,
+395 | |                                 "name": core_name,
+396 | |                                 "component_type": core_name + "_widget",
+397 | |                                 "position": 10,
+398 | |                                 "configuration": {},
+399 | |                                 "enabled": True,
+400 | |                                 "inherit": False,
+401 | |                             })
+    | |______________________________^
+402 |                       if additions:
+403 |                           sys_node.widget_assignments = assigns + additions
+    |
+help: Replace for loop with list comprehension
+
+E501 Line too long (123 > 88)
+   --> app\core\dev_seed.py:412:89
+    |
+410 | ÔÇª                     q = select(WidgetAssignment).where(
+411 | ÔÇª                         WidgetAssignment.node_id == sys_node.id,
+412 | ÔÇª                         (WidgetAssignment.widget_id == add.get("id")) | (WidgetAssignment.name == add.get("name")),
+    |                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+413 | ÔÇª                     )
+414 | ÔÇª                     resw = await s4.execute(q)
+    |
+
+E501 Line too long (93 > 88)
+   --> app\core\dev_seed.py:425:89
+    |
+423 | ÔÇª                         position=add.get("position", 10),
+424 | ÔÇª                         configuration=add.get("configuration", {}),
+425 | ÔÇª                         required_permissions=add.get("required_permissions", []),
+    |                                                                               ^^^^^
+426 | ÔÇª                     )
+427 | ÔÇª                     s4.add(wa)
+    |
+
+E501 Line too long (96 > 88)
+   --> app\core\dev_seed.py:432:89
+    |
+430 |                         if isinstance(_exc, InvalidRequestError):
+431 |                             raise
+432 |                         logger.debug("Relational widget_assignment insertion skipped or failed")
+    |                                                                                         ^^^^^^^^
+433 |
+434 |                 # bootstrap-admin calendar assignment
+    |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> app\core\dev_seed.py:438:36
+    |
+436 |                     admin_node = await repo.get_node("bootstrap-admin")
+437 |                     if admin_node is not None:
+438 |                         a_assigns: List[Dict[str, Any]] = getattr(admin_node, "widget_assignments", None) or []
+    |                                    ^^^^
+439 |                         a_names = {str(a.get("id") or a.get("name")) for a in a_assigns if (a.get("id") or a.get("name"))}
+440 |                         if "calendar" not in a_names:
+    |
+help: Replace with `list`
+    |
+437 |                     if admin_node is not None:
+    -                         a_assigns: List[Dict[str, Any]] = getattr(admin_node, "widget_assignments", None) or []
+438 +                         a_assigns: list[Dict[str, Any]] = getattr(admin_node, "widget_assignments", None) or []
+439 |                         a_names = {str(a.get("id") or a.get("name")) for a in a_assigns if (a.get("id") or a.get("name"))}
+    |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> app\core\dev_seed.py:438:41
+    |
+436 |                     admin_node = await repo.get_node("bootstrap-admin")
+437 |                     if admin_node is not None:
+438 |                         a_assigns: List[Dict[str, Any]] = getattr(admin_node, "widget_assignments", None) or []
+    |                                         ^^^^
+439 |                         a_names = {str(a.get("id") or a.get("name")) for a in a_assigns if (a.get("id") or a.get("name"))}
+440 |                         if "calendar" not in a_names:
+    |
+help: Replace with `dict`
+    |
+437 |                     if admin_node is not None:
+    -                         a_assigns: List[Dict[str, Any]] = getattr(admin_node, "widget_assignments", None) or []
+438 +                         a_assigns: List[dict[str, Any]] = getattr(admin_node, "widget_assignments", None) or []
+439 |                         a_names = {str(a.get("id") or a.get("name")) for a in a_assigns if (a.get("id") or a.get("name"))}
+    |
+
+E501 Line too long (111 > 88)
+   --> app\core\dev_seed.py:438:89
+    |
+436 |                     admin_node = await repo.get_node("bootstrap-admin")
+437 |                     if admin_node is not None:
+438 |                         a_assigns: List[Dict[str, Any]] = getattr(admin_node, "widget_assignments", None) or []
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+439 |                         a_names = {str(a.get("id") or a.get("name")) for a in a_assigns if (a.get("id") or a.get("name"))}
+440 |                         if "calendar" not in a_names:
+    |
+
+E501 Line too long (122 > 88)
+   --> app\core\dev_seed.py:439:89
+    |
+437 |                     if admin_node is not None:
+438 |                         a_assigns: List[Dict[str, Any]] = getattr(admin_node, "widget_assignments", None) or []
+439 |                         a_names = {str(a.get("id") or a.get("name")) for a in a_assigns if (a.get("id") or a.get("name"))}
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+440 |                         if "calendar" not in a_names:
+441 |                             ca: Dict[str, Any] = {
+    |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> app\core\dev_seed.py:441:33
+    |
+439 |                         a_names = {str(a.get("id") or a.get("name")) for a in a_assigns if (a.get("id") or a.get("name"))}
+440 |                         if "calendar" not in a_names:
+441 |                             ca: Dict[str, Any] = {
+    |                                 ^^^^
+442 |                                 "id": "calendar",
+443 |                                 "name": "calendar",
+    |
+help: Replace with `dict`
+    |
+440 |                         if "calendar" not in a_names:
+    -                             ca: Dict[str, Any] = {
+441 +                             ca: dict[str, Any] = {
+442 |                                 "id": "calendar",
+    |
+
+RUF005 Consider `[*a_assigns, ca]` instead of concatenation
+   --> app\core\dev_seed.py:450:61
+    |
+448 | ÔÇª                         "inherit": True,
+449 | ÔÇª                     }
+450 | ÔÇª                     admin_node.widget_assignments = a_assigns + [ca]
+    |                                                       ^^^^^^^^^^^^^^^^
+451 | ÔÇª                     s4.add(admin_node)
+452 | ÔÇª                     await s4.flush()
+    |
+help: Replace with `[*a_assigns, ca]`
+
+E501 Line too long (111 > 88)
+   --> app\core\dev_seed.py:456:89
+    |
+454 |                         q2 = select(WidgetAssignment).where(
+455 |                             WidgetAssignment.node_id == admin_node.id,
+456 |                             (WidgetAssignment.widget_id == "calendar") | (WidgetAssignment.name == "calendar"),
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^
+457 |                         )
+458 |                         res2 = await s4.execute(q2)
+    |
+
+E501 Line too long (94 > 88)
+   --> app\core\dev_seed.py:476:89
+    |
+474 |                     if isinstance(_exc, InvalidRequestError):
+475 |                         raise
+476 |                     logger.debug("Relational calendar assignment insertion skipped or failed")
+    |                                                                                         ^^^^^^
+477 |
+478 |                 # Ensure standard system nodes and their default widget assignments
+    |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> app\core\dev_seed.py:480:37
+    |
+478 |                 # Ensure standard system nodes and their default widget assignments
+479 |                 try:
+480 |                     standard_nodes: Dict[str, Dict[str, Any]] = {
+    |                                     ^^^^
+481 |                         "system-root": {
+482 |                             "type": "system",
+    |
+help: Replace with `dict`
+    |
+479 |                 try:
+    -                     standard_nodes: Dict[str, Dict[str, Any]] = {
+480 +                     standard_nodes: dict[str, Dict[str, Any]] = {
+481 |                         "system-root": {
+    |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> app\core\dev_seed.py:480:47
+    |
+478 |                 # Ensure standard system nodes and their default widget assignments
+479 |                 try:
+480 |                     standard_nodes: Dict[str, Dict[str, Any]] = {
+    |                                               ^^^^
+481 |                         "system-root": {
+482 |                             "type": "system",
+    |
+help: Replace with `dict`
+    |
+479 |                 try:
+    -                     standard_nodes: Dict[str, Dict[str, Any]] = {
+480 +                     standard_nodes: Dict[str, dict[str, Any]] = {
+481 |                         "system-root": {
+    |
+
+E501 Line too long (92 > 88)
+   --> app\core\dev_seed.py:485:89
+    |
+483 | ÔÇª                     "parent": None,
+484 | ÔÇª                     "widgets": [
+485 | ÔÇª                         {"name": "system_health", "inherit": False, "position": 10},
+    |                                                                                   ^^^^
+486 | ÔÇª                         {"name": "audit_log", "inherit": False, "position": 20},
+487 | ÔÇª                         {"name": "registry_editor", "inherit": False, "position": 30},
+    |
+
+E501 Line too long (94 > 88)
+   --> app\core\dev_seed.py:487:89
+    |
+485 |                                 {"name": "system_health", "inherit": False, "position": 10},
+486 |                                 {"name": "audit_log", "inherit": False, "position": 20},
+487 |                                 {"name": "registry_editor", "inherit": False, "position": 30},
+    |                                                                                         ^^^^^^
+488 |                             ],
+489 |                         },
+    |
+
+E501 Line too long (122 > 88)
+   --> app\core\dev_seed.py:494:89
+    |
+492 | ÔÇª                     "parent": "system-root",
+493 | ÔÇª                     "widgets": [
+494 | ÔÇª                         {"name": "calendar", "inherit": True, "position": 10, "configuration": {"view": "month"}},
+    |                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+495 | ÔÇª                         {"name": "files", "inherit": True, "position": 20},
+496 | ÔÇª                         {"name": "chat", "inherit": True, "position": 30},
+    |
+
+E501 Line too long (122 > 88)
+   --> app\core\dev_seed.py:510:89
+    |
+508 | ÔÇª                     "parent": "system-root",
+509 | ÔÇª                     "widgets": [
+510 | ÔÇª                         {"name": "calendar", "inherit": True, "position": 10, "configuration": {"view": "month"}},
+    |                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+511 | ÔÇª                         {"name": "files", "inherit": False, "position": 20},
+512 | ÔÇª                     ],
+    |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> app\core\dev_seed.py:525:31
+    |
+524 |                     for node_id, spec in standard_nodes.items():
+525 |                         spec: Dict[str, Any]
+    |                               ^^^^
+526 |                         node = await repo.get_node(node_id)
+527 |                         if node is None:
+    |
+help: Replace with `dict`
+    |
+524 |                     for node_id, spec in standard_nodes.items():
+    -                         spec: Dict[str, Any]
+525 +                         spec: dict[str, Any]
+526 |                         node = await repo.get_node(node_id)
+    |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> app\core\dev_seed.py:543:39
+    |
+542 |                         if node is not None:
+543 |                             existing: List[Dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+    |                                       ^^^^
+544 |                             existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+545 |                             additions: List[Dict[str, Any]] = []
+    |
+help: Replace with `list`
+    |
+542 |                         if node is not None:
+    -                             existing: List[Dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+543 +                             existing: list[Dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+544 |                             existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+    |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> app\core\dev_seed.py:543:44
+    |
+542 |                         if node is not None:
+543 |                             existing: List[Dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+    |                                            ^^^^
+544 |                             existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+545 |                             additions: List[Dict[str, Any]] = []
+    |
+help: Replace with `dict`
+    |
+542 |                         if node is not None:
+    -                             existing: List[Dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+543 +                             existing: List[dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+544 |                             existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+    |
+
+E501 Line too long (108 > 88)
+   --> app\core\dev_seed.py:543:89
+    |
+542 |                         if node is not None:
+543 |                             existing: List[Dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^
+544 |                             existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+545 |                             additions: List[Dict[str, Any]] = []
+    |
+
+E501 Line too long (98 > 88)
+   --> app\core\dev_seed.py:544:89
+    |
+542 |                         if node is not None:
+543 |                             existing: List[Dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+544 |                             existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+    |                                                                                         ^^^^^^^^^^
+545 |                             additions: List[Dict[str, Any]] = []
+546 |                             for w in spec.get("widgets", []):
+    |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> app\core\dev_seed.py:545:40
+    |
+543 | ÔÇª                     existing: List[Dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+544 | ÔÇª                     existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+545 | ÔÇª                     additions: List[Dict[str, Any]] = []
+    |                                  ^^^^
+546 | ÔÇª                     for w in spec.get("widgets", []):
+547 | ÔÇª                         if w["name"] not in existing_names:
+    |
+help: Replace with `list`
+    |
+544 |                             existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+    -                             additions: List[Dict[str, Any]] = []
+545 +                             additions: list[Dict[str, Any]] = []
+546 |                             for w in spec.get("widgets", []):
+    |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> app\core\dev_seed.py:545:45
+    |
+543 | ÔÇª                     existing: List[Dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+544 | ÔÇª                     existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+545 | ÔÇª                     additions: List[Dict[str, Any]] = []
+    |                                       ^^^^
+546 | ÔÇª                     for w in spec.get("widgets", []):
+547 | ÔÇª                         if w["name"] not in existing_names:
+    |
+help: Replace with `dict`
+    |
+544 |                             existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+    -                             additions: List[Dict[str, Any]] = []
+545 +                             additions: List[dict[str, Any]] = []
+546 |                             for w in spec.get("widgets", []):
+    |
+
+E501 Line too long (115 > 88)
+   --> app\core\dev_seed.py:552:89
+    |
+550 | ÔÇª                     "id": w["name"],
+551 | ÔÇª                     "name": w["name"],
+552 | ÔÇª                     "component_type": (w.get("component_type") or (w["name"] + "_widget")),
+    |                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+553 | ÔÇª                     "position": w.get("position", 100),
+554 | ÔÇª                     "configuration": w.get("configuration", {}),
+    |
+
+E501 Line too long (121 > 88)
+   --> app\core\dev_seed.py:568:89
+    |
+566 | ÔÇª                     q = select(WidgetAssignment).where(
+567 | ÔÇª                         WidgetAssignment.node_id == node.id,
+568 | ÔÇª                         (WidgetAssignment.widget_id == w["name"]) | (WidgetAssignment.name == w["name"]),
+    |                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+569 | ÔÇª                     )
+570 | ÔÇª                     res = await s4.execute(q)
+    |
+
+E501 Line too long (120 > 88)
+   --> app\core\dev_seed.py:588:89
+    |
+586 |                                 if isinstance(_exc, InvalidRequestError):
+587 |                                     raise
+588 |                                 logger.debug("Relational widget_assignment insertion skipped or failed for %s", node_id)
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+589 |                     logger.info("Development node widget assignments ensured")
+590 |                 except Exception as _exc:
+    |
+
+E501 Line too long (97 > 88)
+   --> app\core\dev_seed.py:593:89
+    |
+591 |                     if isinstance(_exc, InvalidRequestError):
+592 |                         raise
+593 |                     logger.debug("Failed to ensure standard node widget assignments; continuing")
+    |                                                                                         ^^^^^^^^^
+594 |         logger.info("Development node widget assignments ensured")
+595 |     except Exception:
+    |
+
+E501 Line too long (89 > 88)
+   --> app\core\dev_seed.py:596:89
+    |
+594 |         logger.info("Development node widget assignments ensured")
+595 |     except Exception:
+596 |         logger.exception("Failed to ensure standard node widget assignments; continuing")
+    |                                                                                         ^
+597 |
+598 |     # All done
+    |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> app\widgets\service.py:1:1
+   |
+ 1 | / from __future__ import annotations
+ 2 | |
+ 3 | | from dataclasses import dataclass
+ 4 | | from typing import Any
+ 5 | | import logging
+ 6 | | from sqlalchemy import select
+ 7 | | import json
+ 8 | | from sqlalchemy.ext.asyncio import AsyncSession
+ 9 | |
+10 | | from app.storage.models import HierarchyNode, WidgetRegistry, WidgetAssignment
+11 | | from app.core.settings import settings
+   | |______________________________________^
+12 |
+13 |   logger = logging.getLogger(__name__)
+   |
+help: Organize imports
+   |
+2  |
+3  + import json
+4  + import logging
+5  | from dataclasses import dataclass
+6  | from typing import Any
+   - import logging
+7  +
+8  + from app.core.settings import settings
+9  + from app.storage.models import HierarchyNode, WidgetAssignment, WidgetRegistry
+10 | from sqlalchemy import select
+   - import json
+11 | from sqlalchemy.ext.asyncio import AsyncSession
+   -
+   - from app.storage.models import HierarchyNode, WidgetRegistry, WidgetAssignment
+   - from app.core.settings import settings
+12 |
+   |
+
+E501 Line too long (101 > 88)
+  --> app\widgets\service.py:53:89
+   |
+51 |         if actor is None:
+52 |             return set()
+53 |         perms = set(getattr(actor, "permissions", ()) or ()) | set(getattr(actor, "roles", ()) or ())
+   |                                                                                         ^^^^^^^^^^^^^
+54 |         return {str(p) for p in perms}
+   |
+
+E501 Line too long (95 > 88)
+  --> app\widgets\service.py:62:89
+   |
+61 |         has_db = self._session is not None
+62 |         # Diagnostic: log bound engine/connection info and existence of widget_assignments rows
+   |                                                                                         ^^^^^^^
+63 |         if has_db:
+64 |             try:
+   |
+
+E501 Line too long (110 > 88)
+  --> app\widgets\service.py:67:89
+   |
+65 |                 # Log configured effective database URL for diagnostics
+66 |                 try:
+67 |                     logger.info("widget_resolver: effective_database_url=%s", settings.effective_database_url)
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^
+68 |                 except Exception:
+69 |                     logger.debug("widget_resolver: could not read effective_database_url", exc_info=True)
+   |
+
+E501 Line too long (105 > 88)
+  --> app\widgets\service.py:69:89
+   |
+67 |                     logger.info("widget_resolver: effective_database_url=%s", settings.effective_database_url)
+68 |                 except Exception:
+69 |                     logger.debug("widget_resolver: could not read effective_database_url", exc_info=True)
+   |                                                                                         ^^^^^^^^^^^^^^^^^
+70 |                 # Attempt to inspect the session bind/engine for debugging
+71 |                 try:
+   |
+
+E501 Line too long (106 > 88)
+  --> app\widgets\service.py:80:89
+   |
+79 |                 try:
+80 |                     cnt_res = await self._session.execute(text("SELECT COUNT(*) FROM widget_assignments"))
+   |                                                                                         ^^^^^^^^^^^^^^^^^^
+81 |                     try:
+82 |                         cnt = cnt_res.scalar_one()
+   |
+
+E501 Line too long (91 > 88)
+  --> app\widgets\service.py:88:89
+   |
+86 |                     logger.info("widget_resolver: widget_assignments row_count=%s", cnt)
+87 |                 except Exception:
+88 |                     logger.exception("widget_resolver: failed to COUNT widget_assignments")
+   |                                                                                         ^^^
+89 |
+90 |                 # Try sampling a few rows for debugging
+   |
+
+E501 Line too long (134 > 88)
+  --> app\widgets\service.py:92:89
+   |
+90 |                 # Try sampling a few rows for debugging
+91 |                 try:
+92 |                     sample_res = await self._session.execute(text("SELECT id,node_id,widget_id,name FROM widget_assignments LIMIT 5"))
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+93 |                     rows = sample_res.fetchall()
+94 |                     logger.debug("widget_resolver: sample widget_assignments rows=%r", rows)
+   |
+
+E501 Line too long (92 > 88)
+  --> app\widgets\service.py:94:89
+   |
+92 |                     sample_res = await self._session.execute(text("SELECT id,node_id,widget_id,name FROM widget_assignments LIMIT 5"))
+93 |                     rows = sample_res.fetchall()
+94 |                     logger.debug("widget_resolver: sample widget_assignments rows=%r", rows)
+   |                                                                                         ^^^^
+95 |                 except Exception:
+96 |                     logger.debug("widget_resolver: failed to fetch sample rows from widget_assignments", exc_info=True)
+   |
+
+E501 Line too long (119 > 88)
+  --> app\widgets\service.py:96:89
+   |
+94 |                     logger.debug("widget_resolver: sample widget_assignments rows=%r", rows)
+95 |                 except Exception:
+96 |                     logger.debug("widget_resolver: failed to fetch sample rows from widget_assignments", exc_info=True)
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+97 |             except Exception:
+98 |                 logger.debug("widget_resolver: debug DB inspection failed", exc_info=True)
+   |
+
+E501 Line too long (90 > 88)
+  --> app\widgets\service.py:98:89
+   |
+96 |                     logger.debug("widget_resolver: failed to fetch sample rows from widget_assignments", exc_info=True)
+97 |             except Exception:
+98 |                 logger.debug("widget_resolver: debug DB inspection failed", exc_info=True)
+   |                                                                                         ^^
+
+F841 Local variable `is_admin` is assigned to but never used
+   --> app\widgets\service.py:104:9
+    |
+102 |         actor_perms = self._actor_perms(actor)
+103 |         # Consider explicit system admin flag as well as roles/permissions
+104 |         is_admin = bool(getattr(actor, "is_system_admin", False)) or "admin" in actor_perms or "*" in actor_perms
+    |         ^^^^^^^^
+105 |         # NOTE: do NOT short-circuit resolution when a system-node appears in the chain.
+106 |         # Permissions are enforced per-widget/assignment below.
+    |
+help: Remove assignment to unused variable `is_admin`
+
+E501 Line too long (113 > 88)
+   --> app\widgets\service.py:104:89
+    |
+102 |         actor_perms = self._actor_perms(actor)
+103 |         # Consider explicit system admin flag as well as roles/permissions
+104 |         is_admin = bool(getattr(actor, "is_system_admin", False)) or "admin" in actor_perms or "*" in actor_perms
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+105 |         # NOTE: do NOT short-circuit resolution when a system-node appears in the chain.
+106 |         # Permissions are enforced per-widget/assignment below.
+    |
+
+E501 Line too long (89 > 88)
+   --> app\widgets\service.py:118:89
+    |
+116 |                     return str(v)
+117 |             # fallback to component_type+label
+118 |             return f"<{w.get('component_type') or w.get('type')}>:{w.get('label') or ''}"
+    |                                                                                         ^
+119 |
+120 |         for n in chain:
+    |
+
+E501 Line too long (107 > 88)
+   --> app\widgets\service.py:131:89
+    |
+129 |                 if reg is not None and getattr(reg, "status", "active") != "deprecated":
+130 |                     defaults = getattr(reg, "default_config", {}) or {}
+131 |                     defaults_list = defaults.get("default_widgets") if isinstance(defaults, dict) else None
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^
+132 |                     if isinstance(defaults_list, list):
+133 |                         for w in defaults_list:
+    |
+
+E501 Line too long (89 > 88)
+   --> app\widgets\service.py:139:89
+    |
+137 | ÔÇª                         continue
+138 | ÔÇª                     # permission check
+139 | ÔÇª                     required = getattr(reg, "required_permissions", []) or []
+    |                                                                               ^
+140 | ÔÇª                     if required and not actor_perms.intersection({str(x) for x in required}):
+141 | ÔÇª                         continue
+    |
+
+E501 Line too long (105 > 88)
+   --> app\widgets\service.py:140:89
+    |
+138 | ÔÇª                     # permission check
+139 | ÔÇª                     required = getattr(reg, "required_permissions", []) or []
+140 | ÔÇª                     if required and not actor_perms.intersection({str(x) for x in required}):
+    |                                                                               ^^^^^^^^^^^^^^^^^
+141 | ÔÇª                         continue
+142 | ÔÇª                     effective_map[key] = ResolvedWidget(item=w, source="registry_default", source_node_id=None)
+    |
+
+E501 Line too long (123 > 88)
+   --> app\widgets\service.py:142:89
+    |
+140 | ÔÇª                         if required and not actor_perms.intersection({str(x) for x in required}):
+141 | ÔÇª                             continue
+142 | ÔÇª                         effective_map[key] = ResolvedWidget(item=w, source="registry_default", source_node_id=None)
+    |                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+143 | ÔÇª                         order.append(effective_map[key])
+144 | ÔÇª                     except Exception:
+    |
+
+E501 Line too long (109 > 88)
+   --> app\widgets\service.py:145:89
+    |
+143 |                                 order.append(effective_map[key])
+144 |                             except Exception:
+145 |                                 logger.exception("Failed to apply registry default widget for node %s", n.id)
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^
+146 |             except Exception:
+147 |                 logger.exception("Failed to load registry defaults for node type %s", n.type)
+    |
+
+E501 Line too long (93 > 88)
+   --> app\widgets\service.py:147:89
+    |
+145 |                                 logger.exception("Failed to apply registry default widget for node %s", n.id)
+146 |             except Exception:
+147 |                 logger.exception("Failed to load registry defaults for node type %s", n.type)
+    |                                                                                         ^^^^^
+148 |
+149 |             # Then: explicit assignments on the node. Prefer relational table if present.
+    |
+
+E501 Line too long (89 > 88)
+   --> app\widgets\service.py:149:89
+    |
+147 |                 logger.exception("Failed to load registry defaults for node type %s", n.type)
+148 |
+149 |             # Then: explicit assignments on the node. Prefer relational table if present.
+    |                                                                                         ^
+150 |             try:
+151 |                 if has_db:
+    |
+
+E501 Line too long (91 > 88)
+   --> app\widgets\service.py:152:89
+    |
+150 |             try:
+151 |                 if has_db:
+152 |                     stmt = select(WidgetAssignment).where(WidgetAssignment.node_id == n.id)
+    |                                                                                         ^^^
+153 |                     res = await self._session.execute(stmt)
+154 |                     assigns_rows = res.scalars().all()
+    |
+
+E501 Line too long (163 > 88)
+   --> app\widgets\service.py:168:89
+    |
+167 | ÔÇª
+168 | ÔÇªabled,inherit,position,configuration,required_permissions FROM widget_assignments WHERE node_id = :nid"
+    |                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+169 | ÔÇª
+170 | ÔÇªnid": n.id})
+    |
+
+SIM105 Use `contextlib.suppress(Exception)` instead of `try`-`except`-`pass`
+   --> app\widgets\service.py:176:17
+    |
+175 |               if isinstance(assigns_rows, list):
+176 | /                 try:
+177 | |                     logger.info("Node %s: loaded %d relational assignments", n.id, len(assigns_rows))
+178 | |                 except Exception:
+179 | |                     pass
+    | |________________________^
+180 |
+181 |               assigns: list[dict] = []
+    |
+help: Replace `try`-`except`-`pass` with `with contextlib.suppress(Exception): ...`
+
+E501 Line too long (101 > 88)
+   --> app\widgets\service.py:177:89
+    |
+175 |             if isinstance(assigns_rows, list):
+176 |                 try:
+177 |                     logger.info("Node %s: loaded %d relational assignments", n.id, len(assigns_rows))
+    |                                                                                         ^^^^^^^^^^^^^
+178 |                 except Exception:
+179 |                     pass
+    |
+
+E501 Line too long (93 > 88)
+   --> app\widgets\service.py:187:89
+    |
+185 |                         # support both ORM-mapped objects and raw SQL row tuples
+186 |                         if hasattr(row, "widget_id") or hasattr(row, "id"):
+187 |                             wid = getattr(row, "widget_id", None) or getattr(row, "id", None)
+    |                                                                                         ^^^^^
+188 |                             name = getattr(row, "name", None)
+189 |                             comp_type = None
+    |
+
+E501 Line too long (93 > 88)
+   --> app\widgets\service.py:194:89
+    |
+192 |                             enabled = getattr(row, "enabled", True)
+193 |                             inherit = getattr(row, "inherit", True)
+194 |                             required_permissions = getattr(row, "required_permissions", None)
+    |                                                                                         ^^^^^
+195 |                         else:
+196 |                             # raw tuple order: id,node_id,widget_id,name,enabled,inherit,position,configuration,required_permissions
+    |
+
+E501 Line too long (132 > 88)
+   --> app\widgets\service.py:196:89
+    |
+194 |                             required_permissions = getattr(row, "required_permissions", None)
+195 |                         else:
+196 |                             # raw tuple order: id,node_id,widget_id,name,enabled,inherit,position,configuration,required_permissions
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+197 |                             try:
+198 |                                 wid = row[2]
+    |
+
+E501 Line too long (97 > 88)
+   --> app\widgets\service.py:226:89
+    |
+224 |                         })
+225 |                     except Exception:
+226 |                         logger.exception("Failed to map widget assignment row for node %s", n.id)
+    |                                                                                         ^^^^^^^^^
+227 |             else:
+228 |                 # fallback to legacy JSON assignments on the node
+    |
+
+E501 Line too long (128 > 88)
+   --> app\widgets\service.py:234:89
+    |
+232 |                 # Log number of assignments for this node and raw content
+233 |                 try:
+234 |                     logger.info("widget_resolver: node=%s assignments_count=%d (source=relational_or_json)", n.id, len(assigns))
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+235 |                     logger.info("widget_resolver: node=%s raw_assigns=%r", n.id, assigns)
+236 |                 except Exception:
+    |
+
+E501 Line too long (89 > 88)
+   --> app\widgets\service.py:235:89
+    |
+233 |                 try:
+234 |                     logger.info("widget_resolver: node=%s assignments_count=%d (source=relational_or_json)", n.id, len(assigns))
+235 |                     logger.info("widget_resolver: node=%s raw_assigns=%r", n.id, assigns)
+    |                                                                                         ^
+236 |                 except Exception:
+237 |                     pass
+    |
+
+E501 Line too long (95 > 88)
+   --> app\widgets\service.py:250:89
+    |
+248 |                         inherit = bool(w.get("inherit", True))
+249 |                         position = w.get("position")
+250 |                         reqs_field = w.get("required_permissions") or w.get("visible_to") or []
+    |                                                                                         ^^^^^^^
+251 |
+252 |                         logger.debug(
+    |
+
+E501 Line too long (159 > 88)
+   --> app\widgets\service.py:253:89
+    |
+252 | ÔÇª
+253 | ÔÇªoad node=%s assignment_id=%s widget_id=%s enabled=%s inherit=%s position=%s required_permissions=%s",
+    |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+254 | ÔÇª
+255 | ÔÇª
+    |
+
+E501 Line too long (94 > 88)
+   --> app\widgets\service.py:260:89
+    |
+258 |                             inherit,
+259 |                             position,
+260 |                             list(reqs_field) if isinstance(reqs_field, (list, tuple)) else [],
+    |                                                                                         ^^^^^^
+261 |                         )
+    |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> app\widgets\service.py:276:25
+    |
+275 |                           # Permission check
+276 | /                         if isinstance(reqs_field, (list, tuple)) and reqs_field:
+277 | |                             if not actor_perms.intersection({str(x) for x in reqs_field}):
+    | |__________________________________________________________________________________________^
+278 |                                   skip_reasons.append("skipped_permission")
+    |
+help: Combine `if` statements using `and`
+
+E501 Line too long (90 > 88)
+   --> app\widgets\service.py:277:89
+    |
+275 |                         # Permission check
+276 |                         if isinstance(reqs_field, (list, tuple)) and reqs_field:
+277 |                             if not actor_perms.intersection({str(x) for x in reqs_field}):
+    |                                                                                         ^^
+278 |                                 skip_reasons.append("skipped_permission")
+    |
+
+E501 Line too long (116 > 88)
+   --> app\widgets\service.py:294:89
+    |
+292 | ÔÇª                     from sqlalchemy.exc import MultipleResultsFound
+293 | ÔÇª
+294 | ÔÇª                     stmt = select(WidgetRegistry).where(WidgetRegistry.name == (assign_id or widget_id))
+    |                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+295 | ÔÇª                     res = await self._session.execute(stmt)
+296 | ÔÇª                     try:
+    |
+
+E501 Line too long (91 > 88)
+   --> app\widgets\service.py:299:89
+    |
+297 | ÔÇª                         reg_entry = res.scalar_one_or_none()
+298 | ÔÇª                     except MultipleResultsFound:
+299 | ÔÇª                         # Do NOT pick an arbitrary entry when duplicates exist.
+    |                                                                               ^^^
+300 | ÔÇª                         # Log the condition and treat as if registry lookup failed.
+301 | ÔÇª                         logger.error(
+    |
+
+E501 Line too long (95 > 88)
+   --> app\widgets\service.py:300:89
+    |
+298 | ÔÇª                     except MultipleResultsFound:
+299 | ÔÇª                         # Do NOT pick an arbitrary entry when duplicates exist.
+300 | ÔÇª                         # Log the condition and treat as if registry lookup failed.
+    |                                                                               ^^^^^^^
+301 | ÔÇª                         logger.error(
+302 | ÔÇª                             "widget_resolver: multiple registry entries found for name=%s; registry lookup skipped",
+    |
+
+TRY400 Use `logging.exception` instead of `logging.error`
+   --> app\widgets\service.py:301:37
+    |
+299 |                                       # Do NOT pick an arbitrary entry when duplicates exist.
+300 |                                       # Log the condition and treat as if registry lookup failed.
+301 | /                                     logger.error(
+302 | |                                         "widget_resolver: multiple registry entries found for name=%s; registry lookup skipped",
+303 | |                                         assign_id,
+304 | |                                     )
+    | |_____________________________________^
+305 |                                       reg_entry = None
+306 |                           except Exception:
+    |
+help: Replace with `exception`
+
+E501 Line too long (128 > 88)
+   --> app\widgets\service.py:302:89
+    |
+300 | ÔÇª                     # Log the condition and treat as if registry lookup failed.
+301 | ÔÇª                     logger.error(
+302 | ÔÇª                         "widget_resolver: multiple registry entries found for name=%s; registry lookup skipped",
+    |                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+303 | ÔÇª                         assign_id,
+304 | ÔÇª                     )
+    |
+
+E501 Line too long (132 > 88)
+   --> app\widgets\service.py:307:89
+    |
+305 |                                     reg_entry = None
+306 |                         except Exception:
+307 |                             logger.debug("widget_resolver: registry lookup failed for assignment_id=%s on node=%s", assign_id, n.id)
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+308 |
+309 |                         if reg_entry is None:
+    |
+
+E501 Line too long (105 > 88)
+   --> app\widgets\service.py:315:89
+    |
+313 | ÔÇª                     from sqlalchemy.exc import MultipleResultsFound
+314 | ÔÇª
+315 | ÔÇª                     stmt = select(WidgetRegistry).where(WidgetRegistry.name == widget_id)
+    |                                                                           ^^^^^^^^^^^^^^^^^
+316 | ÔÇª                     res = await self._session.execute(stmt)
+317 | ÔÇª                     try:
+    |
+
+TRY400 Use `logging.exception` instead of `logging.error`
+   --> app\widgets\service.py:320:41
+    |
+318 |   ÔÇª                                 reg_entry = res.scalar_one_or_none()
+319 |   ÔÇª                             except MultipleResultsFound:
+320 | / ÔÇª                                 logger.error(
+321 | | ÔÇª                                     "widget_resolver: multiple registry entries found for widget_id=%s; registry lookup skipped",
+322 | | ÔÇª                                     widget_id,
+323 | | ÔÇª                                 )
+    | |___________________________________^
+324 |   ÔÇª                                 reg_entry = None
+325 |   ÔÇª                     except Exception:
+    |
+help: Replace with `exception`
+
+E501 Line too long (137 > 88)
+   --> app\widgets\service.py:321:89
+    |
+319 | ÔÇª                     except MultipleResultsFound:
+320 | ÔÇª                         logger.error(
+321 | ÔÇª                             "widget_resolver: multiple registry entries found for widget_id=%s; registry lookup skipped",
+    |                                                                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+322 | ÔÇª                             widget_id,
+323 | ÔÇª                         )
+    |
+
+E501 Line too long (117 > 88)
+   --> app\widgets\service.py:342:89
+    |
+340 | ÔÇª             md = {}
+341 | ÔÇª     md = md or {}
+342 | ÔÇª     reg_info["component_type"] = md.get("component_type") or getattr(reg_entry, "type", None)
+    |                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+343 | ÔÇª     reg_info["required_permissions"] = getattr(reg_entry, "required_permissions", []) or md.get("required_permissions", []) or []
+344 | ÔÇª     reg_info["supported_node_types"] = md.get("supported_node_types")
+    |
+
+E501 Line too long (153 > 88)
+   --> app\widgets\service.py:343:89
+    |
+341 | ÔÇª
+342 | ÔÇª= md.get("component_type") or getattr(reg_entry, "type", None)
+343 | ÔÇªons"] = getattr(reg_entry, "required_permissions", []) or md.get("required_permissions", []) or []
+    |                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+344 | ÔÇªpes"] = md.get("supported_node_types")
+    |
+
+E501 Line too long (93 > 88)
+   --> app\widgets\service.py:344:89
+    |
+342 | ÔÇª         reg_info["component_type"] = md.get("component_type") or getattr(reg_entry, "type", None)
+343 | ÔÇª         reg_info["required_permissions"] = getattr(reg_entry, "required_permissions", []) or md.get("required_permissions", []) or ÔÇª
+344 | ÔÇª         reg_info["supported_node_types"] = md.get("supported_node_types")
+    |                                                                       ^^^^^
+345 | ÔÇª
+346 | ÔÇª     logger.debug(
+    |
+
+E501 Line too long (190 > 88)
+   --> app\widgets\service.py:347:89
+    |
+346 | ÔÇª
+347 | ÔÇªignment_id=%s registry_found=%s status=%s type=%s component_type=%s supported_node_types=%s required_permissions=%s",
+    |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+348 | ÔÇª
+349 | ÔÇª
+    |
+
+E501 Line too long (92 > 88)
+   --> app\widgets\service.py:359:89
+    |
+358 |                         # Filtering decisions based on registry
+359 |                         if reg_entry is not None and reg_info.get("status") == "deprecated":
+    |                                                                                         ^^^^
+360 |                             skip_reasons.append("skipped_deprecated")
+    |
+
+SIM102 Use a single `if` statement instead of nested `if` statements
+   --> app\widgets\service.py:363:25
+    |
+362 |                           supported = reg_info.get("supported_node_types")
+363 | /                         if supported and isinstance(supported, list):
+364 | |                             if n.type not in supported:
+    | |_______________________________________________________^
+365 |                                   skip_reasons.append("skipped_unsupported_node_type")
+    |
+help: Combine `if` statements using `and`
+
+E501 Line too long (113 > 88)
+   --> app\widgets\service.py:375:89
+    |
+373 |                         if not reg_info.get("found"):
+374 |                             has_assignment_metadata = bool(
+375 |                                 w.get("component_type") or w.get("configuration") or w.get("id") or w.get("name")
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^
+376 |                             )
+377 |                             if has_db and not has_assignment_metadata:
+    |
+
+E501 Line too long (124 > 88)
+   --> app\widgets\service.py:383:89
+    |
+381 |                         if skip_reasons:
+382 |                             logger.info(
+383 |                                 "widget_resolver: assignment_decision node=%s assignment_id=%s decision=skipped reasons=%s",
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+384 |                                 n.id,
+385 |                                 assign_id,
+    |
+
+E501 Line too long (92 > 88)
+   --> app\widgets\service.py:388:89
+    |
+386 | ÔÇª                         skip_reasons,
+387 | ÔÇª                     )
+388 | ÔÇª                     # If disabled, also ensure removal from effective_map if present
+    |                                                                                   ^^^^
+389 | ÔÇª                     if "skipped_disabled" in skip_reasons:
+390 | ÔÇª                         try:
+    |
+
+E501 Line too long (102 > 88)
+   --> app\widgets\service.py:392:89
+    |
+390 | ÔÇª                     try:
+391 | ÔÇª                         effective_map.pop(assign_id, None)
+392 | ÔÇª                         order = [e for e in order if widget_key(e.item) != str(assign_id)]
+    |                                                                               ^^^^^^^^^^^^^^
+393 | ÔÇª                     except Exception:
+394 | ÔÇª                         pass
+    |
+
+E501 Line too long (99 > 88)
+   --> app\widgets\service.py:409:89
+    |
+407 | ÔÇª                             md = {}
+408 | ÔÇª                     md = md or {}
+409 | ÔÇª                     comp = md.get("component_type") or getattr(reg_entry, "type", None)
+    |                                                                               ^^^^^^^^^^^
+410 | ÔÇª                     if comp:
+411 | ÔÇª                         w["component_type"] = comp
+    |
+
+E501 Line too long (112 > 88)
+   --> app\widgets\service.py:413:89
+    |
+411 | ÔÇª                         w["component_type"] = comp
+412 | ÔÇª                     if not w.get("id"):
+413 | ÔÇª                         w["id"] = getattr(reg_entry, "name", None) or getattr(reg_entry, "id", None)
+    |                                                                               ^^^^^^^^^^^^^^^^^^^^^^^^
+414 | ÔÇª                     if not w.get("name"):
+415 | ÔÇª                         w["name"] = getattr(reg_entry, "name", None)
+    |
+
+E501 Line too long (129 > 88)
+   --> app\widgets\service.py:419:89
+    |
+417 |                                     w["type"] = getattr(reg_entry, "type", None)
+418 |                         except Exception:
+419 |                             logger.debug("widget_resolver: failed to enrich assignment with registry metadata for %s", assign_id)
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+420 |
+421 |                         # Final decision: include
+    |
+
+E501 Line too long (203 > 88)
+   --> app\widgets\service.py:422:89
+    |
+421 | ÔÇª
+422 | ÔÇªs assignment_id=%s decision=included final_id=%s component_type=%s", n.id, assign_id, w.get("id"), w.get("component_type"))
+    |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+423 | ÔÇª
+424 | ÔÇªource_node_id=n.id)
+    |
+
+E501 Line too long (99 > 88)
+   --> app\widgets\service.py:424:89
+    |
+422 | ÔÇª     logger.info("widget_resolver: assignment_decision node=%s assignment_id=%s decision=included final_id=%s component_type=%s", n.ÔÇª
+423 | ÔÇª
+424 | ÔÇª     resolved = ResolvedWidget(item=w, source="assignment", source_node_id=n.id)
+    |                                                                       ^^^^^^^^^^^
+425 | ÔÇª     effective_map[widget_key(w)] = resolved
+426 | ÔÇª     order = [e for e in order if widget_key(e.item) != widget_key(w)]
+    |
+
+E501 Line too long (89 > 88)
+   --> app\widgets\service.py:426:89
+    |
+424 |                         resolved = ResolvedWidget(item=w, source="assignment", source_node_id=n.id)
+425 |                         effective_map[widget_key(w)] = resolved
+426 |                         order = [e for e in order if widget_key(e.item) != widget_key(w)]
+    |                                                                                         ^
+427 |                         order.append(resolved)
+428 |                     except Exception:
+    |
+
+E501 Line too long (89 > 88)
+   --> app\widgets\service.py:429:89
+    |
+427 |                         order.append(resolved)
+428 |                     except Exception:
+429 |                         logger.exception("Failed to process assignment on node %s", n.id)
+    |                                                                                         ^
+430 |
+431 |         # Now produce output list sorted by position
+    |
+
+E501 Line too long (95 > 88)
+   --> app\widgets\service.py:440:89
+    |
+438 |         final = sorted([r.item for r in order], key=pos_of)
+439 |
+440 |         # Defensive enrichment: ensure each final item includes `component_type` when available
+    |                                                                                         ^^^^^^^
+441 |         # by consulting the registry as a best-effort fallback. This avoids losing the graphical
+442 |         # renderer when the assignment lacks explicit metadata but a registry entry exists.
+    |
+
+E501 Line too long (96 > 88)
+   --> app\widgets\service.py:441:89
+    |
+440 |         # Defensive enrichment: ensure each final item includes `component_type` when available
+441 |         # by consulting the registry as a best-effort fallback. This avoids losing the graphical
+    |                                                                                         ^^^^^^^^
+442 |         # renderer when the assignment lacks explicit metadata but a registry entry exists.
+443 |         if has_db:
+    |
+
+E501 Line too long (91 > 88)
+   --> app\widgets\service.py:442:89
+    |
+440 |         # Defensive enrichment: ensure each final item includes `component_type` when available
+441 |         # by consulting the registry as a best-effort fallback. This avoids losing the graphical
+442 |         # renderer when the assignment lacks explicit metadata but a registry entry exists.
+    |                                                                                         ^^^
+443 |         if has_db:
+444 |             try:
+    |
+
+E501 Line too long (91 > 88)
+   --> app\widgets\service.py:449:89
+    |
+447 |                         if it.get('component_type'):
+448 |                             continue
+449 |                         lookup_name = it.get('id') or it.get('name') or it.get('widget_id')
+    |                                                                                         ^^^
+450 |                         reg_entry = None
+451 |                         if lookup_name:
+    |
+
+E501 Line too long (99 > 88)
+   --> app\widgets\service.py:454:89
+    |
+452 | ÔÇª                     from sqlalchemy.exc import MultipleResultsFound
+453 | ÔÇª
+454 | ÔÇª                     stmt = select(WidgetRegistry).where(WidgetRegistry.name == lookup_name)
+    |                                                                                   ^^^^^^^^^^^
+455 | ÔÇª                     res = await self._session.execute(stmt)
+456 | ÔÇª                     try:
+    |
+
+TRY400 Use `logging.exception` instead of `logging.error`
+   --> app\widgets\service.py:459:33
+    |
+457 |                                   reg_entry = res.scalar_one_or_none()
+458 |                               except MultipleResultsFound:
+459 | /                                 logger.error(
+460 | |                                     "widget_resolver: multiple registry entries found for lookup_name=%s; enrichment skipped",
+461 | |                                     lookup_name,
+462 | |                                 )
+    | |_________________________________^
+463 |                                   reg_entry = None
+464 |                           # fallback: try matching by registry.type
+    |
+help: Replace with `exception`
+
+E501 Line too long (126 > 88)
+   --> app\widgets\service.py:460:89
+    |
+458 | ÔÇª                     except MultipleResultsFound:
+459 | ÔÇª                         logger.error(
+460 | ÔÇª                             "widget_resolver: multiple registry entries found for lookup_name=%s; enrichment skipped",
+    |                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+461 | ÔÇª                             lookup_name,
+462 | ÔÇª                         )
+    |
+
+E501 Line too long (102 > 88)
+   --> app\widgets\service.py:468:89
+    |
+466 | ÔÇª                     from sqlalchemy.exc import MultipleResultsFound
+467 | ÔÇª
+468 | ÔÇª                     stmt = select(WidgetRegistry).where(WidgetRegistry.type == it.get('type'))
+    |                                                                                   ^^^^^^^^^^^^^^
+469 | ÔÇª                     res = await self._session.execute(stmt)
+470 | ÔÇª                     try:
+    |
+
+TRY400 Use `logging.exception` instead of `logging.error`
+   --> app\widgets\service.py:473:33
+    |
+471 |   ÔÇª                         reg_entry = res.scalar_one_or_none()
+472 |   ÔÇª                     except MultipleResultsFound:
+473 | / ÔÇª                         logger.error(
+474 | | ÔÇª                             "widget_resolver: multiple registry entries found for type=%s; enrichment skipped",
+475 | | ÔÇª                             it.get('type'),
+476 | | ÔÇª                         )
+    | |___________________________^
+477 |   ÔÇª                         reg_entry = None
+    |
+help: Replace with `exception`
+
+E501 Line too long (119 > 88)
+   --> app\widgets\service.py:474:89
+    |
+472 | ÔÇª                     except MultipleResultsFound:
+473 | ÔÇª                         logger.error(
+474 | ÔÇª                             "widget_resolver: multiple registry entries found for type=%s; enrichment skipped",
+    |                                                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+475 | ÔÇª                             it.get('type'),
+476 | ÔÇª                         )
+    |
+
+E501 Line too long (122 > 88)
+   --> app\widgets\service.py:480:89
+    |
+479 |                         if reg_entry is not None:
+480 |                             md = getattr(reg_entry, 'widget_metadata', None) or getattr(reg_entry, 'metadata', None) or {}
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+481 |                             if isinstance(md, str):
+482 |                                 try:
+    |
+
+E501 Line too long (95 > 88)
+   --> app\widgets\service.py:486:89
+    |
+484 | ÔÇª                         except Exception:
+485 | ÔÇª                             md = {}
+486 | ÔÇª                     comp = md.get('component_type') or getattr(reg_entry, 'type', None)
+    |                                                                                   ^^^^^^^
+487 | ÔÇª                     if comp:
+488 | ÔÇª                         it['component_type'] = comp
+    |
+
+E501 Line too long (109 > 88)
+   --> app\widgets\service.py:490:89
+    |
+488 |                                 it['component_type'] = comp
+489 |                     except Exception:
+490 |                         logger.debug('widget_resolver: failed to fallback-enrich item=%r', it, exc_info=True)
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^
+491 |             except Exception:
+492 |                 logger.debug('widget_resolver: fallback enrichment failed', exc_info=True)
+    |
+
+E501 Line too long (90 > 88)
+   --> app\widgets\service.py:492:89
+    |
+490 |                         logger.debug('widget_resolver: failed to fallback-enrich item=%r', it, exc_info=True)
+491 |             except Exception:
+492 |                 logger.debug('widget_resolver: fallback enrichment failed', exc_info=True)
+    |                                                                                         ^^
+493 |
+494 |         return final
+    |
+
+Found 151 errors.
+[*] 20 fixable with the `--fix` option (8 hidden fixes can be enabled with the `--unsafe-fixes` option).

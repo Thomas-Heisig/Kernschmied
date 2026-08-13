@@ -2,6 +2,7 @@ import React from 'react';
 import type { UIComponentDefinition } from '../contracts/schema';
 import { DynamicIcon } from './iconRegistry';
 import UnsupportedSchemaComponent from '../components/schema/UnsupportedSchemaComponent';
+import WidgetsForNode from '../components/widgets/WidgetsForNode';
 
 /**
  * Map of known schema component types to renderer functions.
@@ -196,6 +197,17 @@ const registry: Record<string, ComponentRenderer> = {
   json: (def) => {
     const props = (def.props ?? {}) as Record<string, unknown>;
     return <pre className="rounded bg-slate-50 p-2 text-xs">{JSON.stringify(props.value ?? {}, null, 2)}</pre>;
+  },
+
+  // Renders effective widgets for a node using the shared WidgetsForNode component.
+  // Expects the SchemaRenderer to pass `context.nodeId` in props.
+  effective_widgets: (def, children, props = {}) => {
+    const p = props as { context?: Record<string, unknown> };
+    const nodeId = p.context && typeof p.context.nodeId === 'string' ? (p.context.nodeId as string) : undefined;
+    if (!nodeId) {
+      return <UnsupportedSchemaComponent type="effective_widgets" definition={def} />;
+    }
+    return <WidgetsForNode nodeId={nodeId} />;
   },
 };
 

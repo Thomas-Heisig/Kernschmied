@@ -6,6 +6,7 @@ from app.storage.models.file import File
 from app.storage.models.config import ConfigState, SystemConfig
 from app.storage.models.event import Event
 from app.storage.models.widget import WidgetRegistry
+from app.storage.models.widget_assignment import WidgetAssignment
 
 __all__ = [
     "Base",
@@ -15,6 +16,7 @@ __all__ = [
     "ConfigState",
     "Event",
     "WidgetRegistry",
+    "WidgetAssignment",
     "HierarchyNode",
     "Message",
     "SystemConfig",

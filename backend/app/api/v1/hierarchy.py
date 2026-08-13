@@ -31,8 +31,32 @@ from app.contracts.hierarchy import (
 from app.hierarchy.models import HierarchyActor
 from app.core.bootstrap import InMemoryHierarchyRepository
 from app.hierarchy.repository import HierarchyParentNotFoundError, HierarchyRepository
-from app.hierarchy.service import HierarchyChildTypeNotAllowedError
+from app.hierarchy.service import (
+    HierarchyChildTypeNotAllowedError,
+    HierarchyNodeTypeChangeInvalidError,
+)
 from app.services.hierarchy_service import create_hierarchy_service
+from app.prompts.resolver import PromptResolver
+from app.hierarchy.permissions import HierarchyPermissionService
+from pydantic import BaseModel
+
+
+class PromptSource(BaseModel):
+    node_id: str
+    node_name: str | None = None
+    node_type: str | None = None
+    local_prompt: str | None = None
+    prompt_length: int = 0
+    is_target: bool = False
+
+
+class PromptContextResponse(BaseModel):
+    schema_version: str = "1.0"
+    node_id: str
+    local_prompt: str | None = None
+    sources: list[PromptSource] = []
+    effective_prompt: str | None = None
+    effective_prompt_length: int = 0
 
 router = APIRouter()
 
@@ -820,6 +844,102 @@ async def update_hierarchy_node(
                 code="PERMISSION_DENIED",
                 message=str(exc),
             )
+        except HierarchyNodeTypeChangeInvalidError as exc:
+            # Return structured validation error with details for the frontend
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                code=getattr(exc, "code", "HIERARCHY_NODE_TYPE_CHANGE_INVALID"),
+                message=str(exc),
+                details=getattr(exc, "details", None),
+            ) from exc
+
+
+@router.get(
+    "/{node_id}/prompt-context",
+    response_model=PromptContextResponse,
+    summary="Prompt-Kontext für Knoten (lokal, Quellen, effektiv)",
+)
+async def get_prompt_context(request: Request, node_id: str) -> PromptContextResponse:
+    actor = build_actor_from_request(request)
+
+    session_factory = getattr(request.app.state, "session_factory", None)
+
+    if session_factory is None:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="HIERARCHY_PERSISTENCE_UNAVAILABLE",
+            message="Die Persistenz für Hierarchie ist nicht verfügbar.",
+        )
+
+    async with session_factory() as session:
+        repository = HierarchyRepository(session)
+
+        # Use PromptResolver with permission checks
+        permission_service = HierarchyPermissionService()
+        resolver = PromptResolver(permission_service=permission_service)
+
+        try:
+            # resolve effective prompt using the same resolver as chat
+            # include settings-level system prompt when available so the
+            # frontend preview matches ChatService resolution exactly
+            settings_prompt = None
+            try:
+                cfg = getattr(request.app.state, "config_service", None)
+                if cfg is not None:
+                    # config_service.get_required may return a value or raise
+                    settings_prompt = cfg.get_required("chat", "system_prompt")
+            except Exception:
+                settings_prompt = None
+
+            resolved = await resolver.resolve(
+                node_id, repository=repository, actor=actor, settings_system_prompt=settings_prompt
+            )
+        except LookupError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_404_NOT_FOUND,
+                code="HIERARCHY_NODE_NOT_FOUND",
+                message=str(exc),
+            ) from exc
+        except PermissionError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                code="PERMISSION_DENIED",
+                message=str(exc),
+            ) from exc
+
+        # collect ancestor chain for sources
+        try:
+            chain = await repository.get_ancestor_chain(node_id)
+        except Exception:
+            chain = []
+
+        sources: list[PromptSource] = []
+        for n in chain:
+            prompt_text = getattr(n, "system_prompt", None)
+            sources.append(
+                PromptSource(
+                    node_id=n.id,
+                    node_name=n.name,
+                    node_type=n.type,
+                    local_prompt=prompt_text,
+                    prompt_length=len(prompt_text or ""),
+                    is_target=(n.id == node_id),
+                )
+            )
+
+        eff_text = resolved.system_prompt if getattr(resolved, "system_prompt", None) is not None else ""
+
+        return PromptContextResponse(
+            node_id=node_id,
+            local_prompt=getattr(chain[-1], "system_prompt", None) if chain else None,
+            sources=sources,
+            effective_prompt=eff_text,
+            effective_prompt_length=len(eff_text or ""),
+        )
 
 
 @router.post(

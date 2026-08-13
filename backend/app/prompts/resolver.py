@@ -8,6 +8,9 @@ from app.hierarchy.permissions import READ_ACTION, HierarchyPermissionService
 from app.hierarchy.repository import HierarchyRepository
 from app.prompts.errors import UnsupportedPromptModeError
 from app.prompts.models import PROMPT_SCHEMA_VERSION, PromptFragment, ResolvedPrompt
+import logging
+
+logger = logging.getLogger(__name__)
 
 PROMPT_SEPARATOR = "\n\n"
 
@@ -162,6 +165,41 @@ class PromptResolver:
             self._permissions.require(actor, READ_ACTION, node)
 
         chain = await repository.get_ancestor_chain(node_id)
-        return self.resolve_from_chain(
+
+        # perform resolution from the collected chain
+        resolved = self.resolve_from_chain(
             chain=chain, settings_system_prompt=settings_system_prompt
         )
+
+        # Emit concise, non-sensitive diagnostic about prompt resolution.
+        try:
+            chain_ids = [str(getattr(n, "id", None)) for n in chain]
+            fragment_sources = [f.source_id for f in resolved.fragments]
+            effective_len = len(resolved.system_prompt or "")
+            # Count hierarchy fragments (exclude settings fragment)
+            hierarchy_prompt_count = sum(1 for f in resolved.fragments if getattr(f, "source_type", "") != "settings")
+            global_present = any(getattr(f, "source_type", "") == "settings" for f in resolved.fragments)
+            global_prompt_length = 0
+            if global_present:
+                for f in resolved.fragments:
+                    if getattr(f, "source_type", "") == "settings":
+                        global_prompt_length = len(getattr(f, "prompt", "") or "")
+                        break
+
+            logger.info(
+                "prompt_resolution_completed",
+                extra={
+                    "prompt_resolution": True,
+                    "target_node_id": node_id,
+                    "chain_node_ids": chain_ids,
+                    "source_node_ids": fragment_sources,
+                    "global_prompt_present": bool(global_present),
+                    "global_prompt_length": global_prompt_length,
+                    "hierarchy_prompt_count": hierarchy_prompt_count,
+                    "effective_prompt_length": effective_len,
+                },
+            )
+        except Exception:
+            logger.debug("prompt_resolution: logging failed", exc_info=True)
+
+        return resolved

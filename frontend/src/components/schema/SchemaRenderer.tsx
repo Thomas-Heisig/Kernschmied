@@ -385,7 +385,8 @@ export default function SchemaRenderer({
     }
 
     // Default: use registry renderer for cards, stacks, headings etc.
-    return renderer(nodeDef, children, { onChange: primitiveOnChange });
+    // Provide the schema context to the renderer so it can access nodeId and other info.
+    return renderer(nodeDef, children, { onChange: primitiveOnChange, context: ctx });
   }
 
   // Error boundary to ensure a broken renderer doesn't crash the entire UI

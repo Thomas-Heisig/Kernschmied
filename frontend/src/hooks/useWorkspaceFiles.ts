@@ -95,7 +95,7 @@ export function useWorkspaceFiles(options: UseWorkspaceFilesOptions): UseWorkspa
         abortRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [node?.id, includeInherited]);
 
   const reload = async () => {

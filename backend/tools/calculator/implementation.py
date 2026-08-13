@@ -7,6 +7,13 @@ from collections.abc import Callable
 from typing import Final, TypeAlias
 
 from app.contracts.tool import BaseTool
+from app.contracts.tool import (
+    JsonMapping,
+    ToolExecutionContext,
+    ToolProgressCallback,
+    ToolResult,
+    ToolExecutionStatus,
+)
 
 Number: TypeAlias = int | float
 BinaryOperation: TypeAlias = Callable[[Number, Number], Number]
@@ -307,3 +314,22 @@ class CalculatorTool(BaseTool):
 
     # Diese Methode muss dieselbe Signatur wie BaseTool.execute besitzen.
     # Der bisherige **kwargs-Vertrag ist nicht mit BaseTool kompatibel.
+    async def execute(
+        self,
+        arguments: JsonMapping,
+        *,
+        context: ToolExecutionContext,
+        progress: ToolProgressCallback | None = None,
+    ) -> ToolResult:
+        # Validate and extract the expression
+        expr = arguments.get("expression")
+        if not isinstance(expr, str):
+            raise ValueError("Das Argument 'expression' muss eine Zeichenkette sein.")
+
+        # perform the calculation
+        value = parse_and_evaluate(expr)
+
+        return ToolResult(
+            status=ToolExecutionStatus.SUCCESS,
+            data={"result": value},
+        )

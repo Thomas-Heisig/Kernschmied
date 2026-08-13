@@ -21,6 +21,7 @@ export const KNOWN_ACTION_KINDS = [
   'delete',
   'move',
   'open_form',
+  'edit_node',
   'navigate',
   'download',
   'export',

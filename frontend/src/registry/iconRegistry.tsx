@@ -105,7 +105,7 @@ export function isKnownIconName(value: unknown): value is KnownIconName {
 }
 
 export function getIconComponent(name: string | null | undefined): ComponentType<{
-  size?: number;
+  size?: string | number;
   className?: string;
   style?: CSSProperties;
   title?: string;

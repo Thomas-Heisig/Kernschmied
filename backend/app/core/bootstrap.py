@@ -28,6 +28,17 @@ from app.models.providers.ollama import create_ollama_backend
 from app.models.service import ModelService
 from app.registries.model_registry import ModelRegistry
 from app.registries.tool_registry import ToolRegistry
+from app.core.settings import AppEnvironment
+from app.contracts.tool import (
+    BaseTool,
+    ToolResult,
+    ToolExecutionContext,
+    ToolExecutionStatus,
+    ToolAvailability,
+    ToolAvailabilityStatus,
+    JsonMapping,
+    ToolProgressCallback,
+)
 from app.services.chat_service import (
     ChatService,
 )
@@ -545,11 +556,83 @@ async def bootstrap_application(
         # ====================================================
 
         tool_registry = ToolRegistry()
+        # Register known tool factories so manifest-based discovery can
+        # instantiate implementations (calculator, websearch).
+        try:
+            from tools.calculator.implementation import CalculatorTool
+            from tools.websearch.implementation import WebSearchTool
+
+            tool_registry.factory_registry.register(
+                "calculator", lambda manifest, deps: CalculatorTool()
+            )
+            tool_registry.factory_registry.register(
+                "websearch", lambda manifest, deps: WebSearchTool()
+            )
+        except Exception:
+            logger.exception("Failed to register builtin tool factories")
+        # Register a safe built-in tool instance (fallback) so at least
+        # one real tool is available in development environments.
+        # This registers the tool instance directly and does not rely on
+        # manifest-based discovery. Failure is non-fatal.
+        try:
+            # Only register the dev builtin tool in DEVELOPMENT environment
+            if settings.app_environment == AppEnvironment.DEVELOPMENT:
+                class _DevBuiltinTool(BaseTool):
+                    tool_id: str = "calculator_builtin"
+                    # `name` must be a valid identifier for registry validation
+                    name: str = "calculator_builtin"
+                    description: str = "Entwicklungs-Calculator (nur lokal, sicher)"
+                    parameters_schema = {
+                        "type": "object",
+                        "properties": {"expression": {"type": "string"}},
+                        "required": ["expression"],
+                        "additionalProperties": False,
+                    }
+
+                    async def execute(
+                        self,
+                        arguments: JsonMapping,
+                        *,
+                        context: ToolExecutionContext,
+                        progress: ToolProgressCallback | None = None,
+                    ) -> ToolResult:
+                        # safe noop execution returning the input expression as-is
+                        return ToolResult(
+                            status=ToolExecutionStatus.SUCCESS,
+                            data=cast(JsonMapping, {"echo": arguments}),
+                        )
+                    async def availability(self) -> ToolAvailability:
+                        # synchronous-appearing availability check; implemented
+                        # as async to match BaseTool.availability signature.
+                        return ToolAvailability(status=ToolAvailabilityStatus.AVAILABLE)
+
+                try:
+                    await tool_registry.register_instance(
+                        _DevBuiltinTool(),
+                        tool_id="calculator_builtin",
+                        tool_type="calculator",
+                        display_name="Calculator (dev)",
+                        description="Entwicklungs-Calculator (nur lokal)",
+                        enabled=True,
+                    )
+                except Exception:
+                    logger.exception("Failed to register dev builtin tool instance")
+                else:
+                    try:
+                        logger.info("Dev builtin tool registered; registry count=%d", tool_registry.count)
+                    except Exception:
+                        logger.debug("Could not read tool_registry.count after registration")
+        except Exception:
+            logger.exception("Unexpected error while registering dev builtin tool")
 
         await _run_bootstrap_step(
             step="tools.discover",
             operation=tool_registry.discover,
         )
+        try:
+            logger.info("Tool registry discovery completed; registry count=%d", tool_registry.count)
+        except Exception:
+            logger.debug("Could not read tool_registry.count after discovery")
 
         # ====================================================
         # 6. ModelService und Provider

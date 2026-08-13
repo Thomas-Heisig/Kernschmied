@@ -21,12 +21,20 @@ from app.hierarchy.permissions import (
     HierarchyPermissionService,
 )
 from app.hierarchy.repository import HierarchyRepository
+from app.ui.node_type_provider import NodeTypeProvider
 from app.hierarchy.serializer import HierarchySerializer
-from app.ui.node_types import create_default_node_types
 
 
 class HierarchyChildTypeNotAllowedError(ValueError):
     code = "HIERARCHY_CHILD_TYPE_NOT_ALLOWED"
+
+
+class HierarchyNodeTypeChangeInvalidError(ValueError):
+    code = "HIERARCHY_NODE_TYPE_CHANGE_INVALID"
+
+    def __init__(self, message: str, *, details: dict[str, Any] | None = None) -> None:
+        super().__init__(message)
+        self.details: dict[str, Any] = details or {}
 
 
 class HierarchyService:
@@ -36,10 +44,16 @@ class HierarchyService:
         repository: HierarchyRepository,
         permission_service: HierarchyPermissionService,
         serializer: HierarchySerializer,
+        node_type_provider: NodeTypeProvider | None = None,
     ) -> None:
         self._repository = repository
         self._permissions = permission_service
         self._serializer = serializer
+        # NodeTypeProvider supplies the active registry. If none is provided,
+        # create a provider that uses the UISchemaService (which may fall back
+        # to in-memory defaults). This keeps create_default_node_types() as a
+        # development fallback only.
+        self._node_type_provider = node_type_provider or NodeTypeProvider()
 
     async def get_tree(
         self,
@@ -104,8 +118,8 @@ class HierarchyService:
         if data.parent_id is not None:
             parent = await self._require_node(data.parent_id)
 
-            # Validate allowed child types via the central node-type registry
-            node_types = create_default_node_types()
+            # Validate allowed child types via the injected NodeTypeProvider
+            node_types = await self._node_type_provider.list_node_types()
             parent_type = getattr(parent, "type", "")
             normalized_parent_type = (parent_type or "").strip().lower()
             allowed = ()
@@ -118,10 +132,7 @@ class HierarchyService:
             child_type = (data.type or "").strip().lower()
             if allowed and child_type not in allowed:
                 raise HierarchyChildTypeNotAllowedError(
-                    
-                        f"Der Knotentyp '{parent_type}' erlaubt keine Kinder "
-                        f"vom Typ '{data.type}'."
-                    
+                    f"Der Knotentyp '{parent_type}' erlaubt keine Kinder vom Typ '{data.type}'."
                 )
             # Disallow non-admins creating children directly under the system root.
             if parent.id == "system-root" and not getattr(actor, "is_admin", False):
@@ -159,6 +170,62 @@ class HierarchyService:
         ):
             self._permissions.require(actor, EDIT_CONFIG_ACTION, node)
 
+        # If the node type is being changed, perform provider-driven validation
+        if "type" in changes:
+            new_type = (changes.get("type") or "").strip().lower()
+            if not new_type:
+                raise ValueError("Ungültiger Knotentyp")
+
+            # ensure new type exists in registry
+            node_types = await self._node_type_provider.list_node_types()
+            if new_type not in node_types:
+                raise ValueError(f"Unbekannter Knotentyp '{new_type}'")
+
+            # Check parent compatibility
+            parent = None
+            if node.parent_id is not None:
+                parent = await self._repository.get_node(node.parent_id)
+                if parent is not None:
+                    parent_type = (parent.type or "").strip().lower()
+                    allowed = ()
+                    if parent_type in node_types:
+                        allowed = tuple(
+                            t.strip().lower()
+                            for t in node_types[parent_type].allowed_child_types
+                        )
+                    if allowed and new_type not in allowed:
+                        raise HierarchyNodeTypeChangeInvalidError(
+                            f"Parent vom Typ '{parent_type}' erlaubt keine Kinder vom Typ '{new_type}'.",
+                            details={
+                                "node_id": node.id,
+                                "new_type": new_type,
+                                "reason": "parent_not_allow",
+                            },
+                        )
+
+            # Check existing children compatibility with the new type
+            children = await self._repository.list_children(node.id)
+            new_type_def = node_types.get(new_type)
+            invalid_children: list[dict[str, Any]] = []
+            if new_type_def is not None:
+                allowed_child_types = tuple(
+                    t.strip().lower() for t in new_type_def.allowed_child_types
+                )
+                for c in children:
+                    child_type = (c.type or "").strip().lower()
+                    if allowed_child_types and child_type not in allowed_child_types:
+                        invalid_children.append({"id": c.id, "type": c.type})
+
+            if invalid_children:
+                raise HierarchyNodeTypeChangeInvalidError(
+                    "Existing children are incompatible with the new type.",
+                    details={
+                        "node_id": node.id,
+                        "new_type": new_type,
+                        "invalid_children": invalid_children,
+                    },
+                )
+
         try:
             await self._repository.update_node(node, data)
             await self._repository.commit()
@@ -188,10 +255,11 @@ class HierarchyService:
             raise ValueError(
                 "Ein Knoten kann nicht sein eigener Elternknoten sein.",
             )
+
         if new_parent_id is not None:
             new_parent = await self._require_node(new_parent_id)
-            # Validate allowed child types for move target
-            node_types = create_default_node_types()
+            # Validate allowed child types for move target using provider
+            node_types = await self._node_type_provider.list_node_types()
             parent_type = getattr(new_parent, "type", "")
             normalized_parent_type = (parent_type or "").strip().lower()
             allowed = ()
@@ -205,10 +273,7 @@ class HierarchyService:
             normalized_node_type = (node_type or "").strip().lower()
             if allowed and normalized_node_type not in allowed:
                 raise HierarchyChildTypeNotAllowedError(
-                    
-                        f"Der Knotentyp '{parent_type}' erlaubt keine Kinder "
-                        f"vom Typ '{node_type}'."
-                    
+                    f"Der Knotentyp '{parent_type}' erlaubt keine Kinder vom Typ '{node_type}'."
                 )
             self._permissions.require(
                 actor,
@@ -269,8 +334,8 @@ class HierarchyService:
 
             if new_parent_id is not None:
                 new_parent = await self._require_node(new_parent_id)
-                # Validate allowed child types for reorder targets
-                node_types = create_default_node_types()
+                # Validate allowed child types for reorder targets via provider
+                node_types = await self._node_type_provider.list_node_types()
                 parent_type = getattr(new_parent, "type", "")
                 normalized_parent_type = (parent_type or "").strip().lower()
                 allowed = ()
@@ -285,10 +350,7 @@ class HierarchyService:
                 normalized_node_type = (node_type or "").strip().lower()
                 if allowed and normalized_node_type not in allowed:
                     raise HierarchyChildTypeNotAllowedError(
-                        
-                            f"Der Knotentyp '{parent_type}' erlaubt keine Kinder "
-                            f"vom Typ '{node_type}'."
-                        
+                        f"Der Knotentyp '{parent_type}' erlaubt keine Kinder vom Typ '{node_type}'."
                     )
                 # require permission to create child under new parent
                 self._permissions.require(actor, CREATE_CHILD_ACTION, new_parent)

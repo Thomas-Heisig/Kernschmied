@@ -25,6 +25,7 @@ interface SettingsContentProps {
   activeKey: string | null;
   showJson: boolean;
   config: UseSystemConfigReturn;
+  onSelectKey?: (key: string | null) => void;
 }
 
 interface SettingsFieldOption {
@@ -59,7 +60,7 @@ const SETTINGS_CATALOG_KEY = 'settings-catalog';
 
 const MAX_RENDER_DEPTH = 12;
 
-export function SettingsContent({ activeKey, showJson, config }: SettingsContentProps) {
+export function SettingsContent({ activeKey, showJson, config, onSelectKey }: SettingsContentProps) {
   const {
     values,
     groups,
@@ -257,11 +258,22 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
     setIsJsonDraftDirty(false);
   }
 
+  // Support selecting a concrete field via `activeKey` containing a dot
+  const isFieldSelection = typeof activeKey === 'string' && activeKey.includes('.');
+
+  useEffect(() => {
+    if (isFieldSelection) {
+      console.debug('[SettingsContent] selectedFieldFullKey', activeKey);
+    }
+  }, [activeKey, isFieldSelection]);
+
   const currentTitle = showJson
     ? 'JSON-Editor'
-    : activeKey
-      ? formatSectionTitle(activeKey)
-      : 'Alle Einstellungen';
+    : isFieldSelection
+      ? formatSettingLabel(activeKey!.split('.')[1])
+      : activeKey
+        ? formatSectionTitle(activeKey)
+        : 'Alle Einstellungen';
 
   const currentDescription = showJson
     ? 'Direkte Bearbeitung der gesamten Konfiguration als validierbares JSON.'
@@ -429,7 +441,14 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
             }}
           />
         ) : activeKey === SETTINGS_CATALOG_KEY ? (
-          <SettingsCatalogView config={config} />
+          <SettingsCatalogView
+            config={config}
+            onOpenField={(fullKey: string) => {
+              // Inform parent to select the group of the opened field (group = part before first dot)
+              const group = fullKey && typeof fullKey === 'string' ? fullKey.split('.')[0] : null;
+              onSelectKey?.(group ?? null);
+            }}
+          />
         ) : activeKey === null ? (
           <SettingsForm
             entries={visibleSectionEntries}
@@ -441,13 +460,26 @@ export function SettingsContent({ activeKey, showJson, config }: SettingsContent
             entriesByFullKey={entriesByFullKey ?? null}
           />
         ) : (
-          <SettingsSingleSection
-            sectionKey={activeKey}
-            value={values[activeKey]}
-            disabled={isSaving}
-            searchQuery={normalizedSearchQuery}
-            onChange={handleFieldChange}
-          />
+          // If a concrete field was selected, render its parent section but
+          // pass the selectedFieldFullKey so the UI can highlight/scroll the field.
+          isFieldSelection ? (
+            <SettingsSingleSection
+              sectionKey={activeKey!.split('.')[0]}
+              value={values[activeKey!.split('.')[0]]}
+              disabled={isSaving}
+              searchQuery={normalizedSearchQuery}
+              onChange={handleFieldChange}
+              selectedFieldFullKey={activeKey!}
+            />
+          ) : (
+            <SettingsSingleSection
+              sectionKey={activeKey}
+              value={values[activeKey]}
+              disabled={isSaving}
+              searchQuery={normalizedSearchQuery}
+              onChange={handleFieldChange}
+            />
+          )
         )}
       </div>
     </div>

@@ -58,6 +58,7 @@ const controlLabel: Record<string, string> = {
 
 interface SettingsCatalogViewProps {
   config: UseSystemConfigReturn;
+  onOpenField?: (fullKey: string) => void;
 }
 
 interface FilteredGroup {
@@ -70,18 +71,21 @@ interface GroupPanelProps {
   sections: SettingsSectionDescriptor[];
   config: UseSystemConfigReturn;
   valuesByFullKey?: Record<string, ConfigValue> | null;
+  onOpenField?: (fullKey: string) => void;
 }
 
 interface SectionPanelProps {
   section: SettingsSectionDescriptor;
   config: UseSystemConfigReturn;
   valuesByFullKey?: Record<string, ConfigValue> | null;
+  onOpenField?: (fullKey: string) => void;
 }
 
 interface FieldCardProps {
   field: SettingsFieldDescriptor;
   config: UseSystemConfigReturn;
   valuesByFullKey?: Record<string, ConfigValue> | null;
+  onOpenField?: (fullKey: string) => void;
 }
 
 // ============================================================
@@ -112,7 +116,8 @@ function isEditableConfigField(
 // Hauptkomponente
 // ============================================================
 
-export function SettingsCatalogView({ config }: SettingsCatalogViewProps) {
+export function SettingsCatalogView({ config, onOpenField }: SettingsCatalogViewProps) {
+  const handleOpenField = onOpenField;
   const [catalog, setCatalog] = useState<SettingsCatalogResponse | null>(null);
 
   const [selectedGroupId, setSelectedGroupId] = useState<string>(DEFAULT_GROUP_ID);
@@ -583,7 +588,7 @@ function CatalogSidebar({
   );
 }
 
-function GroupPanel({ group, sections, config, valuesByFullKey }: GroupPanelProps) {
+function GroupPanel({ group, sections, config, valuesByFullKey, onOpenField }: GroupPanelProps) {
   const fieldCount = countSectionFields(sections);
 
   return (
@@ -623,7 +628,7 @@ function GroupPanel({ group, sections, config, valuesByFullKey }: GroupPanelProp
 
       {sections.length > 0 ? (
         sections.map((section) => (
-          <SectionPanel key={section.id} section={section} config={config} />
+          <SectionPanel key={section.id} section={section} config={config} onOpenField={onOpenField} />
         ))
       ) : (
         <SettingsCatalogEmpty />
@@ -632,7 +637,7 @@ function GroupPanel({ group, sections, config, valuesByFullKey }: GroupPanelProp
   );
 }
 
-function SectionPanel({ section, config, valuesByFullKey }: SectionPanelProps) {
+function SectionPanel({ section, config, valuesByFullKey, onOpenField }: SectionPanelProps) {
   return (
     <section className="space-y-3">
       <header className="flex flex-wrap items-end justify-between gap-3">
@@ -658,6 +663,7 @@ function SectionPanel({ section, config, valuesByFullKey }: SectionPanelProps) {
             field={field}
             config={config}
             valuesByFullKey={valuesByFullKey}
+            onOpenField={onOpenField}
           />
         ))}
       </div>
@@ -669,7 +675,7 @@ function SectionPanel({ section, config, valuesByFullKey }: SectionPanelProps) {
 // FieldCard – vollständig überarbeitet mit Type Guard
 // ============================================================
 
-function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
+function FieldCard({ field, config, valuesByFullKey, onOpenField, }: FieldCardProps & { onOpenField?: (fullKey: string) => void }) {
   const target = resolveFieldTarget(field);
 
   const editableConfigField = isEditableConfigField(field);
@@ -697,14 +703,14 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
 
   if (editableConfigField && configGroup !== null && configKey !== null) {
     return (
-      <article
+          <article
         className={[
           'flex min-h-full flex-col rounded-xl border',
           'border-slate-200 bg-white p-4 shadow-sm',
           'dark:border-white/10 dark:bg-slate-900/60',
         ].join(' ')}
       >
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
             <h4 className="font-semibold text-slate-900 dark:text-slate-100">{field.title}</h4>
 
@@ -715,7 +721,33 @@ function FieldCard({ field, config, valuesByFullKey }: FieldCardProps) {
             ) : null}
           </div>
 
-          <AvailabilityBadge availability={field.availability} />
+          <div className="flex items-center gap-2">
+            <AvailabilityBadge availability={field.availability} />
+
+            {(() => {
+              const cfgGroup = field.config_group ?? null;
+              const cfgKey = field.config_key ?? null;
+              if (cfgGroup && cfgKey && typeof onOpenField === 'function') {
+                const fullKey = `${cfgGroup}.${cfgKey}`;
+                return (
+                  <button
+                    type="button"
+                    className="ml-2 rounded px-2 py-1 text-xs bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenField(fullKey);
+                    }}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    aria-label={`Einstellungen öffnen ${fullKey}`}
+                  >
+                    Öffnen
+                  </button>
+                );
+              }
+
+              return null;
+            })()}
+          </div>
         </div>
 
         <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2">

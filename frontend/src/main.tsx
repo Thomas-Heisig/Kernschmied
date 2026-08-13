@@ -7,6 +7,7 @@ import App from './App';
 import { AppProviders } from './app/AppProviders';
 
 import './index.css';
+import './registry/registerWidgets';
 
 const ROOT_ELEMENT_ID = 'root';
 

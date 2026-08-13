@@ -14,14 +14,16 @@ from app.api.v1 import (
     configs,
     debug_resolver,
     documentation,
+    files,
+    system,
+    audit,
     health,
     hierarchy,
     models,
     tools,
-    widgets,
-    files,
     ui,
     users,
+    widgets,
 )
 from app.api.v1.settings_catalog import router as settings_catalog_router
 
@@ -37,6 +39,13 @@ api_router.include_router(
     health.router,
     prefix="/health",
     tags=["System / Health"],
+)
+
+# Backwards-compatible system endpoints (frontend compatibility)
+api_router.include_router(
+    system.router,
+    prefix="/system",
+    tags=["System / Compatibility"],
 )
 
 api_router.include_router(settings_catalog_router)
@@ -107,8 +116,14 @@ api_router.include_router(
 
 api_router.include_router(
     files.router,
-    prefix="/files",
     tags=["Files / Workspace"],
+)
+
+# Simple audit compatibility endpoint used by some widgets
+api_router.include_router(
+    audit.router,
+    prefix="/audit",
+    tags=["System / Audit"],
 )
 
 # ---------------------------------------------------------------------------

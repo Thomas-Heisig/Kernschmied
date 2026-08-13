@@ -258,6 +258,15 @@ def _log_context(
     }
 
 
+def _safe_int(value: Any | None, default: int = 0) -> int:
+    try:
+        if value is None:
+            return default
+        return int(value)
+    except Exception:
+        return default
+
+
 def _log_info(
     message: str,
     **context: object,
@@ -1150,6 +1159,20 @@ class ChatService:
             model_id=model_id,
             streaming=False,
         )
+        # Emit generation prompt context (non-sensitive diagnostics)
+        try:
+            gen_meta = generation_request.metadata
+            _log_info(
+                "generation_prompt_context",
+                request_id=context.request_id,
+                conversation_id=conversation_id,
+                hierarchy_node_id=gen_meta.get("hierarchy_node_id"),
+                system_prompt_present=bool(gen_meta.get("system_prompt_present")),
+                system_prompt_length=_safe_int(gen_meta.get("system_prompt_length"), 0),
+                prompt_source_count=_safe_int(gen_meta.get("prompt_source_count"), 0),
+            )
+        except Exception:
+            pass
 
         error: ChatServiceError | None = None
 
@@ -1770,6 +1793,31 @@ class ChatService:
 
         # Use the typed hierarchy_node_id field from the service-level ChatRequest
         hierarchy_node_id = request.hierarchy_node_id
+        # If no hierarchy_node_id was provided but a conversation exists, try
+        # to derive the associated node mapping from the persistent chat record.
+        # Do not silently treat conversation_id as hierarchy_node_id.
+        conversation_id_local = request.conversation_id
+        if not hierarchy_node_id and conversation_id_local and self._hierarchy_session_factory is not None:
+            try:
+                from app.storage.models.chat import Chat as ChatModel
+
+                async with self._hierarchy_session_factory() as _s:
+                    existing_chat = await _s.get(ChatModel, conversation_id_local)
+                    if existing_chat is not None:
+                        maybe_node = getattr(existing_chat, "node_id", None)
+                        if maybe_node:
+                            hierarchy_node_id = maybe_node
+                            _log_info(
+                                "Derived hierarchy_node_id from conversation mapping",
+                                request_id=(context.request_id),
+                                conversation_id=(conversation_id_local),
+                                derived_hierarchy_node_id=hierarchy_node_id,
+                            )
+            except Exception:
+                # Don't fail on read errors; continue without derived node
+                pass
+        # Local enriched metadata (avoid assigning to request.metadata which may be read-only)
+        enriched_metadata: Mapping[str, JsonValue] = request.metadata
 
         if hierarchy_node_id and self._hierarchy_session_factory is not None:
             # perform hierarchical resolution using a DB session and PromptResolver
@@ -1796,26 +1844,45 @@ class ChatService:
                         details={"hint": "hierarchy_actor is required"},
                     )
 
-                _log_info(
-                    "Prompt resolution started",
-                    chat_step=("resolve-hierarchy-start"),
-                    request_id=(context.request_id),
-                    hierarchy_node_id=hierarchy_node_id,
-                    actor_user_id=(actor.user_id),
-                    actor_roles=list(actor.roles),
-                    actor_permission_count=len(actor.permissions),
-                )
+                # Log pre-resolution diagnostics (no prompt contents)
+                settings_present = isinstance(system_prompt, str) and bool(system_prompt.strip())
+                settings_length = len(system_prompt.strip()) if isinstance(system_prompt, str) and system_prompt.strip() else 0
 
                 try:
                     resolved = await resolver.resolve(
-                        hierarchy_node_id,
+                        str(hierarchy_node_id),
                         repository=repo,
                         actor=actor,
                         settings_system_prompt=system_prompt,
                     )
 
-                    if resolved and resolved.system_prompt:
+                    if resolved and getattr(resolved, "system_prompt", None):
                         system_prompt = resolved.system_prompt
+
+                    # Structured diagnostics for prompt resolution (no content)
+                    try:
+                        prompt_source_count = (
+                            len(resolved.fragments)
+                            if resolved and getattr(resolved, "fragments", None) is not None
+                            else 0
+                        )
+                        system_prompt_present_final = bool(system_prompt and system_prompt.strip())
+                        system_prompt_length_final = len(system_prompt or "")
+                        _log_info(
+                            "Prompt resolved for generation",
+                            chat_step=("resolve-hierarchy-finalized"),
+                            request_id=(context.request_id),
+                            hierarchy_node_id=hierarchy_node_id,
+                            prompt_source_count=prompt_source_count,
+                            effective_system_prompt_length=system_prompt_length_final,
+                            system_prompt_present=system_prompt_present_final,
+                            settings_system_prompt_present=settings_present,
+                            settings_system_prompt_length=settings_length,
+                        )
+                    except Exception:
+                        prompt_source_count = 0
+                        system_prompt_present_final = bool(system_prompt and system_prompt.strip())
+                        system_prompt_length_final = len(system_prompt or "")
 
                     # carry config revision into resolved prompt when available
                     if config_revision is not None:
@@ -1855,6 +1922,106 @@ class ChatService:
                         "Keine Leseberechtigung für den angeforderten Hierarchieknoten.",
                         request_id=(context.request_id),
                         details={"hierarchy_node_id": hierarchy_node_id},
+                    )
+                # Resolve effective tools for this hierarchy node and compute authorized set
+                try:
+                    # load registry tools (may be present when called from an HTTP request)
+                    req_any = cast(Any, request)
+                    request_app = getattr(req_any, "app", None)
+                    state_obj = getattr(request_app, "state", None)
+                    registry = getattr(state_obj, "tool_registry", None)
+                    normalized_tools: dict[str, object] = {}
+                    if registry is not None:
+                        raw_tools = registry.list_tools()
+                        if inspect.isawaitable(raw_tools):
+                            raw_tools = await raw_tools
+                        for raw in raw_tools:
+                            try:
+                                from app.api.v1.tools import normalize_tool_entry
+
+                                t = normalize_tool_entry(raw)
+                                normalized_tools[t.id] = t
+                            except Exception:
+                                continue
+
+                    # collect latest policy values from ancestor chain
+                    chain_nodes = await repo.get_ancestor_chain(hierarchy_node_id)
+                    latest_value: dict[str, bool] = {}
+                    for n in chain_nodes:
+                        for k, v in dict(n.tool_policy or {}).items():
+                            latest_value[str(k).strip().lower()] = bool(v)
+
+                    effective_ids: set[str] = set()
+                    raw_perms = getattr(actor, "permissions", None)
+                    if raw_perms is None:
+                        actor_perms: frozenset[str] = frozenset()
+                    else:
+                        actor_perms: frozenset[str] = frozenset(str(x).strip() for x in cast(Sequence[object], raw_perms))
+                    for tid, val in latest_value.items():
+                        if not val:
+                            # locally disabled -> not effective
+                            continue
+                        # find registry entry case-insensitive
+                        registry_entry = next((v for k, v in normalized_tools.items() if k.casefold() == tid.casefold()), None)
+                        if registry_entry is None:
+                            continue
+                        # must be enabled and available
+                        if not getattr(registry_entry, "enabled", True) or not getattr(registry_entry, "available", True):
+                            continue
+                        # permissions
+                        req_perms = list(getattr(registry_entry, "required_permissions", []) or [])
+                        if req_perms and not getattr(actor, "is_admin", False):
+                            missing = [rp for rp in req_perms if rp not in actor_perms]
+                            if missing:
+                                continue
+                        # registry_entry may be an arbitrary object from the registry; access attributes safely
+                        rid = getattr(registry_entry, "id", str(tid))
+                        effective_ids.add(str(rid))
+
+                    # normalize requested_tool_ids from request.metadata to a list[str]
+                    raw_requested = request.metadata.get("requested_tool_ids", None)
+                    requested: list[str]
+                    if raw_requested is None:
+                        requested = []
+                    elif isinstance(raw_requested, (list, tuple)):
+                        requested = [str(x) for x in raw_requested]
+                    else:
+                        requested = []
+                    final_ids: list[str]
+                    if requested:
+                        # only allow client-requested tools that are effective
+                        final_ids = [tid for tid in requested if tid in effective_ids]
+                    else:
+                        # preserve existing behaviour: do not automatically enable all effective tools
+                        final_ids = []
+
+                    # annotate metadata for downstream auditing (no secrets)
+                    enriched_metadata = cast(
+                        Mapping[str, JsonValue],
+                        {
+                            **dict(request.metadata),
+                            "effective_tool_ids": sorted(list(effective_ids)),
+                            "requested_tool_ids": requested,
+                            "final_tool_ids": final_ids,
+                        },
+                    )
+                    # log for debug
+                    _log_info(
+                        "Resolved effective tools for chat request",
+                        chat_step=("resolve-effective-tools"),
+                        request_id=(context.request_id),
+                        hierarchy_node_id=hierarchy_node_id,
+                        effective_tool_count=len(effective_ids),
+                        requested_tool_count=len(requested),
+                        final_tool_count=len(final_ids),
+                    )
+                except Exception:
+                    # Do not fail chat generation on tool resolution errors; log and continue
+                    _log_warning(
+                        "Failed to resolve effective tools for hierarchy node",
+                        chat_step=("resolve-effective-tools-failed"),
+                        request_id=(context.request_id),
+                        hierarchy_node_id=hierarchy_node_id,
                     )
         else:
             # no hierarchy node: still apply settings-level prompt if present
@@ -1989,13 +2156,22 @@ class ChatService:
 
         metadata: JsonObject = {
             **dict(
-                request.metadata,
+                enriched_metadata,
             ),
             "request_id": (context.request_id),
             "conversation_id": (conversation_id),
             "tenant_id": (context.tenant_id),
             "user_id": context.user_id,
             "session_id": (context.session_id),
+            # prompt diagnostics (non-sensitive)
+            "hierarchy_node_id": hierarchy_node_id,
+            "system_prompt_present": (
+                bool(system_prompt and system_prompt.strip())
+            ),
+            "system_prompt_length": len(system_prompt or ""),
+            "prompt_source_count": (
+                locals().get("prompt_source_count", 0)
+            ),
         }
 
         # Final invariants check

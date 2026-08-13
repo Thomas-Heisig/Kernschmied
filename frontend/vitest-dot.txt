@@ -1,0 +1,21 @@
+
+[1m[46m RUN [49m[22m [36mv3.2.7 [39m[90mF:/Kernschmied/frontend[39m
+
+[33m[39m[32m┬À[39m[33m[39m[32m┬À[39m[90mstdout[2m | src/components/hierarchy/__tests__/NodeEditorDialog.spec.tsx
+[22m[39m[Kernschmied][ApiClient] {
+  timestamp: [32m'2026-08-11T15:45:27.698Z'[39m,
+  source: [32m'frontend/src/api/client.ts'[39m,
+  area: [32m'api-client'[39m,
+  step: [32m'api-client-initialized'[39m,
+  apiBaseOrigin: [32m'http://localhost:8000'[39m,
+  apiBasePathname: [32m'/api/v1'[39m,
+  defaultCredentials: [32m'include'[39m
+}
+
+[33m[39m[32m┬À[39m[33m[39m[32m┬À[39m[33m[39m[32m┬À[39m[33m[39m[32m┬À[39m[33m[39m[32m┬À[39m[33m[39m[32m┬À[39m[33m[39m[32m┬À[39m[33m[39m[32m┬À[39m[33m[39m[32m┬À[39m[33m[39m[32m┬À[39m
+
+[2m Test Files [22m [1m[32m3 passed[39m[22m[90m (3)[39m
+[2m      Tests [22m [1m[32m12 passed[39m[22m[90m (12)[39m
+[2m   Start at [22m 17:45:26
+[2m   Duration [22m 1.21s[2m (transform 125ms, setup 174ms, collect 477ms, tests 174ms, environment 1.28s, prepare 308ms)[22m
+

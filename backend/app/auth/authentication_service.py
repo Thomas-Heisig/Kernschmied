@@ -128,17 +128,12 @@ class AuthenticationService:
         # Use the canonical principal mapper to produce the same shape
         # as the middleware-resolved principal. This ensures consistency
         # between session-based auth and ORM-resolved principals.
-        from app.auth.principal_mapper import build_principal_from_user
 
-        principal = build_principal_from_user(
-            user,
-            session_id=getattr(auth, "id", None),
-            authentication_method=(
-                getattr(auth, "authentication_method", None) or "password"
-            ),
-        )
-
-        return principal
+        # Return the resolved DB user model here. The middleware expects
+        # a model-like object so it can build a canonical principal itself.
+        # Returning the user model keeps responsibility for principal
+        # construction in the middleware layer and avoids double-mapping.
+        return user
 
     async def logout(self, token: str) -> None:
         token_hash = self.session_svc.hash_token(token)

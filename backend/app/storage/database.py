@@ -134,16 +134,16 @@ class DatabaseManager:
                                 )
 
                             logger.info(
-                                "Running Alembic upgrade heads using %s",
+                                "Running Alembic upgrade head using %s",
                                 str(alembic_ini),
                             )
                             # If Alembic fails here we must NOT continue with create_all()
                             # because that can hide migration problems and lead to FK errors.
-                            # Support repositories with multiple linear heads by
-                            # upgrading all heads. This mirrors manual usage of
-                            # `alembic upgrade heads` to avoid startup failures when
-                            # branch migrations were created in parallel.
-                            command.upgrade(alembic_cfg, "heads")
+                            # Upgrade only the single head. The migration graph has
+                            # been validated to be linear; accepting multiple heads
+                            # on startup would hide merge issues. Use `head` so
+                            # unexpected multiple heads fail loudly.
+                            command.upgrade(alembic_cfg, "head")
                         else:
                             logger.info(
                                 "Alembic config not found at %s, skipping migrations",

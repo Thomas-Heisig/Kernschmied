@@ -7,6 +7,7 @@ import Modal from '../ui/Modal';
 import { apiGet } from '../../api/client';
 import { DynamicIcon } from '../../registry/iconRegistry';
 import WorkspaceFilesSection from '../files/WorkspaceFilesSection';
+import WidgetsForNode from '../widgets/WidgetsForNode';
 
 const statusColorMap: Record<string, string> = {
   active: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300',
@@ -499,6 +500,12 @@ function ContextContent({ node, schemaVersion, onAction, onRequestAction, canPer
             <WorkspaceFilesSection selectedNode={node} />
           </div>
         </ContextSection>
+
+      <ContextSection title="Widgets" defaultOpen={false}>
+        <div className="px-3 py-2">
+          <WidgetsForNode nodeId={node.id} />
+        </div>
+      </ContextSection>
       {systemInfo ? (
         <div className="px-3 py-3 border-t border-border text-xs text-text-muted dark:border-white/10">
           <div className="flex items-center justify-between gap-2">

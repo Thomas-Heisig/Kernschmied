@@ -11,6 +11,7 @@ import { SettingsDialog } from '../settings';
 import { WebsiteWorkspace } from '../websites';
 import SchemaRenderer from '../schema/SchemaRenderer';
 import WidgetBadges from '../widgets/WidgetBadges';
+import WidgetsForNode from '../widgets/WidgetsForNode';
 
 /* ============================================================
  * Typen und Konstanten
@@ -111,6 +112,11 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
         <div className="absolute right-4 top-4">
           <WidgetBadges nodeId={(node as any).id} />
         </div>
+
+        <div className="mx-auto w-full max-w-6xl mt-6">
+          <h3 className="text-sm font-semibold text-slate-500 mb-2">Widgets</h3>
+          <WidgetsForNode nodeId={node.id} variant="workspace" showEmptyState={false} />
+        </div>
       </section>
     );
   }
@@ -134,7 +140,14 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
         <div className="absolute right-6 top-6 z-20">
           <WidgetBadges nodeId={(node as any).id} />
         </div>
-        <GenericChatView title={node.name} hierarchyNodeId={node.id} hierarchyNodeType={normalizedType} />
+        <div className="w-full">
+          <GenericChatView title={node.name} hierarchyNodeId={node.id} hierarchyNodeType={normalizedType} />
+
+          <div className="mt-6 px-6">
+            <h3 className="text-sm font-semibold text-slate-500 mb-2">Widgets</h3>
+            <WidgetsForNode nodeId={node.id} variant="workspace" showEmptyState={false} />
+          </div>
+        </div>
       </section>
     );
   }
@@ -164,11 +177,16 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
                 onUpdateHierarchyNode={onUpdateHierarchyNode}
               />
             </div>
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-slate-500 mb-2">Widgets</h3>
+              <WidgetsForNode nodeId={node.id} variant="workspace" showEmptyState={false} />
+            </div>
           </div>
         </div>
       </section>
     );
   }
+
 
   /* ----------------------------------------------------------
    * Webseiten-Sammlung
@@ -183,7 +201,17 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
    * ---------------------------------------------------------- */
 
   if (WEBSITE_NODE_TYPES.has(normalizedType)) {
-    return <WebsiteWorkspace websiteId={node.id} title={node.name} />;
+    return (
+      <section className={[ 'flex min-h-0 min-w-0', 'w-full flex-1', 'overflow-auto', 'bg-slate-50 p-6', 'dark:bg-slate-950/30', 'sm:p-8', ].join(' ')} aria-label={`Website: ${node.name}`}>
+        <div className="mx-auto w-full max-w-6xl">
+          <WebsiteWorkspace websiteId={node.id} title={node.name} />
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-slate-500 mb-2">Widgets</h3>
+            <WidgetsForNode nodeId={node.id} variant="workspace" showEmptyState={false} />
+          </div>
+        </div>
+      </section>
+    );
   }
 
   /* ----------------------------------------------------------
@@ -194,7 +222,17 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
   }
 
   if (WEBSITE_NODE_TYPES.has(normalizedType)) {
-    return <WebsiteWorkspace websiteId={node.id} title={node.name} />;
+    return (
+      <section className={[ 'flex min-h-0 min-w-0', 'w-full flex-1', 'overflow-auto', 'bg-slate-50 p-6', 'dark:bg-slate-950/30', 'sm:p-8', ].join(' ')} aria-label={`Website: ${node.name}`}>
+        <div className="mx-auto w-full max-w-6xl">
+          <WebsiteWorkspace websiteId={node.id} title={node.name} />
+          <div className="mt-6">
+            <h3 className="text-sm font-semibold text-slate-500 mb-2">Widgets</h3>
+            <WidgetsForNode nodeId={node.id} variant="workspace" showEmptyState={false} />
+          </div>
+        </div>
+      </section>
+    );
   }
 
   // If the schema provides a node definition for this type, render the SchemaRenderer
@@ -223,6 +261,10 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
             </div>
           <div className="mx-auto w-full max-w-6xl">
             <SchemaRenderer schema={nodeDef} context={{ nodeId: node.id }} />
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold text-slate-500 mb-2">Widgets</h3>
+              <WidgetsForNode nodeId={node.id} />
+            </div>
           </div>
         </section>
       );
@@ -313,6 +355,12 @@ export function SelectedNodeWorkspace({ node, schema, onUpdateHierarchyNode }: S
               <h3 className="text-xs font-semibold text-slate-500">Rohdefinition</h3>
               <div className="mt-2 max-h-48 overflow-auto rounded bg-slate-50 p-2 text-xs text-slate-800 whitespace-pre-wrap wrap-break-word">
                 {JSON.stringify(def ?? {}, null, 2)}
+              </div>
+            </div>
+            <div className="rounded-lg border bg-white p-3">
+              <h3 className="text-xs font-semibold text-slate-500">Widgets</h3>
+              <div className="mt-2">
+                <WidgetsForNode nodeId={node.id} />
               </div>
             </div>
           </div>
@@ -617,6 +665,10 @@ function NodePlaceholder({ node, schema }: NodePlaceholderProps & { schema?: any
             </dd>
           </div>
         </dl>
+        <div className="mt-6">
+          <h3 className="text-sm font-semibold text-slate-500 mb-2">Widgets</h3>
+          <WidgetsForNode nodeId={node.id} variant="workspace" showEmptyState={false} />
+        </div>
       </div>
     </section>
   );

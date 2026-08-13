@@ -107,36 +107,81 @@ export function SettingsSidebar({
               const isActive = activeKey === key && !isJsonActive;
 
               return (
-                <button
-                  key={key}
-                  type="button"
-                  className={sidebarItemClass(isActive)}
-                  aria-current={isActive ? 'page' : undefined}
-                  title={formatSidebarLabel(key)}
-                  onClick={() => {
-                    onSelectKey(key);
-                  }}
-                >
-                  <SidebarIcon>
-                    <SectionIcon />
-                  </SidebarIcon>
-
-                  <span className="min-w-0 flex-1 truncate">{formatSidebarLabel(key)}</span>
-
-                  <span
-                    className={[
-                      'ml-2 shrink-0 rounded-full px-2 py-0.5',
-                      'text-[11px] font-medium',
-                      isActive
-                        ? 'bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200'
-                        : 'bg-slate-200/70 text-slate-500 dark:bg-white/5 dark:text-slate-400',
-                    ].join(' ')}
+                <div key={key}>
+                  <button
+                    type="button"
+                    className={sidebarItemClass(isActive)}
+                    aria-current={isActive ? 'page' : undefined}
+                    title={formatSidebarLabel(key)}
+                    onClick={() => {
+                      onSelectKey(key);
+                    }}
                   >
-                    {groups && Array.isArray(groups)
-                      ? (groups.find((g: ConfigGroupResponse) => g.id === key)?.entries ?? []).length
-                      : countSectionEntries(values[key])}
-                  </span>
-                </button>
+                    <SidebarIcon>
+                      <SectionIcon />
+                    </SidebarIcon>
+
+                    <span className="min-w-0 flex-1 truncate">{formatSidebarLabel(key)}</span>
+
+                    <span
+                      className={[
+                        'ml-2 shrink-0 rounded-full px-2 py-0.5',
+                        'text-[11px] font-medium',
+                        isActive
+                          ? 'bg-slate-100 text-slate-700 dark:bg-white/10 dark:text-slate-200'
+                          : 'bg-slate-200/70 text-slate-500 dark:bg-white/5 dark:text-slate-400',
+                      ].join(' ')}
+                    >
+                      {groups && Array.isArray(groups)
+                        ? (groups.find((g: ConfigGroupResponse) => g.id === key)?.entries ?? []).length
+                        : countSectionEntries(values[key])}
+                    </span>
+                  </button>
+
+                  {/** Expand the active group to list sections and fields so specific settings
+                   * can be selected directly from the sidebar. We consider the group active
+                   * when the current activeKey equals the group id or starts with "group." */}
+                  {isActive && groups && Array.isArray(groups) ? (
+                    <div className="pl-6 mt-2 space-y-2">
+                      {(() => {
+                        const group = groups.find((g: ConfigGroupResponse) => g.id === key) as any;
+                        return group?.sections?.map((section: any) => (
+                          <div key={section.id} className="space-y-1">
+                            <div className="text-xs text-slate-500">{section.title}</div>
+                            <div className="mt-1 space-y-1">
+                              {section.fields.map((field: any) => {
+                                const cfgGroup = field.config_group ?? key;
+                                const cfgKey = field.config_key ?? field.id;
+                                const fullKey = `${cfgGroup.trim()}.${cfgKey.trim()}`;
+                                const isFieldActive = activeKey === fullKey;
+
+                                return (
+                                  <button
+                                    key={field.id}
+                                    type="button"
+                                    className={[
+                                      'w-full text-left rounded px-2 py-1 text-sm',
+                                      isFieldActive
+                                        ? 'bg-white text-slate-900 font-medium'
+                                        : 'text-slate-600 hover:bg-white/70',
+                                    ].join(' ')}
+                                    aria-current={isFieldActive ? 'true' : undefined}
+                                      onClick={() => {
+                                        console.debug("[SettingsSidebar] select", fullKey);
+                                        onSelectKey(fullKey);
+                                      }}
+                                  >
+                                    {field.title}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ));
+                      })()}
+                    </div>
+                  ) : null}
+                </div>
               );
             })
           ) : (

@@ -13,14 +13,32 @@ from fastapi import (
     Query,
     Request,
     Response,
-    status,
 )
+from starlette import status
+
+# Local numeric HTTP status constants to aid static analysis (Pylance).
+HTTP_200_OK = status.HTTP_200_OK
+HTTP_400_BAD_REQUEST = status.HTTP_400_BAD_REQUEST
+HTTP_403_FORBIDDEN = status.HTTP_403_FORBIDDEN
+HTTP_404_NOT_FOUND = status.HTTP_404_NOT_FOUND
+HTTP_500_INTERNAL_SERVER_ERROR = status.HTTP_500_INTERNAL_SERVER_ERROR
+HTTP_503_SERVICE_UNAVAILABLE = status.HTTP_503_SERVICE_UNAVAILABLE
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
     JsonValue,  # NEU: Pydantic's JsonValue
 )
+from jsonschema import Draft202012Validator
+from jsonschema.exceptions import ValidationError as JsonSchemaValidationError
+from app.hierarchy.repository import HierarchyRepository
+# HierarchyActor imported where needed via app.api.v1.hierarchy.build_actor_from_request
+from app.services.hierarchy_service import create_hierarchy_service
+from app.api.v1.hierarchy import build_actor_from_request
+from app.hierarchy.models import HierarchyActor
+from typing import Any
+from app.contracts.hierarchy import HierarchyNodeUpdate
+from app.hierarchy.permissions import HierarchyPermissionService, EDIT_CONFIG_ACTION
 
 logger = logging.getLogger(__name__)
 
@@ -210,7 +228,7 @@ def get_tool_registry(
     if registry is None:
         raise structured_error(
             request=request,
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status_code=HTTP_503_SERVICE_UNAVAILABLE,
             code="TOOL_REGISTRY_UNAVAILABLE",
             message="Die Tool-Registry ist nicht verfügbar.",
         )
@@ -1299,7 +1317,7 @@ async def tools(
 
         raise structured_error(
             request=request,
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            status_code=HTTP_503_SERVICE_UNAVAILABLE,
             code="TOOL_REGISTRY_LIST_FAILED",
             message=("Die Tool-Liste konnte nicht geladen werden."),
         ) from exc
@@ -1377,3 +1395,351 @@ async def tools(
             request,
         ),
     )
+
+
+# ---------------------------------------------------------------------------
+# Node-specific Tools API (per-node policy & effective resolution)
+# ---------------------------------------------------------------------------
+
+
+class NodeToolPolicyResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    node_id: str
+    tool_policy: dict[str, bool] = Field(default_factory=dict)
+    metadata: JsonObject = Field(default_factory=dict)
+
+
+class NodeEffectiveToolItem(BaseModel):
+    id: str
+    name: str | None = None
+    display_name: str | None = None
+    status: str
+    source: str | None = None
+    source_node_name: str | None = None
+    source_node_id: str | None = None
+    enabled: bool = False
+    configurable: bool = False
+    required_permissions: list[str] = Field(default_factory=list)
+    available: bool = True
+    description: str | None = None
+
+
+class NodeEffectiveToolsResponse(BaseModel):
+    node_id: str
+    items: list[NodeEffectiveToolItem]
+
+
+@router.get(
+    "/nodes/{node_id}",
+    response_model=NodeToolPolicyResponse,
+    response_model_exclude_none=True,
+    summary="Node tool policy",
+)
+async def get_node_tool_policy(request: Request, node_id: str) -> NodeToolPolicyResponse:
+    actor: HierarchyActor = build_actor_from_request(request)
+
+    session_factory = getattr(request.app.state, "session_factory", None)
+    if session_factory is None:
+        raise HTTPException(status_code=HTTP_503_SERVICE_UNAVAILABLE, detail="Persistence unavailable")
+
+    async with session_factory() as session:
+        repository = HierarchyRepository(session)
+        node = await repository.get_node(node_id)
+        if node is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail={"code": "HIERARCHY_NODE_NOT_FOUND"})
+        # permission: read
+        perms = HierarchyPermissionService()
+        perms.require(actor, "read", node)
+
+        return NodeToolPolicyResponse(node_id=node_id, tool_policy=dict(getattr(node, 'tool_policy', {}) or {}), metadata=dict(getattr(node, 'node_metadata', {}) or {}))
+
+
+@router.get(
+    "/nodes/{node_id}/effective",
+    response_model=NodeEffectiveToolsResponse,
+    response_model_exclude_none=True,
+    summary="Effective tools for a node",
+)
+async def get_node_effective_tools(request: Request, node_id: str) -> NodeEffectiveToolsResponse:
+    actor = build_actor_from_request(request)
+
+    session_factory = getattr(request.app.state, "session_factory", None)
+    if session_factory is None:
+        raise HTTPException(status_code=HTTP_503_SERVICE_UNAVAILABLE, detail="Persistence unavailable")
+
+    registry = get_tool_registry(request)
+
+    async with session_factory() as session:
+        repository = HierarchyRepository(session)
+
+        try:
+            chain = await repository.get_ancestor_chain(node_id)
+        except Exception as exc:
+            raise HTTPException(status_code=HTTP_404_NOT_FOUND, detail={"code": "HIERARCHY_NODE_NOT_FOUND", "message": str(exc)})
+
+        # Collect latest policy value and source node for each tool
+        latest_value: dict[str, bool] = {}
+        latest_source: dict[str, str] = {}
+        for n in chain:
+            for k, v in dict(n.tool_policy or {}).items():
+                key = str(k).strip().lower()
+                latest_value[key] = bool(v)
+                latest_source[key] = n.id
+
+        # load registry tools
+        try:
+            raw_tools = await list_registry_tools(registry)
+        except Exception:
+            raw_tools = []
+
+        normalized_tools: list[ToolEntry] = []
+        for raw in raw_tools:
+            try:
+                normalized_tools.append(normalize_tool_entry(raw))
+            except Exception:
+                continue
+
+        # build items for union of registry and configured tools
+        tool_ids = {t.id for t in normalized_tools} | set(latest_value.keys())
+
+        items: list[NodeEffectiveToolItem] = []
+        for tid in sorted(tool_ids):
+            registry_entry = next((t for t in normalized_tools if t.id == tid), None)
+
+            if registry_entry is None:
+                # unknown tool referenced in policy
+                status = "not_registered"
+                available = False
+                name = tid
+                display_name = None
+                required_permissions: list[str] = []
+                configurable = False
+                description = None
+            else:
+                name = registry_entry.name
+                display_name = getattr(registry_entry, 'display_name', None) or registry_entry.name
+                available = bool(registry_entry.available)
+                required_permissions = list(registry_entry.required_permissions or [])
+                configurable = bool(registry_entry.input_schema and (registry_entry.input_schema.properties or registry_entry.input_schema.required))
+                description = registry_entry.description
+
+            # determine nearest policy
+            source_node = None
+            source = None
+            if tid in latest_value:
+                nearest_val = latest_value[tid]
+                source_node = latest_source.get(tid)
+                if not nearest_val:
+                    status = "locally_disabled"
+                    source = "local_override"
+                else:
+                    status = "active"
+                    source = "direct" if source_node == node_id else "inherited"
+            else:
+                status = "inactive"
+                source = None
+                source_node = None
+
+            # override status for registry availability
+            if registry_entry is not None:
+                if not registry_entry.enabled:
+                    status = "not_released"
+                elif not registry_entry.available:
+                    status = "not_available"
+
+            # permission check
+            authorized = True
+            if registry_entry is not None and required_permissions:
+                # simple check: all required_permissions must be present
+                actor_obj = actor
+                if not getattr(actor_obj, "is_admin", False):
+                    raw_perms = getattr(actor_obj, "permissions", None)
+                    if raw_perms is None:
+                        actor_perms: frozenset[str] = frozenset()
+                    else:
+                        # coerce permission items to str to ensure element typing is `str`
+                        actor_perms: frozenset[str] = frozenset(
+                            normalize_string(item) for item in cast(Sequence[object], raw_perms)
+                        )
+                    for rp in required_permissions:
+                        if rp not in actor_perms:
+                            authorized = False
+                            break
+            if not authorized:
+                status = "not_authorized"
+
+            source_node_name = None
+            if source_node is not None:
+                # try to resolve node name from chain
+                id_to_name = {n.id: n.name for n in chain}
+                source_node_name = id_to_name.get(source_node)
+
+            items.append(
+                NodeEffectiveToolItem(
+                    id=tid,
+                    name=name,
+                    display_name=display_name,
+                    status=status,
+                    source=source,
+                    source_node_name=source_node_name,
+                    source_node_id=source_node,
+                    enabled=(latest_value.get(tid, False) and registry_entry is not None and registry_entry.enabled and registry_entry.available),
+                    configurable=configurable,
+                    required_permissions=required_permissions,
+                    available=available,
+                    description=description,
+                )
+            )
+
+        return NodeEffectiveToolsResponse(node_id=node_id, items=items)
+
+
+@router.put(
+    "/nodes/{node_id}/policy",
+    response_model=NodeToolPolicyResponse,
+    response_model_exclude_none=True,
+    summary="Update node tool policy",
+)
+async def put_node_tool_policy(request: Request, node_id: str, payload: NodeToolPolicyResponse) -> NodeToolPolicyResponse:
+    actor = build_actor_from_request(request)
+
+    session_factory = getattr(request.app.state, "session_factory", None)
+    if session_factory is None:
+        raise HTTPException(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail="Persistence unavailable")
+
+    registry = get_tool_registry(request)
+
+    # payload keys are expected to be strings (Pydantic enforces this); no runtime check required
+
+    async with session_factory() as session:
+        repository = HierarchyRepository(session)
+        service = create_hierarchy_service(repository)
+        # ensure node exists
+        node = await repository.get_node(node_id)
+        if node is None:
+            raise structured_error(request=request, status_code=HTTP_404_NOT_FOUND, code="HIERARCHY_NODE_NOT_FOUND", message=f"Node '{node_id}' not found")
+
+        # permission: must be allowed to edit configuration/tool policy
+        perms = HierarchyPermissionService()
+        try:
+            perms.require(actor, EDIT_CONFIG_ACTION, node)
+        except PermissionError as exc:
+            raise structured_error(request=request, status_code=HTTP_403_FORBIDDEN, code="PERMISSION_DENIED", message=str(exc))
+
+        # load and normalize registry tools
+        try:
+            raw_tools = await list_registry_tools(registry)
+        except Exception as exc:
+            logger.exception("Tool registry listing failed during policy update", extra={"request_id": get_request_id(request)})
+            raise structured_error(request=request, status_code=HTTP_503_SERVICE_UNAVAILABLE, code="TOOL_REGISTRY_UNAVAILABLE", message="Die Tool-Registry ist nicht verfügbar.") from exc
+
+        normalized_tools: dict[str, ToolEntry] = {}
+        for raw in raw_tools:
+            try:
+                t = normalize_tool_entry(raw)
+                normalized_tools[t.id] = t
+            except Exception:
+                continue
+
+        # validate each referenced tool id
+        raw_actor_perms = getattr(actor, "permissions", None)
+        if raw_actor_perms is None:
+            actor_perms: frozenset[str] = frozenset()
+        else:
+            actor_perms: frozenset[str] = frozenset(
+                normalize_string(item) for item in cast(Sequence[object], raw_actor_perms)
+            )
+        for raw_tid in payload.tool_policy.keys():
+            tid = str(raw_tid).strip()
+            if not tid:
+                raise structured_error(request=request, status_code=HTTP_400_BAD_REQUEST, code="TOOL_NOT_REGISTERED", message="Das Werkzeug ist nicht registriert.", details={"tool_id": raw_tid})
+
+            # case-insensitive match
+            registry_entry = next((v for k, v in normalized_tools.items() if k.casefold() == tid.casefold()), None)
+            if registry_entry is None:
+                raise structured_error(request=request, status_code=HTTP_400_BAD_REQUEST, code="TOOL_NOT_REGISTERED", message="Das Werkzeug ist nicht registriert.", details={"tool_id": tid})
+
+            # administratively enabled?
+            if not registry_entry.enabled:
+                raise structured_error(request=request, status_code=HTTP_400_BAD_REQUEST, code="TOOL_NOT_ENABLED", message="Das Werkzeug ist nicht zur Verwendung freigegeben.", details={"tool_id": registry_entry.id})
+
+            # availability check (deprecated/disabled)
+            if not registry_entry.available:
+                raise structured_error(request=request, status_code=HTTP_400_BAD_REQUEST, code="TOOL_NOT_ENABLED", message="Das Werkzeug ist derzeit nicht verfügbar.", details={"tool_id": registry_entry.id})
+
+            # required permissions check
+            required_permissions = list(registry_entry.required_permissions or [])
+            if required_permissions and not getattr(actor, "is_admin", False):
+                missing = [rp for rp in required_permissions if rp not in actor_perms]
+                if missing:
+                    raise structured_error(request=request, status_code=HTTP_403_FORBIDDEN, code="TOOL_NOT_AUTHORIZED", message="Der Actor besitzt nicht die erforderlichen Berechtigungen für dieses Werkzeug.", details={"tool_id": registry_entry.id, "missing_permissions": missing})
+
+        # validate provided metadata.tool configurations if present in payload
+        metadata_obj = payload.metadata or {}
+        provided_tools_cfg = normalize_json_object(metadata_obj.get("tools", {})) or {}
+
+        for cfg_tid, cfg_value in provided_tools_cfg.items():
+            tid = str(cfg_tid).strip()
+            if not tid:
+                continue
+
+            registry_entry = next((v for k, v in normalized_tools.items() if k.casefold() == tid.casefold()), None)
+            if registry_entry is None:
+                raise structured_error(request=request, status_code=HTTP_400_BAD_REQUEST, code="TOOL_NOT_REGISTERED", message="Das Werkzeug ist nicht registriert.", details={"tool_id": tid})
+
+            # pick configuration schema: preference order
+            schema_candidate_raw: object | None = None
+            if registry_entry.metadata.get("configuration_schema") is not None:
+                schema_candidate_raw = registry_entry.metadata.get("configuration_schema")
+            elif registry_entry.metadata.get("config_schema") is not None:
+                schema_candidate_raw = registry_entry.metadata.get("config_schema")
+            elif registry_entry.metadata.get("allow_input_schema_for_config"):
+                # allow using public input_schema for configuration only if explicitly permitted
+                schema_candidate_raw = registry_entry.input_schema.model_dump()
+
+            schema_candidate: Mapping[str, object] | bool | None = None
+            if schema_candidate_raw is None:
+                schema_candidate = None
+            elif isinstance(schema_candidate_raw, bool):
+                schema_candidate = schema_candidate_raw
+            else:
+                sanitized = normalize_json_object(schema_candidate_raw)
+                if sanitized is not None:
+                    schema_candidate = sanitized
+                else:
+                    schema_candidate = None
+
+            if schema_candidate is None:
+                # no schema to validate against; skip
+                continue
+
+            try:
+                validator = Draft202012Validator(cast(Mapping[str, object] | bool, schema_candidate))
+            except Exception as exc:
+                logger.exception("Invalid configuration schema for tool %s", registry_entry.id)
+                raise structured_error(request=request, status_code=HTTP_500_INTERNAL_SERVER_ERROR, code="TOOL_CONFIGURATION_SCHEMA_INVALID", message="Ungültiges Konfigurationsschema im Tool-Manifest.", details=cast(dict[str, object], {"tool_id": registry_entry.id})) from exc
+            errors: list[dict[str, object]] = []
+            try:
+                validator_any = cast(Any, validator)
+                for err in validator_any.iter_errors(cfg_value):
+                    err_obj: Any = err
+                    path = list(getattr(err_obj, "absolute_path", []))
+                    msg = getattr(err_obj, "message", str(err_obj))
+                    errors.append({"message": msg, "path": path})
+            except JsonSchemaValidationError as exc:
+                errors.append({"message": str(exc)})
+
+            if errors:
+                raise structured_error(request=request, status_code=HTTP_400_BAD_REQUEST, code="TOOL_CONFIGURATION_INVALID", message="Die Werkzeugkonfiguration ist ungültig.", details=cast(dict[str, object], {"tool_id": registry_entry.id, "errors": errors}))
+
+        # all validations passed -> perform update (service will also enforce permissions)
+        update = HierarchyNodeUpdate(tool_policy=payload.tool_policy, metadata=payload.metadata)
+
+        try:
+            node = await service.update_node(node_id, update, actor=actor)
+        except LookupError as exc:
+            raise structured_error(request=request, status_code=HTTP_404_NOT_FOUND, code="HIERARCHY_NODE_NOT_FOUND", message=str(exc))
+        except PermissionError as exc:
+            raise structured_error(request=request, status_code=HTTP_403_FORBIDDEN, code="PERMISSION_DENIED", message=str(exc))
+
+        return NodeToolPolicyResponse(node_id=node.id, tool_policy=dict(getattr(node, 'tool_policy', {}) or {}), metadata=dict(getattr(node, 'node_metadata', {}) or {}))

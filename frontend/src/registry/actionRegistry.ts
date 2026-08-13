@@ -148,6 +148,12 @@ const actionDefinitions = [
     enabled: true,
   },
   {
+    kind: 'edit_node',
+    label: 'Knoten bearbeiten…',
+    icon: 'FilePenLine',
+    enabled: true,
+  },
+  {
     kind: 'navigate',
     label: 'Öffnen',
     icon: 'ArrowRight',

@@ -341,6 +341,7 @@ class OllamaProvider(BaseModelBackend):
                     1 for m in messages if (m.get("role") == "system")
                 )
 
+                # Add structured flags about system message presence without logging content
                 logger.info(
                     "Ollama chat payload prepared",
                     extra={
@@ -349,6 +350,7 @@ class OllamaProvider(BaseModelBackend):
                         "message_roles": message_roles,
                         "message_lengths": message_lengths,
                         "system_message_count": system_message_count,
+                        "system_message_present": system_message_count > 0,
                     },
                 )
             except Exception:

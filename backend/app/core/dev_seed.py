@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+from typing import Any, Dict, List, cast
 
 from sqlalchemy import select
+from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.contracts.hierarchy import HierarchyNodeCreate
@@ -10,6 +12,7 @@ from app.core.settings import settings
 from app.database.models.user import UserModel
 from app.database.models.user_role import RoleModel, UserRoleModel
 from app.hierarchy.repository import HierarchyRepository
+from app.storage.models import WidgetRegistry, WidgetAssignment
 from app.storage.repositories.user import UserRepository
 from app.auth.password_service import PasswordService
 
@@ -28,12 +31,14 @@ async def seed_development_hierarchy(
         logger.debug("Skipping dev seed: not in development environment")
         return
 
-    async with session_factory() as session:
-        # Run the minimal seed inside a single transaction for atomicity.
-        async with session.begin():
-            repo = HierarchyRepository(session)
-
-            try:
+    # Break the seed into multiple independent transactional steps. Each step
+    # uses a fresh session/transaction so a failure in one step will not leave
+    # the session in a closed/invalid state for subsequent steps.
+    # Step 1: ensure system-root and bootstrap-admin nodes
+    try:
+        async with session_factory() as s1:
+            async with s1.begin():
+                repo = HierarchyRepository(s1)
                 # Ensure system-root exists and protective flags are correct
                 system_root = await repo.get_node("system-root")
                 if system_root is None:
@@ -50,7 +55,6 @@ async def seed_development_hierarchy(
                         )
                     )
                 else:
-                    # Repair protective attributes
                     changed = False
                     if not getattr(system_root, "is_system", False):
                         system_root.is_system = True
@@ -65,7 +69,7 @@ async def seed_development_hierarchy(
                     if changed:
                         await repo._session.flush()  # type: ignore[attr-defined]
 
-                # Bootstrap administrator (neutral).
+                # Bootstrap administrator node
                 admin_node = await repo.get_node("bootstrap-admin")
                 if admin_node is None:
                     await repo.create_node(
@@ -85,7 +89,6 @@ async def seed_development_hierarchy(
                         )
                     )
                 else:
-                    # Repair admin node attributes conservatively
                     repaired = False
                     if admin_node.type != "user":
                         admin_node.type = "user"
@@ -98,21 +101,19 @@ async def seed_development_hierarchy(
 
                     if repaired:
                         await repo._session.flush()  # type: ignore[attr-defined]
+        logger.info("Development minimal hierarchy seed applied (idempotent)")
+    except Exception:
+        logger.exception("Development hierarchy seed failed; continuing")
 
-                logger.info("Development minimal hierarchy seed applied (idempotent)")
-            except Exception:
-                # session.begin() will rollback on exception
-                logger.exception("Development hierarchy seed failed")
-                raise
-
-            # Idempotent creation of a development administrator user and role.
-            try:
-                # Only in development environment
+    # Step 2: ensure admin user, roles and basic system children
+    try:
+        async with session_factory() as s2:
+            async with s2.begin():
+                repo = HierarchyRepository(s2)
                 if settings.app_environment.name.lower() == "development":
-                    user_repo = UserRepository(session)
+                    user_repo = UserRepository(s2)
                     pwd = PasswordService()
 
-                    # Try find by configured id or username
                     admin: UserModel | None = await user_repo.get_by_id(
                         settings.development_admin_user_id
                     )
@@ -127,8 +128,6 @@ async def seed_development_hierarchy(
                             "username": settings.development_admin_username,
                             "display_name": settings.development_admin_display_name,
                             "email": None,
-                            # For development only: seed a reproducible password
-                            # using the dedicated development password setting.
                             "password_hash": pwd.hash_password(
                                 settings.development_admin_password
                             ),
@@ -138,10 +137,7 @@ async def seed_development_hierarchy(
                         }
                         admin = await user_repo.create(user_data)
                     else:
-                        # If an admin row exists, ensure it has the configured
-                        # username/display_name and a development password hash
                         updated = False
-                        # If existing username differs, attempt to rename if free
                         if getattr(admin, "username", None) != settings.development_admin_username:
                             conflict = await user_repo.get_by_username(
                                 settings.development_admin_username
@@ -165,7 +161,6 @@ async def seed_development_hierarchy(
                             )
                             updated = True
 
-                        # Ensure system flags are set for the development admin
                         if not getattr(admin, "is_system_admin", False):
                             admin.is_system_admin = True
                             updated = True
@@ -176,9 +171,8 @@ async def seed_development_hierarchy(
                         if updated:
                             await user_repo.update(admin, {})
 
-                    # Ensure admin role exists
                     q = select(RoleModel).where(RoleModel.name == "admin")
-                    result = await session.execute(q)
+                    result = await s2.execute(q)
                     admin_role = result.scalar_one_or_none()
                     if admin_role is None:
                         admin_role = RoleModel(
@@ -187,23 +181,20 @@ async def seed_development_hierarchy(
                             is_system=True,
                             assignable=True,
                         )
-                        session.add(admin_role)
-                        await session.flush()
+                        s2.add(admin_role)
+                        await s2.flush()
 
-                    # Ensure user_roles mapping exists
-                    # Check existing mapping
                     q2 = select(UserRoleModel).where(
                         UserRoleModel.user_id == admin.id,
                         UserRoleModel.role_id == admin_role.id,
                     )
-                    res2 = await session.execute(q2)
+                    res2 = await s2.execute(q2)
                     mapping = res2.scalar_one_or_none()
                     if mapping is None:
                         ur = UserRoleModel(user_id=admin.id, role_id=admin_role.id)
-                        session.add(ur)
-                        await session.flush()
+                        s2.add(ur)
+                        await s2.flush()
 
-                    logger.info("Development admin user and role ensured (idempotent)")
                     # Ensure standard root nodes under system-root
                     users_root = await repo.get_node("users-root")
                     if users_root is None:
@@ -273,10 +264,9 @@ async def seed_development_hierarchy(
 
                     # Repair: create user nodes for all active users missing them
                     stmt = select(UserModel).where(UserModel.is_active.is_(True))
-                    res = await session.execute(stmt)
+                    res = await s2.execute(stmt)
                     users = res.scalars().all()
 
-                    # Collect existing user-linked entity_ids under users-root
                     children = await repo.list_children("users-root")
                     existing_entity_ids = {
                         str(n.node_metadata.get("entity_id"))
@@ -304,6 +294,376 @@ async def seed_development_hierarchy(
                                 },
                             )
                         )
-            except Exception:
-                logger.exception("Development admin seed failed")
-                raise
+        logger.info("Development admin user and role ensured (idempotent)")
+    except Exception:
+        logger.exception("Development admin seed failed; continuing")
+
+    # Step 3: ensure widget registry entries (canonical pool)
+    try:
+        async with session_factory() as s3:
+            async with s3.begin():
+                widget_pool: List[Dict[str, Any]] = [
+                    {
+                        "name": "system_health",
+                        "type": "system_health_widget",
+                        "widget_metadata": {"component_type": "system_health_widget", "supported_node_types": ["system"]},
+                    },
+                    {
+                        "name": "audit_log",
+                        "type": "audit_log_widget",
+                        "widget_metadata": {"component_type": "audit_log_widget", "supported_node_types": ["system"]},
+                    },
+                    {
+                        "name": "registry_editor",
+                        "type": "registry_editor_widget",
+                        "widget_metadata": {"component_type": "registry_editor_widget", "supported_node_types": ["system"]},
+                    },
+                    {
+                        "name": "calendar",
+                        "type": "calendar_widget",
+                        "widget_metadata": {"component_type": "calendar_widget"},
+                    },
+                    {
+                        "name": "files",
+                        "type": "files_widget",
+                        "widget_metadata": {"component_type": "files_widget", "supported_node_types": ["workspace", "project", "chat", "user", "folder"]},
+                    },
+                    {
+                        "name": "chat",
+                        "type": "chat_widget",
+                        "widget_metadata": {"component_type": "chat_widget", "supported_node_types": ["chat", "user", "workspace"]},
+                    },
+                ]
+
+                for sw in widget_pool:
+                    # Find all registry rows with this logical name
+                    q = select(WidgetRegistry).where(WidgetRegistry.name == sw["name"])
+                    try:
+                        resw = await s3.execute(q)
+                        rows = cast(List[WidgetRegistry], resw.scalars().all())
+                    except Exception:
+                        logger.warning("Dev seed: failed to query registry rows for %s; skipping", sw["name"])
+                        rows = []
+
+                    # Prefer an existing row whose id equals the stable name
+                    canonical: WidgetRegistry | None = None
+                    for r in rows:
+                        if getattr(r, "id", None) == sw["name"]:
+                            canonical = r
+                            break
+
+                    # If no canonical row with id==name exists, create one by copying fields
+                    if canonical is None:
+                        # Create new canonical registry entry with stable id == name
+                        wr = WidgetRegistry(
+                            id=sw["name"],
+                            name=sw["name"],
+                            type=sw.get("type"),
+                            widget_metadata=sw.get("widget_metadata", {}),
+                            default_config=sw.get("default_config", {}),
+                            required_permissions=sw.get("required_permissions", []),
+                            status=sw.get("status", "active"),
+                            version=sw.get("version", "1.0"),
+                            interaction_mode=sw.get("interaction_mode", "panel"),
+                        )
+                        s3.add(wr)
+                        await s3.flush()
+                        canonical = wr
+
+                    # Ensure canonical has required fields set (update missing)
+                    updated = False
+                    # Narrow type for static analysis: canonical should exist here
+                    assert canonical is not None
+                    c: WidgetRegistry = canonical
+                    if getattr(c, "type", None) != sw.get("type") and sw.get("type"):
+                        c.type = sw.get("type")
+                        updated = True
+                    if not getattr(c, "widget_metadata", None) and sw.get("widget_metadata"):
+                        c.widget_metadata = cast(Dict[str, Any], sw.get("widget_metadata") or {})
+                        updated = True
+                    if not getattr(c, "default_config", None) and sw.get("default_config"):
+                        c.default_config = cast(Dict[str, Any], sw.get("default_config") or {})
+                        updated = True
+                    if updated:
+                        s3.add(c)
+                        await s3.flush()
+
+                    # Deprecate other rows that represent duplicates to avoid ambiguity
+                    # Minimal and defensive: do NOT deprecate a duplicate if it contains
+                    # widget_metadata keys or supported_node_types that the canonical
+                    # entry does not provide. This prevents the dev-seed from silently
+                    # removing metadata that is required for specific node types
+                    # (e.g. system-root support).
+                    try:
+                        # Prepare canonical metadata for comparison
+                        can_md = getattr(canonical, "widget_metadata", {}) or {}
+                        if isinstance(can_md, str):
+                            try:
+                                import json as _json
+
+                                can_md = _json.loads(can_md)
+                            except Exception:
+                                can_md = {}
+
+                        canonical_id = getattr(canonical, "id", None)
+                        for r in rows:
+                            # rows are WidgetRegistry instances (typed above)
+                            if getattr(r, "id", None) == canonical_id:
+                                continue
+                            try:
+                                dup_md = getattr(r, "widget_metadata", {}) or {}
+                                if isinstance(dup_md, str):
+                                    try:
+                                        import json as _json
+
+                                        dup_md = _json.loads(dup_md)
+                                    except Exception:
+                                        dup_md = {}
+
+                                # If the duplicate advertises supported_node_types that
+                                # the canonical does not, skip deprecating to be safe.
+                                dup_supported = set(dup_md.get("supported_node_types") or [])
+                                can_supported = set(can_md.get("supported_node_types") or [])
+                                if dup_supported and not dup_supported.issubset(can_supported):
+                                    logger.warning(
+                                        "Dev seed: skipping deprecation of duplicate registry row %s because it exposes additional supported_node_types %s not present in canonical %s",
+                                        getattr(r, "id", None),
+                                        dup_supported - can_supported,
+                                        getattr(canonical, "id", None),
+                                    )
+                                    continue
+
+                                # Safe to deprecate when duplicate offers no superset metadata
+                                r.status = "deprecated"
+                                s3.add(r)
+                            except Exception:
+                                logger.debug(
+                                    "Failed to mark duplicate registry row %s as deprecated",
+                                    getattr(r, "id", None),
+                                )
+                    except Exception:
+                        logger.debug("Dev seed: error while evaluating duplicate deprecation", exc_info=True)
+                    await s3.flush()
+        logger.info("Development widget registry entries ensured")
+    except Exception:
+        logger.exception("Failed to ensure system widget registry entries; continuing")
+
+    # Step 4: ensure node-level assignments (JSON legacy + relational rows)
+    try:
+        async with session_factory() as s4:
+            async with s4.begin():
+                repo = HierarchyRepository(s4)
+                sys_node = await repo.get_node("system-root")
+                if sys_node is not None:
+                    assigns: List[Dict[str, Any]] = getattr(sys_node, "widget_assignments", None) or []
+                    names = {str(a.get("id") or a.get("widget_id") or a.get("name")) for a in assigns if (a.get("id") or a.get("name") or a.get("widget_id"))}
+                    additions: List[Dict[str, Any]] = []
+                    for core_name in ("system_health", "audit_log", "registry_editor"):
+                        if core_name not in names:
+                            additions.append({
+                                "id": core_name,
+                                "name": core_name,
+                                "component_type": core_name + "_widget",
+                                "position": 10,
+                                "configuration": {},
+                                "enabled": True,
+                                "inherit": False,
+                            })
+                    if additions:
+                        sys_node.widget_assignments = assigns + additions
+                        s4.add(sys_node)
+                        await s4.flush()
+
+                    # relational rows for additions
+                    try:
+                        for add in additions:
+                            q = select(WidgetAssignment).where(
+                                WidgetAssignment.node_id == sys_node.id,
+                                (WidgetAssignment.widget_id == add.get("id")) | (WidgetAssignment.name == add.get("name")),
+                            )
+                            resw = await s4.execute(q)
+                            exists_row = resw.scalar_one_or_none()
+                            if exists_row is None:
+                                wa = WidgetAssignment(
+                                    node_id=sys_node.id,
+                                    widget_id=add.get("id"),
+                                    name=add.get("name"),
+                                    enabled=add.get("enabled", True),
+                                    inherit=add.get("inherit", False),
+                                    position=add.get("position", 10),
+                                    configuration=add.get("configuration", {}),
+                                    required_permissions=add.get("required_permissions", []),
+                                )
+                                s4.add(wa)
+                                await s4.flush()
+                    except Exception as _exc:
+                        if isinstance(_exc, InvalidRequestError):
+                            raise
+                        logger.debug("Relational widget_assignment insertion skipped or failed")
+
+                # bootstrap-admin calendar assignment
+                try:
+                    admin_node = await repo.get_node("bootstrap-admin")
+                    if admin_node is not None:
+                        a_assigns: List[Dict[str, Any]] = getattr(admin_node, "widget_assignments", None) or []
+                        a_names = {str(a.get("id") or a.get("name")) for a in a_assigns if (a.get("id") or a.get("name"))}
+                        if "calendar" not in a_names:
+                            ca: Dict[str, Any] = {
+                                "id": "calendar",
+                                "name": "calendar",
+                                "component_type": "calendar_widget",
+                                "position": 20,
+                                "configuration": {"view": "month"},
+                                "enabled": True,
+                                "inherit": True,
+                            }
+                            admin_node.widget_assignments = a_assigns + [ca]
+                            s4.add(admin_node)
+                            await s4.flush()
+
+                        q2 = select(WidgetAssignment).where(
+                            WidgetAssignment.node_id == admin_node.id,
+                            (WidgetAssignment.widget_id == "calendar") | (WidgetAssignment.name == "calendar"),
+                        )
+                        res2 = await s4.execute(q2)
+                        exists_row2 = res2.scalar_one_or_none()
+                        if exists_row2 is None:
+                            wa2 = WidgetAssignment(
+                                node_id=admin_node.id,
+                                widget_id="calendar",
+                                name="calendar",
+                                enabled=True,
+                                inherit=True,
+                                position=20,
+                                configuration={"view": "month"},
+                                required_permissions=[],
+                            )
+                            s4.add(wa2)
+                            await s4.flush()
+                except Exception as _exc:
+                    if isinstance(_exc, InvalidRequestError):
+                        raise
+                    logger.debug("Relational calendar assignment insertion skipped or failed")
+
+                # Ensure standard system nodes and their default widget assignments
+                try:
+                    standard_nodes: Dict[str, Dict[str, Any]] = {
+                        "system-root": {
+                            "type": "system",
+                            "parent": None,
+                            "widgets": [
+                                {"name": "system_health", "inherit": False, "position": 10},
+                                {"name": "audit_log", "inherit": False, "position": 20},
+                                {"name": "registry_editor", "inherit": False, "position": 30},
+                            ],
+                        },
+                        "bootstrap-admin": {
+                            "type": "user",
+                            "parent": "system-root",
+                            "widgets": [
+                                {"name": "calendar", "inherit": True, "position": 10, "configuration": {"view": "month"}},
+                                {"name": "files", "inherit": True, "position": 20},
+                                {"name": "chat", "inherit": True, "position": 30},
+                            ],
+                        },
+                        "workspace-root": {
+                            "type": "folder",
+                            "parent": "system-root",
+                            "widgets": [
+                                {"name": "files", "inherit": False, "position": 10},
+                            ],
+                        },
+                        "project-root": {
+                            "type": "folder",
+                            "parent": "system-root",
+                            "widgets": [
+                                {"name": "calendar", "inherit": True, "position": 10, "configuration": {"view": "month"}},
+                                {"name": "files", "inherit": False, "position": 20},
+                            ],
+                        },
+                        "chat-root": {
+                            "type": "folder",
+                            "parent": "system-root",
+                            "widgets": [
+                                {"name": "chat", "inherit": False, "position": 10},
+                                {"name": "files", "inherit": False, "position": 20},
+                            ],
+                        },
+                    }
+
+                    for node_id, spec in standard_nodes.items():
+                        spec: Dict[str, Any]
+                        node = await repo.get_node(node_id)
+                        if node is None:
+                            await repo.create_node(
+                                HierarchyNodeCreate(
+                                    node_id=node_id,
+                                    type=spec.get("type", "folder"),
+                                    name=(node_id.replace("-", " ").title()),
+                                    parent_id=spec.get("parent"),
+                                    system_prompt=None,
+                                    tool_policy={},
+                                    config_overrides={},
+                                    metadata={"system_managed": True},
+                                )
+                            )
+                            node = await repo.get_node(node_id)
+
+                        if node is not None:
+                            existing: List[Dict[str, Any]] = getattr(node, "widget_assignments", None) or []
+                            existing_names = {str(a.get("id") or a.get("name")) for a in existing}
+                            additions: List[Dict[str, Any]] = []
+                            for w in spec.get("widgets", []):
+                                if w["name"] not in existing_names:
+                                    additions.append(
+                                        {
+                                            "id": w["name"],
+                                            "name": w["name"],
+                                            "component_type": (w.get("component_type") or (w["name"] + "_widget")),
+                                            "position": w.get("position", 100),
+                                            "configuration": w.get("configuration", {}),
+                                            "enabled": True,
+                                            "inherit": w.get("inherit", False),
+                                        }
+                                    )
+                            if additions:
+                                node.widget_assignments = existing + additions
+                                s4.add(node)
+                                await s4.flush()
+
+                            try:
+                                for w in spec.get("widgets", []):
+                                    q = select(WidgetAssignment).where(
+                                        WidgetAssignment.node_id == node.id,
+                                        (WidgetAssignment.widget_id == w["name"]) | (WidgetAssignment.name == w["name"]),
+                                    )
+                                    res = await s4.execute(q)
+                                    exists_row = res.scalar_one_or_none()
+                                    if exists_row is None:
+                                        wa = WidgetAssignment(
+                                            node_id=node.id,
+                                            widget_id=w["name"],
+                                            name=w["name"],
+                                            enabled=True,
+                                            inherit=w.get("inherit", False),
+                                            position=w.get("position", 100),
+                                            configuration=w.get("configuration", {}),
+                                            required_permissions=[],
+                                        )
+                                        s4.add(wa)
+                                        await s4.flush()
+                            except Exception as _exc:
+                                if isinstance(_exc, InvalidRequestError):
+                                    raise
+                                logger.debug("Relational widget_assignment insertion skipped or failed for %s", node_id)
+                    logger.info("Development node widget assignments ensured")
+                except Exception as _exc:
+                    if isinstance(_exc, InvalidRequestError):
+                        raise
+                    logger.debug("Failed to ensure standard node widget assignments; continuing")
+        logger.info("Development node widget assignments ensured")
+    except Exception:
+        logger.exception("Failed to ensure standard node widget assignments; continuing")
+
+    # All done
+    return

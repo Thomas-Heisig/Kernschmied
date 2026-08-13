@@ -1312,6 +1312,21 @@ def _read_tool_availability(tool: BaseTool) -> ToolAvailability:
         )
 
     try:
+        # Avoid calling coroutine functions here because that would
+        # create a coroutine object that cannot be awaited in this
+        # synchronous context and leads to "coroutine was never awaited"
+        # warnings. If the availability method is asynchronous, treat
+        # the tool as currently unavailable for the synchronous
+        # registry snapshot.
+        if inspect.iscoroutinefunction(availability_method):
+            return ToolAvailability(
+                status=ToolAvailabilityStatus.UNAVAILABLE,
+                reason=(
+                    "Die asynchrone Verfügbarkeitsprüfung kann in der "
+                    "synchronen Registry-Diagnose nicht ausgeführt werden."
+                ),
+            )
+
         result = availability_method()
         if inspect.isawaitable(result):
             return ToolAvailability(

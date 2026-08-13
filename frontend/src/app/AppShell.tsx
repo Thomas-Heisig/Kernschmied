@@ -6,6 +6,7 @@ import { Toaster } from 'sonner';
 import { AppLoadingScreen } from '../components/status';
 import { ToastProvider, useToast } from '../components/ui/ToastProvider';
 import HierarchyActionModal from '../components/ui/HierarchyActionModal';
+import NodeEditorDialog from '../components/hierarchy/NodeEditorDialog';
 import { SettingsDialog } from '../components/settings';
 import { DocumentationDialog } from '../components/documentation';
 import React from 'react';
@@ -131,6 +132,9 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
   const [modalOpen, setModalOpen] = useState(false);
   const [modalKind, setModalKind] = useState<HierarchyActionKind | null>(null);
   const [modalNode, setModalNode] = useState<HierarchyNode | null>(null);
+  // Editor dialog state for generic node editing
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorNode, setEditorNode] = useState<HierarchyNode | null>(null);
   const [isMutating, setIsMutating] = useState(false);
   const [recentlyMovedNodeId, setRecentlyMovedNodeId] = useState<string | null>(null);
 
@@ -238,6 +242,12 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
     : null;
 
   function openModalFor(action: HierarchyActionKind, node: HierarchyNode) {
+    if (action === 'edit_node') {
+      setEditorNode(node);
+      setEditorOpen(true);
+      return;
+    }
+
     setModalKind(action);
     setModalNode(node);
     setModalOpen(true);
@@ -558,6 +568,17 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
           } finally {
             setIsMutating(false);
           }
+        }}
+      />
+
+      <NodeEditorDialog
+        isOpen={editorOpen}
+        node={editorNode}
+        nodeTypes={state.schema?.node_types ?? {}}
+        onClose={() => setEditorOpen(false)}
+        onSaved={async () => {
+          setEditorOpen(false);
+          await reloadHierarchy?.();
         }}
       />
 

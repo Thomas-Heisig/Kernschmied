@@ -141,6 +141,7 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
   }
 
   function handleSelectKey(key: string | null): void {
+    console.debug("[SettingsDialog] activeKey", key);
     setActiveKey(key);
     setShowJson(false);
     setIsSidebarOpen(false);
@@ -315,7 +316,12 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
               'dark:bg-slate-950/30',
             ].join(' ')}
           >
-            <SettingsContent activeKey={activeKey} showJson={showJson} config={config} />
+            <SettingsContent
+              activeKey={activeKey}
+              showJson={showJson}
+              config={config}
+              onSelectKey={handleSelectKey}
+            />
           </main>
         </div>
 

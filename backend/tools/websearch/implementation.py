@@ -581,6 +581,7 @@ class WebSearchTool(BaseTool):
     werden.
     """
 
+    tool_id: str = "websearch"
     name: str = "websearch"
 
     description: str = (

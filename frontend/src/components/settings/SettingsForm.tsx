@@ -358,6 +358,7 @@ export function SettingsSingleSection({
   onChange,
   valuesByFullKey,
   entriesByFullKey,
+  selectedFieldFullKey,
 }: {
   sectionKey: string;
   value: ConfigValue | undefined;
@@ -366,6 +367,7 @@ export function SettingsSingleSection({
   onChange: (path: string[], value: ConfigValue) => void;
   valuesByFullKey?: Record<string, ConfigValue> | null;
   entriesByFullKey?: Record<string, ConfigEntryResponse> | null;
+  selectedFieldFullKey?: string | null;
 }) {
   if (value === undefined || value === null) {
     return (
@@ -394,6 +396,7 @@ export function SettingsSingleSection({
       onChange={onChange}
       valuesByFullKey={valuesByFullKey}
       entriesByFullKey={entriesByFullKey}
+      selectedFieldFullKey={selectedFieldFullKey}
     />
   );
 }
@@ -408,6 +411,7 @@ function SettingsSection({
   onChange,
   valuesByFullKey,
   entriesByFullKey,
+  selectedFieldFullKey,
 }: {
   sectionKey: string;
   value: ConfigValue;
@@ -418,7 +422,36 @@ function SettingsSection({
   onChange: (path: string[], value: ConfigValue) => void;
   valuesByFullKey?: Record<string, ConfigValue> | null;
   entriesByFullKey?: Record<string, ConfigEntryResponse> | null;
+  selectedFieldFullKey?: string | null;
 }) {
+  const sectionRef = React.useRef<HTMLElement | null>(null);
+
+  React.useEffect(() => {
+    if (selectedFieldFullKey) {
+      console.debug("[SettingsForm] selectedFieldFullKey", selectedFieldFullKey);
+    }
+  }, [selectedFieldFullKey]);
+
+  const [highlightedKey, setHighlightedKey] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (!selectedFieldFullKey) return;
+    const el = sectionRef.current?.querySelector(
+      `[data-setting-key="${CSS.escape(selectedFieldFullKey)}"]`,
+    ) as HTMLElement | null;
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      try {
+        el.focus();
+      } catch {
+        // ignore
+      }
+      setHighlightedKey(selectedFieldFullKey);
+      const t = window.setTimeout(() => setHighlightedKey(null), 1500);
+      return () => window.clearTimeout(t);
+    }
+  }, [selectedFieldFullKey]);
+
   const currentPath = [...path, sectionKey];
 
   const label = formatSettingLabel(sectionKey);
@@ -470,13 +503,19 @@ function SettingsSection({
     };
 
     return (
-      <SettingsField
-        entry={inferredEntryMaxDepth}
-        path={currentPath}
-        disabled={disabled}
-        valuesByFullKey={valuesByFullKey}
-        onChange={onChange}
-      />
+      <div
+        data-setting-key={inferredEntryMaxDepth.full_key}
+        tabIndex={-1}
+        className={highlightedKey === inferredEntryMaxDepth.full_key ? 'ring-2 ring-indigo-400 rounded-lg' : undefined}
+      >
+        <SettingsField
+          entry={inferredEntryMaxDepth}
+          path={currentPath}
+          disabled={disabled}
+          valuesByFullKey={valuesByFullKey}
+          onChange={onChange}
+        />
+      </div>
     );
   }
 
@@ -489,13 +528,19 @@ function SettingsSection({
 
     if (existingEntry) {
       return (
-        <SettingsField
-          entry={existingEntry}
-          path={currentPath}
-          disabled={disabled}
-          valuesByFullKey={valuesByFullKey}
-          onChange={onChange}
-        />
+        <div
+          data-setting-key={existingEntry.full_key}
+          tabIndex={-1}
+          className={highlightedKey === existingEntry.full_key ? 'ring-2 ring-indigo-400 rounded-lg' : undefined}
+        >
+          <SettingsField
+            entry={existingEntry}
+            path={currentPath}
+            disabled={disabled}
+            valuesByFullKey={valuesByFullKey}
+            onChange={onChange}
+          />
+        </div>
       );
     }
 
@@ -550,13 +595,19 @@ function SettingsSection({
     };
 
     return (
-      <SettingsField
-        entry={inferredEntryLeaf}
-        path={currentPath}
-        disabled={disabled}
-        valuesByFullKey={valuesByFullKey}
-        onChange={onChange}
-      />
+      <div
+        data-setting-key={inferredEntryLeaf.full_key}
+        tabIndex={-1}
+        className={highlightedKey === inferredEntryLeaf.full_key ? 'ring-2 ring-indigo-400 rounded-lg' : undefined}
+      >
+        <SettingsField
+          entry={inferredEntryLeaf}
+          path={currentPath}
+          disabled={disabled}
+          valuesByFullKey={valuesByFullKey}
+          onChange={onChange}
+        />
+      </div>
     );
   }
 
@@ -622,6 +673,7 @@ function SettingsSection({
             onChange={onChange}
             valuesByFullKey={valuesByFullKey}
             entriesByFullKey={entriesByFullKey ?? null}
+            selectedFieldFullKey={selectedFieldFullKey}
           />
         ))}
       </div>

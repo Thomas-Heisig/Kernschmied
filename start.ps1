@@ -20,6 +20,53 @@ if (-not (Test-Path $VenvPython)) {
     python -m venv (Join-Path $Backend ".venv")
 }
 
+# Funktion: Stoppe Prozesse, die auf einem bestimmten Port lauschen
+function Stop-ProcessOnPort {
+    param([int]$Port)
+    try {
+        $conns = Get-NetTCPConnection -LocalPort $Port -ErrorAction Stop
+        $pids = $conns | Select-Object -ExpandProperty OwningProcess -Unique
+    } catch {
+        $pids = @()
+    }
+
+    if ($pids.Count -gt 0) {
+        foreach ($procId in $pids) {
+            try {
+                $proc = Get-Process -Id $procId -ErrorAction Stop
+                Write-Host "Stopping process $($proc.ProcessName) (PID $procId) listening on port $Port..."
+                Stop-Process -Id $procId -Force -ErrorAction Stop
+            } catch {
+                Write-Host "Failed to stop PID $($procId): $($_)"
+            }
+        }
+        Start-Sleep -Milliseconds 500
+        return
+    }
+
+    # Fallback: parse netstat output if Get-NetTCPConnection didn't return anything
+    $netstat = & netstat -ano | Select-String ":$Port\s+LISTENING" -ErrorAction SilentlyContinue
+    foreach ($line in $netstat) {
+        $parts = ($line -split '\s+') | Where-Object { $_ -ne '' }
+        $procId = $parts[-1]
+        if ($procId -and ($procId -match '^\d+$')) {
+            try {
+                $proc = Get-Process -Id $procId -ErrorAction Stop
+                Write-Host "Stopping process $($proc.ProcessName) (PID $procId) listening on port $Port..."
+                Stop-Process -Id $procId -Force -ErrorAction Stop
+            } catch {
+                Write-Host "Failed to stop PID $($procId) from netstat: $($_)"
+            }
+        }
+    }
+    Start-Sleep -Milliseconds 500
+}
+
+# Vor dem Start vorhandene Prozesse beenden und Fenster schließen
+Write-Host "Überprüfe und stoppe Prozesse auf Backend-Port $BackendPort und Frontend-Port $FrontendPort (falls vorhanden)..."
+Stop-ProcessOnPort -Port $BackendPort
+Stop-ProcessOnPort -Port $FrontendPort
+
 Write-Host "Installiere Backend-Abhängigkeiten..."
 & $VenvPython -m pip install -r (Join-Path $Backend "requirements.txt")
 
