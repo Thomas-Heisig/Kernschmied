@@ -2,7 +2,7 @@
 
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useAppStoreState, selectSelectedNode } from '../../store';
-import { Check, Copy, CornerUpLeft, Download, MessageCircle, Send, Square, X } from 'lucide-react';
+import { Check, Copy, CornerUpLeft, Download, MessageCircle, RotateCcw, Send, Square, Trash2, X } from 'lucide-react';
 import IconBadge from '../common/IconBadge';
 import WorkspaceLayout from '../layout/WorkspaceLayout';
 import useEffectiveWidgets from '../../hooks/useEffectiveWidgets';
@@ -19,6 +19,13 @@ import { loadUserPreferences } from '../../auth/auth-api';
 import { loadMentionCandidates } from '../../api/mentions';
 import type { MentionCandidate } from '../../api/mentions';
 import NodeWorkspaceOverview from '../workspace/NodeWorkspaceOverview';
+import { NodeWorkspaceAction } from '../workspace/NodeWorkspaceOverview';
+import RecentNodeSection, { type RecentWorkspaceNode } from '../workspace/RecentNodeSection';
+import {
+  clearChatMessages,
+  deleteChatMessage,
+  truncateChatMessagesAfter,
+} from '../../api/chats';
 
 import type { ApiStreamHandle } from '../../api/client';
 
@@ -37,6 +44,9 @@ type GenericChatViewProps = {
   title: string;
   hierarchyNodeId: string;
   hierarchyNodeType: string;
+  childNodes?: RecentWorkspaceNode[];
+  onNavigateToNode?: (nodeId: string) => void;
+  canManageHistory?: boolean;
 };
 
 type ChatRole = 'user' | 'assistant' | 'system';
@@ -327,7 +337,14 @@ function parseChatStreamEvent(rawEvent: RawSseEvent): ParsedChatStreamEvent {
  * HAUPTKOMPONENTE
  * ============================================================ */
 
-export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: GenericChatViewProps) {
+export function GenericChatView({
+  title,
+  hierarchyNodeId,
+  hierarchyNodeType,
+  childNodes = [],
+  onNavigateToNode,
+  canManageHistory = false,
+}: GenericChatViewProps) {
   // State
   const [input, setInput] = useState('');
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
@@ -341,6 +358,7 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
   const [aiResponseOnMentions, setAiResponseOnMentions] = useState(false);
   const [deliveryReceiptsEnabled, setDeliveryReceiptsEnabled] = useState(true);
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
+  const [mutationPending, setMutationPending] = useState<string | null>(null);
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -984,6 +1002,74 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
     URL.revokeObjectURL(url);
   }
 
+  async function clearConversationHistory(): Promise<void> {
+    if (!conversationId || loading || mutationPending || messages.length === 0) return;
+    if (!window.confirm('Alle Nachrichten dieses Chats unwiderruflich löschen?')) return;
+
+    setMutationPending('clear');
+    setError(null);
+    try {
+      await clearChatMessages(conversationId);
+      setMessages([]);
+      setReplyTo(null);
+      setRequestStatus('idle');
+    } catch (caughtError) {
+      setError(formatRequestError(caughtError));
+    } finally {
+      setMutationPending(null);
+    }
+  }
+
+  async function removeMessage(message: ChatMessage): Promise<void> {
+    const messageId = message.serverMessageId;
+    if (!conversationId || !messageId || loading || mutationPending) return;
+    if (!window.confirm('Diese einzelne Nachricht unwiderruflich löschen?')) return;
+
+    setMutationPending(message.id);
+    setError(null);
+    try {
+      await deleteChatMessage(conversationId, messageId);
+      setMessages((current) =>
+        current
+          .filter((candidate) => candidate.id !== message.id)
+          .map((candidate) =>
+            candidate.parentMessageId === messageId
+              ? { ...candidate, parentMessageId: undefined }
+              : candidate,
+          ),
+      );
+      setReplyTo((current) => (current?.id === message.id ? null : current));
+    } catch (caughtError) {
+      setError(formatRequestError(caughtError));
+    } finally {
+      setMutationPending(null);
+    }
+  }
+
+  async function resumeAfterMessage(message: ChatMessage): Promise<void> {
+    const messageId = message.serverMessageId;
+    if (!conversationId || !messageId || loading || mutationPending) return;
+    if (!window.confirm('Alle späteren Nachrichten entfernen und den Chat ab hier fortsetzen?')) return;
+
+    setMutationPending(`resume:${message.id}`);
+    setError(null);
+    try {
+      await truncateChatMessagesAfter(conversationId, messageId);
+      setMessages((current) => {
+        const index = current.findIndex((candidate) => candidate.id === message.id);
+        return index >= 0 ? current.slice(0, index + 1) : current;
+      });
+      setReplyTo(null);
+      setInput('');
+      setRequestStatus('idle');
+      window.setTimeout(() => textareaRef.current?.focus(), 0);
+    } catch (caughtError) {
+      setError(formatRequestError(caughtError));
+    } finally {
+      setMutationPending(null);
+    }
+  }
+
   // --- RENDER ---
   const activeAssistantMessage = [...messages]
     .reverse()
@@ -1006,12 +1092,31 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
             title={title}
             description="Gespräch, Kontext, Antworten und angebundene Chatfunktionen in einem gemeinsamen Arbeitsraum."
             icon={<MessageCircle />}
+            actions={canManageHistory ? (
+              <NodeWorkspaceAction
+                danger
+                icon={<Trash2 size={16} />}
+                onClick={() => void clearConversationHistory()}
+                disabled={!conversationId || messages.length === 0 || loading || Boolean(mutationPending)}
+              >
+                Chat bereinigen
+              </NodeWorkspaceAction>
+            ) : null}
             metrics={[
               { label: 'Nachrichten', value: messages.filter((message) => message.role !== 'system').length },
               { label: 'Kontext', value: hierarchyNodeType === 'conversation' ? 'Unterhaltung' : 'Chat' },
-              { label: 'Status', value: loading ? 'Antwort wird erstellt' : 'Bereit' },
+              { label: 'Status', value: mutationPending ? 'Verlauf wird aktualisiert' : loading ? 'Antwort wird erstellt' : 'Bereit' },
             ]}
           />
+          <div className="mt-4">
+            <RecentNodeSection
+              nodes={childNodes}
+              acceptedTypes={['chat', 'conversation']}
+              title="Letzte Unterchats"
+              description="Zuletzt geöffnete direkte Unterhaltungen dieses Chats."
+              onNavigateToNode={onNavigateToNode}
+            />
+          </div>
         </div>
         <p className="sr-only" aria-live="polite">
           {accessibleStatus}
@@ -1126,6 +1231,30 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
                             >
                               <CornerUpLeft className="h-3.5 w-3.5" />
                             </button>
+                            {canManageHistory ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => void resumeAfterMessage(message)}
+                                  disabled={!message.serverMessageId || loading || Boolean(mutationPending)}
+                                  className="rounded p-1.5 hover:bg-black/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                  aria-label="Chat ab dieser Nachricht fortsetzen"
+                                  title="Ab hier fortsetzen"
+                                >
+                                  <RotateCcw className="h-3.5 w-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void removeMessage(message)}
+                                  disabled={!message.serverMessageId || loading || Boolean(mutationPending)}
+                                  className="rounded p-1.5 hover:bg-red-500/15 disabled:cursor-not-allowed disabled:opacity-40"
+                                  aria-label="Nachricht löschen"
+                                  title="Nachricht löschen"
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                </button>
+                              </>
+                            ) : null}
                           </div>
                         </div>
                       </div>

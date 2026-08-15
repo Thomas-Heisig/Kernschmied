@@ -189,6 +189,11 @@ describe('SelectedNodeWorkspace user area', () => {
 
   it('wires project and chat creation to effective node actions', () => {
     const onAction = vi.fn();
+    const onNavigateToNode = vi.fn();
+    window.localStorage.setItem(
+      'kernschmied.sidebar.recent',
+      JSON.stringify(['chat-recent', 'project-recent']),
+    );
     const { rerender } = render(
       <SelectedNodeWorkspace
         node={{
@@ -196,9 +201,18 @@ describe('SelectedNodeWorkspace user area', () => {
           type: 'workspace',
           name: 'Bereich 1',
           actions: ['read', 'create_child'],
-          children: [],
+          children: [
+            {
+              id: 'project-recent',
+              type: 'project',
+              name: 'Letztes Projekt',
+              actions: ['read'],
+              children: [],
+            },
+          ],
         }}
         onAction={onAction}
+        onNavigateToNode={onNavigateToNode}
       />,
     );
 
@@ -209,6 +223,9 @@ describe('SelectedNodeWorkspace user area', () => {
         .getByText('Gemeinsamer Rahmen für Projekte, direkte Chats, Zugriffsregeln und Bereichsfunktionen.')
         .closest('section'),
     ).toHaveAttribute('aria-label', 'Bereich: Bereich 1');
+    expect(screen.getByRole('heading', { name: 'Letzte Projekte' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Letztes Projekt öffnen' }));
+    expect(onNavigateToNode).toHaveBeenCalledWith('project-recent');
     expect(onAction).toHaveBeenNthCalledWith(
       1,
       'create_child',
@@ -227,9 +244,18 @@ describe('SelectedNodeWorkspace user area', () => {
           type: 'project',
           name: 'Projekt 1',
           actions: ['read', 'create_child'],
-          children: [],
+          children: [
+            {
+              id: 'chat-recent',
+              type: 'chat',
+              name: 'Letzter Chat',
+              actions: ['read'],
+              children: [],
+            },
+          ],
         }}
         onAction={onAction}
+        onNavigateToNode={onNavigateToNode}
       />,
     );
 
@@ -241,6 +267,9 @@ describe('SelectedNodeWorkspace user area', () => {
     ).toHaveAttribute('aria-label', 'Projekt: Projekt 1');
     expect(screen.getByRole('button', { name: 'Projektprompt' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Projektwidgets' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Letzte Chats' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Letzter Chat öffnen' }));
+    expect(onNavigateToNode).toHaveBeenCalledWith('chat-recent');
     expect(onAction).toHaveBeenLastCalledWith(
       'create_child',
       expect.objectContaining({ id: 'project-1' }),

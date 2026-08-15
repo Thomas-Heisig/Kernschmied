@@ -158,6 +158,12 @@ Freigabekriterien. Sie enthalten keine parallelen Aufgabenlisten.
       vereinheitlichen, Lightmode-Kontrast gesendeter Nachrichten erhöhen,
       Roh-HTML sperren und Bild-, Audio- sowie Videoausgabe mit fokussierten
       Frontendtests vorbereiten.
+- [x] Kontextbezogene letzte Projekte, Chats und Unterchats je Hierarchieebene
+      aus dem bestehenden Recent-Speicher ableiten und ausschließlich gegen den
+      aktuell sichtbaren, berechtigungsprojizierten Teilbaum anzeigen.
+- [x] Persistente Chat-History berechtigungsgeprüft vollständig leeren, einzelne
+      Nachrichten löschen und nach einem gewählten Stand kürzen; Antwortbezüge
+      und monotone Sequenzen durch Repository- und API-Tests absichern.
 - [ ] `SchemaRenderer` um Formularbindung, Aktionen und Sichtbarkeitsregeln
       vervollständigen.
 - [ ] Widget-Pool und persistente Layoutverwaltung vervollständigen.

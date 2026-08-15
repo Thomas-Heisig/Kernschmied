@@ -8,12 +8,46 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.hierarchy import build_actor_from_request, structured_http_error
 from app.auth.dependencies import require_authenticated_user
 from app.auth.models import UserContext
-from app.contracts.chat_memory import ChatHistoryResponse, ChatMessageRead
-from app.hierarchy.permissions import HierarchyPermissionService
+from app.contracts.chat_memory import (
+    ChatHistoryResponse,
+    ChatMessageRead,
+    ChatMutationResponse,
+)
+from app.hierarchy.permissions import DELETE_ACTION, HierarchyPermissionService
 from app.storage.database import get_session
 from app.storage.repositories import ChatRepository, HierarchyRepository
 
 router = APIRouter()
+
+
+async def _require_conversation_action(
+    request: Request,
+    session: AsyncSession,
+    conversation_id: str,
+    action: str,
+):
+    repository = ChatRepository(session)
+    conversation = await repository.get(conversation_id)
+    if conversation is None:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="CHAT_CONVERSATION_NOT_FOUND",
+            message="Die Unterhaltung wurde nicht gefunden.",
+        )
+
+    hierarchy = HierarchyRepository(session)
+    node = await hierarchy.get(conversation.node_id)
+    actor = build_actor_from_request(request)
+    permissions = HierarchyPermissionService()
+    if node is None or not permissions.can(actor, action, node):
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_403_FORBIDDEN,
+            code="PERMISSION_DENIED",
+            message="Diese Chat-Historie darf nicht verändert werden.",
+        )
+    return repository, conversation
 
 
 @router.get("/{conversation_id}/messages", response_model=ChatHistoryResponse)
@@ -121,4 +155,75 @@ async def list_chat_messages(
         items=items,
         has_more=has_more,
         next_cursor=next_cursor,
+    )
+
+
+@router.delete(
+    "/{conversation_id}/messages/{message_id}",
+    response_model=ChatMutationResponse,
+)
+async def delete_chat_message(
+    request: Request,
+    conversation_id: str,
+    message_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: UserContext = Depends(require_authenticated_user),
+) -> ChatMutationResponse:
+    del user
+    repository, _ = await _require_conversation_action(
+        request, session, conversation_id, DELETE_ACTION
+    )
+    if not await repository.delete_message(conversation_id, message_id):
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_404_NOT_FOUND,
+            code="CHAT_MESSAGE_NOT_FOUND",
+            message="Die Nachricht wurde nicht gefunden.",
+        )
+    await session.commit()
+    return ChatMutationResponse(
+        conversation_id=conversation_id,
+        action="delete_message",
+        affected_messages=1,
+    )
+
+
+@router.delete(
+    "/{conversation_id}/messages",
+    response_model=ChatMutationResponse,
+)
+async def delete_chat_messages(
+    request: Request,
+    conversation_id: str,
+    after_message_id: str | None = Query(default=None),
+    session: AsyncSession = Depends(get_session),
+    user: UserContext = Depends(require_authenticated_user),
+) -> ChatMutationResponse:
+    del user
+    repository, _ = await _require_conversation_action(
+        request, session, conversation_id, DELETE_ACTION
+    )
+
+    if after_message_id is not None:
+        affected = await repository.delete_messages_after(
+            conversation_id, after_message_id
+        )
+        if affected is None:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_404_NOT_FOUND,
+                code="CHAT_MESSAGE_NOT_FOUND",
+                message="Der gewählte Fortsetzungspunkt wurde nicht gefunden.",
+            )
+        action: Literal["clear", "truncate_after"] = "truncate_after"
+    else:
+        affected = await repository.clear_messages(conversation_id)
+        action = "clear"
+
+    await session.commit()
+    return ChatMutationResponse(
+        conversation_id=conversation_id,
+        action=action,
+        affected_messages=affected,
+        retained_through_message_id=after_message_id,
     )

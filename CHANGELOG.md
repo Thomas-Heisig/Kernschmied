@@ -13,6 +13,13 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Hinzugefügt
 
+- Jede Hierarchieebene zeigt kontextbezogene, gegen den sichtbaren Baum
+  gefilterte Schnellzugriffe: systemweit zuletzt verwendete Knoten, letzte
+  Projekte in Bereichen, letzte Chats in Projekten und letzte Unterchats in
+  Chats.
+- Berechtigte Chat-Eigentümer können persistierte Verläufe vollständig leeren,
+  einzelne Nachrichten löschen oder alle späteren Nachrichten entfernen und
+  ab einem gewählten Stand fortsetzen.
 - System, Benutzer, Bereich, Projekt und Chat verwenden einen gemeinsamen,
   kontrastreichen Knoten-Kopf mit ruhiger Neutral-/Salbeipalette, einheitlichen
   Kennzahlen, Aktionen und Abschnittsmustern.
@@ -56,6 +63,10 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Behoben
 
+- Destruktive Verlaufsschaltflächen folgen der effektiven `delete`-Freigabe des
+  Hierarchieknotens; das Backend prüft dieselbe Berechtigung erneut. Gelöschte
+  Elternnachrichten hinterlassen keine ungültigen direkten Antwortreferenzen,
+  und Sequenznummern bleiben nach Bereinigung oder Kürzung monoton.
 - Hierarchie-Konfigurationen überschreiben Runtime-Defaults wieder mit der
   vorgesehenen Priorität; Einzelknoten liefern dieselbe öffentliche JSON-Form
   wie der Hierarchiebaum, und Profil-/Widget-/Node-Type-Vertragstests bilden

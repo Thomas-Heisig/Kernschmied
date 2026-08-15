@@ -19,6 +19,7 @@ import CollapsibleWidgetPanel from '../widgets/CollapsibleWidgetPanel';
 import SystemOverview from '../system/SystemOverview';
 import UserNodeWorkspace from './UserNodeWorkspace';
 import NodeWorkspaceOverview, { NodeWorkspaceAction } from './NodeWorkspaceOverview';
+import RecentNodeSection from './RecentNodeSection';
 
 /* ============================================================
  * TYPEN UND KONSTANTEN
@@ -123,6 +124,14 @@ export function SelectedNodeWorkspace({
               { label: 'Status', value: String((node as any).status ?? 'Aktiv') },
             ]}
           />
+          <RecentNodeSection
+            nodes={children}
+            acceptedTypes={['user', 'workspace', 'bereich', 'project', 'projekt', 'chat', 'conversation']}
+            title="Zuletzt verwendet"
+            description="Zuletzt geöffnete Inhalte aus der sichtbaren Systemhierarchie."
+            onNavigateToNode={onNavigateToNode}
+            includeDescendants
+          />
           <CollapsibleWidgetPanel title="Systemübersicht" icon={<Activity size={19} />}>
             <SystemOverview />
           </CollapsibleWidgetPanel>
@@ -195,7 +204,18 @@ export function SelectedNodeWorkspace({
    * CHAT
    * ---------------------------------------------------------- */
   if (CHAT_NODE_TYPES.has(normalizedType)) {
-    return <GenericChatView title={node.name} hierarchyNodeId={node.id} hierarchyNodeType={normalizedType} />;
+    const children = Array.isArray((node as any).children) ? (node as any).children : [];
+    const actions = Array.isArray((node as any).actions) ? (node as any).actions : [];
+    return (
+      <GenericChatView
+        title={node.name}
+        hierarchyNodeId={node.id}
+        hierarchyNodeType={normalizedType}
+        childNodes={children}
+        onNavigateToNode={onNavigateToNode}
+        canManageHistory={actions.includes('delete')}
+      />
+    );
   }
 
   /* ----------------------------------------------------------
@@ -232,6 +252,13 @@ export function SelectedNodeWorkspace({
               { label: 'Zugriff', value: String((node as any).metadata?.access ?? 'Vererbt') },
               { label: 'Status', value: String((node as any).status ?? 'Aktiv') },
             ]}
+          />
+          <RecentNodeSection
+            nodes={children}
+            acceptedTypes={['chat', 'conversation']}
+            title="Letzte Chats"
+            description="Zuletzt geöffnete Chats in diesem Projekt."
+            onNavigateToNode={onNavigateToNode}
           />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <CollapsibleWidgetPanel title="Projektprompt" icon={<FileText size={19} />}>
@@ -290,6 +317,13 @@ export function SelectedNodeWorkspace({
               { label: 'Direkte Chats', value: chatCount, icon: <MessageSquare size={16} /> },
               { label: 'Zugriff', value: String((node as any).metadata?.access ?? 'Privat') },
             ]}
+          />
+          <RecentNodeSection
+            nodes={children}
+            acceptedTypes={['project', 'projekt']}
+            title="Letzte Projekte"
+            description="Zuletzt geöffnete Projekte in diesem Bereich."
+            onNavigateToNode={onNavigateToNode}
           />
           <CollapsibleWidgetPanel title="Bereichsdaten" icon={<Settings2 size={19} />}>
             <WorkspaceSettingsPanel node={node} onUpdateHierarchyNode={onUpdateHierarchyNode} />

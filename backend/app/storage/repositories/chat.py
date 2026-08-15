@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import select, text
+from sqlalchemy import delete, select, text, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.storage.models.base import utc_now
@@ -90,6 +90,63 @@ class ChatRepository(Repository[Chat]):
 
     async def get_message(self, message_id: str) -> Message | None:
         return await self.session.get(Message, message_id)
+
+    async def get_conversation_message(
+        self,
+        conversation_id: str,
+        message_id: str,
+    ) -> Message | None:
+        return await self.session.scalar(
+            select(Message).where(
+                Message.id == message_id,
+                Message.conversation_id == conversation_id,
+            )
+        )
+
+    async def delete_message(self, conversation_id: str, message_id: str) -> bool:
+        message = await self.get_conversation_message(conversation_id, message_id)
+        if message is None:
+            return False
+
+        # Keep replies as independent messages when their direct parent is
+        # removed. This mirrors the model's ON DELETE SET NULL contract and is
+        # explicit for database configurations with deferred FK handling.
+        await self.session.execute(
+            update(Message)
+            .where(
+                Message.conversation_id == conversation_id,
+                Message.parent_message_id == message_id,
+            )
+            .values(parent_message_id=None)
+        )
+        await self.session.delete(message)
+        await self.session.flush()
+        return True
+
+    async def delete_messages_after(
+        self,
+        conversation_id: str,
+        message_id: str,
+    ) -> int | None:
+        message = await self.get_conversation_message(conversation_id, message_id)
+        if message is None:
+            return None
+
+        result = await self.session.execute(
+            delete(Message).where(
+                Message.conversation_id == conversation_id,
+                Message.sequence_number > message.sequence_number,
+            )
+        )
+        await self.session.flush()
+        return int(getattr(result, "rowcount", 0) or 0)
+
+    async def clear_messages(self, conversation_id: str) -> int:
+        result = await self.session.execute(
+            delete(Message).where(Message.conversation_id == conversation_id)
+        )
+        await self.session.flush()
+        return int(getattr(result, "rowcount", 0) or 0)
 
     async def mark_message_complete(
         self, message_id: str, *, completed_at: datetime | None = None

@@ -45,3 +45,13 @@ class ChatHistoryResponse(BaseModel):
     items: list[ChatMessageRead]
     has_more: bool = False
     next_cursor: int | None = None
+
+
+class ChatMutationResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    schema_version: Literal["1.0"] = Field(default="1.0")
+    conversation_id: str
+    action: Literal["delete_message", "clear", "truncate_after"]
+    affected_messages: int = Field(ge=0)
+    retained_through_message_id: str | None = None

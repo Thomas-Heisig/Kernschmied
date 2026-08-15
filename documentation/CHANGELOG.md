@@ -20,6 +20,15 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Hinzugefügt
 
+- Kontextbezogene Schnellzugriffe auf jeder Hierarchieebene verwenden den
+  bestehenden Recent-Speicher, schneiden ihn aber stets mit dem aktuell
+  berechtigungsprojizierten Baum: System zeigt sichtbare letzte Knoten, Bereiche
+  letzte direkte Projekte, Projekte letzte direkte Chats und Chats letzte
+  direkte Unterchats.
+- Persistente Chatverläufe können mit bestätigten Aktionen vollständig geleert,
+  nach einer einzelnen Nachricht gekürzt oder nachrichtenweise bereinigt werden.
+  Fortsetzen behält die gewählte Nachricht und entfernt ausschließlich spätere
+  Einträge.
 - Wiederverwendbarer `NodeWorkspaceOverview` für die vollständige Hierarchiekette
   `System → Benutzer → Bereich → Projekt → Chat` mit gemeinsamen Metriken,
   Aktionsbuttons und responsiver Neutral-/Salbeigestaltung. Bereich und Projekt
@@ -96,6 +105,10 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Behoben
 
+- Chat-Verlaufsaktionen erscheinen nur bei effektiver `delete`-Berechtigung und
+  werden serverseitig erneut über den zugehörigen Hierarchieknoten autorisiert.
+  Einzelnes Löschen löst direkte Antwortreferenzen, während Kürzen und Leeren
+  den monotonen Conversation-Sequenzzähler nicht zurücksetzen.
 - Hierarchische `models.max_output_tokens`-Overrides werden auch ohne
   injizierten `HierarchyService` über die kanonische Vererbung aufgelöst.
   `GET /hierarchy/{node_id}` verwendet dieselbe öffentliche JSON-Knotenform wie

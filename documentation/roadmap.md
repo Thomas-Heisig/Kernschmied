@@ -60,6 +60,9 @@ Priorisierte Meilensteine (kurz):
   - Gemeinsames kontrastreiches Neutral-/Pastelldesign über System, Benutzer,
     Bereich, Projekt und Chat einschließlich einheitlicher Aktionen, Kennzahlen
     und Widget-Abschnitte abgeschlossen (abgeschlossen 2026-08-15)
+  - Berechtigungsprojizierte letzte Knoten je Hierarchieebene sowie
+    bestätigungspflichtiges Leeren, Einzellöschen und Fortsetzen ab einem
+    persistenten Chatstand umgesetzt (abgeschlossen 2026-08-15)
 
 Leitprinzipien (Kurz):
 
