@@ -170,6 +170,8 @@ Freigabekriterien. Sie enthalten keine parallelen Aufgabenlisten.
 - [x] Persistente Chat-History berechtigungsgeprüft vollständig leeren, einzelne
       Nachrichten löschen und nach einem gewählten Stand kürzen; Antwortbezüge
       und monotone Sequenzen durch Repository- und API-Tests absichern.
+- [x] Chatnachrichten anhand persistierter Benutzer-IDs mit tatsächlichen
+      Anzeigenamen attribuieren und KI-Ausgaben einheitlich als `KI` ausweisen.
 - [ ] `SchemaRenderer` um Formularbindung, Aktionen und Sichtbarkeitsregeln
       vervollständigen.
 - [ ] Widget-Pool und persistente Layoutverwaltung vervollständigen.

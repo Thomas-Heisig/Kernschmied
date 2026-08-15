@@ -42,6 +42,12 @@ vi.mock('../../../auth/auth-api', () => ({
   loadUserPreferences: vi.fn().mockResolvedValue(null),
 }));
 
+vi.mock('../../../auth/AuthProvider', () => ({
+  useAuth: () => ({
+    user: { id: 'user-thomas', username: 'Thomas-Heisig', displayName: 'Thomas' },
+  }),
+}));
+
 vi.mock('../../../api/mentions', () => ({
   loadMentionCandidates: vi.fn().mockResolvedValue([]),
 }));
@@ -62,6 +68,7 @@ const history = [
     created_at: '2026-08-15T10:00:00Z',
     status: 'complete',
     parent_message_id: null,
+    author_name: 'Bianca',
     ui_context: {},
   },
   {
@@ -71,6 +78,7 @@ const history = [
     created_at: '2026-08-15T10:01:00Z',
     status: 'complete',
     parent_message_id: null,
+    author_name: null,
     ui_context: {},
   },
 ];
@@ -118,6 +126,9 @@ describe('GenericChatView history mutations', () => {
     const { onNavigateToNode } = renderChat();
 
     expect(await screen.findByText('Erste Nachricht')).toBeInTheDocument();
+    expect(screen.getByText('Bianca')).toBeInTheDocument();
+    expect(screen.getByText('KI')).toBeInTheDocument();
+    expect(screen.queryByText('Du')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Letzte Unterchats' })).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Unterchat A öffnen' }));
     expect(onNavigateToNode).toHaveBeenCalledWith('child-chat');

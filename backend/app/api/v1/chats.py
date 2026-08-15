@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Literal, cast
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.hierarchy import build_actor_from_request, structured_http_error
@@ -13,6 +14,7 @@ from app.contracts.chat_memory import (
     ChatMessageRead,
     ChatMutationResponse,
 )
+from app.database.models.user import UserModel
 from app.hierarchy.permissions import DELETE_ACTION, HierarchyPermissionService
 from app.storage.database import get_session
 from app.storage.repositories import ChatRepository, HierarchyRepository
@@ -120,6 +122,18 @@ async def list_chat_messages(
 
     visible = rows[:limit]
     has_more = len(rows) > limit
+    user_ids = {message.user_id for message in visible if message.user_id}
+    author_names: dict[str, str] = {}
+    if user_ids:
+        author_rows = await session.execute(
+            select(UserModel.id, UserModel.display_name).where(
+                UserModel.id.in_(user_ids)
+            )
+        )
+        author_names = {
+            str(user_id): str(display_name)
+            for user_id, display_name in author_rows.tuples().all()
+        }
     items: list[ChatMessageRead] = []
     for m in visible:
         items.append(
@@ -128,6 +142,9 @@ async def list_chat_messages(
                 conversation_id=m.conversation_id,
                 hierarchy_node_id=conversation.node_id,
                 user_id=m.user_id,
+                author_name=(
+                    author_names.get(m.user_id) if m.user_id is not None else None
+                ),
                 parent_message_id=m.parent_message_id,
                 role=cast(Literal["user", "assistant", "system", "tool"], m.role),
                 content=m.content,

@@ -7,6 +7,7 @@ from app.auth.dependencies import require_authenticated_user
 from app.auth.models import UserContext
 from app.storage.database import get_session
 from app.storage.database import DatabaseManager
+from app.database.models.user import UserModel
 from app.storage.models.chat import Chat, Message
 from app.storage.models.hierarchy import HierarchyNode
 from app.storage.repositories.chat import ChatRepository
@@ -28,6 +29,10 @@ async def create_conversation(
     session_factory: async_sessionmaker[AsyncSession],
 ) -> tuple[str, tuple[str, str, str]]:
     async with session_factory() as session:
+        author = UserModel(
+            username="bianca",
+            display_name="Bianca",
+        )
         node = HierarchyNode(
             node_type="chat",
             name="Mutation test",
@@ -36,13 +41,18 @@ async def create_conversation(
             config={},
             is_active=True,
         )
-        session.add(node)
+        session.add_all([author, node])
         await session.flush()
 
         repository = ChatRepository(session)
         chat = await repository.add_chat(Chat(node_id=node.id, title="Mutation test"))
         first = await repository.add_message(
-            Message(conversation_id=chat.id, role="user", content="first")
+            Message(
+                conversation_id=chat.id,
+                user_id=author.id,
+                role="user",
+                content="first",
+            )
         )
         second = await repository.add_message(
             Message(
@@ -55,6 +65,7 @@ async def create_conversation(
         third = await repository.add_message(
             Message(
                 conversation_id=chat.id,
+                user_id=author.id,
                 role="user",
                 content="third",
                 parent_message_id=second.id,
@@ -147,6 +158,11 @@ async def test_message_mutation_endpoints(
         transport=httpx.ASGITransport(app=app),
         base_url="http://test",
     ) as client:
+        history = await client.get(f"/chats/{conversation_id}/messages")
+        assert history.status_code == 200
+        assert history.json()["items"][0]["author_name"] == "Bianca"
+        assert history.json()["items"][1]["author_name"] is None
+
         deleted = await client.delete(
             f"/chats/{conversation_id}/messages/{second_id}"
         )

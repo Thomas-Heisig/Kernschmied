@@ -6,6 +6,9 @@ export interface ChatMessage {
   // Some backends return `content`, others `text` — accept both.
   content?: string;
   text?: string;
+  user_id?: string | null;
+  author_name?: string | null;
+  ui_context?: Record<string, unknown> | null;
   metadata?: Record<string, any>;
   position?: number;
   created_at: string;

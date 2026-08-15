@@ -39,7 +39,11 @@ export default function ChatWidget({ widget, nodeId }: ChatWidgetProps) {
       setMessages(
         items.map((m: any) => ({
           id: m.id,
-          user: m.user ?? m.sender ?? (m.role === 'assistant' ? 'Assistent' : 'Benutzer'),
+          user: m.author_name
+            ?? m.ui_context?.assistant_display_name
+            ?? m.user
+            ?? m.sender
+            ?? (m.role === 'assistant' ? 'KI' : 'Benutzer'),
           role: m.role ?? (m.user === 'assistant' ? 'assistant' : 'user'),
           text: m.text ?? m.message ?? String(m),
           time: m.time ?? m.timestamp ?? m.created_at,
@@ -119,7 +123,7 @@ export default function ChatWidget({ widget, nodeId }: ChatWidgetProps) {
           {messages.slice(0, 12).map((msg, idx) => {
             const isUser = msg.role === 'user' || msg.user === 'Benutzer';
             const isAssistant = msg.role === 'assistant' || msg.user === 'Assistent';
-            const displayName = isUser ? 'Du' : isAssistant ? 'Assistent' : (msg.user ?? 'System');
+            const displayName = isUser ? (msg.user ?? 'Benutzer') : isAssistant ? 'KI' : (msg.user ?? 'System');
             const initials = getInitials(displayName);
 
             return (

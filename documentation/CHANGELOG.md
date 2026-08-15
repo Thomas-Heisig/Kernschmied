@@ -90,6 +90,9 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Geändert
 
+- Live-Chat, persistierte Historie und Chat-Widget attribuieren Nachrichten mit
+  dem tatsächlichen Benutzer-Anzeigenamen oder `KI`; der History-Vertrag liefert
+  dafür den serverseitig aus der Benutzer-ID aufgelösten `author_name`.
 - Der bisher dunkle blau-graue Benutzer-Hero und cyan/violett/emerald gemischte
   Knotenkarten wurden durch eine einzelne ruhige Pastellakzentfamilie ersetzt;
   Chatnachrichten behalten mit tiefem Grün und weißer Schrift starken Kontrast.

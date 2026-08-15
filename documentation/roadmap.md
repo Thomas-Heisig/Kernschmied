@@ -67,6 +67,9 @@ Priorisierte Meilensteine (kurz):
   - Vollständige direkte Projekt-/Chat-Sammlungen für Bereich und Projekt im
     gemeinsamen Kartenaufbau des Benutzerarbeitsbereichs ergänzt
     (abgeschlossen 2026-08-15)
+  - Tatsächliche Benutzer- und KI-Attribution in Live-Chat, Historie und
+    Chat-Widget statt generischer Eigenbezeichnung umgesetzt
+    (abgeschlossen 2026-08-16)
 
 Leitprinzipien (Kurz):
 

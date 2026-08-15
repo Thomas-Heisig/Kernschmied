@@ -55,6 +55,8 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Geändert
 
+- Chatnachrichten zeigen den tatsächlichen Anzeigenamen des gespeicherten
+  Benutzers beziehungsweise `KI` statt der generischen Bezeichnung `Du`.
 - Der persönliche Arbeitsbereich verzichtet auf den dunklen blau-grauen Hero
   und mehrfarbige Knotenkarten; Bereiche, Projekte, Chats und Funktionen folgen
   durchgängig einer zurückhaltenden Pastellgestaltung.

@@ -16,6 +16,7 @@ import { ApiError, apiPostStream } from '../../api/client';
 import { apiGet } from '../../api/client';
 import { useChatHistory } from '../../hooks/useChatHistory';
 import { loadUserPreferences } from '../../auth/auth-api';
+import { useAuth } from '../../auth/AuthProvider';
 import { loadMentionCandidates } from '../../api/mentions';
 import type { MentionCandidate } from '../../api/mentions';
 import NodeWorkspaceOverview from '../workspace/NodeWorkspaceOverview';
@@ -152,15 +153,10 @@ function formatTime(timestamp: number): string {
   });
 }
 
-function getInitials(role: ChatRole): string {
-  switch (role) {
-    case 'user':
-      return 'DU';
-    case 'assistant':
-      return 'KI';
-    default:
-      return 'SY';
-  }
+function getInitials(authorName: string): string {
+  const words = authorName.trim().split(/\s+/).filter(Boolean);
+  if (words.length === 0) return '?';
+  return words.slice(0, 2).map((word) => word[0]).join('').toUpperCase();
 }
 
 function getDeliveryStatus(message: ChatMessage): string {
@@ -370,6 +366,7 @@ export function GenericChatView({
 
   // Hooks
   const appState = useAppStoreState();
+  const { user } = useAuth();
   const { fetchHistory } = useChatHistory();
 
   const loading = requestStatus === 'connecting' || requestStatus === 'streaming';
@@ -445,9 +442,13 @@ export function GenericChatView({
       parentMessageId: typeof m.parent_message_id === 'string' ? m.parent_message_id : undefined,
       directedToUser: Array.isArray(m.ui_context?.mentions) && m.ui_context.mentions.length > 0,
       authorName:
-        typeof m.ui_context?.assistant_display_name === 'string'
+        typeof m.author_name === 'string' && m.author_name.trim()
+          ? m.author_name
+          : typeof m.ui_context?.assistant_display_name === 'string'
           ? m.ui_context.assistant_display_name
-          : undefined,
+          : m.role === 'assistant'
+            ? 'KI'
+            : undefined,
     };
   }
 
@@ -821,6 +822,7 @@ export function GenericChatView({
       conversationId: activeConversationId ?? undefined,
       parentMessageId: replyTo?.serverMessageId ?? replyTo?.id,
       directedToUser: selectedMentions.length > 0,
+      authorName: user?.displayName || user?.username || 'Benutzer',
     };
 
     const assistantMessage: ChatMessage = {
@@ -1147,6 +1149,8 @@ export function GenericChatView({
                 {messages.map((message) => {
                   const isUser = message.role === 'user';
                   const isSystem = message.role === 'system';
+                  const authorName = message.authorName
+                    || (isUser ? user?.displayName || user?.username || 'Benutzer' : 'KI');
                   const parentMessage = message.parentMessageId
                     ? messages.find((candidate) => (candidate.serverMessageId ?? candidate.id) === message.parentMessageId)
                     : undefined;
@@ -1161,7 +1165,7 @@ export function GenericChatView({
                       data-message-status={message.status}
                     >
                       <IconBadge
-                        icon={<span className="text-xs font-bold uppercase">{getInitials(message.role)}</span>}
+                        icon={<span className="text-xs font-bold uppercase">{getInitials(authorName)}</span>}
                         size="sm"
                         variant={isUser ? 'primary' : 'secondary'}
                         className="shrink-0 ring-1 ring-primary/15 dark:ring-primary/25"
@@ -1176,7 +1180,7 @@ export function GenericChatView({
                       >
                         <div className="flex items-center justify-between gap-4">
                           <span className={`text-xs font-semibold ${isUser ? 'text-white/80' : 'text-text-muted dark:text-gray-400'}`}>
-                            {isUser ? 'Du' : (message.authorName ? `${message.authorName} · KI` : 'KI-Assistent')}
+                            {authorName}
                           </span>
                           <time
                             dateTime={new Date(message.timestamp).toISOString()}

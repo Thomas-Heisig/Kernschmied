@@ -24,6 +24,7 @@ class ChatMessageRead(BaseModel):
     conversation_id: str
     hierarchy_node_id: str | None
     user_id: str | None
+    author_name: str | None
     parent_message_id: str | None
     role: Literal["user", "assistant", "system", "tool"]
     content: str

@@ -21,6 +21,9 @@ Stand: 2026-08-15
 - Chatausgabe: Live-Chat und Historie rendern CommonMark/GFM sicher und
 	einheitlich; gesendete Nachrichten sind im Lightmode kontrastreich, Roh-HTML
 	bleibt gesperrt und Bild-/Audio-/Videoelemente besitzen explizite Renderer
+- Chat-Attribution: Live-Chat, Historie und Chat-Widget zeigen den tatsächlichen
+	Benutzer-Anzeigenamen oder `KI`; persistierte Benutzer-IDs werden dafür im
+	History-Endpunkt serverseitig aufgelöst
 - Benutzerknoten: Persönliches Dashboard mit Kontoaktionen, Kennzahlen,
 	sichtbaren Bereichen und Projekten, letzten Chats, Kontingenten sowie
 	funktionierenden Kalender-/Datei-Anbindungen ist aktiv

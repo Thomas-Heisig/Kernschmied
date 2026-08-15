@@ -4,12 +4,14 @@ import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { RefreshCw, Copy, X } from 'lucide-react';
 import { useChatHistory } from '../../hooks/useChatHistory';
 import IconBadge from '../common/IconBadge';
+import { useAuth } from '../../auth/AuthProvider';
 
 const ChatMessageContent = lazy(() => import('./ChatMessageContent'));
 
 export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
   const [conversationId, setConversationId] = useState('');
   const { loading, error, messages, fetchHistory } = useChatHistory();
+  const { user } = useAuth();
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -112,6 +114,12 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
           {messages?.length ? (
             messages.map((m) => {
               const isUser = m.role === 'user';
+              const assistantName = typeof m.ui_context?.assistant_display_name === 'string'
+                ? m.ui_context.assistant_display_name
+                : null;
+              const authorName = m.author_name
+                || assistantName
+                || (isUser ? user?.displayName || user?.username || 'Benutzer' : 'KI');
               return (
                 <div
                   key={m.id}
@@ -132,7 +140,7 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
                             isUser ? 'text-white/80' : 'text-text-muted dark:text-gray-400'
                           }`}
                         >
-                          {m.role}
+                          {authorName}
                         </span>
                         <span
                           className={`text-[11px] ${
