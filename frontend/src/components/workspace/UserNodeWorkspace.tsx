@@ -31,6 +31,7 @@ import WorkspaceLayout from '../layout/WorkspaceLayout';
 import WidgetBadges from '../widgets/WidgetBadges';
 import WidgetsForNode from '../widgets/WidgetsForNode';
 import NodeWorkspaceOverview, { NodeWorkspaceAction } from './NodeWorkspaceOverview';
+import WorkspaceNodeCollection from './WorkspaceNodeCollection';
 
 interface UserWorkspaceNode {
   id: string;
@@ -196,54 +197,33 @@ export default function UserNodeWorkspace({
           </section>
         ) : null}
 
-        <section aria-labelledby="available-projects-title">
-          <SectionHeading
-            id="available-projects-title"
-            icon={<FolderKanban size={18} />}
-            title="Verfügbare Projekte"
-            description="Projekte aus deinen sichtbaren Bereichen."
-          />
-          {availableProjects.length > 0 ? (
-            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {availableProjects.slice(0, 6).map((entry) => (
-                <NodeCard
-                  key={entry.node.id}
-                  node={entry.node}
-                  eyebrow={entry.path.join(' › ') || 'Projekt'}
-                  icon={<FolderKanban size={19} />}
-                  onClick={() => onNavigateToNode?.(entry.node.id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyPanel text="In deinen verfügbaren Bereichen gibt es derzeit keine Projekte." />
-          )}
-        </section>
+        <WorkspaceNodeCollection
+          id="available-projects-title"
+          icon={<FolderKanban size={18} />}
+          title="Verfügbare Projekte"
+          description="Projekte aus deinen sichtbaren Bereichen."
+          items={availableProjects.slice(0, 6).map((entry) => ({
+            node: entry.node,
+            eyebrow: entry.path.join(' › ') || 'Projekt',
+            icon: <FolderKanban size={19} />,
+          }))}
+          emptyText="In deinen verfügbaren Bereichen gibt es derzeit keine Projekte."
+          onNavigateToNode={onNavigateToNode}
+        />
 
-        <section aria-labelledby="available-areas-title">
-          <SectionHeading
-            id="available-areas-title"
-            icon={<Building2 size={18} />}
-            title="Verfügbare Bereiche"
-            description="Alle Bereiche, die dir aktuell bereitgestellt wurden."
-          />
-
-          {availableAreas.length > 0 ? (
-            <div className="mt-3 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {availableAreas.map((child) => (
-                <NodeCard
-                  key={child.id}
-                  node={child}
-                  eyebrow={labelForNodeType(child.type)}
-                  icon={<DynamicIcon name={iconForNodeType(child.type)} className="h-5 w-5" />}
-                  onClick={() => onNavigateToNode?.(child.id)}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyPanel text="Diesem Benutzer sind derzeit keine Bereiche zugeordnet." />
-          )}
-        </section>
+        <WorkspaceNodeCollection
+          id="available-areas-title"
+          icon={<Building2 size={18} />}
+          title="Verfügbare Bereiche"
+          description="Alle Bereiche, die dir aktuell bereitgestellt wurden."
+          items={availableAreas.map((child) => ({
+            node: child,
+            eyebrow: labelForNodeType(child.type),
+            icon: <DynamicIcon name={iconForNodeType(child.type)} className="h-5 w-5" />,
+          }))}
+          emptyText="Diesem Benutzer sind derzeit keine Bereiche zugeordnet."
+          onNavigateToNode={onNavigateToNode}
+        />
 
         {isOwnNode && quotas?.limits && quotas.usage ? (
           <section aria-labelledby="usage-title">
@@ -285,18 +265,20 @@ export default function UserNodeWorkspace({
   );
 }
 
-function QuotaValue({ label, used, limit }: { label: string; used: number; limit: number }) {
-  const percentage = limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+function QuotaValue({ label, used, limit }: { label: string; used: number; limit: number | null }) {
+  const percentage = limit !== null && limit > 0 ? Math.min(100, Math.round((used / limit) * 100)) : 0;
   return (
     <div className="rounded-xl border border-border-soft bg-white p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/50">
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="font-medium text-text dark:text-gray-200">{label}</span>
-        <strong className="text-text dark:text-white">{used}/{limit}</strong>
+        <strong className="text-text dark:text-white">{limit === null ? `${used} / ∞` : `${used}/${limit}`}</strong>
       </div>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-        <div className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400" style={{ width: `${percentage}%` }} />
+        <div className="h-full rounded-full bg-emerald-600 dark:bg-emerald-400" style={{ width: limit === null ? '100%' : `${percentage}%` }} />
       </div>
-      <p className="mt-2 text-xs text-text-muted dark:text-gray-400">{limit - used > 0 ? `${limit - used} verfügbar` : 'Kontingent ausgeschöpft'}</p>
+      <p className="mt-2 text-xs text-text-muted dark:text-gray-400">
+        {limit === null ? 'Unbegrenzt' : limit - used > 0 ? `${limit - used} verfügbar` : 'Kontingent ausgeschöpft'}
+      </p>
     </div>
   );
 }
@@ -400,14 +382,6 @@ function NodeCard({
       </span>
       <ArrowRight size={17} className="shrink-0 text-slate-400 transition group-hover:text-emerald-700 dark:group-hover:text-emerald-300" />
     </button>
-  );
-}
-
-function EmptyPanel({ text }: { text: string }) {
-  return (
-    <div className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-50 px-4 py-6 text-center text-sm text-slate-600 dark:border-white/15 dark:bg-slate-900/30 dark:text-gray-400">
-      {text}
-    </div>
   );
 }
 

@@ -123,9 +123,13 @@ export interface ManagedUser {
   isActive: boolean;
   isSystem: boolean;
   accessLevel: AccessLevel;
+  workspaceQuota: QuotaSetting;
+  projectQuota: QuotaSetting;
+  chatQuota: QuotaSetting;
 }
 
 export type AccessLevel = 'guest' | 'internal' | 'admin';
+export type QuotaSetting = number | 'unlimited' | null;
 
 export interface ManagedUserInput {
   username: string;
@@ -135,6 +139,15 @@ export interface ManagedUserInput {
   generatePassword?: boolean;
   requirePasswordChange?: boolean;
   accessLevel?: AccessLevel;
+  workspaceQuota?: QuotaSetting;
+  projectQuota?: QuotaSetting;
+  chatQuota?: QuotaSetting;
+}
+
+function normalizeQuotaSetting(value: unknown): QuotaSetting {
+  if (value === 'unlimited') return 'unlimited';
+  if (typeof value === 'number' && Number.isInteger(value) && value >= 0) return value;
+  return null;
 }
 
 function normalizeManagedUser(raw: unknown): ManagedUser {
@@ -150,6 +163,9 @@ function normalizeManagedUser(raw: unknown): ManagedUser {
       value.access_level === 'admin' || value.access_level === 'internal'
         ? value.access_level
         : 'guest',
+      workspaceQuota: normalizeQuotaSetting(value.workspace_quota ?? value.workspaceQuota),
+      projectQuota: normalizeQuotaSetting(value.project_quota ?? value.projectQuota),
+      chatQuota: normalizeQuotaSetting(value.chat_quota ?? value.chatQuota),
   };
 }
 
@@ -173,6 +189,9 @@ export async function createManagedUser(input: ManagedUserInput): Promise<{
       require_password_change: input.requirePasswordChange ?? true,
       roles: null,
       access_level: input.accessLevel ?? 'guest',
+      workspace_quota: input.workspaceQuota ?? null,
+      project_quota: input.projectQuota ?? null,
+      chat_quota: input.chatQuota ?? null,
       is_active: true,
       preferences: null,
       create_default_workspace: true,
@@ -196,6 +215,9 @@ export async function updateManagedUser(
     email?: string | null;
     isActive: boolean;
     accessLevel: AccessLevel;
+    workspaceQuota: QuotaSetting;
+    projectQuota: QuotaSetting;
+    chatQuota: QuotaSetting;
   },
 ): Promise<ManagedUser> {
   const response = await apiPatch<unknown, Record<string, unknown>>(
@@ -205,6 +227,9 @@ export async function updateManagedUser(
       email: input.email ?? null,
       is_active: input.isActive,
       access_level: input.accessLevel,
+      workspace_quota: input.workspaceQuota,
+      project_quota: input.projectQuota,
+      chat_quota: input.chatQuota,
     },
     { credentials: 'include' },
   );

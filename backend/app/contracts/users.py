@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 AccessLevel = Literal["guest", "internal", "admin"]
+QuotaSetting = int | Literal["unlimited"] | None
 
 
 class BaseContract(BaseModel):
@@ -25,6 +26,9 @@ class UserCreateRequest(BaseContract):
     # Roles to assign (names)
     roles: list[str] | None = None
     access_level: AccessLevel = "guest"
+    workspace_quota: QuotaSetting = None
+    project_quota: QuotaSetting = None
+    chat_quota: QuotaSetting = None
 
     is_active: bool = True
 
@@ -40,6 +44,9 @@ class UserUpdateRequest(BaseContract):
     email: EmailStr | None = None
     is_active: bool | None = None
     access_level: AccessLevel | None = None
+    workspace_quota: QuotaSetting = None
+    project_quota: QuotaSetting = None
+    chat_quota: QuotaSetting = None
 
 
 class UserRead(BaseContract):
@@ -50,6 +57,9 @@ class UserRead(BaseContract):
     is_active: bool
     is_system: bool | None = False
     access_level: AccessLevel = "guest"
+    workspace_quota: QuotaSetting = None
+    project_quota: QuotaSetting = None
+    chat_quota: QuotaSetting = None
     created_at: str
     updated_at: str
 

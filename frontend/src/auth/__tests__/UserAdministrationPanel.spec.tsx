@@ -24,6 +24,9 @@ const thomas = {
   isActive: true,
   isSystem: false,
   accessLevel: 'internal' as const,
+  workspaceQuota: null,
+  projectQuota: null,
+  chatQuota: null,
 };
 
 describe('UserAdministrationPanel', () => {
@@ -44,6 +47,15 @@ describe('UserAdministrationPanel', () => {
     fireEvent.change(screen.getByLabelText('Anzeigename'), {
       target: { value: 'Thomas H.' },
     });
+    fireEvent.change(screen.getByLabelText('Bereiche-Kontingent'), {
+      target: { value: 'unlimited' },
+    });
+    fireEvent.change(screen.getByLabelText('Projekte-Kontingent'), {
+      target: { value: 'limit' },
+    });
+    fireEvent.change(screen.getByLabelText('Maximale Projekte'), {
+      target: { value: '7' },
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Speichern' }));
 
     await waitFor(() => {
@@ -52,6 +64,9 @@ describe('UserAdministrationPanel', () => {
         email: 'thomas@example.test',
         isActive: true,
         accessLevel: 'internal',
+        workspaceQuota: 'unlimited',
+        projectQuota: 7,
+        chatQuota: null,
       });
     });
   });

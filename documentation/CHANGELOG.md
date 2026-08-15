@@ -20,6 +20,15 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Hinzugefügt
 
+- Wiederverwendbare vollständige Knotensammlungen gleichen Bereich und Projekt
+  an den Benutzerarbeitsbereich an: Bereiche zeigen alle direkten Projekte und
+  Chats, Projekte alle direkten Chats; kontextbezogene Recents bleiben als
+  zusätzliche Schnellzugriffe erhalten.
+- Pro Benutzer administrierbare Bereichs-, Projekt- und Chatkontingente mit den
+  Modi Rollenstandard, festes Limit und unbegrenzt. Migration
+  `0024_add_user_hierarchy_quotas`, API und Quotenservice persistieren und
+  erzwingen die semantischen Werte ohne den internen Unbegrenzt-Sentinel nach
+  außen zu geben.
 - Kontextbezogene Schnellzugriffe auf jeder Hierarchieebene verwenden den
   bestehenden Recent-Speicher, schneiden ihn aber stets mit dem aktuell
   berechtigungsprojizierten Baum: System zeigt sichtbare letzte Knoten, Bereiche

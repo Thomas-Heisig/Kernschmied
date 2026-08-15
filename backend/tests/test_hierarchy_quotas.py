@@ -202,3 +202,50 @@ async def test_internal_defaults_are_higher_and_admin_is_unlimited():
         "chat": 25,
     }
     assert admin_status["limits"] is None
+
+
+@pytest.mark.asyncio
+async def test_per_user_quota_override_takes_precedence_over_role_default():
+    actor = HierarchyActor(user_id="alice", roles=frozenset({"guest"}))
+    user_root = model("user-alice", "user", parent_id="users-root")
+    repository = SimpleNamespace(
+        list_nodes=AsyncMock(return_value=[user_root]),
+        get_user_quota_overrides=AsyncMock(
+            return_value={"workspace": 3, "project": None, "chat": None}
+        ),
+    )
+
+    status = await HierarchyQuotaService(repository).status(actor)
+
+    assert status["limits"] == {"workspace": 3, "project": 2, "chat": 5}
+    assert status["remaining"] == {"workspace": 3, "project": 2, "chat": 5}
+
+
+@pytest.mark.asyncio
+async def test_per_user_unlimited_quota_allows_creation_and_reports_no_limit():
+    actor = HierarchyActor(user_id="alice", roles=frozenset({"guest"}))
+    user_root = model("user-alice", "user", parent_id="users-root")
+    workspace = model(
+        "workspace-alice",
+        "workspace",
+        parent_id=user_root.id,
+        owner_user_id="alice",
+    )
+    repository = SimpleNamespace(
+        list_nodes=AsyncMock(return_value=[user_root, workspace]),
+        get_user_quota_overrides=AsyncMock(
+            return_value={"workspace": -1, "project": None, "chat": None}
+        ),
+    )
+    quota_service = HierarchyQuotaService(repository)
+
+    prepared = await quota_service.prepare_create(
+        payload("workspace", user_root.id),
+        actor=actor,
+        parent=user_root,
+    )
+    status = await quota_service.status(actor)
+
+    assert prepared.type == "workspace"
+    assert status["limits"] == {"workspace": None, "project": 2, "chat": 5}
+    assert status["remaining"] == {"workspace": None, "project": 2, "chat": 5}

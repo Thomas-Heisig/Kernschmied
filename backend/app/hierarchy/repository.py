@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.contracts.hierarchy import HierarchyNodeCreate, HierarchyNodeUpdate
 from app.storage.models.chat import Chat
 from app.database.models.hierarchy_node import HierarchyNodeModel
+from app.database.models.user import UserModel
 from app.prompts.errors import (
     BrokenPromptHierarchyError,
     InactivePromptHierarchyNodeError,
@@ -53,6 +54,19 @@ class HierarchyRepository:
 
     async def get_node(self, node_id: str) -> HierarchyNodeModel | None:
         return await self._session.get(HierarchyNodeModel, node_id)
+
+    async def get_user_quota_overrides(
+        self,
+        user_id: str,
+    ) -> dict[str, int | None] | None:
+        user = await self._session.get(UserModel, user_id)
+        if user is None:
+            return None
+        return {
+            "workspace": user.workspace_quota,
+            "project": user.project_quota,
+            "chat": user.chat_quota,
+        }
 
     async def list_children(
         self,

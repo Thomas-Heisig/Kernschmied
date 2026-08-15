@@ -9,7 +9,9 @@ import {
   updateManagedUser,
   type AccessLevel,
   type ManagedUser,
+  type QuotaSetting,
 } from './auth-api';
+import UserQuotaEditor from './UserQuotaEditor';
 
 export default function UserAdministrationPanel() {
   const [users, setUsers] = useState<ManagedUser[]>([]);
@@ -20,6 +22,9 @@ export default function UserAdministrationPanel() {
   const [password, setPassword] = useState('');
   const [isActive, setIsActive] = useState(true);
   const [accessLevel, setAccessLevel] = useState<AccessLevel>('guest');
+  const [workspaceQuota, setWorkspaceQuota] = useState<QuotaSetting>(null);
+  const [projectQuota, setProjectQuota] = useState<QuotaSetting>(null);
+  const [chatQuota, setChatQuota] = useState<QuotaSetting>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -44,6 +49,8 @@ export default function UserAdministrationPanel() {
   }, []);
 
   useEffect(() => {
+    setError(null);
+    setMessage(null);
     if (!selectedUser) {
       setUsername('');
       setDisplayName('');
@@ -51,6 +58,9 @@ export default function UserAdministrationPanel() {
       setPassword('');
       setIsActive(true);
       setAccessLevel('guest');
+      setWorkspaceQuota(null);
+      setProjectQuota(null);
+      setChatQuota(null);
       return;
     }
     setUsername(selectedUser.username);
@@ -59,6 +69,9 @@ export default function UserAdministrationPanel() {
     setPassword('');
     setIsActive(selectedUser.isActive);
     setAccessLevel(selectedUser.accessLevel);
+    setWorkspaceQuota(selectedUser.workspaceQuota);
+    setProjectQuota(selectedUser.projectQuota);
+    setChatQuota(selectedUser.chatQuota);
   }, [selectedUser]);
 
   async function handleSave() {
@@ -91,6 +104,9 @@ export default function UserAdministrationPanel() {
           generatePassword: !password,
           requirePasswordChange: true,
           accessLevel,
+          workspaceQuota,
+          projectQuota,
+          chatQuota,
         });
         setMessage(
           result.temporaryPassword
@@ -104,6 +120,9 @@ export default function UserAdministrationPanel() {
           email: email.trim() || null,
           isActive,
           accessLevel,
+          workspaceQuota,
+          projectQuota,
+          chatQuota,
         });
         setMessage('Benutzerdaten wurden gespeichert.');
       }
@@ -184,7 +203,7 @@ export default function UserAdministrationPanel() {
 
       <section className="min-w-0 p-5">
         <h2 className="text-lg font-semibold">{selectedId === 'new' ? 'Benutzer anlegen' : 'Benutzerdaten bearbeiten'}</h2>
-        <p className="mt-1 text-sm text-text-muted">Kontodaten und Passwortzugang zentral verwalten.</p>
+        <p className="mt-1 text-sm text-text-muted">Kontodaten, Zugriff, Hierarchie-Kontingente und Passwortzugang zentral verwalten.</p>
         {error ? <div role="alert" className="mt-4 rounded-md bg-danger-soft px-3 py-2 text-sm text-danger">{error}</div> : null}
         {message ? <div role="status" className="mt-4 rounded-md bg-success/10 px-3 py-2 text-sm text-success">{message}</div> : null}
 
@@ -210,6 +229,16 @@ export default function UserAdministrationPanel() {
               <option value="admin">Administrator · vollständiger Zugriff</option>
             </select>
           </label>
+          <UserQuotaEditor
+            accessLevel={accessLevel}
+            workspaceQuota={workspaceQuota}
+            projectQuota={projectQuota}
+            chatQuota={chatQuota}
+            disabled={Boolean(selectedUser?.isSystem)}
+            onWorkspaceQuotaChange={setWorkspaceQuota}
+            onProjectQuotaChange={setProjectQuota}
+            onChatQuotaChange={setChatQuota}
+          />
           <label className="text-sm font-medium sm:col-span-2">{selectedId === 'new' ? 'Startpasswort (leer = generieren)' : 'Neues Passwort (leer = generieren)'}
             <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} className="mt-1 w-full rounded-md border border-border bg-white px-3 py-2 dark:border-white/10 dark:bg-slate-900" />
           </label>

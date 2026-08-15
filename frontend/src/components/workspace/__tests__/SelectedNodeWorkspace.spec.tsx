@@ -224,7 +224,11 @@ describe('SelectedNodeWorkspace user area', () => {
         .closest('section'),
     ).toHaveAttribute('aria-label', 'Bereich: Bereich 1');
     expect(screen.getByRole('heading', { name: 'Letzte Projekte' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Letztes Projekt öffnen' }));
+    expect(screen.getByRole('heading', { name: 'Projekte im Bereich' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Direkte Chats' })).toBeInTheDocument();
+    const projectButtons = screen.getAllByRole('button', { name: 'Letztes Projekt öffnen' });
+    expect(projectButtons).toHaveLength(2);
+    fireEvent.click(projectButtons[1]);
     expect(onNavigateToNode).toHaveBeenCalledWith('project-recent');
     expect(onAction).toHaveBeenNthCalledWith(
       1,
@@ -268,7 +272,10 @@ describe('SelectedNodeWorkspace user area', () => {
     expect(screen.getByRole('button', { name: 'Projektprompt' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Projektwidgets' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Letzte Chats' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Letzter Chat öffnen' }));
+    expect(screen.getByRole('heading', { name: 'Chats im Projekt' })).toBeInTheDocument();
+    const chatButtons = screen.getAllByRole('button', { name: 'Letzter Chat öffnen' });
+    expect(chatButtons).toHaveLength(2);
+    fireEvent.click(chatButtons[1]);
     expect(onNavigateToNode).toHaveBeenCalledWith('chat-recent');
     expect(onAction).toHaveBeenLastCalledWith(
       'create_child',

@@ -20,6 +20,7 @@ import SystemOverview from '../system/SystemOverview';
 import UserNodeWorkspace from './UserNodeWorkspace';
 import NodeWorkspaceOverview, { NodeWorkspaceAction } from './NodeWorkspaceOverview';
 import RecentNodeSection from './RecentNodeSection';
+import WorkspaceNodeCollection from './WorkspaceNodeCollection';
 
 /* ============================================================
  * TYPEN UND KONSTANTEN
@@ -234,7 +235,7 @@ export function SelectedNodeWorkspace({
         widgetBadges={<WidgetBadges nodeId={node.id} size="sm" />}
         background="white"
       >
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-7">
           <NodeWorkspaceOverview
             eyebrow="Projekt"
             title={node.name}
@@ -258,6 +259,21 @@ export function SelectedNodeWorkspace({
             acceptedTypes={['chat', 'conversation']}
             title="Letzte Chats"
             description="Zuletzt geöffnete Chats in diesem Projekt."
+            onNavigateToNode={onNavigateToNode}
+          />
+          <WorkspaceNodeCollection
+            id="project-chats-title"
+            icon={<MessageSquare size={18} />}
+            title="Chats im Projekt"
+            description="Alle sichtbaren Chats dieses Projekts."
+            items={children
+              .filter((child: any) => CHAT_NODE_TYPES.has(normalizeNodeType(child?.type) ?? ''))
+              .map((child: any) => ({
+                node: child,
+                eyebrow: 'Chat',
+                icon: <MessageSquare size={19} />,
+              }))}
+            emptyText="In diesem Projekt gibt es derzeit keine Chats."
             onNavigateToNode={onNavigateToNode}
           />
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -302,7 +318,7 @@ export function SelectedNodeWorkspace({
         widgetBadges={<WidgetBadges nodeId={node.id} size="sm" />}
         background="white"
       >
-        <div className="w-full space-y-4">
+        <div className="w-full space-y-7">
           <NodeWorkspaceOverview
             eyebrow="Bereich"
             title={node.name}
@@ -323,6 +339,36 @@ export function SelectedNodeWorkspace({
             acceptedTypes={['project', 'projekt']}
             title="Letzte Projekte"
             description="Zuletzt geöffnete Projekte in diesem Bereich."
+            onNavigateToNode={onNavigateToNode}
+          />
+          <WorkspaceNodeCollection
+            id="workspace-projects-title"
+            icon={<FolderKanban size={18} />}
+            title="Projekte im Bereich"
+            description="Alle sichtbaren Projekte dieses Bereichs."
+            items={children
+              .filter((child: any) => ['project', 'projekt'].includes(normalizeNodeType(child?.type) ?? ''))
+              .map((child: any) => ({
+                node: child,
+                eyebrow: 'Projekt',
+                icon: <FolderKanban size={19} />,
+              }))}
+            emptyText="In diesem Bereich gibt es derzeit keine Projekte."
+            onNavigateToNode={onNavigateToNode}
+          />
+          <WorkspaceNodeCollection
+            id="workspace-chats-title"
+            icon={<MessageSquare size={18} />}
+            title="Direkte Chats"
+            description="Chats, die direkt diesem Bereich zugeordnet sind."
+            items={children
+              .filter((child: any) => CHAT_NODE_TYPES.has(normalizeNodeType(child?.type) ?? ''))
+              .map((child: any) => ({
+                node: child,
+                eyebrow: 'Chat',
+                icon: <MessageSquare size={19} />,
+              }))}
+            emptyText="Diesem Bereich sind derzeit keine direkten Chats zugeordnet."
             onNavigateToNode={onNavigateToNode}
           />
           <CollapsibleWidgetPanel title="Bereichsdaten" icon={<Settings2 size={19} />}>

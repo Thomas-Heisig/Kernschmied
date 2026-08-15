@@ -76,8 +76,8 @@ class HierarchyQuotaService:
             )
 
         usage = self._usage(owned_nodes)
-        limit = self._limit(access_level, node_type)
-        if usage[node_type] >= limit:
+        limit = await self._limit(access_level, node_type, actor.user_id)
+        if limit is not None and usage[node_type] >= limit:
             raise HierarchyQuotaExceededError(
                 node_type=node_type,
                 limit=limit,
@@ -106,7 +106,7 @@ class HierarchyQuotaService:
 
         usage = self._usage(await self._owned_nodes(actor.user_id))
         limits = {
-            node_type: self._limit(access_level, node_type)
+            node_type: await self._limit(access_level, node_type, actor.user_id)
             for node_type in DEFAULT_HIERARCHY_QUOTAS[access_level]
         }
         return {
@@ -114,7 +114,11 @@ class HierarchyQuotaService:
             "limits": limits,
             "usage": usage,
             "remaining": {
-                node_type: max(limits[node_type] - usage[node_type], 0)
+                node_type: (
+                    None
+                    if limits[node_type] is None
+                    else max(limits[node_type] - usage[node_type], 0)
+                )
                 for node_type in limits
             },
         }
@@ -146,7 +150,22 @@ class HierarchyQuotaService:
                 usage[node_type] += 1
         return usage
 
-    def _limit(self, access_level: str, node_type: str) -> int:
+    async def _limit(
+        self,
+        access_level: str,
+        node_type: str,
+        user_id: str,
+    ) -> int | None:
+        load_overrides = getattr(self._repository, "get_user_quota_overrides", None)
+        if load_overrides is not None:
+            overrides = await load_overrides(user_id)
+            if overrides is not None:
+                override = overrides.get(node_type)
+                if override == -1:
+                    return None
+                if override is not None:
+                    return max(int(override), 0)
+
         default = DEFAULT_HIERARCHY_QUOTAS[access_level][node_type]
         if self._config is None:
             return default

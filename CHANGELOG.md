@@ -13,6 +13,13 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Hinzugefügt
 
+- Bereiche und Projekte zeigen neben kontextbezogenen Schnellzugriffen nun ihre
+  vollständigen direkten Projekt- beziehungsweise Chat-Sammlungen im selben
+  Kartenaufbau wie der Benutzerknoten.
+- Administratoren können pro Benutzer getrennte Bereichs-, Projekt- und
+  Chatkontingente auf Rollenstandard, ein festes Limit oder unbegrenzte Nutzung
+  setzen; die Werte werden persistiert und bei der Hierarchieerstellung
+  serverseitig erzwungen.
 - Jede Hierarchieebene zeigt kontextbezogene, gegen den sichtbaren Baum
   gefilterte Schnellzugriffe: systemweit zuletzt verwendete Knoten, letzte
   Projekte in Bereichen, letzte Chats in Projekten und letzte Unterchats in

@@ -40,6 +40,7 @@ Priorisierte Meilensteine (kurz):
   - Persönlicher Benutzerarbeitsbereich mit kanonischen Profildaten, Self-Service-Aktionen und ausschließlich effektiv sichtbaren Bereichen (abgeschlossen 2026-08-15)
   - Robuste Sitzungsübersicht mit korrekter Session-Identität, UTC-Zeitstempeln und bereinigtem Dialog (abgeschlossen 2026-08-15)
   - Eigene Hierarchieerstellung mit rollenabhängigen, administrierbaren Bereichs-, Projekt- und Chatquoten sowie strikt privater Eigentümerschaft (abgeschlossen 2026-08-15)
+  - Benutzerbezogene Überschreibungen der Bereichs-, Projekt- und Chatquoten mit Rollenstandard, festem Limit oder unbegrenzt in Administration und serverseitiger Durchsetzung (abgeschlossen 2026-08-15)
   - Mention-/Presence-MVP mit getrennten Benutzeranfragen, hierarchiebegrenztem Autocomplete, Online-Liste, persönlichem Eingang und optionaler zusätzlicher KI-Antwort (abgeschlossen 2026-08-15)
   - Benutzergebundenes Postfach mit Mention-Zustellung, Statussynchronisierung, SMTP-Outbox, Mailpit-Testbetrieb und fehlertoleranten Willkommens-/Testmails (abgeschlossen 2026-08-15)
   - Direkte `@Administrator`-KI-Auto-Antwort mit persistierter Administrator-Attribution ohne gewöhnliche Benutzeranfrage (abgeschlossen 2026-08-15)
@@ -63,6 +64,9 @@ Priorisierte Meilensteine (kurz):
   - Berechtigungsprojizierte letzte Knoten je Hierarchieebene sowie
     bestätigungspflichtiges Leeren, Einzellöschen und Fortsetzen ab einem
     persistenten Chatstand umgesetzt (abgeschlossen 2026-08-15)
+  - Vollständige direkte Projekt-/Chat-Sammlungen für Bereich und Projekt im
+    gemeinsamen Kartenaufbau des Benutzerarbeitsbereichs ergänzt
+    (abgeschlossen 2026-08-15)
 
 Leitprinzipien (Kurz):
 

@@ -17,6 +17,7 @@ from app.contracts.auth import CurrentUserResponse
 from app.contracts.users import (
     AccessLevel,
     GeneratedCredentials,
+    QuotaSetting,
     UpdateUserPreferencesRequest,
     UserCreateRequest,
     UserCreateResponse,
@@ -67,6 +68,52 @@ ACCESS_LEVEL_ROLES: dict[AccessLevel, str] = {
     "internal": "user",
     "admin": "admin",
 }
+QUOTA_FIELDS = ("workspace_quota", "project_quota", "chat_quota")
+
+
+def _quota_to_storage(value: object) -> int | None:
+    if value is None:
+        return None
+    if value == "unlimited":
+        return -1
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={
+                "code": "INVALID_USER_QUOTA",
+                "message": "Kontingente müssen eine nichtnegative Zahl, unbegrenzt oder Standard sein.",
+            },
+        )
+    return value
+
+
+def _quota_from_storage(value: object) -> QuotaSetting:
+    if value == -1:
+        return "unlimited"
+    if value is None:
+        return None
+    return max(int(cast(int, value)), 0)
+
+
+def _user_read(
+    user: UserModel,
+    *,
+    access_level: AccessLevel,
+) -> UserRead:
+    return UserRead(
+        id=user.id,
+        username=user.username,
+        display_name=user.display_name,
+        email=user.email,
+        is_active=bool(user.is_active),
+        is_system=bool(user.is_system_admin or user.is_system_user),
+        access_level=access_level,
+        workspace_quota=_quota_from_storage(user.workspace_quota),
+        project_quota=_quota_from_storage(user.project_quota),
+        chat_quota=_quota_from_storage(user.chat_quota),
+        created_at=str(user.created_at),
+        updated_at=str(user.updated_at),
+    )
 
 
 class UpdateOwnProfileRequest(BaseModel):
@@ -149,6 +196,10 @@ async def create_user(
             auto_login=False,
         )
 
+        for field_name in QUOTA_FIELDS:
+            setattr(user, field_name, _quota_to_storage(getattr(payload, field_name)))
+        await session.flush()
+
         try:
             await session.commit()
         except Exception:
@@ -196,20 +247,13 @@ async def create_user(
         generated_credentials = GeneratedCredentials(temporary_password=generated)
 
     return UserCreateResponse(
-        user=UserRead(
-            id=user.id,
-            username=user.username,
-            display_name=user.display_name,
-            email=user.email,
-            is_active=bool(user.is_active),
-            is_system=bool(user.is_system_admin),
+        user=_user_read(
+            user,
             access_level=(
                 _access_level_from_roles(payload.roles)
                 if payload.roles
                 else payload.access_level
             ),
-            created_at=str(user.created_at),
-            updated_at=str(user.updated_at),
         ),
         generated_credentials=generated_credentials,
     )
@@ -227,6 +271,7 @@ async def list_users(
                  """
                  SELECT users.id, users.username, users.display_name, users.email,
                      users.is_active, users.is_system_admin, users.is_system_user,
+                     users.workspace_quota, users.project_quota, users.chat_quota,
                      users.created_at, users.updated_at,
                      GROUP_CONCAT(roles.name) AS roles
                  FROM users
@@ -252,6 +297,9 @@ async def list_users(
                     r.get("is_system_admin") or r.get("is_system_user")
                 ),
                 access_level=_access_level_from_roles(r.get("roles")),
+                workspace_quota=_quota_from_storage(r.get("workspace_quota")),
+                project_quota=_quota_from_storage(r.get("project_quota")),
+                chat_quota=_quota_from_storage(r.get("chat_quota")),
                 created_at=str(r.get("created_at")),
                 updated_at=str(r.get("updated_at")),
             )
@@ -379,6 +427,7 @@ async def patch_user(
     if db_user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
     data = payload.model_dump(exclude_unset=True)
+    current_access_level = await _get_access_level(session, db_user.id)
 
     # Protect system users
     from app.core.settings import settings
@@ -392,7 +441,13 @@ async def patch_user(
                 "message": "Der Systembenutzer kann nicht deaktiviert werden.",
                 "request_id": getattr(request.state, "request_id", None),
             })
-        if "roles" in data or "access_level" in data:
+        if (
+            "roles" in data
+            or (
+                "access_level" in data
+                and data.get("access_level") != current_access_level
+            )
+        ):
             # Deny role changes that would remove administrator
             # For simplicity, deny any role change for system users
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={
@@ -402,17 +457,22 @@ async def patch_user(
             })
 
     changes: dict[str, object] = {}
-    current_access_level = await _get_access_level(session, db_user.id)
     if "display_name" in data:
         changes["display_name"] = data["display_name"]
     if "email" in data:
         changes["email"] = data["email"]
     if "is_active" in data:
         changes["is_active"] = data["is_active"]
+    for field_name in QUOTA_FIELDS:
+        if field_name in data:
+            changes[field_name] = _quota_to_storage(data[field_name])
     requested_access_level = cast(AccessLevel | None, data.get("access_level"))
 
     try:
-        if requested_access_level is not None:
+        if (
+            requested_access_level is not None
+            and requested_access_level != current_access_level
+        ):
             await _assign_access_level(session, db_user.id, requested_access_level)
         updated = await repo.update(db_user, changes)
         await ensure_user_mailbox(
@@ -426,16 +486,9 @@ async def patch_user(
         await session.rollback()
         raise
 
-    return UserRead(
-        id=updated.id,
-        username=updated.username,
-        display_name=updated.display_name,
-        email=updated.email,
-        is_active=bool(updated.is_active),
-        is_system=bool(updated.is_system_admin),
+    return _user_read(
+        updated,
         access_level=requested_access_level or current_access_level,
-        created_at=str(updated.created_at),
-        updated_at=str(updated.updated_at),
     )
 
 

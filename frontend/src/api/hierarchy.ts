@@ -25,9 +25,9 @@ export async function deleteHierarchyNode(id: string) {
 
 export interface HierarchyQuotaStatus {
   accessLevel: 'guest' | 'internal' | 'admin';
-  limits: Record<'workspace' | 'project' | 'chat', number> | null;
+  limits: Record<'workspace' | 'project' | 'chat', number | null> | null;
   usage: Record<'workspace' | 'project' | 'chat', number> | null;
-  remaining: Record<'workspace' | 'project' | 'chat', number> | null;
+  remaining: Record<'workspace' | 'project' | 'chat', number | null> | null;
 }
 
 export async function loadOwnHierarchyQuotas(): Promise<HierarchyQuotaStatus> {

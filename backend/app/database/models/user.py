@@ -46,6 +46,9 @@ class UserModel(Base):
     failed_login_attempts: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0
     )
+    workspace_quota: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    project_quota: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    chat_quota: Mapped[int | None] = mapped_column(Integer, nullable=True)
     locked_until: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

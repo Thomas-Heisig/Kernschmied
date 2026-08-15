@@ -20,7 +20,18 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 
 
 @pytest.mark.asyncio
-async def test_mention_is_delivered_to_the_recipient_mailbox() -> None:
+async def test_mention_is_delivered_to_the_recipient_mailbox(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        mailbox_service,
+        "settings",
+        type(
+            "EmailSettings",
+            (),
+            {"email_delivery_enabled": False, "email_provider": "smtp"},
+        )(),
+    )
     engine = create_async_engine("sqlite+aiosqlite:///:memory:")
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)

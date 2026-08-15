@@ -161,6 +161,12 @@ Freigabekriterien. Sie enthalten keine parallelen Aufgabenlisten.
 - [x] Kontextbezogene letzte Projekte, Chats und Unterchats je Hierarchieebene
       aus dem bestehenden Recent-Speicher ableiten und ausschließlich gegen den
       aktuell sichtbaren, berechtigungsprojizierten Teilbaum anzeigen.
+- [x] Bereiche und Projekte um vollständige direkte Projekt-/Chat-Sammlungen im
+      gemeinsamen Kartenaufbau des Benutzerarbeitsbereichs ergänzen und die
+      kontextbezogenen Recents als zusätzliche Schnellzugriffe erhalten.
+- [x] Bereichs-, Projekt- und Chatkontingente pro Benutzer mit Rollenstandard,
+      festem Limit und unbegrenzter Nutzung administrierbar, persistierbar und
+      in der serverseitigen Hierarchieerstellung wirksam machen.
 - [x] Persistente Chat-History berechtigungsgeprüft vollständig leeren, einzelne
       Nachrichten löschen und nach einem gewählten Stand kürzen; Antwortbezüge
       und monotone Sequenzen durch Repository- und API-Tests absichern.
