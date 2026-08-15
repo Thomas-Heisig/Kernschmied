@@ -54,6 +54,15 @@ class HierarchyNodeCreate(BaseModel):
 
     system_prompt: str | None = None
 
+    # Prompt flags exposed in read responses
+    prompt_enabled: bool = True
+    prompt_mode: str = 'append'
+    prompt_priority: int = 0
+
+    prompt_enabled: bool = True
+    prompt_mode: str = 'append'
+    prompt_priority: int = 0
+
     tool_policy: ToolPolicy
 
     config_overrides: JsonObjectField
@@ -73,6 +82,11 @@ class HierarchyNodeUpdate(BaseModel):
     )
 
     system_prompt: str | None = None
+
+    # Prompt-related fields
+    prompt_enabled: bool | None = None
+    prompt_mode: str | None = None
+    prompt_priority: int | None = None
 
     tool_policy: dict[str, bool] | None = None
 

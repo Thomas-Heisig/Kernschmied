@@ -18,7 +18,8 @@ function normalizeUser(raw: unknown): CurrentUser | null {
 
   const username = String(r.username ?? r['username'] ?? r.name ?? id);
   const displayName = String(r.display_name ?? r.displayName ?? username);
-  const email = r.email === undefined ? null : String(r.email ?? r['email'] ?? null);
+  const rawEmail = r.email ?? r['email'];
+  const email = rawEmail === undefined || rawEmail === null ? null : String(rawEmail);
 
   const tenantRaw = r.tenant ?? r['tenant'] ?? null;
   const tenant =
@@ -114,6 +115,125 @@ export interface RegisterInput {
   invitationToken?: string | null;
 }
 
+export interface ManagedUser {
+  id: string;
+  username: string;
+  displayName: string;
+  email: string | null;
+  isActive: boolean;
+  isSystem: boolean;
+  accessLevel: AccessLevel;
+}
+
+export type AccessLevel = 'guest' | 'internal' | 'admin';
+
+export interface ManagedUserInput {
+  username: string;
+  displayName: string;
+  email?: string | null;
+  password?: string | null;
+  generatePassword?: boolean;
+  requirePasswordChange?: boolean;
+  accessLevel?: AccessLevel;
+}
+
+function normalizeManagedUser(raw: unknown): ManagedUser {
+  const value = raw as Record<string, unknown>;
+  return {
+    id: String(value.id),
+    username: String(value.username),
+    displayName: String(value.display_name ?? value.displayName ?? value.username),
+    email: value.email ? String(value.email) : null,
+    isActive: Boolean(value.is_active ?? value.isActive),
+    isSystem: Boolean(value.is_system ?? value.isSystem),
+    accessLevel:
+      value.access_level === 'admin' || value.access_level === 'internal'
+        ? value.access_level
+        : 'guest',
+  };
+}
+
+export async function listManagedUsers(): Promise<ManagedUser[]> {
+  const response = await apiGet<unknown[]>('/api/v1/users/', { credentials: 'include' });
+  return Array.isArray(response) ? response.map(normalizeManagedUser) : [];
+}
+
+export async function createManagedUser(input: ManagedUserInput): Promise<{
+  user: ManagedUser;
+  temporaryPassword: string | null;
+}> {
+  const response = await apiPost<Record<string, unknown>>(
+    '/api/v1/users/',
+    {
+      username: input.username,
+      display_name: input.displayName,
+      email: input.email ?? null,
+      password: input.password || null,
+      generate_password: Boolean(input.generatePassword),
+      require_password_change: input.requirePasswordChange ?? true,
+      roles: null,
+      access_level: input.accessLevel ?? 'guest',
+      is_active: true,
+      preferences: null,
+      create_default_workspace: true,
+      default_workspace_name: `${input.displayName} – Arbeitsbereich`,
+    },
+    { credentials: 'include' },
+  );
+  const credentials = response.generated_credentials as Record<string, unknown> | null;
+  return {
+    user: normalizeManagedUser(response.user),
+    temporaryPassword: credentials?.temporary_password
+      ? String(credentials.temporary_password)
+      : null,
+  };
+}
+
+export async function updateManagedUser(
+  userId: string,
+  input: {
+    displayName: string;
+    email?: string | null;
+    isActive: boolean;
+    accessLevel: AccessLevel;
+  },
+): Promise<ManagedUser> {
+  const response = await apiPatch<unknown, Record<string, unknown>>(
+    `/api/v1/users/${encodeURIComponent(userId)}`,
+    {
+      display_name: input.displayName,
+      email: input.email ?? null,
+      is_active: input.isActive,
+      access_level: input.accessLevel,
+    },
+    { credentials: 'include' },
+  );
+  return normalizeManagedUser(response);
+}
+
+export async function resetManagedUserPassword(
+  userId: string,
+  password: string | null,
+): Promise<string | null> {
+  const response = await apiPost<{ temporary_password?: string | null }>(
+    `/api/v1/users/${encodeURIComponent(userId)}/password-reset`,
+    {
+      generate_password: !password,
+      password: password || null,
+      require_password_change: true,
+      revoke_sessions: true,
+    },
+    { credentials: 'include' },
+  );
+  return response.temporary_password ?? null;
+}
+
+export async function deleteManagedUser(userId: string): Promise<void> {
+  await apiDelete(`/api/v1/users/${encodeURIComponent(userId)}`, {
+    credentials: 'include',
+  });
+}
+
 export async function registerUser(
   registerEndpoint: string | undefined,
   payload: RegisterInput,
@@ -172,6 +292,9 @@ function normalizePreferences(raw: unknown): UserPreferences | null {
         ? null
         : String(r.default_view ?? r['defaultView']),
     notificationsEnabled: Boolean(r.notifications_enabled ?? r['notificationsEnabled'] ?? true),
+    aiResponseOnMentions: Boolean(
+      r.ai_response_on_mentions ?? r['aiResponseOnMentions'] ?? false,
+    ),
     revision: Number(r.revision ?? 0) as number,
     updatedAt: r.updated_at ? String(r.updated_at) : null,
     schemaVersion: String(r.schema_version ?? r['schemaVersion'] ?? '1.0'),
@@ -196,10 +319,12 @@ export async function updateUserPreferences(
   if (input.timezone !== undefined) body.timezone = input.timezone;
   if (input.theme !== undefined) body.theme = input.theme;
   if ((input as UpdateUserPreferencesInput).compactMode !== undefined)
-    body.compact_mode = (input as UpdateUserPreferencesInput).compactMode ? 1 : 0;
+    body.density = (input as UpdateUserPreferencesInput).compactMode ? 'compact' : 'comfortable';
   if (input.defaultView !== undefined) body.default_view = input.defaultView;
   if (input.notificationsEnabled !== undefined)
     body.notifications_enabled = input.notificationsEnabled;
+  if (input.aiResponseOnMentions !== undefined)
+    body.ai_response_on_mentions = input.aiResponseOnMentions;
 
   const resRaw = await apiPatch<unknown, typeof body>(ep, body, { credentials: 'include' });
   const normalized = normalizePreferences(resRaw);

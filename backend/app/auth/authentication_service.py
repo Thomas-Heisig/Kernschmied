@@ -10,6 +10,7 @@ from app.auth.password_service import PasswordService
 from app.auth.session_service import SessionService
 from app.core.settings import Settings
 from app.database.models.user import UserModel
+from app.services.mailbox_service import ensure_user_mailbox
 from app.storage.repositories.auth_session import AuthSessionRepository
 from app.storage.repositories.user import UserRepository
 
@@ -29,6 +30,8 @@ class AuthenticationService:
         self.session_repo = AuthSessionRepository(session)
         self.pwd = PasswordService()
         self.session_svc = SessionService()
+        self.resolved_session_id: str | None = None
+        self.resolved_authentication_method: str | None = None
 
     async def authenticate(self, username: str, password: str) -> UserModel:
         user = await self.user_repo.get_by_username(username)
@@ -125,6 +128,11 @@ class AuthenticationService:
         if user is None:
             return None
 
+        self.resolved_session_id = str(auth.id)
+        self.resolved_authentication_method = auth.authentication_method
+        await self.session_repo.touch(auth, now)
+        await self.session.commit()
+
         # Use the canonical principal mapper to produce the same shape
         # as the middleware-resolved principal. This ensures consistency
         # between session-based auth and ORM-resolved principals.
@@ -205,5 +213,12 @@ class AuthenticationService:
                 updated = True
             if updated:
                 await self.user_repo.update(user, {})
+
+        await ensure_user_mailbox(
+            self.session,
+            user.id,
+            external_email=user.email,
+            sync_external_email=True,
+        )
 
         return user

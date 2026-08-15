@@ -1,6 +1,7 @@
 import React from 'react';
 import type { UIComponentDefinition } from '../contracts/schema';
 import { DynamicIcon } from './iconRegistry';
+import IconBadge from '../components/common/IconBadge';
 import UnsupportedSchemaComponent from '../components/schema/UnsupportedSchemaComponent';
 import WidgetsForNode from '../components/widgets/WidgetsForNode';
 
@@ -56,7 +57,9 @@ const registry: Record<string, ComponentRenderer> = {
         onClick={p.onClick}
         className="inline-flex items-center gap-2 rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white hover:bg-blue-700"
       >
-        {componentProps.icon ? <DynamicIcon name={String(componentProps.icon)} size={16} /> : null}
+        {componentProps.icon ? (
+          <IconBadge icon={<DynamicIcon name={String(componentProps.icon)} />} size="sm" variant="default" />
+        ) : null}
         {def.title ?? children}
       </button>
     );

@@ -1,4 +1,5 @@
 # F:\Kernschmied\backend\app\services\chat_service.py
+# pyright: reportUnusedVariable=false, reportUnusedImport=false, reportMissingTypeArgument=false, reportGeneralTypeIssues=false
 
 """
 Anwendungsschicht für Chat-Generierungen.
@@ -36,6 +37,7 @@ import inspect
 import json
 import logging
 import time
+import hashlib as _hashlib
 from collections.abc import (
     AsyncIterator,
     Awaitable,
@@ -468,6 +470,8 @@ class ChatRequest:
     max_output_tokens: int | None = None
 
     stream: bool = True
+
+    respond_with_ai: bool = True
 
     tools: tuple[
         ToolDefinition,
@@ -1023,6 +1027,7 @@ class ChatService:
         self,
         *,
         model_service: ModelService,
+        config_service: object | None = None,
         default_model_id: str | None = None,
         model_resolver: ModelResolver | None = None,
         repository: ChatRepository | None = None,
@@ -1034,6 +1039,7 @@ class ChatService:
         generation_timeout_seconds: float = (DEFAULT_CHAT_GENERATION_TIMEOUT_SECONDS),
         hierarchy_session_factory: async_sessionmaker[AsyncSession] | None = None,
         prompt_config_reader: object | None = None,
+        hierarchy_service: object | None = None,
     ) -> None:
         if not (0.0 <= default_temperature <= 2.0):
             raise ValueError(
@@ -1072,6 +1078,9 @@ class ChatService:
 
         self._model_service = model_service
 
+        # Optional runtime config service used to read editable settings per request
+        self._config_service = config_service
+
         self._default_model_id = normalized_default_model_id
 
         self._model_resolver = model_resolver
@@ -1107,6 +1116,8 @@ class ChatService:
         self._hierarchy_session_factory = hierarchy_session_factory
         # Optional config reader used to fetch system prompt and revision
         self._prompt_config_reader = prompt_config_reader
+        # Optional HierarchyService instance providing resolve_effective_values
+        self._hierarchy_service = hierarchy_service
 
     # ========================================================
     # Nicht streamende Generierung
@@ -1330,6 +1341,27 @@ class ChatService:
             conversation_id=conversation_id,
             user_message_id=user_message_id,
         )
+
+        if not request.respond_with_ai:
+            yield ChatStreamEvent(
+                event=ChatEventType.START,
+                request_id=context.request_id,
+                conversation_id=conversation_id,
+                message_id=user_message_id,
+                model_id=model_id,
+                data={"ai_response": False},
+                sequence=0,
+            )
+            yield ChatStreamEvent(
+                event=ChatEventType.COMPLETE,
+                request_id=context.request_id,
+                conversation_id=conversation_id,
+                message_id=user_message_id,
+                model_id=model_id,
+                data={"ai_response": False, "status": "stored"},
+                sequence=1,
+            )
+            return
 
         generation_request = await self._create_generation_request(
             request=request,
@@ -1775,11 +1807,11 @@ class ChatService:
         # fetch settings-level system prompt via injected reader when present
         if self._prompt_config_reader is not None:
             try:
-                maybe: Any = cast(Any, self._prompt_config_reader).get_system_prompt()
-                if inspect.isawaitable(maybe):
-                    settings_result: Any = await maybe
+                settings_maybe: Any = cast(Any, self._prompt_config_reader).get_system_prompt()
+                if inspect.isawaitable(settings_maybe):
+                    settings_result: Any = await settings_maybe
                 else:
-                    settings_result = maybe
+                    settings_result = settings_maybe
 
                 if isinstance(settings_result, tuple):
                     sr = cast(tuple[Any, ...], settings_result)
@@ -1790,6 +1822,42 @@ class ChatService:
             except Exception:
                 # Don't fail hard on config read; fallback to default
                 system_prompt = self._default_system_prompt
+
+        # Additionally read ConfigService directly (if available) for diagnostics
+        try:
+            # `request` may be an object with `.app` when called from the API layer
+            req_any = cast(Any, request)
+            request_app = getattr(req_any, "app", None)
+            cfg = getattr(getattr(request_app, "state", None), "config_service", None)
+            if cfg is not None:
+                try:
+                    stored = cfg.get_required("chat", "system_prompt")
+                    rev = getattr(cfg, "revision", None)
+                    stored_present = bool(stored and str(stored).strip())
+                    stored_len = len(str(stored)) if stored_present else 0
+                    import hashlib as _hashlib
+
+                    stored_sha = (
+                        _hashlib.sha256(str(stored or "").encode("utf-8")).hexdigest()
+                        if stored_present
+                        else None
+                    )
+
+                    is_dev = str(getattr(__import__("app.core.settings", fromlist=["settings"]).settings, "app_environment", "")).lower() == "development"
+                    preview = (str(stored)[:40]) if (stored_present and is_dev) else None
+
+                    logger.info(
+                        "CONFIG_PROMPT revision=%s present=%s length=%s sha256=%s preview=%s",
+                        rev,
+                        stored_present,
+                        stored_len,
+                        stored_sha,
+                        preview,
+                    )
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
         # Use the typed hierarchy_node_id field from the service-level ChatRequest
         hierarchy_node_id = request.hierarchy_node_id
@@ -1819,6 +1887,9 @@ class ChatService:
         # Local enriched metadata (avoid assigning to request.metadata which may be read-only)
         enriched_metadata: Mapping[str, JsonValue] = request.metadata
 
+        # Ensure `resolved` is always defined for downstream diagnostics
+        resolved = None
+
         if hierarchy_node_id and self._hierarchy_session_factory is not None:
             # perform hierarchical resolution using a DB session and PromptResolver
             session_factory = self._hierarchy_session_factory
@@ -1829,8 +1900,11 @@ class ChatService:
 
                 repo = HierarchyRepository(session)
                 permission_service = HierarchyPermissionService()
-                resolver = PromptResolver(permission_service=permission_service)
-
+                # Prefer using the canonical HierarchyService to obtain effective
+                # values (prompt, tools, config) when available. This centralizes
+                # inheritance and merging rules in one place.
+                hierarchy_service_local = getattr(self, "_hierarchy_service", None)
+                resolver = None
                 # Use the strongly-typed HierarchyActor provided in the
                 # ChatServiceContext. The actor MUST be created at the API
                 # boundary via `hierarchy_actor_from_user_context()` and
@@ -1847,61 +1921,86 @@ class ChatService:
                 # Log pre-resolution diagnostics (no prompt contents)
                 settings_present = isinstance(system_prompt, str) and bool(system_prompt.strip())
                 settings_length = len(system_prompt.strip()) if isinstance(system_prompt, str) and system_prompt.strip() else 0
+                # Emit runtime configuration diagnostics (no prompt contents)
+                try:
+                    _log_info(
+                        "chat_runtime_settings",
+                        chat_step=("runtime-settings-read"),
+                        request_id=(context.request_id),
+                        hierarchy_node_id=hierarchy_node_id,
+                        config_revision=(config_revision),
+                        settings_system_prompt_present=settings_present,
+                        settings_system_prompt_length=settings_length,
+                        configured_model=(model_id),
+                        requested_max_output_tokens=(request.max_output_tokens),
+                        default_max_output_tokens=(self._default_max_output_tokens),
+                        requested_temperature=(request.temperature),
+                    )
+                except Exception:
+                    pass
 
                 try:
-                    resolved = await resolver.resolve(
-                        str(hierarchy_node_id),
-                        repository=repo,
-                        actor=actor,
-                        settings_system_prompt=system_prompt,
-                    )
-
-                    if resolved and getattr(resolved, "system_prompt", None):
-                        system_prompt = resolved.system_prompt
-
-                    # Structured diagnostics for prompt resolution (no content)
-                    try:
-                        prompt_source_count = (
-                            len(resolved.fragments)
-                            if resolved and getattr(resolved, "fragments", None) is not None
-                            else 0
+                    # If a HierarchyService was injected, use it as the single
+                    # source of truth for resolved prompt, tools and config.
+                    if hierarchy_service_local is not None:
+                        vals = await hierarchy_service_local.resolve_effective_values(
+                            hierarchy_node_id, actor=actor
                         )
-                        system_prompt_present_final = bool(system_prompt and system_prompt.strip())
-                        system_prompt_length_final = len(system_prompt or "")
-                        _log_info(
-                            "Prompt resolved for generation",
-                            chat_step=("resolve-hierarchy-finalized"),
-                            request_id=(context.request_id),
-                            hierarchy_node_id=hierarchy_node_id,
-                            prompt_source_count=prompt_source_count,
-                            effective_system_prompt_length=system_prompt_length_final,
-                            system_prompt_present=system_prompt_present_final,
-                            settings_system_prompt_present=settings_present,
-                            settings_system_prompt_length=settings_length,
+                        if isinstance(vals, dict):
+                            resolved_prompt = vals.get("prompt")
+                            if resolved_prompt:
+                                system_prompt = resolved_prompt
+                            # capture effective tools/config later via `eff`
+                            resolved_tools = vals.get("tools") or {}
+                            resolved_config = vals.get("config") or {}
+                            # carry config revision into diagnostics when available
+                            if config_revision is not None:
+                                try:
+                                    if isinstance(vals, dict):
+                                        vals["config_revision"] = config_revision
+                                except Exception:
+                                    pass
+                            # Structured diagnostics (no prompt contents)
+                            try:
+                                prompt_source_count = 1 if resolved_prompt else 0
+                                system_prompt_present_final = bool(system_prompt and system_prompt.strip())
+                                system_prompt_length_final = len(system_prompt or "")
+                                _log_info(
+                                    "Prompt resolved for generation",
+                                    chat_step=("resolve-hierarchy-finalized"),
+                                    request_id=(context.request_id),
+                                    hierarchy_node_id=hierarchy_node_id,
+                                    prompt_source_count=prompt_source_count,
+                                    effective_system_prompt_length=system_prompt_length_final,
+                                    system_prompt_present=system_prompt_present_final,
+                                    settings_system_prompt_present=settings_present,
+                                    settings_system_prompt_length=settings_length,
+                                )
+                            except Exception:
+                                pass
+                        else:
+                            resolved_tools = {}
+                            resolved_config = {}
+                    else:
+                        # Fall back to local PromptResolver if HierarchyService is not available
+                        resolver = PromptResolver(permission_service=permission_service)
+                        resolved = await resolver.resolve(
+                            str(hierarchy_node_id),
+                            repository=repo,
+                            actor=actor,
+                            settings_system_prompt=system_prompt,
                         )
-                    except Exception:
-                        prompt_source_count = 0
-                        system_prompt_present_final = bool(system_prompt and system_prompt.strip())
-                        system_prompt_length_final = len(system_prompt or "")
+                        if resolved and getattr(resolved, "system_prompt", None):
+                            system_prompt = resolved.system_prompt
+                        resolved_tools = getattr(resolved, "effective_tools", {}) or {}
+                        resolved_config = getattr(resolved, "effective_config", {}) or {}
 
-                    # carry config revision into resolved prompt when available
-                    if config_revision is not None:
-                        import contextlib as _contextlib2
-
-                        with _contextlib2.suppress(Exception):
-                            resolved.config_revision = config_revision
-
+                    # publish a compact resolution log
                     _log_info(
                         "Resolved system prompt from hierarchy",
                         chat_step=("resolve-hierarchy"),
                         request_id=(context.request_id),
                         hierarchy_node_id=hierarchy_node_id,
-                        fragment_count=(
-                            len(resolved.fragments)
-                            if resolved
-                            and getattr(resolved, "fragments", None) is not None
-                            else 0
-                        ),
                     )
 
                 except LookupError:
@@ -1931,6 +2030,7 @@ class ChatService:
                     state_obj = getattr(request_app, "state", None)
                     registry = getattr(state_obj, "tool_registry", None)
                     normalized_tools: dict[str, object] = {}
+                    registry_candidates: list[str] = []
                     if registry is not None:
                         raw_tools = registry.list_tools()
                         if inspect.isawaitable(raw_tools):
@@ -1941,42 +2041,97 @@ class ChatService:
 
                                 t = normalize_tool_entry(raw)
                                 normalized_tools[t.id] = t
+                                registry_candidates.append(t.id)
                             except Exception:
                                 continue
 
-                    # collect latest policy values from ancestor chain
-                    chain_nodes = await repo.get_ancestor_chain(hierarchy_node_id)
+                    # collect latest policy values: prefer resolved_tools from
+                    # HierarchyService if available, else fall back to ancestor chain.
                     latest_value: dict[str, bool] = {}
-                    for n in chain_nodes:
-                        for k, v in dict(n.tool_policy or {}).items():
-                            latest_value[str(k).strip().lower()] = bool(v)
+                    if 'resolved_tools' in locals():
+                        try:
+                            for k, v in dict(resolved_tools or {}).items():
+                                latest_value[str(k).strip().lower()] = bool(v)
+                        except Exception:
+                            latest_value = {}
+                    else:
+                        chain_nodes = await repo.get_ancestor_chain(hierarchy_node_id)
+                        for n in chain_nodes:
+                            for k, v in dict(n.tool_policy or {}).items():
+                                latest_value[str(k).strip().lower()] = bool(v)
+
+                    # Read global runtime tool settings from ConfigService (if available)
+                    cfg_tools_enabled = True
+                    cfg_allowed_tools: list[str] | None = None
+                    cfg_auto_select = False
+                    cfg_max_selected = None
+                    try:
+                        if self._config_service is not None:
+                            try:
+                                cfg_tools_enabled = bool(getattr(self._config_service, 'get')('tools', 'enabled'))
+                            except Exception:
+                                cfg_tools_enabled = True
+                            try:
+                                a = getattr(self._config_service, 'get')('tools', 'allowed_tool_ids')
+                                if isinstance(a, list):
+                                    cfg_allowed_tools = [str(x) for x in a]
+                            except Exception:
+                                cfg_allowed_tools = None
+                            try:
+                                cfg_auto_select = bool(getattr(self._config_service, 'get')('tools', 'automatic_selection'))
+                            except Exception:
+                                cfg_auto_select = False
+                            try:
+                                cfg_max_selected = int(getattr(self._config_service, 'get')('tools', 'max_selected_tools'))
+                            except Exception:
+                                cfg_max_selected = None
+                    except Exception:
+                        cfg_tools_enabled = True
 
                     effective_ids: set[str] = set()
+                    skip_reasons: dict[str, int] = {}
                     raw_perms = getattr(actor, "permissions", None)
                     if raw_perms is None:
                         actor_perms: frozenset[str] = frozenset()
                     else:
                         actor_perms: frozenset[str] = frozenset(str(x).strip() for x in cast(Sequence[object], raw_perms))
-                    for tid, val in latest_value.items():
-                        if not val:
-                            # locally disabled -> not effective
-                            continue
-                        # find registry entry case-insensitive
-                        registry_entry = next((v for k, v in normalized_tools.items() if k.casefold() == tid.casefold()), None)
-                        if registry_entry is None:
-                            continue
-                        # must be enabled and available
-                        if not getattr(registry_entry, "enabled", True) or not getattr(registry_entry, "available", True):
-                            continue
-                        # permissions
-                        req_perms = list(getattr(registry_entry, "required_permissions", []) or [])
-                        if req_perms and not getattr(actor, "is_admin", False):
-                            missing = [rp for rp in req_perms if rp not in actor_perms]
-                            if missing:
+
+                    # If global tools are disabled entirely, nothing is effective
+                    if not cfg_tools_enabled:
+                        skip_reasons['global_disabled'] = len(latest_value)
+                    else:
+                        for tid, val in latest_value.items():
+                            if not val:
+                                # locally disabled -> not effective
+                                skip_reasons['locally_disabled'] = skip_reasons.get('locally_disabled', 0) + 1
                                 continue
-                        # registry_entry may be an arbitrary object from the registry; access attributes safely
-                        rid = getattr(registry_entry, "id", str(tid))
-                        effective_ids.add(str(rid))
+                            # find registry entry case-insensitive
+                            registry_entry = next((v for k, v in normalized_tools.items() if k.casefold() == tid.casefold()), None)
+                            if registry_entry is None:
+                                skip_reasons['not_in_registry'] = skip_reasons.get('not_in_registry', 0) + 1
+                                continue
+                            # must be enabled and available
+                            if not getattr(registry_entry, "enabled", True):
+                                skip_reasons['registry_disabled'] = skip_reasons.get('registry_disabled', 0) + 1
+                                continue
+                            if not getattr(registry_entry, "available", True):
+                                skip_reasons['registry_unavailable'] = skip_reasons.get('registry_unavailable', 0) + 1
+                                continue
+                            # global allowlist check (ConfigService has precedence over node allowlist)
+                            rid = getattr(registry_entry, "id", str(tid))
+                            if cfg_allowed_tools is not None and rid not in cfg_allowed_tools:
+                                skip_reasons['global_blocked'] = skip_reasons.get('global_blocked', 0) + 1
+                                continue
+                            # node/hierarchy policy already expressed by latest_value (we honored it above)
+                            # permissions
+                            req_perms = list(getattr(registry_entry, "required_permissions", []) or [])
+                            if req_perms and not getattr(actor, "is_admin", False):
+                                missing = [rp for rp in req_perms if rp not in actor_perms]
+                                if missing:
+                                    skip_reasons['missing_permissions'] = skip_reasons.get('missing_permissions', 0) + 1
+                                    continue
+                            # registry_entry may be an arbitrary object from the registry; access attributes safely
+                            effective_ids.add(str(rid))
 
                     # normalize requested_tool_ids from request.metadata to a list[str]
                     raw_requested = request.metadata.get("requested_tool_ids", None)
@@ -1987,13 +2142,19 @@ class ChatService:
                         requested = [str(x) for x in raw_requested]
                     else:
                         requested = []
+
+                    # final selection: request may only reduce the effective set
                     final_ids: list[str]
                     if requested:
-                        # only allow client-requested tools that are effective
                         final_ids = [tid for tid in requested if tid in effective_ids]
                     else:
-                        # preserve existing behaviour: do not automatically enable all effective tools
-                        final_ids = []
+                        # If auto-selection is allowed, leave final_ids empty to signal
+                        # providers/models that they may choose among `effective_tool_ids`.
+                        if cfg_auto_select:
+                            final_ids = []
+                        else:
+                            # preserve existing conservative behaviour: do not enable tools by default
+                            final_ids = []
 
                     # annotate metadata for downstream auditing (no secrets)
                     enriched_metadata = cast(
@@ -2005,16 +2166,21 @@ class ChatService:
                             "final_tool_ids": final_ids,
                         },
                     )
-                    # log for debug
-                    _log_info(
-                        "Resolved effective tools for chat request",
-                        chat_step=("resolve-effective-tools"),
-                        request_id=(context.request_id),
-                        hierarchy_node_id=hierarchy_node_id,
-                        effective_tool_count=len(effective_ids),
-                        requested_tool_count=len(requested),
-                        final_tool_count=len(final_ids),
-                    )
+
+                    # Exactly one compact TOOL_EFFECTIVE info log per request
+                    try:
+                        _log_info(
+                            "TOOL_EFFECTIVE",
+                            chat_step=("tool-effective"),
+                            request_id=(context.request_id),
+                            hierarchy_node_id=hierarchy_node_id,
+                            registry_candidate_count=len(registry_candidates),
+                            effective_tool_count=len(effective_ids),
+                            final_tool_count=len(final_ids),
+                            skip_reasons=skip_reasons,
+                        )
+                    except Exception:
+                        pass
                 except Exception:
                     # Do not fail chat generation on tool resolution errors; log and continue
                     _log_warning(
@@ -2040,14 +2206,66 @@ class ChatService:
                     with _contextlib3.suppress(Exception):
                         resolved.config_revision = config_revision
 
+        # Diagnostic: capture resolved prompt state before applying request/default fallback
+        try:
+            import hashlib as _hashlib
+
+            _pre_bytes = (system_prompt or "").encode("utf-8")
+            _pre_len = len(_pre_bytes)
+            _pre_sha = _hashlib.sha256(_pre_bytes).hexdigest() if _pre_bytes else None
+        except Exception:
+            _pre_len = 0
+            _pre_sha = None
+
+        _log_info(
+            "Resolved prompt pre-fallback",
+            request_id=(context.request_id),
+            hierarchy_node_id=hierarchy_node_id,
+            fragments_count=(len(resolved.fragments) if resolved and getattr(resolved, "fragments", None) is not None else 0),
+            system_prompt_present=bool(system_prompt and system_prompt.strip()),
+            system_prompt_length=_pre_len,
+            system_prompt_sha256=_pre_sha,
+        )
+
         # fallback to explicit request-level or service default system prompt
         if system_prompt is None:
             system_prompt = request.system_prompt or self._default_system_prompt
 
         if system_prompt:
+            # Diagnostic: capture runtime system_prompt presence and SHA before insertion
+            try:
+                import hashlib as _hashlib
+
+                _prompt_bytes = (system_prompt or "").encode("utf-8")
+                _prompt_len = len(_prompt_bytes)
+                _prompt_sha = (
+                    _hashlib.sha256(_prompt_bytes).hexdigest() if _prompt_bytes else None
+                )
+            except Exception:
+                _prompt_len = 0
+                _prompt_sha = None
+
+            _log_info(
+                "Pre-insert system prompt",
+                system_prompt_present=bool(system_prompt),
+                system_prompt_length=_prompt_len,
+                system_prompt_sha256=_prompt_sha,
+            )
+
             messages.insert(
                 0, ChatMessage(role=MessageRole.SYSTEM, content=system_prompt)
             )
+
+        # Compute non-sensitive SHA-256 of the effective system prompt for diagnostics
+        try:
+            import hashlib as _hashlib
+
+            _prompt_bytes = (system_prompt or "").encode("utf-8")
+            system_prompt_sha256 = (
+                _hashlib.sha256(_prompt_bytes).hexdigest() if _prompt_bytes else None
+            )
+        except Exception:
+            system_prompt_sha256 = None
 
         # Load persisted history when we have an effective conversation id.
         # Use the service-side `conversation_id` (which may be generated by
@@ -2148,11 +2366,101 @@ class ChatService:
             ),
         )
 
-        max_tokens = (
-            request.max_output_tokens
-            if (request.max_output_tokens is not None)
-            else (self._default_max_output_tokens)
-        )
+        # Precompute effective hierarchy config and provider manifest info once
+        eff = None
+        eff_config: dict | None = None
+        provider_info = None
+        try:
+            # Prefer canonical resolved_config/resolved_tools from earlier
+            # hierarchy resolution (resolved_config/resolved_tools). These are
+            # populated when a HierarchyService was injected and used above.
+            if 'resolved_config' in locals():
+                eff_config = cast(dict, locals().get('resolved_config') or {})
+            else:
+                # Fallback: if no resolved_config, try existing inheritance service
+                if hierarchy_node_id and self._hierarchy_session_factory is not None:
+                    from app.hierarchy.inheritance import HierarchyInheritanceService
+                    from app.hierarchy.repository import HierarchyRepository
+
+                    async with self._hierarchy_session_factory() as _session:
+                        repo = HierarchyRepository(_session)
+                        chain = await repo.get_ancestor_chain(hierarchy_node_id)
+
+                    inh = HierarchyInheritanceService()
+                    eff = inh.resolve(list(chain))
+                    eff_config = getattr(eff, "config", None) or {}
+        except Exception:
+            eff = None
+            eff_config = {}
+
+        # Try to obtain model/manifest/provider defaults for later fallbacks
+        try:
+            if getattr(self, "_model_service", None) is not None and model_id:
+                maybe = await getattr(self, "_model_service").get_model_info(
+                    model_id, include_provider_info=True, access_context=(context.access)
+                )
+                if isinstance(maybe, tuple):
+                    _svc_info, provider_info = maybe
+                else:
+                    provider_info = maybe
+        except Exception:
+            provider_info = None
+
+        # Resolve effective max_output_tokens with priority:
+        # 1. explicit request override
+        # 2. effective hierarchy config (node.config overrides)
+        # 3. runtime ConfigService models.max_output_tokens
+        # 4. service default fallback
+        max_tokens = None
+
+        if request.max_output_tokens is not None:
+            max_tokens = int(request.max_output_tokens)
+        else:
+            # Attempt to read hierarchy effective config when available
+            try:
+                maybe: int | float | str | None = None
+                if isinstance(eff_config, dict):
+                    eff_conf_dict = cast(dict[str, Any], eff_config)
+                    models_cfg: Any = eff_conf_dict.get("models")
+                    if isinstance(models_cfg, dict):
+                        if "max_output_tokens" in models_cfg:
+                            maybe = cast(int | float | str | None, models_cfg["max_output_tokens"])
+                    if maybe is None and "max_output_tokens" in eff_conf_dict:
+                        maybe = cast(int | float | str | None, eff_conf_dict["max_output_tokens"])
+
+                if maybe is not None:
+                    try:
+                        max_tokens_candidate: int | None = None
+                        if isinstance(maybe, (int, float)):
+                            max_tokens_candidate = int(maybe)
+                        else:
+                            s = str(maybe).strip()
+                            if s:
+                                max_tokens_candidate = int(s)
+
+                        max_tokens = max_tokens_candidate
+                    except Exception:
+                        max_tokens = None
+            except Exception:
+                # Non-fatal: fall through to config_service or default
+                max_tokens = None
+
+            # If still unset, try ConfigService runtime setting
+            if max_tokens is None and self._config_service is not None:
+                try:
+                    cfg = self._config_service
+                    if hasattr(cfg, "get"):
+                        cfg_val = getattr(cfg, "get")("models", "max_output_tokens")
+                    else:
+                        cfg_val = None
+
+                    if cfg_val is not None:
+                        max_tokens = int(cfg_val)
+                except Exception:
+                    max_tokens = None
+
+            if max_tokens is None:
+                max_tokens = int(self._default_max_output_tokens)
 
         metadata: JsonObject = {
             **dict(
@@ -2172,7 +2480,65 @@ class ChatService:
             "prompt_source_count": (
                 locals().get("prompt_source_count", 0)
             ),
+            "system_prompt_sha256": (system_prompt_sha256),
         }
+
+        # Non-sensitive diagnostics about the prepared messages
+        # Ensure diagnostic variables are defined for static analysis
+        first_role = None
+        first_length = 0
+        try:
+            if messages:
+                first_msg = messages[0]
+                first_role = getattr(first_msg.role, "value", str(first_msg.role))
+                first_length = len(getattr(first_msg, "content", "") or "")
+            else:
+                first_role = None
+                first_length = 0
+
+            metadata["first_message_role"] = first_role
+            metadata["first_message_length"] = first_length
+        except Exception:
+            # never fail generation on diagnostics
+            pass
+
+        # Emit compact, human-readable GENERATION_REQUEST diagnostics
+        try:
+            msg_roles = [getattr(m.role, "value", str(m.role)) for m in messages]
+            system_count = sum(1 for m in messages if getattr(m.role, "value", str(m.role)).lower() == "system")
+            first_sha = None
+            try:
+                if messages:
+                    first_msg = messages[0]
+                    if getattr(first_msg.role, "value", str(first_msg.role)).lower() == "system":
+                        import hashlib as _hashlib2
+
+                        first_sha = _hashlib2.sha256((getattr(first_msg, "content", "") or "").encode("utf-8")).hexdigest()
+            except Exception:
+                first_sha = None
+
+            # development-only system preview
+            is_dev = str(getattr(__import__("app.core.settings", fromlist=["settings"]).settings, "app_environment", "")).lower() == "development"
+            first_preview = ""
+            if is_dev and messages:
+                try:
+                    if getattr(messages[0].role, "value", str(messages[0].role)).lower() == "system":
+                        first_preview = (getattr(messages[0], "content", "") or "")[:200]
+                except Exception:
+                    first_preview = ""
+
+            logger.info(
+                "GENERATION_REQUEST message_count=%s roles=%s system_message_count=%s first_role=%s first_length=%s first_sha256=%s preview=%s",
+                len(messages),
+                ",".join(msg_roles),
+                system_count,
+                first_role,
+                first_length,
+                first_sha,
+                first_preview,
+            )
+        except Exception:
+            pass
 
         # Final invariants check
         try:
@@ -2180,30 +2546,380 @@ class ChatService:
         except ChatServiceError:
             raise
 
-        return GenerationRequest(
+        # Resolve additional generation parameters (temperature, top_p, stream)
+        # Priority: request -> hierarchy eff_config -> runtime ConfigService -> provider manifest -> service defaults
+        # Temperature
+        temperature = None
+        temperature_source = "default"
+        try:
+            if request.temperature is not None:
+                temperature = float(request.temperature)
+                temperature_source = "request"
+            else:
+                # hierarchy
+                maybe_t = None
+                if isinstance(eff_config, dict):
+                    models_cfg = eff_config.get("models")
+                    if isinstance(models_cfg, dict) and "temperature" in models_cfg:
+                        maybe_t = models_cfg.get("temperature")
+                    elif "temperature" in eff_config:
+                        maybe_t = eff_config.get("temperature")
+
+                if maybe_t is not None:
+                    try:
+                        temperature = float(maybe_t)
+                        temperature_source = "hierarchy"
+                    except Exception:
+                        temperature = None
+
+                # ConfigService
+                if temperature is None and self._config_service is not None:
+                    try:
+                        cfg_val = getattr(self._config_service, "get")( "models", "temperature")
+                        if cfg_val is not None:
+                            temperature = float(cfg_val)
+                            temperature_source = "config_service"
+                    except Exception:
+                        temperature = None
+
+                # provider manifest
+                if temperature is None and provider_info is not None:
+                    try:
+                        meta = getattr(provider_info, "metadata", {}) or {}
+                        defaults = meta.get("defaults") if isinstance(meta, dict) else None
+                        if isinstance(defaults, dict) and "temperature" in defaults:
+                            temperature = float(defaults.get("temperature"))
+                            temperature_source = "provider_manifest"
+                    except Exception:
+                        temperature = None
+
+                if temperature is None:
+                    temperature = float(self._default_temperature)
+                    temperature_source = "default"
+        except Exception:
+            temperature = float(self._default_temperature)
+            temperature_source = "default"
+
+        # top_p
+        top_p = None
+        top_p_source = ""
+        try:
+            maybe_tp = None
+            if isinstance(eff_config, dict):
+                models_cfg = eff_config.get("models")
+                if isinstance(models_cfg, dict) and "top_p" in models_cfg:
+                    maybe_tp = models_cfg.get("top_p")
+                elif "top_p" in eff_config:
+                    maybe_tp = eff_config.get("top_p")
+
+            if maybe_tp is not None:
+                try:
+                    top_p = float(maybe_tp)
+                    top_p_source = "hierarchy"
+                except Exception:
+                    top_p = None
+
+            if top_p is None and self._config_service is not None:
+                try:
+                    cfg_val = getattr(self._config_service, "get")( "models", "top_p")
+                    if cfg_val is not None:
+                        top_p = float(cfg_val)
+                        top_p_source = "config_service"
+                except Exception:
+                    top_p = None
+
+            if top_p is None and provider_info is not None:
+                try:
+                    meta = getattr(provider_info, "metadata", {}) or {}
+                    defaults = meta.get("defaults") if isinstance(meta, dict) else None
+                    if isinstance(defaults, dict) and "top_p" in defaults:
+                        top_p = float(defaults.get("top_p"))
+                        top_p_source = "provider_manifest"
+                except Exception:
+                    top_p = None
+        except Exception:
+            top_p = None
+
+        # stream
+        stream_value = True
+        stream_source = "default"
+        try:
+            if getattr(request, "stream", None) is not None:
+                stream_value = bool(request.stream)
+                stream_source = "request"
+            else:
+                if self._config_service is not None:
+                    try:
+                        cfg_val = getattr(self._config_service, "get")( "communication", "chat_streaming_enabled")
+                        if isinstance(cfg_val, bool):
+                            stream_value = cfg_val
+                            stream_source = "config_service"
+                    except Exception:
+                        pass
+        except Exception:
+            stream_value = True
+
+        # Additional model/resilience parameters: top_k, repeat_penalty, request_timeout_seconds, max_retries
+        top_k = None
+        top_k_source = ""
+        try:
+            maybe_k = None
+            if isinstance(eff_config, dict):
+                models_cfg = eff_config.get("models")
+                if isinstance(models_cfg, dict) and "top_k" in models_cfg:
+                    maybe_k = models_cfg.get("top_k")
+                elif "top_k" in eff_config:
+                    maybe_k = eff_config.get("top_k")
+
+            if maybe_k is not None:
+                try:
+                    top_k = int(maybe_k)
+                    top_k_source = "hierarchy"
+                except Exception:
+                    top_k = None
+
+            if top_k is None and self._config_service is not None:
+                try:
+                    cfg_val = getattr(self._config_service, "get")( "models", "top_k")
+                    if cfg_val is not None:
+                        top_k = int(cfg_val)
+                        top_k_source = "config_service"
+                except Exception:
+                    top_k = None
+
+            if top_k is None and provider_info is not None:
+                try:
+                    meta = getattr(provider_info, "metadata", {}) or {}
+                    defaults = meta.get("defaults") if isinstance(meta, dict) else None
+                    if isinstance(defaults, dict) and "top_k" in defaults:
+                        top_k = int(defaults.get("top_k"))
+                        top_k_source = "provider_manifest"
+                except Exception:
+                    top_k = None
+        except Exception:
+            top_k = None
+
+        repeat_penalty = None
+        repeat_penalty_source = ""
+        try:
+            maybe_r = None
+            if isinstance(eff_config, dict):
+                models_cfg = eff_config.get("models")
+                if isinstance(models_cfg, dict) and "repeat_penalty" in models_cfg:
+                    maybe_r = models_cfg.get("repeat_penalty")
+                elif "repeat_penalty" in eff_config:
+                    maybe_r = eff_config.get("repeat_penalty")
+
+            if maybe_r is not None:
+                try:
+                    repeat_penalty = float(maybe_r)
+                    repeat_penalty_source = "hierarchy"
+                except Exception:
+                    repeat_penalty = None
+
+            if repeat_penalty is None and self._config_service is not None:
+                try:
+                    cfg_val = getattr(self._config_service, "get")( "models", "repeat_penalty")
+                    if cfg_val is not None:
+                        repeat_penalty = float(cfg_val)
+                        repeat_penalty_source = "config_service"
+                except Exception:
+                    repeat_penalty = None
+
+            if repeat_penalty is None and provider_info is not None:
+                try:
+                    meta = getattr(provider_info, "metadata", {}) or {}
+                    defaults = meta.get("defaults") if isinstance(meta, dict) else None
+                    if isinstance(defaults, dict) and "repeat_penalty" in defaults:
+                        repeat_penalty = float(defaults.get("repeat_penalty"))
+                        repeat_penalty_source = "provider_manifest"
+                except Exception:
+                    repeat_penalty = None
+        except Exception:
+            repeat_penalty = None
+
+        request_timeout_seconds = None
+        request_timeout_source = ""
+        try:
+            maybe_to = None
+            if isinstance(eff_config, dict):
+                models_cfg = eff_config.get("models")
+                if isinstance(models_cfg, dict) and "request_timeout_seconds" in models_cfg:
+                    maybe_to = models_cfg.get("request_timeout_seconds")
+                elif "request_timeout_seconds" in eff_config:
+                    maybe_to = eff_config.get("request_timeout_seconds")
+
+            if maybe_to is not None:
+                try:
+                    request_timeout_seconds = int(maybe_to)
+                    request_timeout_source = "hierarchy"
+                except Exception:
+                    request_timeout_seconds = None
+
+            if request_timeout_seconds is None and self._config_service is not None:
+                try:
+                    cfg_val = getattr(self._config_service, "get")( "models", "request_timeout_seconds")
+                    if cfg_val is not None:
+                        request_timeout_seconds = int(cfg_val)
+                        request_timeout_source = "config_service"
+                except Exception:
+                    request_timeout_seconds = None
+
+            if request_timeout_seconds is None and provider_info is not None:
+                try:
+                    meta = getattr(provider_info, "metadata", {}) or {}
+                    defaults = meta.get("defaults") if isinstance(meta, dict) else None
+                    if isinstance(defaults, dict) and "request_timeout_seconds" in defaults:
+                        request_timeout_seconds = int(defaults.get("request_timeout_seconds"))
+                        request_timeout_source = "provider_manifest"
+                except Exception:
+                    request_timeout_seconds = None
+
+            if request_timeout_seconds is None:
+                # fall back to service-level generation timeout
+                request_timeout_seconds = int(self._generation_timeout_seconds)
+                request_timeout_source = "service_default"
+        except Exception:
+            request_timeout_seconds = int(self._generation_timeout_seconds)
+            request_timeout_source = "service_default"
+
+        max_retries = None
+        max_retries_source = ""
+        try:
+            maybe_mr = None
+            if isinstance(eff_config, dict):
+                models_cfg = eff_config.get("models")
+                if isinstance(models_cfg, dict) and "max_retries" in models_cfg:
+                    maybe_mr = models_cfg.get("max_retries")
+                elif "max_retries" in eff_config:
+                    maybe_mr = eff_config.get("max_retries")
+
+            if maybe_mr is not None:
+                try:
+                    max_retries = int(maybe_mr)
+                    max_retries_source = "hierarchy"
+                except Exception:
+                    max_retries = None
+
+            if max_retries is None and self._config_service is not None:
+                try:
+                    cfg_val = getattr(self._config_service, "get")( "models", "max_retries")
+                    if cfg_val is not None:
+                        max_retries = int(cfg_val)
+                        max_retries_source = "config_service"
+                except Exception:
+                    max_retries = None
+
+            if max_retries is None and provider_info is not None:
+                try:
+                    meta = getattr(provider_info, "metadata", {}) or {}
+                    defaults = meta.get("defaults") if isinstance(meta, dict) else None
+                    if isinstance(defaults, dict) and "max_retries" in defaults:
+                        max_retries = int(defaults.get("max_retries"))
+                        max_retries_source = "provider_manifest"
+                except Exception:
+                    max_retries = None
+
+            if max_retries is None:
+                max_retries = 0
+                max_retries_source = "default"
+        except Exception:
+            max_retries = 0
+            max_retries_source = "default"
+
+        gen_req = GenerationRequest(
             model=model_id,
-            messages=list(
-                messages,
-            ),
-            temperature=(
-                request.temperature
-                if (request.temperature is not None)
-                else (self._default_temperature)
-            ),
+            messages=list(messages),
+            temperature=temperature,
             max_tokens=max_tokens,
-            tools=list(
-                request.tools,
-            ),
+            top_p=top_p,
+            top_k=top_k,
+            repeat_penalty=repeat_penalty,
+            request_timeout_seconds=request_timeout_seconds,
+            max_retries=max_retries,
+            stop=None,
+            tools=list(request.tools),
+            stream=stream_value,
             metadata=metadata,
         )
+
+        # Runtime diagnostics for config effectiveness (development-only)
+        try:
+            import hashlib as _hashlib
+
+            sys_sha = (
+                _hashlib.sha256((system_prompt or "").encode("utf-8")).hexdigest()
+                if system_prompt and system_prompt.strip()
+                else None
+            )
+
+            model_source = (
+                "request" if request.model_id is not None else "config_service" if (self._config_service is not None and isinstance(getattr(self._config_service, 'get')( 'models','default_model' ), str)) else "bootstrap"
+            )
+
+            max_source = (
+                "request" if request.max_output_tokens is not None else "hierarchy" if (hierarchy_node_id and 'eff' in locals()) else "config_service" if (self._config_service is not None) else "default"
+            )
+
+            _log_info(
+                "CHAT_RUNTIME_CONFIG",
+                chat_step=("runtime-config-resolved"),
+                request_id=(context.request_id),
+                config_revision=(config_revision),
+                requested_model_id=(request.model_id),
+                effective_model_id=(model_id),
+                model_source=model_source,
+                requested_max_output_tokens=(request.max_output_tokens),
+                effective_max_output_tokens=(max_tokens),
+                max_output_tokens_source=max_source,
+                effective_temperature=temperature,
+                effective_temperature_source=temperature_source,
+                effective_top_p=top_p,
+                effective_top_p_source=top_p_source,
+                effective_stream=stream_value,
+                effective_stream_source=stream_source,
+                    effective_top_k=top_k,
+                    effective_top_k_source=top_k_source,
+                    effective_repeat_penalty=repeat_penalty,
+                    effective_repeat_penalty_source=repeat_penalty_source,
+                    effective_request_timeout_seconds=request_timeout_seconds,
+                    effective_request_timeout_source=request_timeout_source,
+                    effective_max_retries=max_retries,
+                    effective_max_retries_source=max_retries_source,
+                system_prompt_sha256=sys_sha,
+            )
+        except Exception:
+            pass
+
+        # Compact effective-config diagnostic (non-sensitive)
+        try:
+            _log_info(
+                "CONFIG_EFFECTIVE",
+                chat_step=("config-effective"),
+                request_id=(context.request_id),
+                hierarchy_node_id=hierarchy_node_id,
+                config_revision=(config_revision),
+                effective_model=(model_id),
+                effective_temperature=temperature,
+                effective_max_tokens=max_tokens,
+                effective_top_p=top_p,
+                effective_top_k=top_k,
+            )
+        except Exception:
+            pass
+
+        return gen_req
+        
 
     async def _resolve_model_id(
         self,
         request: ChatRequest,
         context: ChatServiceContext,
     ) -> str:
+        # Priority: explicit request -> model_resolver -> runtime config (models.default_model) -> bootstrap default
         if request.model_id is not None:
             model_id = request.model_id
+            resolution_source = "request"
 
         elif self._model_resolver is not None:
             resolver_result = self._model_resolver(
@@ -2217,9 +2933,42 @@ class ChatService:
                 model_id = await resolver_result
             else:
                 model_id = resolver_result
+            resolution_source = "resolver"
+
+        elif self._config_service is not None:
+            # read runtime-editable default model from ConfigService when available
+            try:
+                cfg = self._config_service
+                # prefer get_required when present, else get
+                if hasattr(cfg, "get"):
+                    model_val = getattr(cfg, "get")("models", "default_model")
+                else:
+                    model_val = None
+
+                if isinstance(model_val, str) and model_val.strip():
+                    model_id = model_val
+                    resolution_source = "config"
+                elif self._default_model_id is not None:
+                    model_id = self._default_model_id
+                    resolution_source = "fallback"
+                else:
+                    raise InvalidChatRequestError(
+                        "Für die Chat-Anfrage konnte kein Modell bestimmt werden.",
+                        request_id=(context.request_id),
+                    )
+            except Exception:
+                if self._default_model_id is not None:
+                    model_id = self._default_model_id
+                    resolution_source = "fallback"
+                else:
+                    raise InvalidChatRequestError(
+                        "Für die Chat-Anfrage konnte kein Modell bestimmt werden.",
+                        request_id=(context.request_id),
+                    )
 
         elif self._default_model_id is not None:
             model_id = self._default_model_id
+            resolution_source = "fallback"
 
         else:
             raise InvalidChatRequestError(
@@ -2235,7 +2984,176 @@ class ChatService:
                 request_id=(context.request_id),
             )
 
-        return normalized
+        # Diagnostic + protective resolution: ensure we hand a registered
+        # Kernschmied model-id to downstream services. If the configured
+        # value appears to be a provider-native model name (e.g. "qwen2.5:7b"),
+        # attempt a best-effort mapping to a single registry manifest.
+        resolved = normalized
+
+        try:
+            requested_model = request.model_id
+
+            cfg_default = None
+            try:
+                if self._config_service is not None:
+                    cfg_val = getattr(self._config_service, "get")( "models", "default_model")
+                    cfg_default = cfg_val if isinstance(cfg_val, str) else None
+            except Exception:
+                cfg_default = None
+
+            registered = False
+            registered_ids = []
+            mapping_found = None
+
+            registry = None
+            try:
+                registry = getattr(self._model_service, "_model_registry", None)
+            except Exception:
+                registry = None
+
+            if registry is not None:
+                try:
+                    registered = await registry.has(resolved)
+                except Exception:
+                    registered = False
+
+                try:
+                    registered_ids = list(await registry.list_model_ids())
+                except Exception:
+                    registered_ids = []
+
+                # If not registered, try to map provider model name -> registry id
+                if not registered:
+                    try:
+                        entries = await registry.list_entries()
+                        candidate_matches: list[str] = []
+
+                        for entry in entries:
+                            try:
+                                manifest = entry.manifest
+                                provider_cfg = getattr(manifest, "provider", None)
+                                # Retrieve provider config without forcing a
+                                # static type. Perform a runtime isinstance
+                                # check below and cast only when it's a
+                                # real mapping so static checkers (Pylance)
+                                # understand `cfg.get`'s return type.
+                                cfg_untyped = getattr(provider_cfg, "config", {}) if provider_cfg is not None else {}
+                                if isinstance(cfg_untyped, dict):
+                                    cfg = cast(dict[str, Any], cfg_untyped)
+                                else:
+                                    cfg = {}
+
+                                # provider config may expose 'default_model' or 'model'
+                                for key in ("default_model", "model"):
+                                    # Be explicit about types here so static checkers
+                                    # (Pylance) do not report unknown member types.
+                                    # Explicitly annotate as Any to satisfy static
+                                    # type checkers (Pylance) when cfg is untyped.
+                                    raw_val: Any = cfg.get(key)
+
+                                    if isinstance(raw_val, str) and raw_val.strip().lower() == normalized:
+                                        candidate_matches.append(entry.model_id)
+                                        break
+                            except Exception:
+                                continue
+
+                        # Unique mapping -> adopt registry id
+                        unique = tuple(dict.fromkeys(candidate_matches))
+                        if len(unique) == 1:
+                            mapping_found = unique[0]
+                            resolved = mapping_found
+
+                            # If the configured system default uses the provider-name
+                            # and a ConfigService exists, migrate both provider and
+                            # model atomically to the canonical registry values.
+                            if (
+                                self._config_service is not None
+                                and cfg_default is not None
+                                and cfg_default.strip().lower() == normalized
+                            ):
+                                try:
+                                    matched_entry = await registry.get_entry(mapping_found)
+                                    provider_id = matched_entry.provider_type
+                                except Exception:
+                                    provider_id = None
+
+                                updates: dict[tuple[str, str], object] = {}
+                                if provider_id is not None:
+                                    updates[("models", "default_provider")] = provider_id
+
+                                updates[("models", "default_model")] = mapping_found
+
+                                if updates:
+                                    try:
+                                        await getattr(self._config_service, "set_many")(updates, changed_by="system")
+                                        _log_info(
+                                            "MODEL_RESOLUTION_MIGRATED",
+                                            chat_step="model-migration",
+                                            request_id=(context.request_id),
+                                            previous_config_value=(cfg_default),
+                                            migrated_model_id=(mapping_found),
+                                        )
+                                    except Exception:
+                                        _log_warning(
+                                            "MODEL_RESOLUTION_MIGRATION_FAILED",
+                                            chat_step="model-migration-failed",
+                                            request_id=(context.request_id),
+                                            attempted_model_id=(mapping_found),
+                                        )
+
+                        elif (
+                            resolution_source == "config"
+                            and self._default_model_id is not None
+                            and await registry.has(self._default_model_id)
+                        ):
+                            resolved = self._default_model_id
+                            registered = True
+
+                            if self._config_service is not None:
+                                try:
+                                    fallback_entry = await registry.get_entry(resolved)
+                                    updates = {
+                                        ("models", "default_model"): resolved,
+                                        ("models", "default_provider"): fallback_entry.provider_type,
+                                    }
+                                    await getattr(self._config_service, "set_many")(
+                                        updates,
+                                        changed_by="system",
+                                    )
+                                    _log_info(
+                                        "MODEL_RESOLUTION_MIGRATED",
+                                        chat_step="model-default-recovery",
+                                        request_id=(context.request_id),
+                                        previous_config_value=(cfg_default),
+                                        migrated_model_id=(resolved),
+                                    )
+                                except Exception:
+                                    _log_warning(
+                                        "MODEL_RESOLUTION_MIGRATION_FAILED",
+                                        chat_step="model-default-recovery-failed",
+                                        request_id=(context.request_id),
+                                        attempted_model_id=(resolved),
+                                    )
+                    except Exception:
+                        # ignore mapping failures; resolution will fail later
+                        pass
+
+            _log_info(
+                "MODEL_RESOLUTION",
+                chat_step=("model-resolution"),
+                request_id=(context.request_id),
+                requested_model_id=(requested_model),
+                configured_default_model=(cfg_default),
+                resolved_model_id=(resolved),
+                registry_has=(registered),
+                registered_model_ids=(registered_ids),
+                mapping_found=(mapping_found),
+            )
+        except Exception:
+            # Do not block request on diagnostics
+            pass
+
+        return resolved
 
     # ========================================================
     # Modell-Event-Mapping
@@ -2664,15 +3582,31 @@ class ChatService:
         response: ChatResponse,
     ) -> None:
         try:
+            administrator_user_id = request.metadata.get("administrator_user_id")
+            assistant_user_id = (
+                administrator_user_id
+                if isinstance(administrator_user_id, str)
+                and administrator_user_id.strip()
+                else None
+            )
+            response_metadata: JsonObject = _normalize_json_object(response.metadata)
+            if assistant_user_id is not None:
+                response_metadata.update(
+                    {
+                        "administrator_auto_answer": True,
+                        "assistant_display_name": "Administrator",
+                    }
+                )
             val3: Awaitable[None] | None = self._repository.append_assistant_message(
                 conversation_id=(response.conversation_id),
                 message_id=(response.message_id),
                 parent_message_id=(request.parent_message_id),
                 model_id=(response.model_id),
+                user_id=assistant_user_id,
                 content=(response.content),
                 finish_reason=(response.finish_reason),
                 usage=response.usage,
-                metadata=(response.metadata),
+                metadata=response_metadata,
             )
 
             await self._await_if_needed(val3)

@@ -31,6 +31,7 @@ from app.contracts.hierarchy import (
 from app.hierarchy.models import HierarchyActor
 from app.core.bootstrap import InMemoryHierarchyRepository
 from app.hierarchy.repository import HierarchyParentNotFoundError, HierarchyRepository
+from app.hierarchy.quotas import HierarchyQuotaExceededError, HierarchyQuotaService
 from app.hierarchy.service import (
     HierarchyChildTypeNotAllowedError,
     HierarchyNodeTypeChangeInvalidError,
@@ -713,7 +714,8 @@ async def create_hierarchy_node(
 
     async with session_factory() as session:  # type: ignore[arg-type]
         repository = HierarchyRepository(session)  # type: ignore[arg-type]
-        service = create_hierarchy_service(repository)
+        config_service = getattr(request.app.state, "config_service", None)
+        service = create_hierarchy_service(repository, config_service)
 
         try:
             node = await service.create_node(payload, actor=actor)
@@ -734,6 +736,14 @@ async def create_hierarchy_node(
                 code="PERMISSION_DENIED",
                 message=str(exc),
             )
+        except HierarchyQuotaExceededError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_409_CONFLICT,
+                code=exc.code,
+                message=str(exc),
+                details=exc.details,
+            ) from exc
         except HierarchyChildTypeNotAllowedError as exc:
             raise structured_http_error(
                 request=request,
@@ -758,6 +768,37 @@ async def create_hierarchy_node(
                     "node_type": payload.type if hasattr(payload, "type") else "unknown"
                 },
             )
+
+
+@router.get(
+    "/quotas/me",
+    summary="Eigene Hierarchie-Quoten laden",
+)
+async def get_own_hierarchy_quotas(request: Request) -> dict[str, object]:
+    actor = build_actor_from_request(request)
+    session_factory = getattr(request.app.state, "session_factory", None)
+    if session_factory is None:
+        raise structured_http_error(
+            request=request,
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            code="HIERARCHY_PERSISTENCE_UNAVAILABLE",
+            message="Die Persistenz für Hierarchie ist nicht verfügbar.",
+        )
+
+    async with session_factory() as session:  # type: ignore[arg-type]
+        quota_service = HierarchyQuotaService(
+            HierarchyRepository(session),  # type: ignore[arg-type]
+            getattr(request.app.state, "config_service", None),
+        )
+        try:
+            return await quota_service.status(actor)
+        except PermissionError as exc:
+            raise structured_http_error(
+                request=request,
+                status_code=status.HTTP_403_FORBIDDEN,
+                code="PERMISSION_DENIED",
+                message=str(exc),
+            ) from exc
 
 
 @router.get(

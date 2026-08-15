@@ -11,6 +11,7 @@ from app.auth.authentication_service import AuthenticationError, AuthenticationS
 
 # dependencies
 from app.auth.dependencies import AuthenticatedUser
+from app.auth.password_service import PasswordPolicyError
 from app.auth.registration_service import RegistrationError, RegistrationService
 
 # from app.auth.password_service import PasswordService
@@ -22,6 +23,7 @@ from app.auth.session_management_service import (
 from app.contracts.auth import CurrentUserResponse, TenantSummary, UserSessionResponse
 from app.core.settings import settings
 from app.database.models.user import UserModel
+from app.services.mailbox_service import safely_deliver_pending_email_for_user
 from app.storage.database import get_session
 
 router = APIRouter()
@@ -185,6 +187,22 @@ def _user_to_out(u: object) -> UserOut:
     )
 
 
+def _principal_string_values(principal: object, attribute: str) -> list[str]:
+    raw_values = getattr(principal, attribute, ()) or ()
+    if isinstance(raw_values, str):
+        raw_values = (raw_values,)
+    result: list[str] = []
+    for raw_value in raw_values:
+        value = (
+            raw_value
+            if isinstance(raw_value, str)
+            else getattr(raw_value, "name", None)
+        )
+        if value and str(value) not in result:
+            result.append(str(value))
+    return result
+
+
 @router.post("/login", response_model=UserOut)
 async def login(
     request: Request,
@@ -231,6 +249,8 @@ async def login(
         authenticated=True,
         development_session=out.development_session,
         password_login_available=out.password_login_available,
+        roles=_principal_string_values(user, "roles"),
+        permissions=_principal_string_values(user, "permissions"),
         tenant=out.tenant,
         created_at=getattr(user, "created_at", None),
         last_login_at=getattr(user, "last_login_at", None),
@@ -260,7 +280,8 @@ async def me(request: Request):
     if user is None or (hasattr(user, "authenticated") and not user.authenticated):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED)
 
-    out = _user_to_out(user)
+    profile_source = getattr(request.state, "user_model", None) or user
+    out = _user_to_out(profile_source)
     return CurrentUserResponse(
         id=out.id,
         username=out.username,
@@ -269,9 +290,11 @@ async def me(request: Request):
         authenticated=True,
         development_session=out.development_session,
         password_login_available=out.password_login_available,
+        roles=_principal_string_values(user, "roles"),
+        permissions=_principal_string_values(user, "permissions"),
         tenant=out.tenant,
-        created_at=getattr(user, "created_at", None),
-        last_login_at=getattr(user, "last_login_at", None),
+        created_at=getattr(profile_source, "created_at", None),
+        last_login_at=getattr(profile_source, "last_login_at", None),
     )
 
 
@@ -320,6 +343,8 @@ async def development_login(
         authenticated=True,
         development_session=out.development_session,
         password_login_available=out.password_login_available,
+        roles=_principal_string_values(user, "roles"),
+        permissions=_principal_string_values(user, "permissions"),
         tenant=out.tenant,
         created_at=getattr(user, "created_at", None),
         last_login_at=getattr(user, "last_login_at", None),
@@ -334,7 +359,8 @@ async def register(
     session: AsyncSession = SESSION_DEP,
 ):
     # Determine effective registration allowance
-    app_env = str(getattr(settings, "app_environment", "development")).lower()
+    raw_app_env = getattr(settings, "app_environment", "development")
+    app_env = str(getattr(raw_app_env, "value", raw_app_env)).lower()
     if app_env == "development":
         registration_allowed = bool(
             getattr(settings, "development_self_registration_enabled", False)
@@ -349,7 +375,9 @@ async def register(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     # If invitations required, ensure token present
-    requires_invite = bool(getattr(settings, "registration_requires_invitation", False))
+    requires_invite = app_env != "development" and bool(
+        getattr(settings, "registration_requires_invitation", False)
+    )
     if requires_invite and not payload.invitation_token:
         request_id = getattr(request.state, "request_id", None)
         raise HTTPException(
@@ -377,6 +405,7 @@ async def register(
             display_name=payload.display_name,
             email=payload.email,
             password=payload.password,
+            roles=["guest"],
             invitation_token=payload.invitation_token,
             auto_login=False,
         )
@@ -387,8 +416,16 @@ async def register(
         except Exception:
             await session.rollback()
             raise
+        await safely_deliver_pending_email_for_user(session, user.id)
 
+    except PasswordPolicyError as exc:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail={"code": exc.code, "message": str(exc)},
+        ) from exc
     except RegistrationError as re:
+        await session.rollback()
         code = str(re)
         if code == "USERNAME_EXISTS":
             raise HTTPException(

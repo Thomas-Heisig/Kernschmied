@@ -26,6 +26,7 @@ interface SettingsContentProps {
   showJson: boolean;
   config: UseSystemConfigReturn;
   onSelectKey?: (key: string | null) => void;
+  fullBleed?: boolean;
 }
 
 interface SettingsFieldOption {
@@ -60,7 +61,7 @@ const SETTINGS_CATALOG_KEY = 'settings-catalog';
 
 const MAX_RENDER_DEPTH = 12;
 
-export function SettingsContent({ activeKey, showJson, config, onSelectKey }: SettingsContentProps) {
+export function SettingsContent({ activeKey, showJson, config, onSelectKey, fullBleed = false }: SettingsContentProps) {
   const {
     values,
     groups,
@@ -287,7 +288,7 @@ export function SettingsContent({ activeKey, showJson, config, onSelectKey }: Se
         className={[
           'sticky top-0 z-10 shrink-0',
           'border-b border-slate-200 bg-white/95',
-          'px-5 py-4 backdrop-blur',
+          (fullBleed ? 'px-0 py-4' : 'px-5 py-4') + ' backdrop-blur',
           'dark:border-white/10 dark:bg-slate-950/90',
         ].join(' ')}
       >
@@ -313,7 +314,7 @@ export function SettingsContent({ activeKey, showJson, config, onSelectKey }: Se
               ) : null}
             </div>
 
-            <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+            <p className={['mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400', fullBleed ? '' : 'max-w-3xl'].join(' ')}>
               {currentDescription}
             </p>
 
@@ -424,7 +425,7 @@ export function SettingsContent({ activeKey, showJson, config, onSelectKey }: Se
         </div>
       ) : null}
 
-      <div className="flex-1 p-5 md:p-8">
+      <div className={['flex-1', fullBleed ? 'p-0' : 'p-5 md:p-8'].join(' ')}>
         {showJson ? (
           <SettingsJsonEditorComponent
             value={jsonDraft}
@@ -448,6 +449,7 @@ export function SettingsContent({ activeKey, showJson, config, onSelectKey }: Se
               const group = fullKey && typeof fullKey === 'string' ? fullKey.split('.')[0] : null;
               onSelectKey?.(group ?? null);
             }}
+            fullBleed={fullBleed}
           />
         ) : activeKey === null ? (
           <SettingsForm

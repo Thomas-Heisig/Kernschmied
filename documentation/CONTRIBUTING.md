@@ -217,7 +217,7 @@ Kleine, thematisch geschlossene Pull Requests sind leichter prüfbar als große 
 Aktualisiere bei relevanten Änderungen mindestens:
 
 - `README.md`,
-- `docs/todo.md`,
+- `documentation/todo.md`,
 - API- und Vertragsdokumentation,
 - `CHANGELOG.md`.
 

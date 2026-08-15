@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { BookOpen, LoaderCircle, Search, X, ChevronDown, ChevronRight } from 'lucide-react';
+import IconBadge from '../common/IconBadge';
 
 import { loadDocumentationIndex, loadDocumentationPage } from '../../api/documentation';
 import type {
@@ -115,12 +116,10 @@ export function DocumentationDialog({ isOpen, onClose }: DocumentationDialogProp
   }, [index, search]);
 
   useEffect(() => {
-    // initialize all sections as collapsed by default
     if (!index) return;
     const map: Record<string, boolean> = {};
     for (const s of index.sections) map[s.id] = s.id === 'user-manual';
 
-    // load persisted state
     try {
       const raw = localStorage.getItem('docs:expandedSections');
       if (raw) {
@@ -162,9 +161,9 @@ export function DocumentationDialog({ isOpen, onClose }: DocumentationDialogProp
       >
         <header className="flex h-16 shrink-0 items-center justify-between gap-4 border-b border-border bg-white px-4 dark:border-white/10 dark:bg-slate-950 sm:px-6">
           <div className="flex min-w-0 items-center gap-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary dark:bg-primary/20">
-              <BookOpen size={21} aria-hidden="true" />
-            </span>
+            <div className="shrink-0">
+              <IconBadge icon={<BookOpen />} size="lg" variant="primary" />
+            </div>
             <div className="min-w-0">
               <h1
                 id="documentation-dialog-title"
@@ -185,7 +184,7 @@ export function DocumentationDialog({ isOpen, onClose }: DocumentationDialogProp
             title="Schließen"
             onClick={onClose}
           >
-            <X size={19} aria-hidden="true" />
+            <IconBadge icon={<X />} size="sm" variant="default" className="pointer-events-none" />
           </button>
         </header>
 
@@ -239,7 +238,7 @@ export function DocumentationDialog({ isOpen, onClose }: DocumentationDialogProp
                       <h2 className="text-[11px] font-semibold uppercase tracking-wider text-text-muted dark:text-slate-500">
                         {section.title}
                       </h2>
-                      <span className="text-xs text-text-muted">
+                      <span className="text-text-muted">
                         {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                       </span>
                     </button>
@@ -248,7 +247,6 @@ export function DocumentationDialog({ isOpen, onClose }: DocumentationDialogProp
                       ref={navRef}
                       className={isExpanded ? 'space-y-1' : 'hidden'}
                       onKeyDown={(e) => {
-                        // keyboard navigation within expanded section
                         const el = navRef.current;
                         if (!el) return;
                         const buttons = Array.from(
@@ -316,37 +314,38 @@ export function DocumentationDialog({ isOpen, onClose }: DocumentationDialogProp
 
           <main className="min-w-0 flex-1 overflow-y-auto bg-white dark:bg-slate-950">
             {error ? (
-              <div className="m-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-200">
+              <div className="m-6 rounded-xl border border-danger/20 bg-danger-soft p-4 text-sm text-danger dark:border-danger/30 dark:bg-danger/10">
                 {error}
               </div>
             ) : null}
 
             {isLoadingPage ? (
-              <div className="flex h-full min-h-80 items-center justify-center gap-3 text-text-muted dark:text-slate-400">
+              <div className="flex h-full min-h-80 items-center justify-center gap-3 text-text-muted">
                 <LoaderCircle className="animate-spin" size={22} />
                 Dokumentationsseite wird geladen …
               </div>
             ) : page ? (
               <>
-                <div className="border-b border-border bg-surface-muted/40 px-5 py-3 text-xs text-text-muted dark:border-white/10 dark:bg-slate-900/30 dark:text-slate-400 sm:px-8 lg:px-12">
+                <div className="border-b border-border bg-surface-muted/40 px-5 py-3 text-xs text-text-muted dark:border-white/10 dark:bg-slate-900/30 sm:px-8 lg:px-12">
                   {page.section_title} / {page.title}
                 </div>
                 <MarkdownDocument content={page.content} />
               </>
             ) : !error && index ? (
-              // Wiki-like start page: show sections and pages for navigation
               <div className="prose max-w-none p-6 sm:p-8 lg:p-12">
-                <h2>Willkommen zur Dokumentation</h2>
-                <p>
+                <h2 className="text-text dark:text-white">Willkommen zur Dokumentation</h2>
+                <p className="text-text-soft dark:text-slate-300">
                   Hier findest du eine Übersicht über alle zentralen Dokumentationen. Klicke auf
                   einen Eintrag, um die Seite zu öffnen.
                 </p>
                 {index.sections.map((section) => (
                   <div key={section.id} className="mb-6">
-                    <h3 className="mb-2 text-sm font-semibold">{section.title}</h3>
-                    <ul className="ml-4 list-disc">
+                    <h3 className="mb-2 text-sm font-semibold text-text-soft dark:text-slate-300">
+                      {section.title}
+                    </h3>
+                    <ul className="ml-4 list-disc space-y-1 text-text-soft dark:text-slate-300">
                       {section.pages.map((p) => (
-                        <li key={p.id} className="mb-1">
+                        <li key={p.id}>
                           <button
                             type="button"
                             onClick={() => setActivePageId(p.id)}

@@ -1,5 +1,8 @@
-import type { ComponentProps } from 'react';
+// F:\Kernschmied\frontend\src\app\AppWorkspace.tsx
+
+import { useMemo, type ComponentProps } from 'react';
 import type { HierarchyNode } from '../contracts/hierarchy';
+import type { AppBootstrap } from '../types/bootstrap';
 
 import { DocumentationDialog } from '../components/documentation';
 import { AppContextSidebar, AppHierarchySidebar, AppLayout } from '../components/layout';
@@ -13,7 +16,6 @@ type LayoutProps = ComponentProps<typeof AppLayout>;
 interface AppWorkspaceProps {
   schema: HierarchySidebarProps['schema'];
   root: HierarchySidebarProps['root'];
-  // full hierarchy node (may include metadata) when available
   selectedHierarchyNode?: any | null;
   selectedNode: ContextSidebarProps['node'];
   selectedNodeId: HierarchySidebarProps['selectedNodeId'];
@@ -21,7 +23,7 @@ interface AppWorkspaceProps {
   theme: LayoutProps['theme'];
   applicationVersion?: string;
   environment?: string;
-  bootstrap?: any | null;
+  bootstrap?: AppBootstrap | null;
   userName?: string;
   isSettingsOpen: boolean;
   isDocumentationOpen: boolean;
@@ -84,8 +86,18 @@ export function AppWorkspace({
   isHierarchyBusy,
   recentlyMovedNodeId,
 }: AppWorkspaceProps) {
-  function findPath(root: HierarchyNode | null | undefined, targetId: string | null | undefined): Array<{ id: string; name: string }> | null {
-    if (!root || !targetId) return null;
+  // ============================================================
+  // Hilfsfunktionen (gememoized)
+  // ============================================================
+
+  /**
+   * Sucht den Pfad von der Wurzel zu einem bestimmten Knoten.
+   * Wird für die Breadcrumb‑Navigation in der Context‑Sidebar verwendet.
+   */
+  const breadcrumbPath = useMemo(() => {
+    if (!root || !selectedHierarchyNode?.id) return null;
+
+    const targetId = selectedHierarchyNode.id;
     const path: Array<{ id: string; name: string }> = [];
 
     function dfs(node: HierarchyNode): boolean {
@@ -100,39 +112,57 @@ export function AppWorkspace({
       return false;
     }
 
-    // root may not be a HierarchyNode type here; coerce
     try {
-      if ((root as any).id) {
-        if (dfs(root as unknown as HierarchyNode)) return path;
+      const coercedRoot = root as unknown as HierarchyNode;
+      if (coercedRoot.id) {
+        if (dfs(coercedRoot)) return path;
       }
     } catch {
       return null;
     }
 
     return null;
-  }
+  }, [root, selectedHierarchyNode?.id]);
 
-  const breadcrumbPath = selectedHierarchyNode ? findPath(root as any, selectedHierarchyNode.id) : null;
-  function findNodeById(root: HierarchyNode | null | undefined, id: string | null | undefined): HierarchyNode | null {
-    if (!root || !id) return null;
+  /**
+   * Sucht einen Knoten anhand seiner ID im gesamten Baum.
+   * Wird für die Navigation von der Context‑Sidebar verwendet.
+   */
+  const findNodeById = useMemo(() => {
+    return (id: string | null | undefined): HierarchyNode | null => {
+      if (!root || !id) return null;
 
-    function dfs(node: HierarchyNode): HierarchyNode | null {
-      if (node.id === id) return node;
-      if (node.children) {
-        for (const c of node.children) {
-          const res = dfs(c);
-          if (res) return res;
+      function dfs(node: HierarchyNode): HierarchyNode | null {
+        if (node.id === id) return node;
+        if (node.children) {
+          for (const c of node.children) {
+            const res = dfs(c);
+            if (res) return res;
+          }
         }
+        return null;
       }
-      return null;
-    }
 
-    try {
-      return dfs(root as HierarchyNode);
-    } catch {
-      return null;
-    }
-  }
+      try {
+        return dfs(root as unknown as HierarchyNode);
+      } catch {
+        return null;
+      }
+    };
+  }, [root]);
+
+  // ============================================================
+  // Props für AppLayout aus Bootstrap extrahieren
+  // ============================================================
+
+  const apiVersion = (bootstrap as any)?.versions?.api ?? (bootstrap as any)?.apiVersion ?? (bootstrap as any)?.api_version ?? 'v1';
+  const configRevision = (bootstrap as any)?.config_revision ?? (bootstrap as any)?.configRevision ?? 1;
+  const backendOnline = (bootstrap as any)?.backend_online ?? (bootstrap as any)?.backendOnline ?? true;
+
+  // ============================================================
+  // Render
+  // ============================================================
+
   return (
     <>
       <AppLayout
@@ -141,12 +171,15 @@ export function AppWorkspace({
         applicationVersion={applicationVersion}
         environment={environment}
         userName={userName}
+        apiVersion={apiVersion}
+        configRevision={configRevision}
+        backendOnline={backendOnline}
         onToggleTheme={onToggleTheme}
         onOpenSettings={onOpenSettings}
         onOpenDocumentation={onOpenDocumentation}
         onOpenCalendar={onOpenCalendar}
-      onCreatePublicWorkspace={onCreatePublicWorkspace}
-      onCreateInternWorkspace={onCreateInternWorkspace}
+        onCreatePublicWorkspace={onCreatePublicWorkspace}
+        onCreateInternWorkspace={onCreateInternWorkspace}
         hierarchySidebar={
           <AppHierarchySidebar
             root={root}
@@ -159,11 +192,9 @@ export function AppWorkspace({
               void onCreateHierarchyNode?.(id);
             }}
             onNodeDrop={(sourceId, targetId, dropInfo) => {
-              // If dropInfo.position is provided, forward it as the insertion index
               if (dropInfo && typeof dropInfo.position === 'number') {
                 void onMoveHierarchyNode?.(sourceId, dropInfo.parentId ?? null, dropInfo.position);
               } else if (dropInfo) {
-                // append as child
                 void onMoveHierarchyNode?.(sourceId, dropInfo.parentId ?? null);
               } else {
                 void onMoveHierarchyNode?.(sourceId, targetId);
@@ -185,7 +216,7 @@ export function AppWorkspace({
             canPerformAction={canPerformAction}
             path={breadcrumbPath ?? undefined}
             onNavigateToNode={(id: string) => {
-              const n = findNodeById(root as any, id);
+              const n = findNodeById(id);
               if (n) onSelectNode(n);
             }}
             systemInfo={bootstrap ?? undefined}
@@ -196,11 +227,16 @@ export function AppWorkspace({
           node={selectedHierarchyNode ?? selectedNode}
           schema={schema}
           onUpdateHierarchyNode={onUpdateHierarchyNode}
+          onAction={onAction}
+          onNavigateToNode={(id) => {
+            const target = findNodeById(id);
+            if (target) onSelectNode(target);
+          }}
         />
       </AppLayout>
-      {isSettingsOpen ? (
-        <SettingsDialog isOpen={isSettingsOpen} onClose={onCloseSettings} />
-      ) : null}
+
+      {/* Einstellungen & Dokumentation (werden als Overlays gerendert) */}
+      {isSettingsOpen && <SettingsDialog isOpen={isSettingsOpen} onClose={onCloseSettings} />}
       <DocumentationDialog isOpen={isDocumentationOpen} onClose={onCloseDocumentation} />
     </>
   );

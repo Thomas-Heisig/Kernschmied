@@ -18,6 +18,7 @@ export default function UserSettingsPanel() {
   const [compactMode, setCompactMode] = useState<boolean>(false);
   const [defaultView, setDefaultView] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
+  const [aiResponseOnMentions, setAiResponseOnMentions] = useState<boolean>(false);
 
   const [isSaving, setIsSaving] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
@@ -42,6 +43,7 @@ export default function UserSettingsPanel() {
         setCompactMode(Boolean(p.compactMode ?? false));
         setDefaultView(p.defaultView ?? null);
         setNotificationsEnabled(Boolean(p.notificationsEnabled ?? true));
+        setAiResponseOnMentions(Boolean(p.aiResponseOnMentions));
         setIsDirty(false);
         setLoadStatus('ready');
         // Apply theme choice immediately
@@ -105,6 +107,7 @@ export default function UserSettingsPanel() {
         compactMode,
         defaultView,
         notificationsEnabled,
+        aiResponseOnMentions,
       };
 
       const updated = await updateUserPreferences(undefined, input);
@@ -116,6 +119,7 @@ export default function UserSettingsPanel() {
       setCompactMode(Boolean(updated.compactMode));
       setDefaultView(updated.defaultView ?? null);
       setNotificationsEnabled(Boolean(updated.notificationsEnabled));
+      setAiResponseOnMentions(Boolean(updated.aiResponseOnMentions));
       setIsDirty(false);
       setSuccessMessage('Einstellungen gespeichert');
       // ensure applied theme matches saved
@@ -144,6 +148,7 @@ export default function UserSettingsPanel() {
     setCompactMode(Boolean(prefsOriginal.compactMode ?? false));
     setDefaultView(prefsOriginal.defaultView ?? null);
     setNotificationsEnabled(Boolean(prefsOriginal.notificationsEnabled));
+    setAiResponseOnMentions(Boolean(prefsOriginal.aiResponseOnMentions));
     setIsDirty(false);
     setError(null);
     setSuccessMessage(null);
@@ -201,6 +206,23 @@ export default function UserSettingsPanel() {
             <div className="flex items-center gap-2">
               <input id="notif" type="checkbox" checked={notificationsEnabled} onChange={(e) => { setNotificationsEnabled(e.target.checked); markDirty(); }} />
               <label htmlFor="notif" className="text-sm">Benachrichtigungen aktivieren</label>
+            </div>
+
+            <div className="rounded-lg border border-border-soft p-3 dark:border-white/10">
+              <div className="flex items-center gap-2">
+                <input
+                  id="ai-response-on-mentions"
+                  type="checkbox"
+                  checked={aiResponseOnMentions}
+                  onChange={(e) => { setAiResponseOnMentions(e.target.checked); markDirty(); }}
+                />
+                <label htmlFor="ai-response-on-mentions" className="text-sm font-medium">
+                  KI antwortet zusätzlich bei Benutzeranfragen
+                </label>
+              </div>
+              <p className="mt-1 pl-6 text-xs text-text-muted">
+                Ist die Option aus, wird eine Nachricht mit @Benutzer gespeichert und zugestellt, ohne automatisch das KI-Modell aufzurufen.
+              </p>
             </div>
           </div>
 

@@ -6,8 +6,16 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ## [Unreleased]
 
+### Dokumentation
+
+- Offene Aufgaben in `documentation/todo.md` zentralisiert und alte
+  Parallelquellen entfernt.
+
 ### Hinzugefügt
 
+- Benutzergebundene Postfächer versenden Willkommens-, Mention- und Testmails über eine fehlertolerante SMTP-Outbox; Mailpit steht als lokaler Testprovider bereit.
+- `@Administrator` erzeugt eine direkte, als Administrator attribuierte KI-Auto-Antwort statt einer gewöhnlichen Benutzeranfrage.
+- Nur das geschützte Administrator-Systemkonto löst diese Auto-Antwort aus; namentlich erwähnte menschliche Administratoren erhalten normale Mention- und Postfachbenachrichtigungen.
 - Bootstrap-zentrierte Frontendarchitektur wird weiter konsolidiert.
 - Schema-gesteuerte Ansichten über einen zentralen `SchemaRenderer` werden erweitert.
 - Generische Komponenten- und Action-Registries werden vervollständigt.
@@ -17,18 +25,11 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Geändert
 
+- Pylance-Typfehler bei Mention-Defaults, Assistant-Metadaten und Session-Presence wurden beseitigt.
+- Admin- und Selbstregistrierung melden ungültige Passwörter als konkrete Eingabefehler statt HTTP 500; die Browserformulare validieren die Passwortregeln vor dem Versand.
 - Der ausgewählte Knotentyp `user` soll künftig über den zentralen `SchemaRenderer` dargestellt werden.
 - Frontend-Einstieg und Providerstruktur wurden auf einen zentralen Anwendungseinstieg ausgerichtet.
 - Bootstrap-, Registry- und Schema-Normalisierung werden schrittweise gehärtet.
-
-### Offen
-
-- OpenAPI-Artefakte gegen die tatsächlich laufende FastAPI-Anwendung verifizieren und neu erzeugen.
-- Hierarchie-Endpunkt vollständig gegen `HierarchyTreeResponse` prüfen.
-- Bootstrap als einzigen festen fachlichen Einstiegspunkt im Frontend durchsetzen.
-- Laufzeitvalidierung aller öffentlichen Frontendverträge vervollständigen.
-- ChatRequest und SSE-Ereignisse vollständig vereinheitlichen.
-- Autorisierung, Auditierung und Betriebsprofile vervollständigen.
 
 ## [0.1.0] - 2026-07-26
 

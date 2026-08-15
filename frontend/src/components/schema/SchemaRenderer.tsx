@@ -1,3 +1,5 @@
+// F:\Kernschmied\frontend\src\components\schema\SchemaRenderer.tsx
+
 import React, { useCallback, useMemo } from 'react';
 import type { UIComponentDefinition, UIActionDefinition } from '../../contracts/schema';
 import UnsupportedSchemaComponent from './UnsupportedSchemaComponent';
@@ -20,7 +22,6 @@ export interface SchemaRendererProps {
   context?: SchemaRenderContext;
   onChange?: (value: unknown) => void;
   onAction?: (action: UIActionDefinition, context: SchemaRenderContext) => void | Promise<unknown>;
-  // Optional explicit action definitions supplied by the caller or context.
   actionDefinitions?: Readonly<Record<string, UIActionDefinition>>;
 }
 
@@ -49,7 +50,6 @@ export default function SchemaRenderer({
     async (actionRef: string | UIActionDefinition) => {
       let actionDef: UIActionDefinition | undefined;
       if (typeof actionRef === 'string') {
-        // Prefer explicit actionDefinitions passed via props
         actionDef = actionDefinitions?.[actionRef];
       } else {
         actionDef = actionRef;
@@ -81,8 +81,6 @@ export default function SchemaRenderer({
           payload: undefined,
         });
       } catch (e) {
-        // do not crash renderer
-
         console.warn('Action execution failed', e);
       }
     },
@@ -94,7 +92,6 @@ export default function SchemaRenderer({
       return <UnsupportedSchemaComponent type={String(nodeDef?.type)} definition={nodeDef} />;
     }
 
-    // Respect explicit visibility flag on node definitions
     if (nodeDef.visible === false) return null;
 
     const renderer = getComponentRenderer(nodeDef.type);
@@ -102,8 +99,6 @@ export default function SchemaRenderer({
       renderNode(c as UIComponentDefinition, i),
     );
 
-    // Inputs and controls must be controlled using onChange.
-    // Support per-field binding via `props.path` (dot-separated or array).
     const getValueFromPath = (root: unknown, path?: string | string[]) => {
       if (!path) return root;
       const parts = typeof path === 'string' ? path.split('.') : path;
@@ -156,10 +151,9 @@ export default function SchemaRenderer({
       return <UnsupportedSchemaComponent type={nodeDef.type} definition={nodeDef} />;
     }
 
-    // Special: button triggers action
+    // Button
     if (nodeDef.type === 'button') {
       const actionRef = nodeDef.props?.action as string | undefined;
-
       return renderer(nodeDef, children, {
         onClick: (e: React.MouseEvent) => {
           e.preventDefault();
@@ -168,7 +162,7 @@ export default function SchemaRenderer({
       });
     }
 
-    // Controlled inputs
+    // Text Input (verbessert)
     if (nodeDef.type === 'text_input') {
       const pathProp = nodeDef.props?.path as string | string[] | undefined;
       const current =
@@ -179,7 +173,7 @@ export default function SchemaRenderer({
 
       return (
         <input
-          className="w-full rounded border px-2 py-1"
+          className="w-full rounded-lg border border-border-soft bg-surface-muted px-3 py-2 text-sm text-text outline-none transition placeholder:text-text-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-primary/20"
           value={String(current)}
           placeholder={String(nodeDef.props?.placeholder ?? '')}
           disabled={effectiveDisabled}
@@ -189,6 +183,7 @@ export default function SchemaRenderer({
       );
     }
 
+    // Textarea (verbessert)
     if (nodeDef.type === 'textarea') {
       const pathProp = nodeDef.props?.path as string | string[] | undefined;
       const current =
@@ -199,7 +194,7 @@ export default function SchemaRenderer({
 
       return (
         <textarea
-          className="w-full rounded border px-2 py-1"
+          className="w-full rounded-lg border border-border-soft bg-surface-muted px-3 py-2 text-sm text-text outline-none transition placeholder:text-text-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-primary/20"
           value={String(current)}
           placeholder={String(nodeDef.props?.placeholder ?? '')}
           disabled={effectiveDisabled}
@@ -209,6 +204,7 @@ export default function SchemaRenderer({
       );
     }
 
+    // Number Input (verbessert)
     if (nodeDef.type === 'number_input') {
       const pathProp = nodeDef.props?.path as string | string[] | undefined;
       const current = getValueFromPath(value, pathProp) ?? Number(nodeDef.props?.value ?? 0);
@@ -219,7 +215,7 @@ export default function SchemaRenderer({
       return (
         <input
           type="number"
-          className="w-full rounded border px-2 py-1"
+          className="w-full rounded-lg border border-border-soft bg-surface-muted px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:focus:ring-primary/20"
           value={String(current)}
           disabled={effectiveDisabled}
           readOnly={effectiveReadOnly}
@@ -228,6 +224,7 @@ export default function SchemaRenderer({
       );
     }
 
+    // Checkbox (verbessert)
     if (nodeDef.type === 'checkbox') {
       const pathProp = nodeDef.props?.path as string | string[] | undefined;
       const checked = Boolean(getValueFromPath(value, pathProp) ?? nodeDef.props?.checked);
@@ -235,18 +232,20 @@ export default function SchemaRenderer({
       const effectiveDisabled = Boolean(disabled) || Boolean(nodeDef.props?.disabled);
 
       return (
-        <label className="inline-flex items-center gap-2">
+        <label className="inline-flex items-center gap-2 text-sm text-text-soft dark:text-gray-300">
           <input
             type="checkbox"
             checked={checked}
             disabled={effectiveDisabled}
             onChange={(e) => primitiveOnChange(e.target.checked, pathProp)}
+            className="rounded border-border-soft text-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10"
           />
           <span>{nodeDef.title}</span>
         </label>
       );
     }
 
+    // Select (verbessert)
     if (nodeDef.type === 'select') {
       const options = Array.isArray(nodeDef.props?.options)
         ? (nodeDef.props?.options as unknown[])
@@ -258,7 +257,7 @@ export default function SchemaRenderer({
 
       return (
         <select
-          className="w-full rounded border px-2 py-1"
+          className="w-full rounded-lg border border-border-soft bg-surface-muted px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:focus:ring-primary/20"
           value={String(current ?? '')}
           disabled={effectiveDisabled}
           onChange={(e) => primitiveOnChange(e.target.value, pathProp)}
@@ -284,10 +283,7 @@ export default function SchemaRenderer({
       );
     }
 
-    // Support rendering a config entry using the SettingsField dispatcher.
-    // The schema node can either provide a full `entry` object in props or
-    // a minimal set of props (group,key,value,ui) from which we construct
-    // a compatible `ConfigEntryResponse`.
+    // Config Entry / Settings Field (unverändert, aber wird von den einheitlichen SettingsField-Klassen profitieren)
     if (nodeDef.type === 'config_entry' || nodeDef.type === 'setting_field') {
       const entryProp = nodeDef.props?.entry as ConfigEntryResponse | undefined;
 
@@ -372,11 +368,8 @@ export default function SchemaRenderer({
             }
             disabled={Boolean(disabled) || Boolean(nodeDef.props?.disabled)}
             onChange={(nextPath: string[], v: ConfigValue) => {
-              // propagate change to parent using SchemaRenderer onChange
               if (!onChange) return;
-              // reconstruct object with updated path
               const targetPath = nodeDef.props?.path ?? entry.full_key;
-              // If the entry is bound via path, we let primitiveOnChange handle it
               primitiveOnChange(v, targetPath as string | string[] | undefined);
             }}
           />
@@ -384,12 +377,11 @@ export default function SchemaRenderer({
       );
     }
 
-    // Default: use registry renderer for cards, stacks, headings etc.
-    // Provide the schema context to the renderer so it can access nodeId and other info.
+    // Default: use registry renderer
     return renderer(nodeDef, children, { onChange: primitiveOnChange, context: ctx });
   }
 
-  // Error boundary to ensure a broken renderer doesn't crash the entire UI
+  // Error Boundary (verbessert)
   class SchemaErrorBoundary extends React.Component<
     { children: React.ReactNode },
     { hasError: boolean }
@@ -410,7 +402,7 @@ export default function SchemaRenderer({
     render() {
       if (this.state.hasError) {
         return (
-          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          <div className="rounded-xl border border-danger/20 bg-danger-soft p-3 text-sm text-danger dark:border-danger/30 dark:bg-danger/10">
             Ein Fehler ist im SchemaRenderer aufgetreten.
           </div>
         );

@@ -1,5 +1,7 @@
 // F:\Kernschmied\frontend\src\components\layout\AppHeader.tsx
 
+import { useEffect, useState } from 'react';
+
 import {
   BookOpen,
   CircleUserRound,
@@ -9,9 +11,12 @@ import {
   ShieldCheck,
   Sun,
   CalendarDays,
+  Bell,
 } from 'lucide-react';
+import IconBadge from '../common/IconBadge';
 import UserMenu from '../../auth/UserMenu';
 import { useAuth } from '../../auth/AuthProvider';
+import { loadMyMentions } from '../../api/mentions';
 
 type AppTheme = 'light' | 'dark';
 
@@ -43,6 +48,7 @@ export function AppHeader({
   onCreateInternWorkspace,
 }: AppHeaderProps) {
   const auth = useAuth();
+  const [unreadMentionCount, setUnreadMentionCount] = useState(0);
   const resolvedUserName = auth?.user?.displayName ?? userName;
   const userInitials = createInitials(resolvedUserName);
   const normalizedEnvironment = environment.trim().toLowerCase();
@@ -61,14 +67,42 @@ export function AppHeader({
   const actionButtonClassName =
     'inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-soft transition-colors hover:bg-surface-hover hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:text-gray-300 dark:hover:bg-slate-800 dark:hover:text-white dark:focus-visible:ring-offset-slate-950';
 
+  useEffect(() => {
+    if (!auth?.user) {
+      setUnreadMentionCount(0);
+      return;
+    }
+    let active = true;
+    const refresh = () => {
+      void loadMyMentions()
+        .then((mentions) => {
+          if (active) {
+            setUnreadMentionCount(
+              mentions.filter((mention) => mention.status === 'unread').length,
+            );
+          }
+        })
+        .catch(() => undefined);
+    };
+    refresh();
+    const interval = window.setInterval(refresh, 30_000);
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+    };
+  }, [auth?.user?.id]);
+
   return (
     <header className="relative z-30 shrink-0 border-b border-border bg-white/90 shadow-sm backdrop-blur-xl dark:border-white/10 dark:bg-slate-950/90">
       <div className="flex h-16 min-w-0 items-center justify-between gap-4 px-4 sm:px-6">
+        {/* Logo & Titel */}
         <div className="flex min-w-0 items-center gap-3">
           <div className="relative shrink-0">
-            <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-xl border border-border-soft bg-white shadow-sm dark:border-white/10 dark:bg-slate-800">
-              <img src="/favicon.png" alt="Kernschmied" className="h-8 w-8 object-contain" />
-            </div>
+            <IconBadge
+              icon={<img src="/favicon.png" alt="Kernschmied" className="h-8 w-8 object-contain" />}
+              size="lg"
+              variant="primary"
+            />
             <span
               className="absolute -right-1 -bottom-1 h-3 w-3 rounded-full border-2 border-white bg-emerald-500 dark:border-slate-950"
               title="Anwendung bereit"
@@ -91,7 +125,7 @@ export function AppHeader({
               {schemaVersion ? (
                 <>
                   <span
-                    className="hidden text-border sm:inline dark:text-gray-600"
+                    className="hidden text-border dark:text-gray-600 sm:inline"
                     aria-hidden="true"
                   >
                     •
@@ -105,25 +139,43 @@ export function AppHeader({
           </div>
         </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-          {/* Public/Intern workspace creation buttons removed from header */}
+        {/* Rechte Seite: Aktionen & Benutzer */}
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          {/* Environment-Badge */}
           <div
             className="hidden items-center gap-1.5 rounded-lg border border-border-soft bg-surface-muted/80 px-2.5 py-1.5 text-xs font-medium text-text-soft dark:border-white/10 dark:bg-slate-800/70 dark:text-gray-300 md:flex"
             title={`Betriebsprofil: ${environmentLabel}`}
           >
-            <ShieldCheck
-              size={14}
-              className="text-emerald-600 dark:text-emerald-400"
-              aria-hidden="true"
+            <IconBadge
+              icon={<ShieldCheck className="text-emerald-600 dark:text-emerald-400" />}
+              size="sm"
+              variant="default"
             />
             <span>{environmentLabel}</span>
           </div>
 
           <div className="hidden h-7 w-px bg-border dark:bg-white/10 sm:block" />
 
+          {/* UserMenu (Desktop) */}
           <div className="hidden sm:flex">
             <UserMenu />
           </div>
+
+          {/* Aktionen */}
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event('kernschmied:open-context'))}
+            className={`${actionButtonClassName} relative`}
+            aria-label={`${unreadMentionCount} offene Anfragen`}
+            title="Anfragen und Online-Benutzer anzeigen"
+          >
+            <IconBadge icon={<Bell />} size="sm" variant="default" />
+            {unreadMentionCount > 0 ? (
+              <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-danger px-1 text-center text-[10px] font-bold leading-4 text-white">
+                {unreadMentionCount > 99 ? '99+' : unreadMentionCount}
+              </span>
+            ) : null}
+          </button>
 
           <button
             type="button"
@@ -132,7 +184,7 @@ export function AppHeader({
             aria-label="Dokumentation öffnen"
             title="Dokumentation und Benutzerhandbuch öffnen"
           >
-            <BookOpen size={18} aria-hidden="true" />
+            <IconBadge icon={<BookOpen />} size="sm" variant="default" />
           </button>
 
           <button
@@ -142,7 +194,7 @@ export function AppHeader({
             aria-label="Kalender verwalten"
             title="Kalenderverwaltung öffnen"
           >
-            <CalendarDays size={18} aria-hidden="true" />
+            <IconBadge icon={<CalendarDays />} size="sm" variant="default" />
           </button>
 
           <button
@@ -152,7 +204,7 @@ export function AppHeader({
             aria-label="Einstellungen öffnen"
             title="Einstellungen öffnen"
           >
-            <Settings size={18} aria-hidden="true" />
+            <IconBadge icon={<Settings />} size="sm" variant="default" />
           </button>
 
           <button
@@ -163,17 +215,19 @@ export function AppHeader({
             title={themeLabel}
             aria-pressed={theme === 'dark'}
           >
-            {theme === 'dark' ? (
-              <Sun size={18} aria-hidden="true" />
-            ) : (
-              <Moon size={18} aria-hidden="true" />
-            )}
+            <IconBadge
+              icon={theme === 'dark' ? <Sun /> : <Moon />}
+              size="sm"
+              variant={theme === 'dark' ? 'primary' : 'default'}
+            />
           </button>
 
+          {/* Mobile Benutzer-Avatar (mit Initialen) */}
           <div className="flex h-9 w-9 items-center justify-center sm:hidden">
-            <CircleUserRound
-              size={20}
-              className="text-text-soft dark:text-gray-300"
+            <IconBadge
+              icon={<span className="text-xs font-bold uppercase">{userInitials}</span>}
+              size="md"
+              variant="secondary"
               aria-label={`Angemeldet als ${resolvedUserName}`}
             />
           </div>

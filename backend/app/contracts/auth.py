@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 
 class TenantSummary(BaseModel):
@@ -21,6 +21,8 @@ class CurrentUserResponse(BaseModel):
     authenticated: bool
     development_session: bool
     password_login_available: bool
+    roles: list[str] = Field(default_factory=list)
+    permissions: list[str] = Field(default_factory=list)
 
     tenant: TenantSummary | None = None
 

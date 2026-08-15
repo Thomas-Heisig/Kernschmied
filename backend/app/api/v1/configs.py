@@ -620,7 +620,7 @@ def require_config_permission(
     if development_fallback_allowed(
         request,
     ):
-        logger.warning(
+        logger.info(
             "Configuration permission granted through development fallback",
             extra={
                 "permission": permission,

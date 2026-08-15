@@ -31,13 +31,13 @@ def test_post_assignments_creates_relational_and_effective_includes_calendar(tmp
     app = mod.create_application()
 
     with TestClient(app) as client:
-        # POST assignment for calendar to workspace-root
+        # POST assignment for calendar to workspaces-root
         payload = {"assignments": [{"name": "calendar", "enabled": True}]}
-        resp = client.post("/api/v1/widgets/nodes/workspace-root/assignments", json=payload)
+        resp = client.post("/api/v1/widgets/nodes/workspaces-root/assignments", json=payload)
         assert resp.status_code == 200
 
-        # GET effective widgets for workspace-root should now include calendar
-        eff = client.get("/api/v1/widgets/nodes/workspace-root/effective")
+        # GET effective widgets for workspaces-root should now include calendar
+        eff = client.get("/api/v1/widgets/nodes/workspaces-root/effective")
         assert eff.status_code == 200
         data = eff.json()
         items = data.get("items") or []
@@ -59,20 +59,20 @@ def test_post_empty_deletes_relational_assignment_and_effective_excludes_calenda
     with TestClient(app) as client:
         # Add assignment first
         payload = {"assignments": [{"name": "calendar", "enabled": True}]}
-        resp = client.post("/api/v1/widgets/nodes/workspace-root/assignments", json=payload)
+        resp = client.post("/api/v1/widgets/nodes/workspaces-root/assignments", json=payload)
         assert resp.status_code == 200
 
         # Confirm present
-        eff = client.get("/api/v1/widgets/nodes/workspace-root/effective")
+        eff = client.get("/api/v1/widgets/nodes/workspaces-root/effective")
         assert eff.status_code == 200
         items = eff.json().get("items") or []
         assert any((str(i.get("id") or i.get("name")) == "calendar") for i in items)
 
         # Now post empty assignments to remove
-        resp2 = client.post("/api/v1/widgets/nodes/workspace-root/assignments", json={"assignments": []})
+        resp2 = client.post("/api/v1/widgets/nodes/workspaces-root/assignments", json={"assignments": []})
         assert resp2.status_code == 200
 
-        eff2 = client.get("/api/v1/widgets/nodes/workspace-root/effective")
+        eff2 = client.get("/api/v1/widgets/nodes/workspaces-root/effective")
         assert eff2.status_code == 200
         items2 = eff2.json().get("items") or []
         assert not any((str(i.get("id") or i.get("name")) == "calendar") for i in items2)

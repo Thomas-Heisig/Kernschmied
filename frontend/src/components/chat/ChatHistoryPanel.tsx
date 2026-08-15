@@ -1,6 +1,9 @@
+// F:\Kernschmied\frontend\src\components\chat\ChatHistoryPanel.tsx
+
 import React, { useEffect, useRef, useState } from 'react';
-import { RefreshCw, Copy } from 'lucide-react';
+import { RefreshCw, Copy, X } from 'lucide-react';
 import { useChatHistory, type ChatMessage } from '../../hooks/useChatHistory';
+import IconBadge from '../common/IconBadge';
 
 export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
   const [conversationId, setConversationId] = useState('');
@@ -8,35 +11,37 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
+  // ESC schließen
   useEffect(() => {
-    function onKey(e: KeyboardEvent) {
+    const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
-    }
+    };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
+  // Klick außerhalb schließen
   useEffect(() => {
-    function onMDown(e: MouseEvent) {
+    const onMouseDown = (e: MouseEvent) => {
       if (!panelRef.current) return;
       if (!panelRef.current.contains(e.target as Node)) onClose();
-    }
-    document.addEventListener('mousedown', onMDown);
-    return () => document.removeEventListener('mousedown', onMDown);
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    return () => document.removeEventListener('mousedown', onMouseDown);
   }, [onClose]);
 
   async function copyText(id: string, text: string) {
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(id);
-      setTimeout(() => setCopiedId((v) => (v === id ? null : v)), 1500);
+      setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 1500);
     } catch {
       /* ignore */
     }
   }
 
+  // Nachrichteninhalt mit Code‑Blöcken rendern
   function renderContent(msg: ChatMessage) {
-    // split on fenced code blocks ```lang\n...```
     const content = msg.content ?? msg.text ?? '';
     const parts: Array<{ type: 'text' | 'code'; text: string; lang?: string }> = [];
     const re = /```(.*?)\n([\s\S]*?)```/gm;
@@ -55,21 +60,24 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
 
     return (
       <div className="space-y-2">
-          {parts.map((p: { type: 'text' | 'code'; text: string; lang?: string }, i: number) =>
+        {parts.map((p, i) =>
           p.type === 'text' ? (
-            <div key={i} className="whitespace-pre-wrap text-sm">
+            <div key={i} className="whitespace-pre-wrap text-sm leading-6">
               {p.text}
             </div>
           ) : (
-            <div key={i} className="relative bg-gray-900 text-gray-100 rounded p-2 text-xs font-mono overflow-auto">
-              <pre className="whitespace-pre-wrap">{p.text}</pre>
+            <div
+              key={i}
+              className="relative rounded-md bg-slate-900 p-2 font-mono text-xs text-slate-100 dark:bg-slate-950 dark:text-slate-300"
+            >
+              <pre className="whitespace-pre-wrap overflow-auto">{p.text}</pre>
               <button
-                className="absolute right-1 top-1 p-1 rounded bg-white/5 hover:bg-white/10 text-xs"
-                onClick={() => copyText(msg.id + '-' + i, p.text)}
-                aria-label="Copy code"
+                className="absolute right-1 top-1 rounded bg-white/10 p-1 text-slate-400 hover:bg-white/20 hover:text-slate-200 transition"
+                onClick={() => copyText(`${msg.id}-${i}`, p.text)}
+                aria-label="Code kopieren"
                 type="button"
               >
-                <Copy size={12} />
+                <IconBadge icon={<Copy />} size="sm" variant="default" />
               </button>
             </div>
           )
@@ -79,35 +87,56 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div ref={panelRef} className="fixed right-4 bottom-24 z-50 w-[min(720px,95%)] max-w-full rounded border bg-white p-4 shadow dark:bg-slate-800">
-      <div className="flex items-center justify-between">
+    <div
+      ref={panelRef}
+      className="fixed right-4 bottom-24 z-50 w-[min(720px,95%)] max-w-full rounded-xl border border-border-soft bg-white/95 shadow-xl backdrop-blur-sm dark:border-white/10 dark:bg-slate-900/95 dark:backdrop-blur-sm"
+      role="dialog"
+      aria-label="Chat-Historie"
+    >
+      {/* Kopfzeile */}
+      <div className="flex items-center justify-between border-b border-border-soft px-5 py-3 dark:border-white/10">
         <div className="flex items-baseline gap-3">
-          <strong>Chat-Historie</strong>
-          <span className="text-xs text-text-muted">{conversationId ? `(${conversationId})` : ''}</span>
+          <h2 className="text-base font-semibold text-text-soft dark:text-gray-200">Chat-Historie</h2>
+          {conversationId && (
+            <span className="text-xs text-text-muted dark:text-gray-500">({conversationId})</span>
+          )}
         </div>
+
         <div className="flex items-center gap-2">
           <button
-            className="text-sm text-gray-500 hover:text-gray-700"
+            className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary disabled:opacity-40 dark:text-gray-500 dark:hover:bg-slate-800 dark:hover:text-gray-300"
             onClick={() => fetchHistory(conversationId)}
             disabled={!conversationId || loading}
+            aria-label="Historie neu laden"
             title="Neu laden"
           >
-            <RefreshCw size={16} />
+            <IconBadge icon={<RefreshCw />} size="sm" variant="default" />
           </button>
-          <button className="text-sm text-gray-500" onClick={onClose}>✕</button>
+
+          <button
+            className="rounded p-1.5 text-text-muted hover:bg-surface-hover hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-gray-500 dark:hover:bg-slate-800 dark:hover:text-gray-300"
+            onClick={onClose}
+            aria-label="Schließen"
+            title="Schließen"
+          >
+            <IconBadge icon={<X />} size="sm" variant="default" />
+          </button>
         </div>
       </div>
 
-      <div className="mt-3">
+      {/* Inhalt */}
+      <div className="p-5">
+        {/* Eingabezeile */}
         <div className="flex gap-2">
           <input
-            className="flex-1 rounded border px-2 py-1 bg-white dark:bg-slate-800"
+            className="flex-1 rounded-lg border border-border-soft bg-surface-muted px-4 py-2 text-sm text-text outline-none placeholder:text-text-subtle focus:border-primary focus:ring-4 focus:ring-primary-soft dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-primary/20"
             placeholder="Conversation ID eingeben"
             value={conversationId}
             onChange={(e) => setConversationId(e.target.value)}
+            aria-label="Conversation ID"
           />
           <button
-            className="px-3 py-1 rounded bg-sky-600 text-white disabled:opacity-50"
+            className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-glow transition hover:bg-primary-hover hover:shadow-primary-glow disabled:cursor-not-allowed disabled:opacity-40 dark:bg-primary-dark dark:hover:bg-primary-dark-hover"
             onClick={() => fetchHistory(conversationId)}
             disabled={!conversationId || loading}
           >
@@ -115,38 +144,72 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
           </button>
         </div>
 
-        {error ? <div className="mt-2 text-sm text-red-600">{error}</div> : null}
+        {/* Fehleranzeige */}
+        {error && (
+          <div className="mt-3 rounded-lg bg-danger-soft px-4 py-2 text-sm text-danger dark:bg-danger/10">
+            {error}
+          </div>
+        )}
 
-        <div className="mt-3 max-h-72 overflow-auto text-sm space-y-3">
+        {/* Nachrichtenliste */}
+        <div className="mt-4 max-h-80 overflow-y-auto overscroll-contain space-y-4 pr-1">
           {messages?.length ? (
             messages.map((m) => {
               const isUser = m.role === 'user';
               return (
-                <div key={m.id} className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[86%] rounded-lg p-3 ${isUser ? 'bg-sky-50 text-sky-900' : 'bg-gray-100 text-gray-900'} shadow-sm` }>
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="text-xs text-text-muted">
-                        <span className="font-medium mr-2">{m.role}</span>
-                        <span className="text-[11px] text-gray-500">{m.position} · {new Date(m.created_at).toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          className="text-xs text-gray-500 hover:text-gray-700"
-                          onClick={() => copyText(m.id, m.content ?? m.text ?? '')}
-                          title="Nachricht kopieren"
+                <div
+                  key={m.id}
+                  className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[86%] rounded-2xl px-4 py-3 shadow-sm ${
+                      isUser
+                        ? 'bg-primary text-white dark:bg-primary-dark'
+                        : 'border border-border-soft bg-white/90 dark:border-white/10 dark:bg-slate-800/80'
+                    }`}
+                  >
+                    {/* Kopf der Nachricht */}
+                    <div className="mb-1 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2 text-xs">
+                        <span
+                          className={`font-medium ${
+                            isUser ? 'text-white/80' : 'text-text-muted dark:text-gray-400'
+                          }`}
                         >
-                          {copiedId === m.id ? '✔' : <Copy size={12} />}
-                        </button>
+                          {m.role}
+                        </span>
+                        <span
+                          className={`text-[11px] ${
+                            isUser ? 'text-white/60' : 'text-text-subtle dark:text-gray-500'
+                          }`}
+                        >
+                          {m.position} · {new Date(m.created_at).toLocaleString()}
+                        </span>
                       </div>
+                      <button
+                        className="rounded p-1 text-xs transition hover:bg-white/10 dark:hover:bg-slate-700/50"
+                        onClick={() => copyText(m.id, m.content ?? m.text ?? '')}
+                        aria-label="Nachricht kopieren"
+                        title="Nachricht kopieren"
+                      >
+                        {copiedId === m.id ? (
+                          <span className="text-green-400">✔</span>
+                        ) : (
+                          <IconBadge icon={<Copy />} size="sm" variant="default" />
+                        )}
+                      </button>
                     </div>
 
+                    {/* Inhalt */}
                     {renderContent(m)}
                   </div>
                 </div>
               );
             })
           ) : (
-            <div className="text-sm text-text-muted">Keine Nachrichten geladen.</div>
+            <div className="text-sm text-text-muted dark:text-gray-500">
+              Keine Nachrichten geladen.
+            </div>
           )}
         </div>
       </div>

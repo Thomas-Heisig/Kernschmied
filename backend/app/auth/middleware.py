@@ -76,18 +76,16 @@ class AuthenticationContextMiddleware(BaseHTTPMiddleware):
                             auth_svc, token
                         )
                         if resolved is not None:
-                            # resolved is likely a UserModel; convert to canonical principal
+                            # Convert the resolved UserModel to a canonical principal.
                             from app.auth.principal_mapper import (
                                 build_principal_from_user,
                             )
 
                             principal = build_principal_from_user(
                                 resolved,
-                                session_id=getattr(resolved, "id", None),
+                                session_id=auth_svc.resolved_session_id,
                                 authentication_method=(
-                                    getattr(
-                                        resolved, "authentication_method", None
-                                    )
+                                    auth_svc.resolved_authentication_method
                                     or "password"
                                 ),
                             )
@@ -140,10 +138,32 @@ class AuthenticationContextMiddleware(BaseHTTPMiddleware):
                             return await call_next(request)
                         else:
                             logger.warning(
-                                "Development fallback enabled but development admin user not found"
+                                "Development fallback enabled but development "
+                                "admin user not found"
                             )
-                except Exception:
-                    logger.exception("Error while loading development admin from DB")
+                except Exception as exc:
+                    # `anyio.EndOfStream` can occur when the client disconnects
+                    # during request processing; treat that as non-actionable and
+                    # avoid noisy exception-level logs. Other exceptions are still
+                    # important and will be logged with stacktrace.
+                    try:
+                        import anyio
+
+                        if isinstance(exc, anyio.EndOfStream):
+                            logger.debug(
+                                "Client disconnected during development admin load; "
+                                "suppressing noisy exception"
+                            )
+                        else:
+                            logger.exception(
+                                "Error while loading development admin from DB"
+                            )
+                    except Exception:
+                        # If anyio is not available or the isinstance check fails,
+                        # fall back to exception-level logging.
+                        logger.exception(
+                            "Error while loading development admin from DB"
+                        )
 
             # If we couldn't load a persistent dev user, fall back to anonymous
             request.state.principal = None

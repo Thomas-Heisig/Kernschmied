@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    audit,
     auth,
     bootstrap,
     calendar,
@@ -15,11 +16,11 @@ from app.api.v1 import (
     debug_resolver,
     documentation,
     files,
-    system,
-    audit,
     health,
     hierarchy,
+    mailbox,
     models,
+    system,
     tools,
     ui,
     users,
@@ -134,6 +135,18 @@ api_router.include_router(
     chat.router,
     prefix="/chat",
     tags=["Chat"],
+)
+
+api_router.include_router(
+    __import__("app.api.v1.mentions", fromlist=["router"]).router,
+    prefix="/mentions",
+    tags=["Chat / Mentions"],
+)
+
+api_router.include_router(
+    mailbox.router,
+    prefix="/mailbox",
+    tags=["Collaboration / Mailbox"],
 )
 
 # Persistent chat storage endpoints

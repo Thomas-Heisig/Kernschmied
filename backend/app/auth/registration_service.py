@@ -4,12 +4,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.password_service import PasswordService
+from app.contracts.hierarchy import HierarchyNodeCreate
 from app.database.models.user import UserModel
 from app.database.models.user_preference import UserPreferenceModel
 from app.database.models.user_role import RoleModel, UserRoleModel
-from app.storage.repositories.user import UserRepository
 from app.hierarchy.repository import HierarchyRepository
-from app.contracts.hierarchy import HierarchyNodeCreate
+from app.services.mailbox_service import ensure_user_mailbox, queue_welcome_email
+from app.storage.repositories.user import UserRepository
 
 
 class RegistrationError(Exception):
@@ -84,17 +85,27 @@ class RegistrationService:
         user = await self.user_repo.create(data)
 
         # Roles: validate requested roles and assign atomically
-        requested_roles = roles or ["user"]
+        requested_roles = roles or ["guest"]
         q = select(RoleModel).where(RoleModel.name.in_(requested_roles))
         res = await self.session.execute(q)
         found_roles = {r.name: r for r in res.scalars().all()}
 
-        # Ensure any missing default role 'user' exists
-        if "user" not in found_roles:
-            default_role = RoleModel(name="user", display_name="User")
-            self.session.add(default_role)
+        built_in_roles = {
+            "guest": ("Gast", "Zugriff auf eigene und öffentliche Bereiche"),
+            "user": ("Intern", "Zugriff auf eigene, öffentliche und interne Bereiche"),
+        }
+        for role_name in requested_roles:
+            if role_name in found_roles or role_name not in built_in_roles:
+                continue
+            display_name, description = built_in_roles[role_name]
+            role = RoleModel(
+                name=role_name,
+                display_name=display_name,
+                description=description,
+            )
+            self.session.add(role)
             await self.session.flush()
-            found_roles["user"] = default_role
+            found_roles[role_name] = role
 
         # Validate requested role names exist and are assignable
         for rname in requested_roles:
@@ -125,6 +136,17 @@ class RegistrationService:
 
         pref = UserPreferenceModel(user_id=user.id, **pref_data)
         self.session.add(pref)
+        await ensure_user_mailbox(
+            self.session,
+            user.id,
+            external_email=user.email,
+            sync_external_email=True,
+        )
+        await queue_welcome_email(
+            self.session,
+            user_id=user.id,
+            display_name=user.display_name,
+        )
 
         # Create a corresponding hierarchy node under users-root if missing.
         try:
@@ -175,6 +197,7 @@ class RegistrationService:
 
         # Flush so caller can commit or create session
         await self.session.flush()
+        await self.user_repo.load_authorization(user)
 
         # No auto-login token handling here; caller may create session
         return user, generated_password

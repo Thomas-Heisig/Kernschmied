@@ -1,3 +1,5 @@
+// F:\Kernschmied\frontend\src\components\ui\HierarchyActionModal.tsx
+
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { HierarchyNode } from '../../contracts/hierarchy';
 import { Modal } from './Modal';
@@ -23,14 +25,10 @@ export function HierarchyActionModal({
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    // Initialize the input value when the modal opens or when the
-    // acted-on node changes (use id for stability). Avoid depending on
-    // the full `node` object which may be recreated on every render
-    // and would reset the input while the user types.
     if (!isOpen) return;
 
     if (kind === 'edit_prompt') {
-      const existing = (node as any)?.metadata?.prompt ?? '';
+      const existing = (node as any)?.system_prompt ?? (node as any)?.metadata?.prompt ?? '';
       setValue(typeof existing === 'string' ? existing : '');
       return;
     }
@@ -40,14 +38,11 @@ export function HierarchyActionModal({
       return;
     }
 
-    // create_chat and move start with empty input
     setValue('');
   }, [isOpen, kind, node?.id]);
 
   useEffect(() => {
     if (!isOpen) return;
-    // Focus the input or textarea inside the modal if present. This runs
-    // after Modal's own focus to ensure typing works immediately.
     const t = window.setTimeout(() => {
       inputRef.current?.focus();
     }, 0);
@@ -96,6 +91,13 @@ export function HierarchyActionModal({
     onConfirm(value || null);
   }, [onConfirm, value]);
 
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    if (import.meta.env.DEV) {
+      console.debug('HierarchyActionModal input onChange', e.target.value);
+    }
+    setValue(e.target.value);
+  }, []);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -106,53 +108,61 @@ export function HierarchyActionModal({
       confirmDisabled={loading}
     >
       {kind === 'delete' ? (
-        <div className="text-sm">
-          Soll <strong>{node?.name}</strong> wirklich gelöscht werden?
+        <div className="text-sm text-text-soft dark:text-gray-300">
+          Soll <strong className="text-text dark:text-white">{node?.name}</strong> wirklich gelöscht werden?
         </div>
       ) : null}
 
-      {(kind === 'rename' || kind === 'create_chat' || kind === 'move') && (
-        <div className="mt-2" onMouseDown={(e) => e.stopPropagation()}>
-          <label className="block text-sm text-text-muted">
+      {(kind === 'rename' || kind === 'create_child' || kind === 'create_chat' || kind === 'move') && (
+        <div className="mt-3" onMouseDown={(e) => e.stopPropagation()}>
+          <label
+            htmlFor="hierarchy-action-input"
+            className="block text-sm font-medium text-text-soft dark:text-gray-300"
+          >
             {kind === 'move' ? 'ID des neuen Elternknotens (leer = Root)' : 'Name'}
           </label>
           <input
-            className="mt-1 w-full rounded border border-border px-2 py-1"
+            id="hierarchy-action-input"
+            className="mt-1.5 w-full rounded-lg border border-border-soft bg-surface-muted px-3 py-2 text-sm text-text outline-none transition placeholder:text-text-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-primary/20"
             value={value}
             ref={inputRef as any}
-            onChange={(e) => {
-              // debug: ensure change events fire
-
-              console.debug('HierarchyActionModal input onChange', e.target.value);
-              setValue(e.target.value);
-            }}
+            onChange={handleChange}
             onFocus={() => {
-              console.debug('HierarchyActionModal input onFocus');
+              if (import.meta.env.DEV) console.debug('HierarchyActionModal input onFocus');
             }}
+            placeholder={kind === 'move' ? 'Eltern-ID eingeben…' : 'Name eingeben…'}
           />
         </div>
       )}
 
       {kind === 'edit_prompt' && (
-        <div className="mt-2" onMouseDown={(e) => e.stopPropagation()}>
-          <label className="block text-sm text-text-muted">System-/Kontext-Prompt</label>
+        <div className="mt-3" onMouseDown={(e) => e.stopPropagation()}>
+          <label
+            htmlFor="hierarchy-action-textarea"
+            className="block text-sm font-medium text-text-soft dark:text-gray-300"
+          >
+            System‑/Kontext‑Prompt
+          </label>
           <textarea
-            className="mt-1 w-full rounded border border-border px-2 py-1"
+            id="hierarchy-action-textarea"
+            className="mt-1.5 w-full rounded-lg border border-border-soft bg-surface-muted px-3 py-2 text-sm text-text outline-none transition placeholder:text-text-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-primary/20"
             rows={6}
             value={value}
             ref={inputRef as any}
-            onChange={(e) => {
-              console.debug('HierarchyActionModal textarea onChange', e.target.value);
-              setValue(e.target.value);
-            }}
+            onChange={handleChange}
             onFocus={() => {
-              console.debug('HierarchyActionModal textarea onFocus');
+              if (import.meta.env.DEV) console.debug('HierarchyActionModal textarea onFocus');
             }}
+            placeholder="Prompt eingeben…"
           />
         </div>
       )}
 
-      {loading ? <div className="mt-3 text-sm text-text-muted">Bitte warten…</div> : null}
+      {loading && (
+        <div className="mt-3 text-sm text-text-muted dark:text-gray-400">
+          Bitte warten…
+        </div>
+      )}
     </Modal>
   );
 }

@@ -777,6 +777,57 @@ class Settings(BaseSettings):
     )
 
     # --------------------------------------------------------
+    # E-Mail-Zustellung
+    # --------------------------------------------------------
+
+    email_delivery_enabled: bool = Field(
+        default=False,
+        validation_alias=AliasChoices(
+            "EMAIL_DELIVERY_ENABLED",
+            "email_delivery_enabled",
+        ),
+    )
+    email_provider: str = Field(
+        default="smtp",
+        min_length=1,
+        max_length=50,
+        validation_alias=AliasChoices("EMAIL_PROVIDER", "email_provider"),
+    )
+    email_from_address: str = Field(
+        default="noreply@kernschmied.local",
+        min_length=3,
+        max_length=320,
+        validation_alias=AliasChoices(
+            "EMAIL_FROM_ADDRESS",
+            "email_from_address",
+        ),
+    )
+    smtp_host: str = Field(
+        default="127.0.0.1",
+        min_length=1,
+        max_length=255,
+        validation_alias=AliasChoices("SMTP_HOST", "smtp_host"),
+    )
+    smtp_port: int = Field(
+        default=1025,
+        ge=1,
+        le=65535,
+        validation_alias=AliasChoices("SMTP_PORT", "smtp_port"),
+    )
+    smtp_starttls: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("SMTP_STARTTLS", "smtp_starttls"),
+    )
+    smtp_username: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("SMTP_USERNAME", "smtp_username"),
+    )
+    smtp_password: SecretStr = Field(
+        default=SecretStr(""),
+        validation_alias=AliasChoices("SMTP_PASSWORD", "smtp_password"),
+    )
+
+    # --------------------------------------------------------
     # Logging und Diagnose
     # --------------------------------------------------------
 

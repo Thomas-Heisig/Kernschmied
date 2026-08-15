@@ -2,16 +2,18 @@ import os
 from pathlib import Path
 
 import pytest
-from sqlalchemy import select
-from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncSession
-
+from app.auth.registration_service import RegistrationError, RegistrationService
+from app.core.dev_seed import seed_development_hierarchy
 from app.core.settings import reload_settings, settings
+from app.database.models.mailbox import UserMailboxModel
+from app.database.models.user import UserModel
+from app.database.models.user_role import RoleModel, UserRoleModel
+from app.hierarchy.repository import HierarchyRepository
 from app.storage import database as _database_module
 from app.storage.database import init_database
-from app.core.dev_seed import seed_development_hierarchy
-from app.database.models.user import UserModel
-from app.hierarchy.repository import HierarchyRepository
-from app.auth.registration_service import RegistrationService, RegistrationError
+from app.storage.models import WidgetRegistry
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 
 @pytest.fixture()
@@ -45,6 +47,10 @@ async def test_development_seed_creates_admin_and_user_node(session_factory):
         assert admin.username == settings.development_admin_username
         assert admin.display_name == settings.development_admin_display_name
         assert getattr(admin, "password_hash", None) is not None
+        mailbox = await session.scalar(
+            select(UserMailboxModel).where(UserMailboxModel.user_id == admin.id)
+        )
+        assert mailbox is not None
 
         # Check hierarchy node exists for admin
         repo = HierarchyRepository(session)
@@ -71,6 +77,40 @@ async def test_development_seed_is_idempotent(session_factory):
 
 
 @pytest.mark.asyncio
+async def test_development_seed_merges_and_deprecates_duplicate_widgets(session_factory):
+    await seed_development_hierarchy(session_factory)
+
+    async with session_factory() as session:
+        async with session.begin():
+            session.add(
+                WidgetRegistry(
+                    id="legacy-system-health",
+                    name="system_health",
+                    type="system_health_widget",
+                    widget_metadata={
+                        "component_type": "system_health_widget",
+                        "supported_node_types": ["system_root"],
+                    },
+                    status="active",
+                )
+            )
+
+    await seed_development_hierarchy(session_factory)
+
+    async with session_factory() as session:
+        result = await session.execute(
+            select(WidgetRegistry).where(WidgetRegistry.name == "system_health")
+        )
+        rows = {row.id: row for row in result.scalars().all()}
+
+        assert set(rows["system_health"].widget_metadata["supported_node_types"]) == {
+            "system",
+            "system_root",
+        }
+        assert rows["legacy-system-health"].status == "deprecated"
+
+
+@pytest.mark.asyncio
 async def test_registration_creates_user_and_hierarchy_node(session_factory):
     # Ensure system roots (users-root) exist
     await seed_development_hierarchy(session_factory)
@@ -83,12 +123,25 @@ async def test_registration_creates_user_and_hierarchy_node(session_factory):
             email=None,
             password="verysecurepassword",
         )
+        assert getattr(user, "roles", ()) == ("guest",)
 
         # After flush, the user id should exist and hierarchy node created
         repo = HierarchyRepository(session)
         node = await repo.get_node(f"user-{user.id}")
         assert node is not None
         assert node.node_metadata.get("entity_id") == user.id
+
+        role_result = await session.execute(
+            select(RoleModel.name)
+            .join(UserRoleModel, UserRoleModel.role_id == RoleModel.id)
+            .where(UserRoleModel.user_id == user.id)
+        )
+        assert set(role_result.scalars().all()) == {"guest"}
+        mailbox = await session.scalar(
+            select(UserMailboxModel).where(UserMailboxModel.user_id == user.id)
+        )
+        assert mailbox is not None
+        assert mailbox.internal_address == f"{user.id}@users.kernschmied.local"
 
 
 @pytest.mark.asyncio

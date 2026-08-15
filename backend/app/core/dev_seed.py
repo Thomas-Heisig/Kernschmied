@@ -7,14 +7,15 @@ from sqlalchemy import select
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.auth.password_service import PasswordService
 from app.contracts.hierarchy import HierarchyNodeCreate
 from app.core.settings import settings
 from app.database.models.user import UserModel
 from app.database.models.user_role import RoleModel, UserRoleModel
 from app.hierarchy.repository import HierarchyRepository
-from app.storage.models import WidgetRegistry, WidgetAssignment
+from app.services.mailbox_service import ensure_user_mailbox
+from app.storage.models import WidgetAssignment, WidgetRegistry
 from app.storage.repositories.user import UserRepository
-from app.auth.password_service import PasswordService
 
 logger = logging.getLogger(__name__)
 
@@ -170,6 +171,13 @@ async def seed_development_hierarchy(
 
                         if updated:
                             await user_repo.update(admin, {})
+
+                    await ensure_user_mailbox(
+                        s2,
+                        admin.id,
+                        external_email=admin.email,
+                        sync_external_email=True,
+                    )
 
                     q = select(RoleModel).where(RoleModel.name == "admin")
                     result = await s2.execute(q)
@@ -370,7 +378,8 @@ async def seed_development_hierarchy(
                         await s3.flush()
                         canonical = wr
 
-                    # Ensure canonical has required fields set (update missing)
+                    # Ensure canonical has required fields set and preserve useful
+                    # metadata from legacy duplicate rows before deprecating them.
                     updated = False
                     # Narrow type for static analysis: canonical should exist here
                     assert canonical is not None
@@ -378,8 +387,38 @@ async def seed_development_hierarchy(
                     if getattr(c, "type", None) != sw.get("type") and sw.get("type"):
                         c.type = sw.get("type")
                         updated = True
-                    if not getattr(c, "widget_metadata", None) and sw.get("widget_metadata"):
-                        c.widget_metadata = cast(Dict[str, Any], sw.get("widget_metadata") or {})
+
+                    canonical_metadata = getattr(c, "widget_metadata", {}) or {}
+                    if isinstance(canonical_metadata, str):
+                        try:
+                            import json as _json
+
+                            canonical_metadata = _json.loads(canonical_metadata)
+                        except Exception:
+                            canonical_metadata = {}
+                    merged_metadata = dict(canonical_metadata)
+                    for key, value in cast(Dict[str, Any], sw.get("widget_metadata") or {}).items():
+                        merged_metadata.setdefault(key, value)
+
+                    supported_node_types = set(merged_metadata.get("supported_node_types") or [])
+                    for row in rows:
+                        duplicate_metadata = getattr(row, "widget_metadata", {}) or {}
+                        if isinstance(duplicate_metadata, str):
+                            try:
+                                import json as _json
+
+                                duplicate_metadata = _json.loads(duplicate_metadata)
+                            except Exception:
+                                duplicate_metadata = {}
+                        for key, value in duplicate_metadata.items():
+                            if key != "supported_node_types":
+                                merged_metadata.setdefault(key, value)
+                        supported_node_types.update(duplicate_metadata.get("supported_node_types") or [])
+                    if supported_node_types:
+                        merged_metadata["supported_node_types"] = sorted(supported_node_types)
+
+                    if merged_metadata != canonical_metadata:
+                        c.widget_metadata = merged_metadata
                         updated = True
                     if not getattr(c, "default_config", None) and sw.get("default_config"):
                         c.default_config = cast(Dict[str, Any], sw.get("default_config") or {})
@@ -388,52 +427,14 @@ async def seed_development_hierarchy(
                         s3.add(c)
                         await s3.flush()
 
-                    # Deprecate other rows that represent duplicates to avoid ambiguity
-                    # Minimal and defensive: do NOT deprecate a duplicate if it contains
-                    # widget_metadata keys or supported_node_types that the canonical
-                    # entry does not provide. This prevents the dev-seed from silently
-                    # removing metadata that is required for specific node types
-                    # (e.g. system-root support).
+                    # Deprecate other rows after their metadata has been merged into
+                    # the canonical entry, avoiding ambiguous active registry rows.
                     try:
-                        # Prepare canonical metadata for comparison
-                        can_md = getattr(canonical, "widget_metadata", {}) or {}
-                        if isinstance(can_md, str):
-                            try:
-                                import json as _json
-
-                                can_md = _json.loads(can_md)
-                            except Exception:
-                                can_md = {}
-
                         canonical_id = getattr(canonical, "id", None)
                         for r in rows:
-                            # rows are WidgetRegistry instances (typed above)
                             if getattr(r, "id", None) == canonical_id:
                                 continue
                             try:
-                                dup_md = getattr(r, "widget_metadata", {}) or {}
-                                if isinstance(dup_md, str):
-                                    try:
-                                        import json as _json
-
-                                        dup_md = _json.loads(dup_md)
-                                    except Exception:
-                                        dup_md = {}
-
-                                # If the duplicate advertises supported_node_types that
-                                # the canonical does not, skip deprecating to be safe.
-                                dup_supported = set(dup_md.get("supported_node_types") or [])
-                                can_supported = set(can_md.get("supported_node_types") or [])
-                                if dup_supported and not dup_supported.issubset(can_supported):
-                                    logger.warning(
-                                        "Dev seed: skipping deprecation of duplicate registry row %s because it exposes additional supported_node_types %s not present in canonical %s",
-                                        getattr(r, "id", None),
-                                        dup_supported - can_supported,
-                                        getattr(canonical, "id", None),
-                                    )
-                                    continue
-
-                                # Safe to deprecate when duplicate offers no superset metadata
                                 r.status = "deprecated"
                                 s3.add(r)
                             except Exception:
@@ -566,27 +567,11 @@ async def seed_development_hierarchy(
                                 {"name": "chat", "inherit": True, "position": 30},
                             ],
                         },
-                        "workspace-root": {
+                        "workspaces-root": {
                             "type": "folder",
                             "parent": "system-root",
                             "widgets": [
                                 {"name": "files", "inherit": False, "position": 10},
-                            ],
-                        },
-                        "project-root": {
-                            "type": "folder",
-                            "parent": "system-root",
-                            "widgets": [
-                                {"name": "calendar", "inherit": True, "position": 10, "configuration": {"view": "month"}},
-                                {"name": "files", "inherit": False, "position": 20},
-                            ],
-                        },
-                        "chat-root": {
-                            "type": "folder",
-                            "parent": "system-root",
-                            "widgets": [
-                                {"name": "chat", "inherit": False, "position": 10},
-                                {"name": "files", "inherit": False, "position": 20},
                             ],
                         },
                     }

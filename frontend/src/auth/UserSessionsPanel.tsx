@@ -25,7 +25,7 @@ function uaIcon(agent: string | null) {
   return '🌐 Browser';
 }
 
-export default function UserSessionsPanel({ onClose }: { onClose?: () => void }) {
+export default function UserSessionsPanel() {
   const { refreshCurrentUser, markUnauthenticated } = useAuth() as any;
   const [sessions, setSessions] = useState<UserSession[]>([]);
   const [loading, setLoading] = useState(false);
@@ -75,7 +75,7 @@ export default function UserSessionsPanel({ onClose }: { onClose?: () => void })
 
   return (
     <div>
-      <h2 className="text-lg font-semibold">Sitzungen</h2>
+      <h2 id="user-panel-sessions-title" className="text-lg font-semibold">Sitzungen</h2>
 
       {loading && <div>Lade Sitzungen…</div>}
       {error && <div className="text-red-600">{error}</div>}
@@ -111,7 +111,6 @@ export default function UserSessionsPanel({ onClose }: { onClose?: () => void })
           </div>
         )}
 
-        <button type="button" onClick={() => onClose && onClose()} className="ml-2 px-3 py-1 bg-slate-200 rounded">Schließen</button>
       </div>
     </div>
   );

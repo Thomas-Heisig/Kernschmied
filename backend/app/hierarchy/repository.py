@@ -130,6 +130,16 @@ class HierarchyRepository:
             node.name = changes["name"].strip()
         if "system_prompt" in changes:
             node.system_prompt = changes["system_prompt"]
+        if "prompt_enabled" in changes and changes["prompt_enabled"] is not None:
+            node.prompt_enabled = bool(changes["prompt_enabled"])
+        if "prompt_mode" in changes and changes["prompt_mode"] is not None:
+            # ensure we write a string only when provided
+            node.prompt_mode = str(changes["prompt_mode"])
+        if "prompt_priority" in changes and changes["prompt_priority"] is not None:
+            try:
+                node.prompt_priority = int(changes["prompt_priority"])
+            except Exception:
+                node.prompt_priority = 0
         if "tool_policy" in changes:
             node.tool_policy = dict(changes["tool_policy"] or {})
         if "config_overrides" in changes:

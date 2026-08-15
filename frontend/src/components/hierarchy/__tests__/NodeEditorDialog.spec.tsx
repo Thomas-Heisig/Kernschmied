@@ -80,7 +80,7 @@ describe('NodeEditorDialog — Structure tab', () => {
     renderDialog();
     // Parent info present
     fireEvent.click(screen.getByText('Struktur'));
-    expect(screen.getByText('ID: parent-1')).toBeTruthy();
+    expect(screen.getByText('parent-1')).toBeTruthy();
     expect(screen.getByText(/Name:/)).toBeTruthy();
     expect(screen.getByText(/Typ:/)).toBeTruthy();
   });

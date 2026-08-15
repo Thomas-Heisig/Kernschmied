@@ -21,14 +21,27 @@ class HierarchyPermissionService:
         action: str,
         node: HierarchyNodeModel | None = None,
     ) -> bool:
-        del node
-
         if actor.is_admin:
             return True
         if f"hierarchy.{action}" in actor.permissions:
             return True
+        normalized_roles = {role.strip().casefold() for role in actor.roles}
         if action == READ_ACTION:
-            return "hierarchy.read" in actor.permissions
+            return bool(
+                normalized_roles.intersection(
+                    {"guest", "user", "internal", "intern"}
+                )
+            )
+        if (
+            action in {CREATE_CHILD_ACTION, RENAME_ACTION, DELETE_ACTION}
+            and actor.user_id is not None
+            and normalized_roles.intersection({"guest", "user", "internal", "intern"})
+            and node is not None
+        ):
+            if node.id == f"user-{actor.user_id}":
+                return action == CREATE_CHILD_ACTION
+            metadata = dict(node.node_metadata or {})
+            return metadata.get("owner_user_id") == actor.user_id
         return False
 
     def require(

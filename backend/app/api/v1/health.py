@@ -8,6 +8,8 @@ from typing import Literal, TypeAlias, cast
 
 from fastapi import APIRouter, Request, Response
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.security_profile import get_security_profile
 
@@ -18,7 +20,7 @@ API_VERSION = "v1"
 HEALTH_SCHEMA_VERSION = "1.0"
 
 
-# Eigene rekursive Definition ENTFERNEN – stattdessen Pydantic's JsonValue verwenden
+# Eigene rekursive Definition ENTFERNEN - stattdessen Pydantic's JsonValue verwenden
 JsonObject: TypeAlias = dict[str, JsonValue]
 
 
@@ -87,6 +89,21 @@ def service_status(
     return ServiceStatus(
         status="up",
     )
+
+
+async def database_status(
+    session_factory: async_sessionmaker[AsyncSession] | None,
+) -> ServiceStatus:
+    if session_factory is None:
+        return ServiceStatus(status="down")
+
+    try:
+        async with session_factory() as session:
+            await session.execute(select(1))
+    except Exception:
+        return ServiceStatus(status="down")
+
+    return ServiceStatus(status="up")
 
 
 def normalize_non_negative_int(
@@ -365,10 +382,13 @@ async def health(
         None,
     )
 
-    database: object | None = getattr(
-        request.app.state,
-        "db",
-        None,
+    session_factory = cast(
+        async_sessionmaker[AsyncSession] | None,
+        getattr(
+            request.app.state,
+            "session_factory",
+            None,
+        ),
     )
 
     revision = await get_config_revision(
@@ -397,9 +417,7 @@ async def health(
             "tool_registry": service_status(
                 tool_registry,
             ),
-            "database": service_status(
-                database,
-            ),
+            "database": await database_status(session_factory),
         },
         request_id=get_request_id(
             request,

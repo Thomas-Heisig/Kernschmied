@@ -14,8 +14,50 @@ export function registerWidgetRenderer(type: string, renderer: WidgetRenderer) {
 
 export function getWidgetRenderer(type: string | undefined | null): WidgetRenderer | null {
   if (!type) return null;
-  const key = String(type).trim().toLowerCase();
-  return registry[key] ?? null;
+  const raw = String(type).trim().toLowerCase();
+
+  // Generate candidate keys by normalizing common variants and dup suffixes
+  const candidates: string[] = [];
+
+  const pushUnique = (s?: string) => {
+    if (!s) return;
+    const v = String(s).trim().toLowerCase();
+    if (!v) return;
+    if (!candidates.includes(v)) candidates.push(v);
+  };
+
+  pushUnique(raw);
+  pushUnique(raw.replace(/-/g, '_'));
+
+  // Remove duplication markers like '__dup__...'
+  const withoutDup = raw.replace(/__dup__.*$/i, '').replace(/[-\s]+/g, '_');
+  pushUnique(withoutDup);
+
+  // If there's an alphanumeric prefix before non-word chars, try that
+  const prefix = raw.split(/[^a-z0-9_]+/i)[0];
+  pushUnique(prefix);
+
+  // Try with and without the common '_widget' suffix
+  const tryVariants = [...candidates];
+  tryVariants.forEach((c) => {
+    if (c.endsWith('_widget')) {
+      pushUnique(c.replace(/_widget$/i, ''));
+    } else {
+      pushUnique(`${c}_widget`);
+    }
+  });
+
+  // Finally try simple replacement of trailing hyphen groups (e.g. 'w-system')
+  candidates.forEach((c) => {
+    pushUnique(c.replace(/__?w[_-].*$/i, ''));
+    pushUnique(c.replace(/__?w.*$/i, ''));
+  });
+
+  for (const k of candidates) {
+    if (registry[k]) return registry[k];
+  }
+
+  return null;
 }
 
 export function listWidgetRendererTypes(): string[] {

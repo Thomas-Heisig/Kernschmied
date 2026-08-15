@@ -7,6 +7,17 @@ def create_default_node_types() -> dict[str, NodeTypeDefinition]:
     """Erzeugt die einfachen MVP-Node-Typen ohne globale mutable Instanz."""
 
     return {
+        "system": NodeTypeDefinition(
+            label="System",
+            icon="ServerCog",
+            color="#64748b",
+            allowed_child_types=("users-root", "workspaces-root", "chats-root"),
+            allowed_actions=(),
+            selectable=True,
+            draggable=False,
+            droppable=True,
+            expandable=True,
+        ),
         "user": NodeTypeDefinition(
             label="Benutzer",
             icon="UserCircle",

@@ -1,3 +1,5 @@
+// F:\Kernschmied\frontend\src\app\useAppBootstrap.ts
+
 import { useCallback } from 'react';
 import { useAppStoreCommands, useAppStoreState } from '../store';
 import type { AppBootstrap } from '../types/bootstrap';
@@ -6,24 +8,55 @@ import type {
   HierarchyNodeUpdate,
   HierarchyTree,
 } from '../contracts/hierarchy';
+import {
+  createHierarchyNode as apiCreateHierarchyNode,
+  updateHierarchyNode as apiUpdateHierarchyNode,
+  moveHierarchyNode as apiMoveHierarchyNode,
+  reorderHierarchy as apiReorderHierarchy,
+  deleteHierarchyNode as apiDeleteHierarchyNode,
+} from '../api/hierarchy';
 
-export function useAppBootstrap(options?: { bootstrap?: AppBootstrap | null; reload?: () => Promise<void>; reloadHierarchy?: () => Promise<void>; }) {
+interface UseAppBootstrapOptions {
+  /** Die Bootstrap‑Daten der App */
+  bootstrap?: AppBootstrap | null;
+  /** Funktion zum Neuladen der gesamten App (Schema + Hierarchie) */
+  reload?: () => Promise<void>;
+  /** Funktion zum Neuladen der Hierarchie (nur Baum) */
+  reloadHierarchy?: () => Promise<void>;
+}
+
+/**
+ * useAppBootstrap – zentrale Hook für Hierarchie‑Mutationen und App‑Reload.
+ *
+ * Stellt Funktionen bereit, um:
+ * - Knoten zu erstellen, zu aktualisieren, zu verschieben und zu löschen
+ * - Die Hierarchie neu zu laden
+ * - Die gesamte App neu zu laden
+ * - Knoten auszuwählen und die expandierten Knoten zu verwalten
+ *
+ * @param options - Konfiguration (Bootstrap, Reload‑Funktionen)
+ * @returns Objekt mit allen Funktionen und State
+ */
+export function useAppBootstrap(options?: UseAppBootstrapOptions) {
   const state = useAppStoreState();
-
   const { selectHierarchyNode, replaceExpandedNodeIds } = useAppStoreCommands();
 
-  // Hierarchie-Mutationen
+  /**
+   * Erstellt einen neuen Hierarchie‑Knoten.
+   *
+   * @param payloadOrParentId - Entweder die ID des Elternknotens (dann wird ein Standard‑Chat erstellt) oder ein vollständiges `HierarchyNodeCreate`‑Objekt.
+   * @returns Die erstellte Knoten‑ID (falls verfügbar)
+   */
   const createHierarchyNode = useCallback(
     async (payloadOrParentId: string | (HierarchyNodeCreate & Record<string, unknown>)) => {
-      const { createHierarchyNode: apiCreate } = await import('../api/hierarchy');
       let payload: HierarchyNodeCreate;
+
       if (typeof payloadOrParentId === 'string') {
-        // called with parentId only -> create a default chat node
+        // Komfort‑API: mit parentId -> Standard‑Chat erstellen
         payload = {
           type: 'chat',
           name: 'Neuer Knoten',
           parent_id: payloadOrParentId || null,
-          // default empty policy/config
           tool_policy: {},
           config_overrides: {},
           metadata: {},
@@ -31,72 +64,128 @@ export function useAppBootstrap(options?: { bootstrap?: AppBootstrap | null; rel
       } else {
         payload = payloadOrParentId as HierarchyNodeCreate;
       }
-      // Create node and ensure UI selects the newly created node after reload.
-      const created = await apiCreate(payload as any);
+
+      // Knoten erstellen
+      const created = await apiCreateHierarchyNode(payload as any);
+      const createdId = (created as any)?.id;
+
+      // Hierarchie neu laden (optional)
       try {
-        if (options?.reloadHierarchy) await options.reloadHierarchy();
-      } catch {
-        // ignore reload errors here – selection may still be useful
+        if (options?.reloadHierarchy) {
+          await options.reloadHierarchy();
+        }
+      } catch (reloadError) {
+        // Reload‑Fehler werden nicht an den Aufrufer weitergegeben,
+        // aber der neu erstellte Knoten könnte trotzdem im Store sein.
+        console.warn('[useAppBootstrap] Reload after create failed:', reloadError);
       }
 
-      // If the API returned the created node id, select it in the UI state.
-      try {
-        const id = (created as any)?.id;
-        if (id && typeof selectHierarchyNode === 'function') {
-          selectHierarchyNode(id);
+      // Neu erstellten Knoten selektieren (wenn ID vorhanden)
+      if (createdId && typeof selectHierarchyNode === 'function') {
+        try {
+          selectHierarchyNode(createdId);
+        } catch (selectionError) {
+          console.warn('[useAppBootstrap] Selection of new node failed:', selectionError);
         }
-      } catch {
-        // silent fallback
       }
+
+      return createdId;
     },
     [options?.reloadHierarchy, selectHierarchyNode],
   );
 
+  /**
+   * Aktualisiert einen bestehenden Hierarchie‑Knoten.
+   *
+   * @param id - ID des zu aktualisierenden Knotens
+   * @param payload - Die zu aktualisierenden Felder (name, type, metadata, etc.)
+   */
   const updateHierarchyNode = useCallback(
     async (id: string, payload: unknown) => {
-      const { updateHierarchyNode: apiUpdate } = await import('../api/hierarchy');
-      await apiUpdate(id, payload as HierarchyNodeUpdate);
-      void (options?.reloadHierarchy?.());
+      await apiUpdateHierarchyNode(id, payload as HierarchyNodeUpdate);
+      try {
+        if (options?.reloadHierarchy) {
+          await options.reloadHierarchy();
+        }
+      } catch (reloadError) {
+        console.warn('[useAppBootstrap] Reload after update failed:', reloadError);
+      }
     },
-      [options?.reloadHierarchy],
+    [options?.reloadHierarchy],
   );
 
+  /**
+   * Verschiebt einen Knoten innerhalb der Hierarchie.
+   *
+   * @param id - ID des zu verschiebenden Knotens
+   * @param newParentId - ID des neuen Elternknotens (oder null für Wurzel)
+   * @param position - Optionale Position im neuen Eltern‑Knoten (Sortierung)
+   */
   const moveHierarchyNode = useCallback(
     async (id: string, newParentId: string | null, position?: number | null) => {
       if (position === undefined || position === null) {
-        const { moveHierarchyNode: apiMove } = await import('../api/hierarchy');
-        await apiMove(id, newParentId);
+        await apiMoveHierarchyNode(id, newParentId);
       } else {
-        const { reorderHierarchy } = await import('../api/hierarchy');
-        await reorderHierarchy([{ id, new_parent_id: newParentId, new_position: position }]);
+        await apiReorderHierarchy([{ id, new_parent_id: newParentId, new_position: position }]);
       }
 
-      void (options?.reloadHierarchy?.());
+      try {
+        if (options?.reloadHierarchy) {
+          await options.reloadHierarchy();
+        }
+      } catch (reloadError) {
+        console.warn('[useAppBootstrap] Reload after move failed:', reloadError);
+      }
     },
     [options?.reloadHierarchy],
   );
 
+  /**
+   * Löscht einen Hierarchie‑Knoten.
+   *
+   * @param id - ID des zu löschenden Knotens
+   */
   const deleteHierarchyNode = useCallback(
     async (id: string) => {
-      const { deleteHierarchyNode: apiDelete } = await import('../api/hierarchy');
-      await apiDelete(id);
-      void (options?.reloadHierarchy?.());
+      await apiDeleteHierarchyNode(id);
+      try {
+        if (options?.reloadHierarchy) {
+          await options.reloadHierarchy();
+        }
+      } catch (reloadError) {
+        console.warn('[useAppBootstrap] Reload after delete failed:', reloadError);
+      }
     },
     [options?.reloadHierarchy],
   );
+
+  /**
+   * Löst ein vollständiges Neuladen der App aus (Schema + Hierarchie).
+   */
   const reloadApplication = useCallback((): void => {
-    void (options?.reload?.());
+    if (options?.reload) {
+      void options.reload();
+    }
   }, [options?.reload]);
 
   return {
+    /** Die Bootstrap‑Daten (oder null) */
     bootstrap: options?.bootstrap ?? null,
+    /** Der aktuelle App‑Store‑State */
     state,
+    /** Löst ein vollständiges Neuladen der App aus */
     reloadApplication,
+    /** Wählt einen Knoten in der Hierarchie aus (Store‑Action) */
     selectHierarchyNode,
+    /** Ersetzt die Menge der expandierten Knoten‑IDs (Store‑Action) */
     replaceExpandedNodeIds,
+    /** Erstellt einen neuen Hierarchie‑Knoten */
     createHierarchyNode,
+    /** Aktualisiert einen bestehenden Hierarchie‑Knoten */
     updateHierarchyNode,
+    /** Verschiebt einen Knoten */
     moveHierarchyNode,
+    /** Löscht einen Knoten */
     deleteHierarchyNode,
   };
 }

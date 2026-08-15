@@ -3327,6 +3327,40 @@ CONFIG_DEFINITIONS: tuple[ConfigDefinition, ...] = (
             "rate_limit",
         },
     ),
+    *(
+        config_definition(
+            group="security",
+            key=f"{access_level}_{node_type}_limit",
+            display_name=f"{label} für {role_label}",
+            description=(
+                f"Maximale Anzahl eigener {label.lower()} pro {role_label}-Konto."
+            ),
+            value_schema={"type": "integer", "minimum": 0, "maximum": 10000},
+            default_value=default_value,
+            allowed_scopes={ConfigScope.SYSTEM},
+            value_type=ConfigValueType.INTEGER,
+            permissions=ConfigPermissions(
+                read="security:read",
+                write="security:admin",
+            ),
+            ui=ConfigUIMetadata(
+                component=ConfigUIComponent.NUMBER,
+                category="Sicherheit",
+                section="Hierarchie-Quoten",
+                order=order,
+                advanced=True,
+            ),
+            tags={"security", "hierarchy", "quota", access_level},
+        )
+        for access_level, role_label, node_type, label, default_value, order in (
+            ("guest", "Gast", "workspace", "Bereiche", 1, 40),
+            ("guest", "Gast", "project", "Projekte", 2, 50),
+            ("guest", "Gast", "chat", "Chats", 5, 60),
+            ("internal", "Intern", "workspace", "Bereiche", 5, 70),
+            ("internal", "Intern", "project", "Projekte", 10, 80),
+            ("internal", "Intern", "chat", "Chats", 25, 90),
+        )
+    ),
 )
 
 

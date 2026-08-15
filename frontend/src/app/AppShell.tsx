@@ -1,16 +1,21 @@
-import { useCallback, useState, useEffect } from 'react';
-import { useRef } from 'react';
+// F:\Kernschmied\frontend\src\app\AppShell.tsx
+
+import { useCallback, useState, useEffect, useMemo, useRef } from 'react';
+import { LoaderCircle } from 'lucide-react';
+import IconBadge from '../components/common/IconBadge';
 
 import { AppErrorScreen } from '../components/errors';
-import { Toaster } from 'sonner';
 import { AppLoadingScreen } from '../components/status';
 import { ToastProvider, useToast } from '../components/ui/ToastProvider';
+import Modal from '../components/ui/Modal';
 import HierarchyActionModal from '../components/ui/HierarchyActionModal';
 import NodeEditorDialog from '../components/hierarchy/NodeEditorDialog';
 import { SettingsDialog } from '../components/settings';
 import { DocumentationDialog } from '../components/documentation';
 import React from 'react';
+
 const CalendarPanel = React.lazy(() => import('../components/calendar/CalendarPanel'));
+
 import AuthProvider, { useAuth } from '../auth/AuthProvider';
 import UserAccountPanelsProvider from '../auth/UserAccountPanels';
 import LoginPage from '../auth/LoginPage';
@@ -29,13 +34,10 @@ import { useAppBootstrap } from './useAppBootstrap';
 import { useAppStoreCommands, useAppStoreState } from '../store';
 import { useAppSchema } from '../hooks/useAppSchema';
 import { useBootstrap } from '../hooks/useBootstrap';
-import { useMemo } from 'react';
 
 export function AppShell() {
   const bootstrapHook = useBootstrap();
 
-  // Memoize the specific bootstrap parts passed to AuthProvider so it doesn't
-  // receive a new object on every render and cause effects to re-run.
   const authBootstrap = useMemo(() => {
     const b = bootstrapHook.bootstrap;
     if (!b) return null;
@@ -48,7 +50,6 @@ export function AppShell() {
 
   return (
     <ToastProvider>
-      <Toaster position="bottom-right" />
       <AuthProvider bootstrap={authBootstrap}>
         <UserAccountPanelsProvider>
           <AppShellContent bootstrapHook={bootstrapHook} />
@@ -60,20 +61,22 @@ export function AppShell() {
 
 function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof useBootstrap> }) {
   const auth = useAuth();
-  // Use the single bootstrap hook passed from parent
+  const isHierarchyAdmin = Boolean(
+    auth.user?.developmentSession
+    || auth.user?.roles.some((role) => role.toLowerCase() === 'admin'),
+  );
   const { bootstrap, status: bootstrapStatus, error: bootstrapError } = bootstrapHook;
 
-  // Hooks must be called unconditionally and in the same order on every render.
-  // Declare all hooks up-front before any early returns.
   const [authView, setAuthView] = useState<'login' | 'register'>('login');
-
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isDocumentationOpen, setIsDocumentationOpen] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
-  // Request schema/hierarchy only when authenticated. Hook handles single-load semantics.
-  const schemaHook = useAppSchema(auth.status === 'authenticated', bootstrap ?? null);
-
+  const schemaHook = useAppSchema(
+    auth.status === 'authenticated',
+    bootstrap ?? null,
+    auth.user?.id ?? null,
+  );
   const {
     schema: loadedSchema,
     hierarchy: loadedHierarchy,
@@ -106,9 +109,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
   } = appBootstrap;
 
   useEffect(() => {
-    if (isLoading) {
-      beginLoading();
-    }
+    if (isLoading) beginLoading();
   }, [isLoading, beginLoading]);
 
   useEffect(() => {
@@ -124,55 +125,55 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
   }, [schemaStatus, schemaError, setError]);
 
   const { theme, toggleTheme } = useTheme();
-
   const { push } = useToast();
   const { replaceHierarchy } = useAppStoreCommands();
 
-  // Modal state for hierarchy actions (declare hooks early to preserve Hooks order)
+  // Modal state
   const [modalOpen, setModalOpen] = useState(false);
   const [modalKind, setModalKind] = useState<HierarchyActionKind | null>(null);
   const [modalNode, setModalNode] = useState<HierarchyNode | null>(null);
-  // Editor dialog state for generic node editing
+
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorNode, setEditorNode] = useState<HierarchyNode | null>(null);
+  const [editorInitialTab, setEditorInitialTab] = useState<
+    'general' | 'structure' | 'widgets' | 'prompts' | 'tools' | null
+  >('general');
+
   const [isMutating, setIsMutating] = useState(false);
   const [recentlyMovedNodeId, setRecentlyMovedNodeId] = useState<string | null>(null);
 
-  const handleOpenSettings = useCallback((): void => {
-    setIsSettingsOpen(true);
-  }, []);
+  // ============================================================
+  // Handler
+  // ============================================================
 
-  const handleCloseSettings = useCallback((): void => {
-    setIsSettingsOpen(false);
-  }, []);
+  const handleOpenSettings = useCallback((): void => setIsSettingsOpen(true), []);
+  const handleCloseSettings = useCallback((): void => setIsSettingsOpen(false), []);
+  const handleOpenDocumentation = useCallback((): void => setIsDocumentationOpen(true), []);
+  const handleCloseDocumentation = useCallback((): void => setIsDocumentationOpen(false), []);
+  const handleOpenCalendar = useCallback((): void => setIsCalendarOpen(true), []);
 
-  const handleOpenDocumentation = useCallback((): void => {
-    setIsDocumentationOpen(true);
-  }, []);
+  // ============================================================
+  // Debug (nur im Development)
+  // ============================================================
 
-  const handleOpenCalendar = useCallback((): void => {
-    setIsCalendarOpen(true);
-  }, []);
+  if (import.meta.env.DEV) {
+    console.debug('[Kernschmied startup state]', {
+      bootstrapStatus,
+      authStatus: auth.status,
+      schemaStatus,
+      bootstrapReady: !!bootstrap,
+      authReady: auth.status === 'authenticated' && !!auth.user,
+      schemaReady: isReady,
+      bootstrapError: bootstrapError?.message ?? null,
+      authError: auth.error ?? null,
+      schemaError: schemaError?.message ?? null,
+    });
+  }
 
-  const handleCloseDocumentation = useCallback((): void => {
-    setIsDocumentationOpen(false);
-  }, []);
+  // ============================================================
+  // Auth‑ & Bootstrap‑State Machine
+  // ============================================================
 
-  // Single debug output for startup state
-  console.debug('[Kernschmied startup state]', {
-    bootstrapStatus,
-    authStatus: auth.status,
-    schemaStatus,
-    bootstrapReady: !!bootstrap,
-    authReady: auth.status === 'authenticated' && !!auth.user,
-    schemaReady: isReady,
-    bootstrapError: bootstrapError?.message ?? null,
-    authError: auth.error ?? null,
-    schemaError: schemaError?.message ?? null,
-  });
-
-  // Auth state machine handling (render short-circuit cases after hooks)
-  // Bootstrap load state must be honored first
   if (bootstrapStatus === 'loading' || (!bootstrap && bootstrapStatus !== 'error')) {
     return <AppLoadingScreen />;
   }
@@ -185,6 +186,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       />
     );
   }
+
   if (auth.status === 'checking') {
     return <AppLoadingScreen />;
   }
@@ -193,7 +195,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
     return authView === 'login' ? (
       <LoginPage onSuccess={() => void auth.reload()} onRegister={() => setAuthView('register')} />
     ) : (
-      <RegisterPage onSuccess={() => void auth.reload()} />
+      <RegisterPage onSuccess={() => void auth.reload()} onBack={() => setAuthView('login')} />
     );
   }
 
@@ -241,13 +243,17 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       }
     : null;
 
+  // ============================================================
+  // Hierarchie‑Aktionen
+  // ============================================================
+
   function openModalFor(action: HierarchyActionKind, node: HierarchyNode) {
-    if (action === 'edit_node') {
+    if (action === 'edit_node' || action === 'edit_config') {
       setEditorNode(node);
+      setEditorInitialTab('general');
       setEditorOpen(true);
       return;
     }
-
     setModalKind(action);
     setModalNode(node);
     setModalOpen(true);
@@ -259,7 +265,6 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
     position?: number | null,
   ) => {
     setIsMutating(true);
-
     const prev = state.hierarchyTree;
 
     if (!prev) {
@@ -268,16 +273,11 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       return;
     }
 
-    // Build optimistic tree
     try {
       const optimistic = moveNodeInTree(prev as HierarchyTree, id, newParentId, position ?? null);
       replaceHierarchy(optimistic);
     } catch (err: unknown) {
-      // If optimistic transform fails, abort
-      push(
-        'error',
-        err instanceof Error ? err.message : 'Fehler beim Anwenden der lokalen Änderung',
-      );
+      push('error', err instanceof Error ? err.message : 'Fehler beim Anwenden der lokalen Änderung');
       setIsMutating(false);
       return;
     }
@@ -288,7 +288,6 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       setRecentlyMovedNodeId(id);
       window.setTimeout(() => setRecentlyMovedNodeId(null), 900);
     } catch (err: unknown) {
-      // revert
       if (prev) replaceHierarchy(prev);
       push('error', err instanceof Error ? err.message : 'Fehler beim Verschieben');
     } finally {
@@ -304,14 +303,11 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
         type: 'workspace',
         name,
         parent_id: root.id ?? null,
-        metadata: { access: 'public', owner: 'Thomas Heisig' },
+        metadata: { visibility: 'public', owner_user_id: auth.user?.id },
       } as any);
       push('success', `Public-Bereich '${name}' erstellt.`);
     } catch (err: unknown) {
-      push(
-        'error',
-        err instanceof Error ? err.message : 'Fehler beim Erstellen des Public-Bereichs',
-      );
+      push('error', err instanceof Error ? err.message : 'Fehler beim Erstellen des Public-Bereichs');
     } finally {
       setIsMutating(false);
     }
@@ -325,14 +321,11 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
         type: 'workspace',
         name,
         parent_id: root.id ?? null,
-        metadata: { access: 'intern', owner: 'Thomas Heisig' },
+        metadata: { visibility: 'internal', owner_user_id: auth.user?.id },
       } as any);
       push('success', `Interner Bereich '${name}' erstellt.`);
     } catch (err: unknown) {
-      push(
-        'error',
-        err instanceof Error ? err.message : 'Fehler beim Erstellen des internen Bereichs',
-      );
+      push('error', err instanceof Error ? err.message : 'Fehler beim Erstellen des internen Bereichs');
     } finally {
       setIsMutating(false);
     }
@@ -345,7 +338,6 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       await createHierarchyNode?.({
         type: 'user',
         name: name.trim() || 'Neuer Benutzer',
-        // Always create users under the stable system root. Backend enforces admin check.
         parent_id: SYSTEM_ROOT_NODE_ID,
         metadata: {},
       } as any);
@@ -359,23 +351,15 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
 
   function chooseChildTypeForParent(parentType: string | undefined) {
     const t = parentType ? String(parentType).trim().toLowerCase() : '';
-
-    // Map common parent types to preferred child types
     const mapping: Record<string, { type: string; defaultName: string }> = {
-      // Benutzer / user -> Bereich / workspace
       benutzer: { type: 'workspace', defaultName: 'Neuer Bereich' },
       user: { type: 'workspace', defaultName: 'Neuer Bereich' },
-
-      // Bereich / workspace / area -> Projekt
       bereich: { type: 'project', defaultName: 'Neues Projekt' },
       workspace: { type: 'project', defaultName: 'Neues Projekt' },
       area: { type: 'project', defaultName: 'Neues Projekt' },
-
-      // Projekt / project -> chat
       projekt: { type: 'chat', defaultName: 'Neuer Chat' },
       project: { type: 'chat', defaultName: 'Neuer Chat' },
     };
-
     return mapping[t] ?? { type: 'chat', defaultName: 'Neues Unterelement' };
   }
 
@@ -387,7 +371,6 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
   ) {
     const clone = JSON.parse(JSON.stringify(hierarchy)) as HierarchyTree;
 
-    // Find and remove node
     let nodeToMove: HierarchyNode | null = null;
 
     function removeNode(parent: HierarchyNode) {
@@ -413,16 +396,16 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
 
     if (!nodeToMove) throw new Error('Knoten konnte nicht entfernt werden.');
 
-    // insert into new parent
     if (newParentId === null) {
       clone.root.children = clone.root.children || [];
       if (insertPosition === null) clone.root.children.push(nodeToMove);
-      else
+      else {
         clone.root.children.splice(
           Math.max(0, Math.min(clone.root.children.length, insertPosition)),
           0,
           nodeToMove,
         );
+      }
       return clone;
     }
 
@@ -430,12 +413,13 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       if (parent.id === newParentId) {
         parent.children = parent.children || [];
         if (insertPosition === null) parent.children.push(nodeToMove as HierarchyNode);
-        else
+        else {
           parent.children.splice(
             Math.max(0, Math.min(parent.children.length, insertPosition)),
             0,
             nodeToMove as HierarchyNode,
           );
+        }
         return true;
       }
       if (!parent.children) return false;
@@ -451,6 +435,10 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
 
     return clone;
   }
+
+  // ============================================================
+  // Render
+  // ============================================================
 
   return (
     <>
@@ -468,9 +456,9 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
         onSelectNode={selectHierarchyNode}
         onExpandedNodeIdsChange={replaceExpandedNodeIds}
         onCreateHierarchyNode={createHierarchyNode}
-        onCreatePublicWorkspace={handleCreatePublicWorkspace}
-        onCreateInternWorkspace={handleCreateInternWorkspace}
-        onCreateUser={handleCreateUser}
+        onCreatePublicWorkspace={isHierarchyAdmin ? handleCreatePublicWorkspace : undefined}
+        onCreateInternWorkspace={isHierarchyAdmin ? handleCreateInternWorkspace : undefined}
+        onCreateUser={isHierarchyAdmin ? handleCreateUser : undefined}
         onMoveHierarchyNode={handleMoveHierarchyNode}
         isHierarchyBusy={isMutating}
         recentlyMovedNodeId={recentlyMovedNodeId}
@@ -485,6 +473,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
         onCloseDocumentation={handleCloseDocumentation}
       />
 
+      {/* Hierarchie‑Aktions‑Modal */}
       <HierarchyActionModal
         isOpen={modalOpen}
         kind={modalKind as any}
@@ -497,18 +486,11 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
           try {
             switch (modalKind) {
               case 'create_child':
-              case 'create_child':
               case 'create_chat': {
-                // Determine the child type and default name based on parent type
                 const chosen = chooseChildTypeForParent((modalNode as any)?.type);
                 const childType = modalKind === 'create_chat' ? 'chat' : chosen.type;
                 const defaultName = modalKind === 'create_chat' ? 'Neuer Chat' : chosen.defaultName;
                 const name = value ?? defaultName;
-
-                // inherit access/owner from parent when creating children
-                const inheritedMetadata = {
-                  ...(modalNode.metadata ?? {}),
-                } as Record<string, unknown>;
 
                 await createHierarchyNode?.({
                   type: childType,
@@ -520,7 +502,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
                     undefined,
                   tool_policy: {},
                   config_overrides: {},
-                  metadata: inheritedMetadata,
+                  metadata: {},
                 } as any);
                 push(
                   'success',
@@ -547,19 +529,23 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
               }
               case 'edit_prompt': {
                 const promptValue = value ?? null;
-                // store prompt in metadata.prompt
-                const metadata = {
-                  ...(modalNode.metadata ?? {}),
-                  prompt: promptValue,
+                const payload: any = {
+                  system_prompt: promptValue,
+                  prompt_enabled: !!promptValue,
                 };
-                await updateHierarchyNode?.(modalNode.id, { metadata });
+                if ((modalNode as any)?.prompt_mode !== undefined) {
+                  payload.prompt_mode = (modalNode as any).prompt_mode;
+                }
+                if ((modalNode as any)?.prompt_priority !== undefined) {
+                  payload.prompt_priority = (modalNode as any).prompt_priority;
+                }
+                await updateHierarchyNode?.(modalNode.id, payload);
                 push('success', `Prompt für '${modalNode.name}' gespeichert.`);
                 break;
               }
               default:
                 break;
             }
-
             setModalOpen(false);
           } catch (err: unknown) {
             const message = err instanceof Error ? err.message : 'Fehler bei der Aktion';
@@ -571,29 +557,45 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
         }}
       />
 
+      {/* Node‑Editor‑Dialog */}
       <NodeEditorDialog
         isOpen={editorOpen}
         node={editorNode}
         nodeTypes={state.schema?.node_types ?? {}}
         onClose={() => setEditorOpen(false)}
+        initialTab={editorInitialTab ?? undefined}
         onSaved={async () => {
           setEditorOpen(false);
           await reloadHierarchy?.();
         }}
       />
 
+      {/* Einstellungen */}
       <SettingsDialog isOpen={isSettingsOpen} onClose={handleCloseSettings} />
+
+      {/* Dokumentation */}
       <DocumentationDialog isOpen={isDocumentationOpen} onClose={handleCloseDocumentation} />
+
+      {/* Kalender – jetzt mit einheitlichem Modal */}
       {isCalendarOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setIsCalendarOpen(false)} />
-          <div className="relative z-50 w-[90%] max-w-4xl rounded bg-white p-4 dark:bg-slate-900">
-            {/* Lazy load panel to keep bundle small */}
-            <React.Suspense fallback={<div>Loading...</div>}>
-              <CalendarPanel onClose={() => setIsCalendarOpen(false)} />
-            </React.Suspense>
-          </div>
-        </div>
+        <Modal
+          isOpen={isCalendarOpen}
+          title="Kalenderverwaltung"
+          onClose={() => setIsCalendarOpen(false)}
+          confirmLabel="Schließen"
+          onConfirm={() => setIsCalendarOpen(false)}
+        >
+          <React.Suspense
+            fallback={
+              <div className="flex items-center justify-center py-12">
+                <IconBadge icon={<LoaderCircle className="animate-spin" />} size="lg" variant="default" />
+                <span className="ml-3 text-text-muted dark:text-gray-400">Kalender wird geladen …</span>
+              </div>
+            }
+          >
+            <CalendarPanel onClose={() => setIsCalendarOpen(false)} />
+          </React.Suspense>
+        </Modal>
       )}
     </>
   );

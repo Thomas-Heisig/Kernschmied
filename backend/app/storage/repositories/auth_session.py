@@ -62,6 +62,16 @@ class AuthSessionRepository:
         self.session.add(obj)
         await self.session.flush()
 
+    async def touch(self, obj: AuthSessionModel, when: datetime) -> None:
+        previous = getattr(obj, "last_seen_at", None)
+        if previous is not None and previous.tzinfo is None:
+            previous = previous.replace(tzinfo=when.tzinfo)
+        if previous is not None and (when - previous).total_seconds() < 60:
+            return
+        obj.last_seen_at = when
+        self.session.add(obj)
+        await self.session.flush()
+
     async def list_for_user(self, user_id: str) -> list[AuthSessionModel]:
         stmt = select(AuthSessionModel).where(AuthSessionModel.user_id == user_id)
         result = await self.session.execute(stmt)

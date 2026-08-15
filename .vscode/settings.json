@@ -1,3 +1,10 @@
 {
-  "ollama-autopilot.model.modelName": "qwen2.5-coder:7b"
+  "ollama-autopilot.model.modelName": "qwen2.5-coder:7b",
+  // Ignore unknown at-rules (Tailwind custom directives like @custom-variant)
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "less.lint.unknownAtRules": "ignore",
+
+  // Ensure Tailwind extension has language mappings (optional)
+  "tailwindCSS.includeLanguages": { "plaintext": "html", "javascript": "javascript", "typescript": "typescript" }
 }

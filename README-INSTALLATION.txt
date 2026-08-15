@@ -34,6 +34,25 @@ cd ..
 .\start.ps1
 ```
 
+Das Backend startet standardmäßig mit WatchFiles-ReLoad. Änderungen an
+Python-Dateien unter `backend` lösen automatisch einen Serverneustart aus.
+Mit `-Reload:$false` kann dieses Verhalten deaktiviert werden.
+
+Laufzeitdateien:
+
+- `artifacts/run/backend.pid` – verwaltete Backend-Prozess-ID
+- `artifacts/logs/backend-*.log` – Standardausgabe
+- `artifacts/logs/backend-*.err.log` – Uvicorn-, WatchFiles- und Reloadmeldungen
+
+`start.ps1` öffnet standardmäßig ein separates Fenster, das Anwendungs- und
+Requestlogs sowie Uvicorn-, WatchFiles- und Reloadmeldungen live zusammenführt.
+Dieses Fenster kann geschlossen werden, ohne das Backend zu beenden. Ohne
+Logfenster starten:
+
+```powershell
+.\start.ps1 -ShowBackendLog:$false
+```
+
 Hinweis
 
 - Verwende `.env.example` als Vorlage für `.env`.

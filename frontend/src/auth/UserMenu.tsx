@@ -1,5 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
 import { useAuth } from './AuthProvider';
+import IconBadge from '../components/common/IconBadge';
 import { useUserPanels } from './UserAccountPanels';
 
 function initialsFrom(name: string | undefined) {
@@ -64,6 +65,9 @@ export default function UserMenu() {
   }, [logout]);
 
   const displayName = user?.displayName ?? user?.username ?? 'Gast';
+  const isAdmin = Boolean(user?.developmentSession) || (
+    user?.roles?.some((role) => role.toLowerCase() === 'admin') ?? false
+  );
 
   function onToggleKey(e: React.KeyboardEvent) {
     if (e.key === 'Enter' || e.key === ' ') {
@@ -83,9 +87,7 @@ export default function UserMenu() {
         aria-expanded={open}
         className="inline-flex items-center gap-2 rounded-lg px-2 py-1 hover:bg-surface-hover"
       >
-        <div className="h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-sm font-semibold text-slate-800 dark:text-white">
-          {initialsFrom(displayName)}
-        </div>
+        <IconBadge icon={<span className="text-sm font-semibold">{initialsFrom(displayName)}</span>} size="sm" variant="secondary" />
         <div className="hidden sm:flex flex-col items-start text-left">
           <div className="text-sm font-medium text-gray-900 dark:text-white">{displayName}</div>
           <div className="text-xs text-gray-500 dark:text-gray-400">{user?.username ?? ''}</div>
@@ -103,12 +105,15 @@ export default function UserMenu() {
           {user?.passwordLoginAvailable ? (
             <button type="button" ref={(el) => { itemsRef.current[3] = el }} role="menuitem" onClick={() => { panels?.openPanel('change-password'); setOpen(false); toggleRef.current?.focus(); }} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">Passwort ändern</button>
           ) : null}
+          {isAdmin ? (
+            <button type="button" ref={(el) => { itemsRef.current[4] = el }} role="menuitem" onClick={() => { panels?.openPanel('users'); setOpen(false); toggleRef.current?.focus(); }} className="w-full text-left px-3 py-2 text-sm font-medium hover:bg-surface-hover">Benutzer verwalten</button>
+          ) : null}
           <div className="border-t my-1" />
           {user?.developmentSession ? (
             <div className="px-3 py-2 text-sm text-amber-700">Development-Modus (aktiv)</div>
           ) : null}
           <div className="border-t my-1" />
-          <button type="button" ref={(el) => { itemsRef.current[4] = el }} role="menuitem" onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">
+          <button type="button" ref={(el) => { itemsRef.current[5] = el }} role="menuitem" onClick={handleLogout} className="w-full text-left px-3 py-2 text-sm hover:bg-surface-hover">
             Abmelden
           </button>
         </div>

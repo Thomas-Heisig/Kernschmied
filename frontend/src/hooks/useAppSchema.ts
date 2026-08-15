@@ -96,6 +96,7 @@ export interface UseAppSchemaResult {
 export function useAppSchema(
   enabled: boolean = true,
   initialBootstrap: AppBootstrap | null = null,
+  identityKey: string | null = null,
 ): UseAppSchemaResult {
   const [schema, setSchema] = useState<UISchema | null>(null);
 
@@ -126,6 +127,8 @@ export function useAppSchema(
    * entsteht.
    */
   const hasUsableDataRef = useRef(false);
+
+  const identityKeyRef = useRef(identityKey);
 
   const loadFull = useCallback(async (): Promise<void> => {
     // The hook must not perform any bootstrap fetches. It relies on
@@ -398,12 +401,43 @@ export function useAppSchema(
   }, [loadBootstrapOnly, initialBootstrap]);
 
   const isReady = schema !== null && hierarchyTree !== null;
+
+  useEffect(() => {
+    if (identityKeyRef.current === identityKey) return;
+
+    identityKeyRef.current = identityKey;
+    requestGenerationRef.current += 1;
+    activeRequestControllerRef.current?.abort();
+    activeRequestControllerRef.current = null;
+    hasUsableDataRef.current = false;
+    setHierarchyTree(null);
+    setError(null);
+    setIsRefreshing(false);
+    setStatus('idle');
+  }, [identityKey]);
+
+  useEffect(() => {
+    if (enabled) return;
+
+    requestGenerationRef.current += 1;
+    activeRequestControllerRef.current?.abort();
+    activeRequestControllerRef.current = null;
+    hasUsableDataRef.current = false;
+
+    // Hierarchies are user-scoped. Never retain an administrator's tree across
+    // logout, registration, or a subsequent login with another account.
+    setHierarchyTree(null);
+    setError(null);
+    setIsRefreshing(false);
+    setStatus('idle');
+  }, [enabled]);
+
   useEffect(() => {
     // When enabled flips to true, perform the full load (if not already ready).
-    if (enabled && !isReady) {
+    if (enabled && bootstrapState && !isReady) {
       void loadFull();
     }
-  }, [enabled, isReady, loadFull]);
+  }, [bootstrapState, enabled, isReady, loadFull]);
 
   return {
     schema,

@@ -10,15 +10,17 @@ from __future__ import annotations
 from app.hierarchy.inheritance import HierarchyInheritanceService
 from app.hierarchy.models import HierarchyActor
 from app.hierarchy.permissions import HierarchyPermissionService
+from app.hierarchy.quotas import ConfigReader, HierarchyQuotaService
 from app.hierarchy.repository import HierarchyRepository
 from app.hierarchy.serializer import HierarchySerializer
 from app.hierarchy.service import HierarchyService
-from app.ui.node_type_provider import NodeTypeProvider
 from app.services.ui_schema_service import create_ui_schema_service
+from app.ui.node_type_provider import NodeTypeProvider
 
 
 def create_hierarchy_service(
     repository: HierarchyRepository,
+    config_service: ConfigReader | None = None,
 ) -> HierarchyService:
     """
     Erstellt einen vollständig verdrahteten HierarchyService.
@@ -44,6 +46,7 @@ def create_hierarchy_service(
         permission_service=permission_service,
         serializer=serializer,
         node_type_provider=node_type_provider,
+        quota_service=HierarchyQuotaService(repository, config_service),
     )
 
 

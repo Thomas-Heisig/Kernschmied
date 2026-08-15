@@ -17,6 +17,7 @@ import {
   Wrench,
   X,
 } from 'lucide-react';
+import IconBadge from '../common/IconBadge';
 
 import { fetchSettingsCatalog } from '../../api/settingsCatalog';
 import type { ConfigObject, ConfigValue, ConfigEntryResponse, ConfigUIComponent } from '../../contracts/config';
@@ -59,6 +60,7 @@ const controlLabel: Record<string, string> = {
 interface SettingsCatalogViewProps {
   config: UseSystemConfigReturn;
   onOpenField?: (fullKey: string) => void;
+  fullBleed?: boolean;
 }
 
 interface FilteredGroup {
@@ -116,7 +118,7 @@ function isEditableConfigField(
 // Hauptkomponente
 // ============================================================
 
-export function SettingsCatalogView({ config, onOpenField }: SettingsCatalogViewProps) {
+export function SettingsCatalogView({ config, onOpenField, fullBleed = false }: SettingsCatalogViewProps) {
   const handleOpenField = onOpenField;
   const [catalog, setCatalog] = useState<SettingsCatalogResponse | null>(null);
 
@@ -269,10 +271,9 @@ export function SettingsCatalogView({ config, onOpenField }: SettingsCatalogView
       <div className="min-h-0 flex-1">
         <main
           className={[
-            'min-w-0 overflow-y-auto rounded-2xl border',
-            'border-slate-200 bg-slate-50 p-5',
+            'min-w-0 overflow-y-auto',
+            fullBleed ? 'bg-transparent' : 'rounded-2xl border border-slate-200 bg-slate-50 p-5 md:p-6',
             'dark:border-white/10 dark:bg-slate-950/40',
-            'md:p-6',
           ].join(' ')}
         >
           {selectedFilteredGroup ? (
@@ -281,6 +282,7 @@ export function SettingsCatalogView({ config, onOpenField }: SettingsCatalogView
               sections={selectedFilteredGroup.sections}
               config={config}
               valuesByFullKey={valuesByFullKey}
+              fullBleed={fullBleed}
             />
           ) : (
             <SettingsCatalogEmpty />
@@ -358,16 +360,9 @@ function CatalogHeader({
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-3">
-            <span
-              className={[
-                'inline-flex h-10 w-10 shrink-0 items-center',
-                'justify-center rounded-xl bg-blue-50 text-blue-700',
-                'dark:bg-blue-500/10 dark:text-blue-300',
-              ].join(' ')}
-              aria-hidden="true"
-            >
-              <Settings2 size={20} />
-            </span>
+            <div aria-hidden="true">
+              <IconBadge icon={<Settings2 />} size="lg" variant="primary" />
+            </div>
 
             <div>
               <h1 className="text-xl font-semibold text-slate-950 dark:text-white">
@@ -588,7 +583,7 @@ function CatalogSidebar({
   );
 }
 
-function GroupPanel({ group, sections, config, valuesByFullKey, onOpenField }: GroupPanelProps) {
+function GroupPanel({ group, sections, config, valuesByFullKey, onOpenField, fullBleed }: GroupPanelProps & { fullBleed?: boolean }) {
   const fieldCount = countSectionFields(sections);
 
   return (
@@ -609,7 +604,10 @@ function GroupPanel({ group, sections, config, valuesByFullKey, onOpenField }: G
               <AvailabilityBadge availability={group.availability} />
             </div>
 
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+            <p className={[
+              'mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400',
+              fullBleed ? '' : 'max-w-3xl',
+            ].join(' ')}>
               {group.description}
             </p>
           </div>

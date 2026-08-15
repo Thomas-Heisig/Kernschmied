@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useAuth } from './AuthProvider';
+import IconBadge from '../components/common/IconBadge';
 import { toast } from 'sonner';
 
 export default function LoginPage({ onSuccess, onRegister }: { onSuccess?: () => void; onRegister?: () => void }) {
@@ -42,7 +43,7 @@ export default function LoginPage({ onSuccess, onRegister }: { onSuccess?: () =>
       <div className="w-full max-w-6xl bg-white dark:bg-slate-800 rounded-lg shadow-lg overflow-hidden grid grid-cols-1 md:grid-cols-2">
         <div className="p-8 md:p-12 bg-linear-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-900">
           <div className="flex items-center gap-4">
-            <img src="/favicon.png" alt="Kernschmied" className="h-12 w-12" />
+            <IconBadge icon={<img src="/favicon.png" alt="Kernschmied" className="h-8 w-8 object-contain" />} size="lg" variant="default" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Kernschmied</h1>
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">

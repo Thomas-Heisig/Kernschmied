@@ -9,13 +9,22 @@ from app.contracts.auth import UserSessionResponse
 from app.storage.repositories.auth_session import AuthSessionRepository
 
 
+def _as_utc(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=UTC)
+    return value.astimezone(UTC)
+
+
 def _is_active(session_model: Any) -> bool:
     now = datetime.now(UTC)
     if session_model.revoked_at is not None:
         return False
-    if session_model.expires_at is None:
+    expires_at = _as_utc(session_model.expires_at)
+    if expires_at is None:
         return True
-    return session_model.expires_at > now
+    return expires_at > now
 
 
 async def list_sessions(
@@ -31,10 +40,10 @@ async def list_sessions(
             UserSessionResponse(
                 id=r.id,
                 authentication_method=r.authentication_method or "",
-                created_at=r.created_at,
-                expires_at=r.expires_at or datetime.fromtimestamp(0, tz=UTC),
-                last_seen_at=r.last_seen_at,
-                revoked_at=r.revoked_at,
+                created_at=_as_utc(r.created_at) or datetime.fromtimestamp(0, tz=UTC),
+                expires_at=_as_utc(r.expires_at) or datetime.fromtimestamp(0, tz=UTC),
+                last_seen_at=_as_utc(r.last_seen_at),
+                revoked_at=_as_utc(r.revoked_at),
                 current=(r.id == current_session_id),
                 active=active,
                 ip_address=r.ip_address,
@@ -42,11 +51,9 @@ async def list_sessions(
             )
         )
 
-    # sort: current first, then created_at desc
-    mapped.sort(
-        key=lambda x: (not x.current, getattr(x, "created_at", datetime.min)),
-        reverse=True,
-    )
+    # Stable two-pass sort: newest first, then current session first.
+    mapped.sort(key=lambda item: item.created_at, reverse=True)
+    mapped.sort(key=lambda item: not item.current)
     return mapped
 
 

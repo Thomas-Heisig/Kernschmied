@@ -25,7 +25,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function listCalendars(): Promise<components['schemas']['CalendarOut'][]> {
-  return request<components['schemas']['CalendarOut'][]>(`/calendars`);
+  return request<components['schemas']['CalendarOut'][]>(`/calendars/`);
 }
 
 export async function getCalendar(id: string): Promise<components['schemas']['CalendarOut']> {

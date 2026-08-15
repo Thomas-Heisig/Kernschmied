@@ -1,6 +1,7 @@
 // src/components/AppLoadingScreen.tsx
 import React from 'react';
 import { Loader2 } from 'lucide-react'; // oder eine andere Icon-Bibliothek
+import IconBadge from '../common/IconBadge';
 
 export function AppLoadingScreen() {
   return (
@@ -9,7 +10,7 @@ export function AppLoadingScreen() {
         {/* Linke Spalte: Branding / Info */}
         <div className="p-8 md:p-12 bg-linear-to-b from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 flex flex-col justify-center">
           <div className="flex items-center gap-4">
-            <img src="/favicon.png" alt="Kernschmied" className="h-12 w-12" />
+            <IconBadge icon={<img src="/favicon.png" alt="Kernschmied" className="h-8 w-8 object-contain" />} size="lg" variant="default" />
             <div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Kernschmied</h1>
               <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">

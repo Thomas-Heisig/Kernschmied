@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import re
 from collections.abc import (
     AsyncIterator,
     Mapping,
@@ -34,6 +35,7 @@ from pydantic import (
     field_validator,
 )
 
+from app.core.settings import settings
 from app.hierarchy.actor_factory import hierarchy_actor_from_user_context
 from app.hierarchy.models import HierarchyActor
 from app.models.errors import ModelError
@@ -103,6 +105,18 @@ class ChatFinishReason(StrEnum):
     UNKNOWN = "unknown"
 
 
+class MentionReference(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: str = Field(min_length=1, max_length=36)
+    start: int | None = Field(default=None, ge=0)
+    end: int | None = Field(default=None, ge=0)
+
+
+def _empty_mentions() -> list[MentionReference]:
+    return []
+
+
 class ChatRequest(BaseModel):
     """
     Öffentlicher, versionierter Chat-Request.
@@ -125,6 +139,17 @@ class ChatRequest(BaseModel):
         min_length=1,
         max_length=MAX_MESSAGE_LENGTH,
         description="Nachricht des Benutzers.",
+    )
+
+    mentions: list[MentionReference] = Field(
+        default_factory=_empty_mentions,
+        max_length=20,
+        description="Stabile Benutzerreferenzen aus dem Mention-Autocomplete.",
+    )
+
+    ai_response: bool | None = Field(
+        default=None,
+        description="KI-Antwort bei gerichteten Benutzeranfragen.",
     )
 
     conversation_id: str | None = Field(
@@ -1039,6 +1064,7 @@ def create_service_request(
         {
             "requested_tool_ids": list(payload.tool_ids),
             "request_schema_version": payload.schema_version,
+            "mentions": [mention.model_dump() for mention in payload.mentions],
         }
     )
 
@@ -1055,7 +1081,121 @@ def create_service_request(
         tools=(),
         metadata=md,
         hierarchy_node_id=payload.hierarchy_node_id,
+        respond_with_ai=payload.ai_response is not False,
     )
+
+
+async def resolve_mentions_for_request(
+    request: Request, payload: ChatRequest, context: StreamContext
+) -> ChatRequest:
+    """Resolve and authorize all mention targets before opening the SSE stream."""
+
+    session_factory = getattr(request.app.state, "session_factory", None)
+    if session_factory is None:
+        return payload.model_copy(update={"mentions": [], "ai_response": True})
+
+    from sqlalchemy import func, or_, select
+
+    from app.database.models.user import UserModel
+    from app.users.preferences_service import get_preferences
+
+    async with session_factory() as session:
+        requested_ids = {mention.user_id for mention in payload.mentions}
+        usernames = {
+            match.group(1).lower()
+            for match in re.finditer(
+                r"(?<!\w)@([A-Za-z0-9._-]{1,100})", payload.message
+            )
+        }
+        resolved_users: list[UserModel] = []
+        if requested_ids or usernames:
+            stmt = select(UserModel).where(UserModel.is_active.is_(True))
+            if requested_ids and usernames:
+                stmt = stmt.where(
+                    or_(
+                        UserModel.id.in_(requested_ids),
+                        func.lower(UserModel.username).in_(usernames),
+                    )
+                )
+            elif requested_ids:
+                stmt = stmt.where(UserModel.id.in_(requested_ids))
+            else:
+                stmt = stmt.where(func.lower(UserModel.username).in_(usernames))
+            result = await session.execute(stmt)
+            resolved_users = list(result.scalars().all())
+
+        resolved_by_id = {db_user.id: db_user for db_user in resolved_users}
+        missing_ids = requested_ids.difference(resolved_by_id)
+        if missing_ids:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail={
+                    "code": "MENTION_TARGET_INVALID",
+                    "message": "Mindestens ein Mention-Ziel ist ungültig oder inaktiv.",
+                },
+            )
+
+        merged_ids = list(requested_ids)
+        for db_user in resolved_users:
+            if db_user.username.lower() in usernames and db_user.id not in merged_ids:
+                merged_ids.append(db_user.id)
+        merged_ids = [user_id for user_id in merged_ids if user_id != context.user_id]
+        from app.api.v1.mentions import (
+            allowed_mention_target_ids,
+            is_administrator_auto_answer_user,
+        )
+
+        administrator_target_ids = {
+            db_user.id
+            for db_user in resolved_users
+            if is_administrator_auto_answer_user(db_user)
+        }
+        human_target_ids = [
+            user_id
+            for user_id in merged_ids
+            if user_id not in administrator_target_ids
+        ]
+        allowed_ids = await allowed_mention_target_ids(
+            session,
+            payload.hierarchy_node_id,
+            is_admin="admin" in context.roles,
+        )
+        if allowed_ids is not None and not set(human_target_ids).issubset(allowed_ids):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail={
+                    "code": "MENTION_TARGET_FORBIDDEN",
+                    "message": "Das Mention-Ziel gehört nicht zum aktiven Bereich.",
+                },
+            )
+        mentions = [MentionReference(user_id=user_id) for user_id in human_target_ids]
+
+        ai_response = payload.ai_response
+        if administrator_target_ids:
+            ai_response = True
+        elif mentions and ai_response is None and context.user_id:
+            preferences = await get_preferences(session, context.user_id)
+            ai_response = preferences.ai_response_on_mentions
+        if not mentions:
+            ai_response = True
+
+        metadata = dict(payload.metadata)
+        if administrator_target_ids:
+            metadata.update(
+                {
+                    "administrator_auto_answer": True,
+                    "administrator_user_id": sorted(administrator_target_ids)[0],
+                    "assistant_display_name": "Administrator",
+                }
+            )
+
+        return payload.model_copy(
+            update={
+                "mentions": mentions,
+                "ai_response": ai_response,
+                "metadata": metadata,
+            }
+        )
 
 
 def create_service_context(
@@ -1495,12 +1635,27 @@ async def stream_chat(
         payload=payload,
     )
 
+    # Compact route-entry diagnostic for browser-request tracing
+    try:
+        _log_info(
+            "CHAT_ROUTE_ENTRY",
+            request_id=context.request_id,
+            path=str(request.url.path),
+            conversation_id=(payload.conversation_id),
+            node_id=(payload.hierarchy_node_id),
+            message_length=len(payload.message),
+        )
+    except Exception:
+        pass
+
     # Muss vor dem Erzeugen der StreamingResponse stattfinden.
     await authorize_chat_request(
         request=request,
         payload=payload,
         context=context,
     )
+
+    payload = await resolve_mentions_for_request(request, payload, context)
 
     _log_info(
         "Chat stream request accepted",
@@ -1538,6 +1693,75 @@ async def stream_chat(
                 "request_id": context.request_id,
             },
         )
+
+    # Emit a compact, human-readable CHAT_CONTEXT line so plain formatters show it
+    try:
+        resolved_node_id = None
+        node_type = None
+        node_name = None
+
+        # attempt to resolve conversation -> hierarchy node mapping using DB
+        sf = getattr(request.app.state, "session_factory", None)
+        if payload.conversation_id and sf is not None:
+            try:
+                from app.hierarchy.repository import HierarchyRepository
+                from app.storage.models.chat import Chat as ChatModel
+
+                async with sf() as s:
+                    chat_row = await s.get(ChatModel, payload.conversation_id)
+                    if chat_row is not None:
+                        maybe_node = getattr(chat_row, "node_id", None)
+                        if maybe_node:
+                            resolved_node_id = str(maybe_node)
+                            repo = HierarchyRepository(s)
+                            node = await repo.get_node(resolved_node_id)
+                            if node is not None:
+                                node_type = getattr(node, "type", None)
+                                node_name = getattr(node, "name", None)
+            except Exception:
+                # don't fail request on diagnostics
+                pass
+
+        logger.info(
+            "CHAT_CONTEXT conversation_id=%s request_hierarchy_node_id=%s resolved_hierarchy_node_id=%s node_type=%s node_name=%s",
+            payload.conversation_id,
+            payload.hierarchy_node_id,
+            resolved_node_id,
+            node_type,
+            node_name,
+        )
+    except Exception:
+        pass
+
+    # Read and display the runtime settings system prompt diagnostics (development only)
+    try:
+        cfg = getattr(request.app.state, "config_service", None)
+        if cfg is not None:
+            try:
+                maybe = cfg.get_required("chat", "system_prompt")
+                rev = getattr(cfg, "revision", None)
+                prompt_present = bool(maybe and str(maybe).strip())
+                prompt_len = len(str(maybe)) if maybe else 0
+                import hashlib
+
+                sha = hashlib.sha256(str(maybe or "").encode("utf-8")).hexdigest() if prompt_present else None
+
+                is_dev = str(getattr(settings, "app_environment", "")).lower() == "development"
+                # development: include short preview (first 40 chars)
+                preview = (str(maybe)[:40]) if (prompt_present and is_dev) else None
+
+                logger.info(
+                    "CONFIG_PROMPT revision=%s present=%s length=%s sha256=%s preview=%s",
+                    rev,
+                    prompt_present,
+                    prompt_len,
+                    sha,
+                    preview,
+                )
+            except Exception:
+                pass
+    except Exception:
+        pass
 
     return StreamingResponse(
         generate_chat_events(

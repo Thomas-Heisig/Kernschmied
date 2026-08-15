@@ -1,4 +1,8 @@
+// F:\Kernschmied\frontend\src\components\calendar\CalendarPanel.tsx
+
 import React, { useEffect, useState } from 'react';
+import { Plus, Trash2, X } from 'lucide-react';
+import IconBadge from '../common/IconBadge';
 import { useToast } from '../ui/ToastProvider';
 import Modal from '../ui/Modal';
 import type { components } from '../../api/openapi-types';
@@ -132,76 +136,152 @@ export default function CalendarPanel({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <div className="p-4">
-      <Modal
-        isOpen={confirmOpen}
-        title="Kalender löschen"
-        onClose={() => setConfirmOpen(false)}
-        onConfirm={() => void confirmRemoveCalendar()}
-        confirmLabel="Löschen"
-        confirmDisabled={isConfirming}
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div
+        className="w-full max-h-[90vh] overflow-auto bg-white p-6 shadow-2xl dark:bg-slate-900"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="calendar-panel-title"
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="text-sm">Soll der Kalender wirklich gelöscht werden?</div>
-      </Modal>
-
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">Kalenderverwaltung</h3>
-        <div>
-          <button className="mr-2 rounded px-2 py-1" onClick={onClose}>
-            Schließen
+        {/* Kopfzeile */}
+        <div className="flex items-center justify-between mb-6">
+          <h3 id="calendar-panel-title" className="text-lg font-semibold text-text dark:text-white">
+            Kalenderverwaltung
+          </h3>
+          <button
+            type="button"
+            className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-hover hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-white"
+            onClick={onClose}
+            aria-label="Kalender schließen"
+            title="Schließen"
+          >
+            <IconBadge icon={<X />} size="sm" variant="default" />
           </button>
         </div>
-      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <div className="mb-3">
-            <input
-              className="w-full rounded border px-2 py-1 text-sm"
-              placeholder="Neuer Kalendername"
-              value={newCalName}
-              onChange={(e) => setNewCalName(e.target.value)}
-            />
-            <div className="mt-2 flex gap-2">
-              <button className="px-3 py-1 bg-sky-600 text-white rounded" onClick={handleAddCalendar}>
-                Hinzufügen
-              </button>
+        {/* Inhalt: 2 Spalten */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+          {/* Linke Spalte: Kalenderliste + Hinzufügen */}
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="new-calendar-name" className="sr-only">
+                Neuer Kalendername
+              </label>
+              <div className="flex gap-2">
+                <input
+                  id="new-calendar-name"
+                  className="flex-1 rounded-lg border border-border-soft bg-surface-muted px-3 py-2 text-sm text-text outline-none transition placeholder:text-text-subtle focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-primary/20"
+                  placeholder="Neuer Kalendername"
+                  value={newCalName}
+                  onChange={(e) => setNewCalName(e.target.value)}
+                />
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-medium text-white shadow-glow transition hover:bg-primary-hover hover:shadow-primary-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:opacity-50 dark:bg-primary/80 dark:hover:bg-primary"
+                  onClick={handleAddCalendar}
+                  disabled={!newCalName.trim()}
+                  aria-label="Kalender hinzufügen"
+                >
+                  <IconBadge icon={<Plus />} size="sm" variant="default" />
+                  <span>Hinzufügen</span>
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-text-muted dark:text-gray-500">
+                Kalender
+              </h4>
+              {loadingCals ? (
+                <div className="flex items-center gap-2 text-sm text-text-muted">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-primary/60" />
+                  Lade…
+                </div>
+              ) : (
+                <ul className="space-y-1.5">
+                  {calendarsState.map((c) => {
+                    const isActive = selectedCalendarId === c.id;
+                    return (
+                      <li
+                        key={c.id}
+                        className={[
+                          'flex items-center gap-2 rounded-lg px-3 py-2 transition-colors',
+                          isActive
+                            ? 'bg-primary-soft dark:bg-primary/20'
+                            : 'hover:bg-surface-hover dark:hover:bg-slate-800',
+                        ].join(' ')}
+                      >
+                        <button
+                          type="button"
+                          className={[
+                            'flex-1 truncate text-left text-sm font-medium',
+                            isActive ? 'text-primary dark:text-primary' : 'text-text-soft dark:text-gray-300',
+                          ].join(' ')}
+                          onClick={() => setSelectedCalendarId(c.id)}
+                        >
+                          {c.name}
+                        </button>
+                        <button
+                          type="button"
+                          className="rounded p-1 text-text-muted transition hover:bg-danger-soft hover:text-danger focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger dark:text-gray-400 dark:hover:bg-danger/10 dark:hover:text-danger"
+                          onClick={() => handleRemoveCalendar(c.id)}
+                          aria-label={`Kalender "${c.name}" löschen`}
+                          title="Kalender löschen"
+                        >
+                          <IconBadge icon={<Trash2 />} size="sm" variant="default" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
             </div>
           </div>
 
-          <div>
-            {loadingCals ? (
-              <div>Lade...</div>
+          {/* Rechte Spalte: CalendarView */}
+          <div className="md:col-span-2">
+            {selectedCalendarId ? (
+              loadingEvents ? (
+                <div className="flex items-center justify-center py-12 text-text-muted">
+                  <span className="h-2 w-2 animate-pulse rounded-full bg-primary/60" />
+                  <span className="ml-2">Lade Ereignisse…</span>
+                </div>
+              ) : (
+                <CalendarView
+                  events={eventsState}
+                  onCreate={handleCreateEvent}
+                  onUpdate={handleUpdateEvent}
+                  onRemove={handleRemoveEvent}
+                />
+              )
             ) : (
-              <ul className="space-y-2">
-                {calendarsState.map((c) => (
-                  <li key={c.id} className="flex items-center justify-between">
-                    <button className="text-left flex-1" onClick={() => setSelectedCalendarId(c.id)}>
-                      {c.name}
-                    </button>
-                    <button className="text-sm text-red-600" onClick={() => handleRemoveCalendar(c.id)}>
-                      Löschen
-                    </button>
-                  </li>
-                ))}
-              </ul>
+              <div className="flex h-full min-h-50 items-center justify-center rounded-xl border border-dashed border-border-soft text-sm text-text-muted dark:border-white/10">
+                Kein Kalender ausgewählt
+              </div>
             )}
           </div>
         </div>
 
-        <div className="col-span-2">
-          {selectedCalendarId ? (
-            <>
-              {loadingEvents ? (
-                <div>Lade Ereignisse...</div>
-              ) : (
-                <CalendarView events={eventsState} onCreate={handleCreateEvent} onUpdate={handleUpdateEvent} onRemove={handleRemoveEvent} />
-              )}
-            </>
-          ) : (
-            <div>Kein Kalender ausgewählt</div>
-          )}
-        </div>
+        {/* Bestätigungsmodal */}
+        <Modal
+          isOpen={confirmOpen}
+          title="Kalender löschen"
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={() => void confirmRemoveCalendar()}
+          confirmLabel="Löschen"
+          confirmDisabled={isConfirming}
+        >
+          <div className="text-sm text-text-soft dark:text-gray-300">
+            Soll der Kalender wirklich gelöscht werden?
+          </div>
+        </Modal>
       </div>
     </div>
   );

@@ -719,7 +719,14 @@ function formatStructuredDetails(details: unknown): string | undefined {
 }
 
 function normalizeErrorPayload(payload: Record<string, unknown>): ApiErrorResponse {
-  const structuredMessage = typeof payload.message === 'string' ? payload.message : undefined;
+  const nestedDetail = isRecord(payload.detail) ? payload.detail : undefined;
+
+  const structuredMessage =
+    typeof payload.message === 'string'
+      ? payload.message
+      : typeof nestedDetail?.message === 'string'
+        ? nestedDetail.message
+        : undefined;
 
   const detailMessage =
     typeof payload.detail === 'string'
@@ -736,7 +743,12 @@ function normalizeErrorPayload(payload: Record<string, unknown>): ApiErrorRespon
   const detailsMessage = formatStructuredDetails(details);
 
   return {
-    code: typeof payload.code === 'string' ? payload.code : undefined,
+    code:
+      typeof payload.code === 'string'
+        ? payload.code
+        : typeof nestedDetail?.code === 'string'
+          ? nestedDetail.code
+          : undefined,
 
     message: structuredMessage ?? detailMessage ?? detailsMessage,
 

@@ -1,8 +1,12 @@
+// F:\Kernschmied\frontend\src\components\calendar\CalendarView.tsx
+
 import React, { useMemo, useState } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import { X, Save, Trash2 } from 'lucide-react';
+import IconBadge from '../common/IconBadge';
 import type { components } from '../../api/openapi-types';
 import { useToast } from '../ui/ToastProvider';
 import Modal from '../ui/Modal';
@@ -29,6 +33,9 @@ export default function CalendarView({ events, onCreate, onUpdate, onRemove }: P
   );
 
   const [editing, setEditing] = useState<components['schemas']['EventOut'] | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmEventId, setConfirmEventId] = useState<string | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   async function handleEventDrop(arg: any) {
     try {
@@ -103,14 +110,10 @@ export default function CalendarView({ events, onCreate, onUpdate, onRemove }: P
           setEditing(null);
         }
       }
-      } catch (err: any) {
+    } catch (err: any) {
       push('error', 'Speichern fehlgeschlagen: ' + String(err));
     }
   }
-
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmEventId, setConfirmEventId] = useState<string | null>(null);
-  const [isConfirming, setIsConfirming] = useState(false);
 
   function requestRemove(id: string) {
     setConfirmEventId(id);
@@ -143,12 +146,19 @@ export default function CalendarView({ events, onCreate, onUpdate, onRemove }: P
         confirmLabel="Löschen"
         confirmDisabled={isConfirming}
       >
-        <div className="text-sm">Soll das Ereignis wirklich gelöscht werden?</div>
+        <div className="text-sm text-text-soft dark:text-gray-300">
+          Soll das Ereignis wirklich gelöscht werden?
+        </div>
       </Modal>
+
       <FullCalendar
         plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
         initialView="dayGridMonth"
-        headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek,timeGridDay' }}
+        headerToolbar={{
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay',
+        }}
         events={fcEvents}
         editable
         selectable
@@ -158,65 +168,143 @@ export default function CalendarView({ events, onCreate, onUpdate, onRemove }: P
         height="auto"
       />
 
-      {editing ? (
-        <div className="fixed inset-0 flex items-center justify-center bg-black/30">
-          <div className="bg-white p-4 rounded w-full max-w-md">
-            <h4 className="font-semibold mb-2">Ereignis bearbeiten</h4>
-            <input
-              className="w-full rounded border px-2 py-1 text-sm mb-2"
-              value={editing.title}
-              onChange={(e) => setEditing({ ...editing, title: e.target.value })}
-            />
-            <textarea
-              className="w-full rounded border px-2 py-1 text-sm mb-2"
-              rows={3}
-              value={editing.description ?? ''}
-              onChange={(e) => setEditing({ ...editing, description: e.target.value })}
-            />
-            <div className="flex items-center gap-4 mb-2">
-              <label className="flex items-center gap-2 text-sm">
+      {/* Bearbeitungsmodal (verbessert) */}
+      {editing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          role="presentation"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setEditing(null);
+          }}
+        >
+          <div
+            className="w-full max-w-lg rounded-2xl border border-border-soft bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-slate-900"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="event-editor-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Kopfzeile */}
+            <div className="flex items-center justify-between mb-4">
+              <h4 id="event-editor-title" className="text-lg font-semibold text-text dark:text-white">
+                {editing.id === '__new' ? 'Neues Ereignis' : 'Ereignis bearbeiten'}
+              </h4>
+              <button
+                type="button"
+                className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-hover hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-white"
+                onClick={() => setEditing(null)}
+                aria-label="Schließen"
+                title="Schließen"
+              >
+                <IconBadge icon={<X />} size="sm" variant="default" />
+              </button>
+            </div>
+
+            {/* Formularfelder */}
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="event-title" className="block text-sm font-medium text-text-soft dark:text-gray-300">
+                  Titel
+                </label>
                 <input
-                  type="checkbox"
-                  checked={!!editing.all_day}
-                  onChange={(e) => setEditing({ ...editing, all_day: e.target.checked })}
+                  id="event-title"
+                  className="mt-1 w-full rounded-lg border border-border-soft bg-white px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:focus:ring-primary/20"
+                  value={editing.title}
+                  onChange={(e) => setEditing({ ...editing, title: e.target.value })}
                 />
-                Ganztägig
-              </label>
+              </div>
+
+              <div>
+                <label htmlFor="event-description" className="block text-sm font-medium text-text-soft dark:text-gray-300">
+                  Beschreibung
+                </label>
+                <textarea
+                  id="event-description"
+                  rows={3}
+                  className="mt-1 w-full rounded-lg border border-border-soft bg-white px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:focus:ring-primary/20"
+                  value={editing.description ?? ''}
+                  onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                />
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm text-text-soft dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={!!editing.all_day}
+                    onChange={(e) => setEditing({ ...editing, all_day: e.target.checked })}
+                    className="rounded border-border-soft text-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10"
+                  />
+                  Ganztägig
+                </label>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="event-start" className="block text-sm font-medium text-text-soft dark:text-gray-300">
+                    Start
+                  </label>
+                  <input
+                    id="event-start"
+                    type="datetime-local"
+                    className="mt-1 w-full rounded-lg border border-border-soft bg-white px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:focus:ring-primary/20"
+                    value={new Date(editing.start).toISOString().slice(0, 16)}
+                    onChange={(e) => setEditing({ ...editing, start: new Date(e.target.value).toISOString() })}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="event-end" className="block text-sm font-medium text-text-soft dark:text-gray-300">
+                    Ende
+                  </label>
+                  <input
+                    id="event-end"
+                    type="datetime-local"
+                    className="mt-1 w-full rounded-lg border border-border-soft bg-white px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:focus:ring-primary/20"
+                    value={new Date(editing.end).toISOString().slice(0, 16)}
+                    onChange={(e) => setEditing({ ...editing, end: new Date(e.target.value).toISOString() })}
+                  />
+                </div>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <input
-                type="datetime-local"
-                className="w-full rounded border px-2 py-1 text-sm"
-                value={new Date(editing.start).toISOString().slice(0, 16)}
-                onChange={(e) => setEditing({ ...editing, start: new Date(e.target.value).toISOString() })}
-              />
-              <input
-                type="datetime-local"
-                className="w-full rounded border px-2 py-1 text-sm"
-                value={new Date(editing.end).toISOString().slice(0, 16)}
-                onChange={(e) => setEditing({ ...editing, end: new Date(e.target.value).toISOString() })}
-              />
-            </div>
-            <div className="mt-3 flex justify-end gap-2">
-              <button className="px-3 py-1" onClick={() => setEditing(null)}>
+
+            {/* Aktionsleiste */}
+            <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border-soft px-4 py-2 text-sm font-medium text-text-soft transition hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/10 dark:text-gray-300 dark:hover:bg-slate-800"
+                onClick={() => setEditing(null)}
+              >
                 Abbrechen
               </button>
-              <button className="px-3 py-1 bg-sky-600 text-white rounded" onClick={() => void handleSaveEdit()}>
-                Speichern
-              </button>
+
+              {editing.id !== '__new' && (
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-danger px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-danger-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-danger focus-visible:ring-offset-2 dark:bg-danger/80 dark:hover:bg-danger"
+                  onClick={() => {
+                    const id = editing.id;
+                    setEditing(null);
+                    requestRemove(id);
+                  }}
+                  aria-label="Ereignis löschen"
+                >
+                  <IconBadge icon={<Trash2 />} size="sm" variant="default" />
+                  <span>Löschen</span>
+                </button>
+              )}
+
               <button
-                className="px-3 py-1 text-red-600"
-                onClick={() => {
-                  setEditing(null);
-                  requestRemove(editing.id);
-                }}
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-glow transition hover:bg-primary-hover hover:shadow-primary-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:bg-primary/80 dark:hover:bg-primary"
+                onClick={() => void handleSaveEdit()}
               >
-                Löschen
+                <IconBadge icon={<Save />} size="sm" variant="default" />
+                <span>Speichern</span>
               </button>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

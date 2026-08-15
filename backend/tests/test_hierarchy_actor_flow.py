@@ -44,6 +44,7 @@ class InMemoryChatRepository:
         content: str,
         metadata: Mapping[str, JsonValue],
         user_id: str | None = None,
+        hierarchy_node_id: str | None = None,
     ) -> None:
         return None
 
@@ -355,6 +356,7 @@ def test_missing_hierarchy_actor_is_rejected():
         import app.services.chat_service as csmod
 
         original = csmod.PromptResolver
+        RecordingPromptResolver.last_instance = None
         csmod.PromptResolver = RecordingPromptResolver
 
         try:

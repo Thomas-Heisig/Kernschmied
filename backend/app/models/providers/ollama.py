@@ -351,8 +351,45 @@ class OllamaProvider(BaseModelBackend):
                         "message_lengths": message_lengths,
                         "system_message_count": system_message_count,
                         "system_message_present": system_message_count > 0,
+                        "system_prompt_sha256": request.metadata.get("system_prompt_sha256"),
                     },
                 )
+                # Human-readable OLLAMA_PAYLOAD line and development preview
+                try:
+                    sys_msg = None
+                    for m in messages:
+                        if m.get("role") == "system":
+                            sys_msg = m.get("content", "")
+                            break
+
+                    import hashlib as _hashlib
+
+                    if sys_msg:
+                        sys_sha = _hashlib.sha256(str(sys_msg).encode("utf-8")).hexdigest()
+                        sys_len = len(str(sys_msg))
+                    else:
+                        sys_sha = None
+                        sys_len = 0
+
+                    # development preview
+                    try:
+                        from app.core.settings import settings as _settings
+                        is_dev = str(getattr(_settings, "app_environment", "")).lower() == "development"
+                    except Exception:
+                        is_dev = False
+
+                    preview = (str(sys_msg)[:200]) if (is_dev and sys_msg) else None
+
+                    logger.info(
+                        "OLLAMA_PAYLOAD roles=%s system_message_count=%s system_message_length=%s system_message_sha256=%s preview=%s",
+                        ",".join(str(r) for r in message_roles),
+                        system_message_count,
+                        sys_len,
+                        sys_sha,
+                        preview,
+                    )
+                except Exception:
+                    pass
             except Exception:
                 # Logging must never break runtime
                 pass

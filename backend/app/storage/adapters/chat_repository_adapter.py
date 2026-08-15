@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
+from app.database.models.user_mention import UserMentionModel
 from app.services.chat_service import (
     ChatHierarchyNodeNotFoundError,
     ChatHierarchyNodeRequiredError,
+)
+from app.services.mailbox_service import (
+    deliver_mailbox_message_email,
+    deliver_mention_to_mailbox,
 )
 from app.storage.models.chat import Chat as ChatModel
 from app.storage.models.chat import Message as MessageModel
@@ -75,12 +80,6 @@ class ChatRepositoryAdapter:
                 await session.flush()
 
             await session.commit()
-            # After commit, best-effort projection of created conversation
-            try:
-                # resolve post-commit projection service from app state if available
-                from app.core.bootstrap import _publish_services  # type: ignore
-            except Exception:
-                pass
 
     async def append_user_message(
         self,
@@ -149,7 +148,37 @@ class ChatRepositoryAdapter:
             )
 
             await chat_repo.add_message(message)
+            raw_mentions = metadata.get("mentions", [])
+            mailbox_message_ids: list[str] = []
+            if user_id and isinstance(raw_mentions, list):
+                seen_targets: set[str] = set()
+                for raw_mention in cast(list[object], raw_mentions):
+                    if not isinstance(raw_mention, Mapping):
+                        continue
+                    mention_data = cast(Mapping[str, object], raw_mention)
+                    target_user_id = str(mention_data.get("user_id", "")).strip()
+                    if not target_user_id or target_user_id in seen_targets:
+                        continue
+                    seen_targets.add(target_user_id)
+                    mention = UserMentionModel(
+                        message_id=message_id,
+                        conversation_id=conversation_id,
+                        sender_user_id=user_id,
+                        target_user_id=target_user_id,
+                        mention_text=content,
+                    )
+                    session.add(mention)
+                    await session.flush()
+                    mailbox_message = await deliver_mention_to_mailbox(session, mention)
+                    mailbox_message_ids.append(mailbox_message.id)
             await session.commit()
+            try:
+                for mailbox_message_id in mailbox_message_ids:
+                    await deliver_mailbox_message_email(session, mailbox_message_id)
+                if mailbox_message_ids:
+                    await session.commit()
+            except Exception:
+                await session.rollback()
             # best-effort projection: project conversation messages
             # The safe integration point is to let API handlers trigger projection; repository must not rely on app state here.
 

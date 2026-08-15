@@ -29,6 +29,8 @@ class WidgetResolverService:
 
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
+        # Track registry names we've already warned about to avoid log flood
+        self._seen_registry_duplicates: set[str] = set()
 
     def _choose_registry_candidate(self, rows: list[WidgetRegistry] | list, requested_key: str | None = None):
         """Deterministically choose a registry row from possible duplicates.
@@ -57,12 +59,16 @@ class WidgetResolverService:
         if len(rows) > 1:
             try:
                 ids = [getattr(r, "id", None) for r in rows]
-                logger.warning(
-                    "widget_registry_duplicate_detected requested_key=%s candidate_ids=%s selected_id=%s",
-                    requested_key,
-                    ids,
-                    getattr(selected, "id", None),
-                )
+                # Log duplicate registry detection once per requested_key to avoid repeated warnings
+                key = requested_key or (getattr(selected, "name", None) or getattr(selected, "id", None))
+                if key and key not in getattr(self, "_seen_registry_duplicates", set()):
+                    self._seen_registry_duplicates.add(key)
+                    logger.warning(
+                        "widget_registry_duplicate_detected requested_key=%s candidate_ids=%s selected_id=%s",
+                        requested_key,
+                        ids,
+                        getattr(selected, "id", None),
+                    )
             except Exception:
                 logger.warning("widget_registry_duplicate_detected requested_key=%s selected_first_candidate", requested_key)
         return selected
@@ -158,7 +164,10 @@ class WidgetResolverService:
             # First: apply registry-level defaults where registry.name == node.type
             try:
                 if has_db:
-                    stmt = select(WidgetRegistry).where(WidgetRegistry.name == n.type)
+                    stmt = select(WidgetRegistry).where(
+                        WidgetRegistry.name == n.type,
+                        WidgetRegistry.status != "deprecated",
+                    )
                     res = await self._session.execute(stmt)
                     rows = res.scalars().all()
                     reg = self._choose_registry_candidate(rows, n.type)
@@ -337,7 +346,10 @@ class WidgetResolverService:
                             if has_db:
                                 from sqlalchemy.exc import MultipleResultsFound
 
-                                stmt = select(WidgetRegistry).where(WidgetRegistry.name == (assign_id or widget_id))
+                                stmt = select(WidgetRegistry).where(
+                                    WidgetRegistry.name == (assign_id or widget_id),
+                                    WidgetRegistry.status != "deprecated",
+                                )
                                 res = await self._session.execute(stmt)
                                 # Prefer a single match; if multiple results exist, select
                                 # the best candidate (id==name, then active status, else first).
@@ -360,11 +372,16 @@ class WidgetResolverService:
                                                 break
                                     if reg_entry is None:
                                         reg_entry = rows[0]
-                                    logger.warning(
-                                        "widget_resolver: multiple registry entries found for name=%s; selected id=%s",
-                                        assign_id,
-                                        getattr(reg_entry, "id", None),
-                                    )
+                                    # Avoid flooding logs: warn about duplicate registry
+                                    # entries for a given name only once per service instance.
+                                    dup_key = assign_id or (getattr(reg_entry, "name", None) or getattr(reg_entry, "id", None))
+                                    if dup_key and dup_key not in getattr(self, "_seen_registry_duplicates", set()):
+                                        self._seen_registry_duplicates.add(dup_key)
+                                        logger.warning(
+                                            "widget_resolver: multiple registry entries found for name=%s; selected id=%s",
+                                            assign_id,
+                                            getattr(reg_entry, "id", None),
+                                        )
                         except Exception:
                             logger.debug("widget_resolver: registry lookup failed for assignment_id=%s on node=%s", assign_id, n.id)
 
@@ -372,7 +389,10 @@ class WidgetResolverService:
                             # try lookup by widget_id if different
                             try:
                                 if has_db and widget_id and widget_id != assign_id:
-                                    stmt = select(WidgetRegistry).where(WidgetRegistry.name == widget_id)
+                                    stmt = select(WidgetRegistry).where(
+                                        WidgetRegistry.name == widget_id,
+                                        WidgetRegistry.status != "deprecated",
+                                    )
                                     res = await self._session.execute(stmt)
                                     rows = res.scalars().all()
                                     if not rows:
@@ -392,11 +412,14 @@ class WidgetResolverService:
                                                     break
                                         if reg_entry is None:
                                             reg_entry = rows[0]
-                                        logger.warning(
-                                            "widget_resolver: multiple registry entries found for widget_id=%s; selected id=%s",
-                                            widget_id,
-                                            getattr(reg_entry, "id", None),
-                                        )
+                                        dup_key = widget_id or (getattr(reg_entry, "name", None) or getattr(reg_entry, "id", None))
+                                        if dup_key and dup_key not in getattr(self, "_seen_registry_duplicates", set()):
+                                            self._seen_registry_duplicates.add(dup_key)
+                                            logger.warning(
+                                                "widget_resolver: multiple registry entries found for widget_id=%s; selected id=%s",
+                                                widget_id,
+                                                getattr(reg_entry, "id", None),
+                                            )
                             except Exception:
                                 pass
 

@@ -9,7 +9,9 @@ and association tables used by Alembic and runtime schema generation.
 # Import model modules that register tables on Base.metadata.
 # Keep imports explicit so static analysis tools can follow them.
 from .auth_session import AuthSessionModel
+from .mailbox import MailboxMessageModel, UserMailboxModel
 from .user import UserModel
+from .user_mention import UserMentionModel
 from .user_preference import UserPreferenceModel
 from .user_role import (
     PermissionModel,
@@ -20,9 +22,12 @@ from .user_role import (
 
 __all__ = [
     "AuthSessionModel",
+    "MailboxMessageModel",
     "PermissionModel",
     "RoleModel",
     "RolePermissionModel",
+    "UserMailboxModel",
+    "UserMentionModel",
     "UserModel",
     "UserPreferenceModel",
     "UserRoleModel",

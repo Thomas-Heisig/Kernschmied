@@ -1,4 +1,4 @@
-Stand: 2026-08-03
+Stand: 2026-08-15
 
 # Current Status (Kurzfassung)
 
@@ -8,12 +8,10 @@ Stand: 2026-08-03
 - Persistente Hierarchie: Backend-CRUD vorhanden; Laufzeitintegration (Seeding + Chat-FK) teilweise blockiert
 - Chat-Persistenz: Modelle und Repository vorhanden; Laufzeitpfad durch fehlenden persistenten Hierarchieknoten teilweise gestört
 
-Bekannte Laufzeitfehler:
+Zu verifizierende Laufzeitrisiken:
+
 - Entwicklungsdatenbank mit Revision `0009_merge_branches` (nicht im Repo-Head)
 - FK-Fehler beim Conversation-Insert wegen fehlendem Hierarchieknoten
 
-Zu tun (Kurz):
-- Alembic-Head dynamisch ermitteln und Entwicklungs-DB sichern
-- Persistente Hierarchie seeden (idempotent)
-- Chat-Repository an persistenten Hierarchiepfad anbinden
-- SSE + History Deduplizierung prüfen
+Die zugehörigen Arbeiten werden ausschließlich in der
+[zentralen TODO-Liste](../todo.md) gepflegt.

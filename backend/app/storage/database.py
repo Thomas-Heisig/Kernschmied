@@ -4,6 +4,7 @@ from __future__ import annotations
 # are registered on Base.metadata before calling create_all().
 import importlib
 from collections.abc import AsyncIterator
+from contextlib import suppress
 from typing import Any
 
 from sqlalchemy.ext.asyncio import (
@@ -222,8 +223,6 @@ class DatabaseManager:
         temporary SQLite files)."""
         try:
             if self._engine is not None:
-                from contextlib import suppress
-
                 with suppress(Exception):
                     # Close the underlying sync engine to release file handles.
                     self._engine.sync_engine.dispose()
@@ -242,8 +241,6 @@ class DatabaseManager:
 
     def __del__(self) -> None:
         # Best-effort synchronous cleanup when object is garbage-collected.
-        from contextlib import suppress
-
         with suppress(Exception):
             self._dispose_sync()
 

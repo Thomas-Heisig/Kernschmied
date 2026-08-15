@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 
 import type { ConfigObject, ConfigGroupResponse } from '../../contracts/config';
+import IconBadge from '../common/IconBadge';
 
 interface SettingsSidebarProps {
   values: ConfigObject;
@@ -242,16 +243,9 @@ function SidebarDivider() {
 
 function SidebarIcon({ children }: { children: React.ReactNode }) {
   return (
-    <span
-      className={[
-        'mr-3 flex h-8 w-8 shrink-0 items-center justify-center',
-        'rounded-md bg-slate-100 text-slate-500',
-        'dark:bg-white/5 dark:text-slate-400',
-      ].join(' ')}
-      aria-hidden="true"
-    >
-      {children}
-    </span>
+    <div aria-hidden="true">
+      <IconBadge icon={children as React.ReactNode} size="sm" variant="secondary" />
+    </div>
   );
 }
 

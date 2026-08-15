@@ -1,5 +1,5 @@
 // API-Wrapper für Hierarchie-Mutationen
-import { apiPost, apiPatch, apiDelete } from './client';
+import { apiDelete, apiGet, apiPatch, apiPost } from './client';
 import type { HierarchyNode, HierarchyNodeCreate, HierarchyNodeUpdate } from '../contracts/hierarchy';
 
 export async function createHierarchyNode(payload: HierarchyNodeCreate) {
@@ -21,6 +21,28 @@ export async function moveHierarchyNode(id: string, newParentId: string | null) 
 
 export async function deleteHierarchyNode(id: string) {
   return apiDelete<void>(`/hierarchy/${encodeURIComponent(id)}`);
+}
+
+export interface HierarchyQuotaStatus {
+  accessLevel: 'guest' | 'internal' | 'admin';
+  limits: Record<'workspace' | 'project' | 'chat', number> | null;
+  usage: Record<'workspace' | 'project' | 'chat', number> | null;
+  remaining: Record<'workspace' | 'project' | 'chat', number> | null;
+}
+
+export async function loadOwnHierarchyQuotas(): Promise<HierarchyQuotaStatus> {
+  const raw = await apiGet<{
+    access_level: HierarchyQuotaStatus['accessLevel'];
+    limits: HierarchyQuotaStatus['limits'];
+    usage: HierarchyQuotaStatus['usage'];
+    remaining: HierarchyQuotaStatus['remaining'];
+  }>('/hierarchy/quotas/me');
+  return {
+    accessLevel: raw.access_level,
+    limits: raw.limits,
+    usage: raw.usage,
+    remaining: raw.remaining,
+  };
 }
 
 export async function reorderHierarchy(

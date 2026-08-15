@@ -117,7 +117,7 @@ function renderInline(text: string): ReactNode[] {
       return (
         <code
           key={index}
-          className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-[0.9em] text-primary dark:bg-slate-800"
+          className="rounded-md bg-surface-muted px-1.5 py-0.5 font-mono text-[0.9em] text-primary dark:bg-slate-800 dark:text-primary"
         >
           {part.slice(1, -1)}
         </code>

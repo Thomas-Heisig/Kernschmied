@@ -75,7 +75,6 @@ async def list_files(
         )
 
     repo = FileRepository(session)
-    # TODO: include_inherited support - for now list files directly attached to node
     rows = await repo.list_by_node(node_id)
     items = [FileOut(
         id=r.id,

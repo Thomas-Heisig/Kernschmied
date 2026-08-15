@@ -22,7 +22,11 @@ import {
   Layers,
   Clock as ClockIcon,
   Info,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from 'lucide-react';
+import IconBadge from '../common/IconBadge';
 import ChatHistoryPanel from '../../components/chat/ChatHistoryPanel';
 
 interface AppFooterProps {
@@ -46,7 +50,6 @@ export function AppFooter({
   toolRevision = 1,
   backendOnline = true,
 }: AppFooterProps) {
-  // Keep bootstrap as any for compatibility with legacy usage in this footer
   const [bootstrap, setBootstrap] = useState<any | null>(null);
   const [online, setOnline] = useState<boolean | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +95,6 @@ export function AppFooter({
         setOnline(true);
         setLastChecked(new Date());
         setRequestId((data as any)?.request_id ?? res.headers.get('X-Request-Id'));
-        // Modelle & Tools zählen
         try {
           const m = await fetch('/api/v1/models', { cache: 'no-store' });
           if (m.ok) {
@@ -231,45 +233,45 @@ export function AppFooter({
   ];
 
   return (
-    <footer className="z-30 shrink-0 border-t border-gray-200 bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/90 shadow-sm">
-      <div className="flex h-12 items-center justify-between gap-3 px-4 text-sm text-gray-600 dark:text-gray-300">
+    <footer className="z-30 shrink-0 border-t border-border bg-white/80 backdrop-blur-md dark:border-white/10 dark:bg-slate-950/90 shadow-sm">
+      <div className="flex h-12 items-center justify-between gap-3 px-4 text-sm text-text-soft dark:text-gray-300">
         {/* Linker Bereich */}
         <div className="flex items-center gap-3">
           <button
             ref={systemTriggerRef}
-            className="flex items-center gap-2 hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 rounded px-1 py-0.5"
+            className="flex items-center gap-2 rounded px-1 py-0.5 hover:underline focus:outline-none focus:ring-2 focus:ring-primary"
             onClick={() => {
               setSystemTab('overview');
               setSystemInfoOpen(true);
             }}
             aria-label="Systeminformationen öffnen"
           >
-            <span className="font-semibold text-gray-900 dark:text-white">{appName}</span>
-            <span className="text-xs text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">
+            <span className="font-semibold text-text dark:text-white">{appName}</span>
+            <span className="rounded bg-surface-muted px-1.5 py-0.5 text-xs text-text-muted dark:bg-slate-800 dark:text-gray-400">
               v{appVersion}
             </span>
           </button>
 
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${envColor}`}>
-            <Globe className="w-3 h-3" />
+          <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${envColor}`}>
+            <Globe className="h-3 w-3" />
             {envLabel}
           </span>
 
           <div className="flex items-center gap-1.5">
-            <StatusIcon className={`w-4 h-4 ${statusColor}`} />
+            <StatusIcon className={`h-4 w-4 ${statusColor}`} />
             <button
-              className="text-xs hover:underline focus:outline-none focus:ring-2 focus:ring-sky-500 rounded px-1"
+              className="rounded px-1 text-xs hover:underline focus:outline-none focus:ring-2 focus:ring-primary"
               onClick={() => setSystemInfoOpen(true)}
             >
               {statusLabel}
             </button>
-            {error && <span className="text-xs text-red-500 ml-1" title={error}>⚠</span>}
+            {error && <span className="ml-1 text-xs text-danger" title={error}>⚠</span>}
           </div>
         </div>
 
         {/* Rechter Bereich */}
         <div className="flex items-center gap-3 flex-1 justify-end">
-          <span className="hidden sm:inline text-xs text-gray-400 dark:text-gray-500">
+          <span className="hidden text-xs text-text-muted dark:text-gray-500 sm:inline">
             API {bootstrap?.versions?.api ?? apiVersion}
             <span className="mx-1">·</span>
             Schema {bootstrap?.schema_version ?? schemaVersion}
@@ -277,36 +279,45 @@ export function AppFooter({
 
           <div className="flex items-center gap-1">
             <button
-              className={`p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors ${
-                autoRefresh ? 'text-sky-600 dark:text-sky-400' : 'text-gray-400'
+              className={`rounded-lg p-1.5 transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
+                autoRefresh
+                  ? 'text-primary dark:text-primary'
+                  : 'text-text-muted hover:bg-surface-hover hover:text-text dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-white'
               }`}
               onClick={() => setAutoRefresh((v) => !v)}
               title={autoRefresh ? 'Auto-Refresh aktiv (30s)' : 'Auto-Refresh deaktiviert'}
+              aria-label={autoRefresh ? 'Auto-Refresh deaktivieren' : 'Auto-Refresh aktivieren'}
             >
-              <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin-slow' : ''}`} />
+              <IconBadge
+                icon={<RefreshCw className={autoRefresh ? 'animate-spin-slow' : ''} />}
+                size="sm"
+                variant={autoRefresh ? 'primary' : 'default'}
+              />
             </button>
 
             <button
               ref={dateToggleRef}
-              className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors"
+              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-primary dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-white"
               onClick={() => {
                 setShowDatePicker((s) => !s);
                 if (!showDatePicker) setSystemInfoOpen(false);
               }}
               aria-label="Datum auswählen"
+              title="Datum auswählen"
             >
-              <CalendarDays className="w-4 h-4" />
+              <IconBadge icon={<CalendarDays />} size="sm" variant="default" />
             </button>
 
             <button
-              className="p-1.5 rounded hover:bg-gray-100 dark:hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-sky-500 transition-colors"
+              className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-primary dark:text-gray-400 dark:hover:bg-slate-800 dark:hover:text-white"
               onClick={() => {
                 setSystemTab('overview');
                 setSystemInfoOpen(true);
               }}
               aria-label="Systeminformationen"
+              title="Systeminformationen"
             >
-              <Info className="w-4 h-4" />
+              <IconBadge icon={<Info />} size="sm" variant="default" />
             </button>
           </div>
 
@@ -318,7 +329,7 @@ export function AppFooter({
       {showDatePicker && (
         <div
           ref={datePickerRef}
-          className="fixed right-4 bottom-16 z-50 w-[min(520px,95%)] max-w-full rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-slate-800"
+          className="fixed right-4 bottom-16 z-50 w-[min(520px,95%)] max-w-full rounded-xl border border-border-soft bg-white p-5 shadow-xl dark:border-white/10 dark:bg-slate-800"
         >
           <DatePickerPopup
             initialDate={selectedDate ?? new Date()}
@@ -344,7 +355,7 @@ export function AppFooter({
       {systemInfoOpen && (
         <div
           ref={systemInfoRef}
-          className="fixed right-4 bottom-16 z-50 w-[min(720px,95%)] max-w-full rounded-xl border border-gray-200 bg-white p-5 shadow-xl dark:border-gray-700 dark:bg-slate-800"
+          className="fixed right-4 bottom-16 z-50 w-[min(720px,95%)] max-w-full rounded-xl border border-border-soft bg-white p-5 shadow-xl dark:border-white/10 dark:bg-slate-800"
         >
           <SystemInfoPanel
             appName={appName}
@@ -405,13 +416,14 @@ function Clock() {
     [now]
   );
   return (
-    <span className="font-mono text-xs text-gray-500 dark:text-gray-400 w-44 text-right" aria-live="polite">
+    <span className="flex items-center gap-1.5 font-mono text-xs text-text-muted dark:text-gray-400 w-44 text-right" aria-live="polite">
+      <IconBadge icon={<ClockIcon />} size="sm" variant="default" />
       {formatted}
     </span>
   );
 }
 
-/** DatePicker-Popup (unverändert, aber ich füge es der Vollständigkeit halber ein) */
+/** DatePicker-Popup (verbessert) */
 function DatePickerPopup({
   initialDate,
   setSelectedDate,
@@ -498,22 +510,27 @@ function DatePickerPopup({
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <button
-            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-primary dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-white"
             onClick={() => setViewDate(new Date(year, month - 1, 1))}
+            aria-label="Vorheriger Monat"
           >
-            ◀
+            <IconBadge icon={<ChevronLeft />} size="sm" variant="default" />
           </button>
-          <strong className="text-base">
+          <strong className="text-base text-text dark:text-white">
             {viewDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' })}
           </strong>
           <button
-            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-primary dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-white"
             onClick={() => setViewDate(new Date(year, month + 1, 1))}
+            aria-label="Nächster Monat"
           >
-            ▶
+            <IconBadge icon={<ChevronRight />} size="sm" variant="default" />
           </button>
         </div>
-        <button className="text-sm text-gray-500 hover:underline" onClick={onCancel}>
+        <button
+          className="rounded-lg px-3 py-1.5 text-sm text-text-muted transition-colors hover:bg-surface-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-primary dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-white"
+          onClick={onCancel}
+        >
           Abbrechen
         </button>
       </div>
@@ -525,7 +542,7 @@ function DatePickerPopup({
         role="grid"
       >
         {['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'].map((w) => (
-          <div key={w} className="font-medium text-gray-500 dark:text-gray-400 py-1">
+          <div key={w} className="py-1 font-medium text-text-muted dark:text-gray-400">
             {w}
           </div>
         ))}
@@ -538,68 +555,69 @@ function DatePickerPopup({
               {d !== null ? (
                 <button
                   onClick={() => pick(d)}
-                  className={`w-full h-8 rounded-full flex items-center justify-center text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                  className={`h-8 w-full rounded-full flex items-center justify-center text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
                     isSelected
-                      ? 'bg-sky-600 text-white hover:bg-sky-700'
+                      ? 'bg-primary text-white hover:bg-primary-hover'
                       : isToday
-                      ? 'bg-sky-100 text-sky-800 dark:bg-sky-900/30 dark:text-sky-300 hover:bg-sky-200'
-                      : 'hover:bg-gray-100 dark:hover:bg-slate-700'
+                      ? 'bg-primary-soft text-primary hover:bg-primary/20 dark:bg-primary/20 dark:text-primary'
+                      : 'hover:bg-surface-hover dark:hover:bg-slate-700'
                   }`}
                 >
                   {d}
                 </button>
               ) : (
-                <span className="w-full h-8 block" />
+                <span className="block h-8 w-full" />
               )}
             </div>
           );
         })}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border-soft pt-3 dark:border-white/10">
         <div className="flex items-center gap-2">
-          <ClockIcon className="w-4 h-4 text-gray-400" />
+          <IconBadge icon={<ClockIcon />} size="sm" variant="default" />
           <input
             type="time"
             value={time}
             onChange={(e) => setTime(e.target.value)}
-            className="rounded border border-gray-300 dark:border-gray-600 bg-transparent px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="rounded-lg border border-border-soft bg-transparent px-2 py-1 text-sm text-text outline-none focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:text-white"
           />
         </div>
 
-        <div className="flex items-center gap-2 ml-auto">
+        <div className="ml-auto flex items-center gap-2">
           <button
-            className={`flex items-center gap-1 text-xs px-2 py-1 rounded-full transition-colors ${
+            className={`flex items-center gap-1 rounded-full px-2 py-1 text-xs transition-colors ${
               autoRefresh
-                ? 'bg-sky-100 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
-                : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+                ? 'bg-primary-soft text-primary dark:bg-primary/20 dark:text-primary'
+                : 'bg-surface-muted text-text-muted dark:bg-slate-700 dark:text-gray-400'
             }`}
             onClick={() => setAutoRefresh?.((v) => !v)}
+            aria-label={autoRefresh ? 'Auto-Refresh deaktivieren' : 'Auto-Refresh aktivieren'}
           >
-            <RefreshCw className={`w-3 h-3 ${autoRefresh ? 'animate-spin-slow' : ''}`} />
+            <RefreshCw className={`h-3 w-3 ${autoRefresh ? 'animate-spin-slow' : ''}`} />
             {autoRefresh ? 'Auto ein' : 'Auto aus'}
           </button>
 
           <button
-            className="hidden md:flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-gray-100 dark:bg-gray-700"
+            className="hidden items-center gap-1 rounded-full bg-surface-muted px-2 py-1 text-xs text-text-muted dark:bg-slate-700 dark:text-gray-400 md:flex"
             onClick={() => setSystemTab?.('versions')}
           >
-            <Layers className="w-3 h-3" />
+            <Layers className="h-3 w-3" />
             Konf {bootstrap?.config_revision ?? configRevision}
           </button>
 
-          <div className="hidden md:flex items-center gap-3 text-xs">
+          <div className="hidden items-center gap-3 text-xs text-text-muted dark:text-gray-400 md:flex">
             <span className="flex items-center gap-1">
-              <Cpu className="w-3 h-3" />
-              <span className="text-gray-500">Modelle</span>
-              <span className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+              <Cpu className="h-3 w-3" />
+              <span>Modelle</span>
+              <span className="rounded bg-surface-muted px-1.5 py-0.5 dark:bg-slate-700">
                 {modelsCount ?? '—'}
               </span>
             </span>
             <span className="flex items-center gap-1">
-              <FolderTree className="w-3 h-3" />
-              <span className="text-gray-500">Werkzeuge</span>
-              <span className="bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+              <FolderTree className="h-3 w-3" />
+              <span>Werkzeuge</span>
+              <span className="rounded bg-surface-muted px-1.5 py-0.5 dark:bg-slate-700">
                 {toolsCount ?? '—'}
               </span>
             </span>
@@ -610,7 +628,7 @@ function DatePickerPopup({
   );
 }
 
-/** Systeminfo-Panel – nun mit allen benötigten Props */
+/** Systeminfo-Panel (verbessert) */
 function SystemInfoPanel({
   appName,
   appVersion,
@@ -696,35 +714,36 @@ function SystemInfoPanel({
   return (
     <>
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Settings className="w-5 h-5" />
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-text dark:text-white">
+          <IconBadge icon={<Settings />} size="md" variant="primary" />
           Systeminformationen
         </h2>
         <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-400">
+          <span className="text-xs text-text-muted dark:text-gray-400">
             {lastChecked
               ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(lastChecked)
               : new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(new Date())}
           </span>
           <button
-            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded focus:outline-none focus:ring-2 focus:ring-sky-500"
+            className="rounded-lg p-1.5 text-text-muted transition-colors hover:bg-surface-hover hover:text-text focus:outline-none focus:ring-2 focus:ring-primary dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-white"
             onClick={onClose}
             aria-label="Schließen"
+            title="Schließen"
           >
-            ✕
+            <IconBadge icon={<X />} size="sm" variant="default" />
           </button>
         </div>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4">
+      <div className="flex flex-col gap-4 md:flex-row">
         <nav className="md:w-40">
           <ul className="space-y-1 text-sm">
             {(['overview', 'functions', 'versions', 'technical'] as const).map((tab) => {
               const icons = {
-                overview: <Globe className="w-4 h-4" />,
-                functions: <Zap className="w-4 h-4" />,
-                versions: <Layers className="w-4 h-4" />,
-                technical: <Server className="w-4 h-4" />,
+                overview: <Globe />,
+                functions: <Zap />,
+                versions: <Layers />,
+                technical: <Server />,
               };
               const labels = {
                 overview: 'Übersicht',
@@ -732,17 +751,19 @@ function SystemInfoPanel({
                 versions: 'Versionen',
                 technical: 'Technik',
               };
+              const isActive = systemTab === tab;
               return (
                 <li key={tab}>
                   <button
-                    className={`flex items-center gap-2 w-full text-left px-3 py-2 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 ${
-                      systemTab === tab
-                        ? 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300'
-                        : 'hover:bg-gray-100 dark:hover:bg-slate-800'
+                    className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
+                      isActive
+                        ? 'bg-primary-soft text-primary dark:bg-primary/20 dark:text-primary'
+                        : 'text-text-soft hover:bg-surface-hover dark:text-gray-300 dark:hover:bg-slate-800'
                     }`}
                     onClick={() => setSystemTab(tab)}
+                    aria-current={isActive ? 'page' : undefined}
                   >
-                    {icons[tab]}
+                    <IconBadge icon={icons[tab]} size="sm" variant={isActive ? 'primary' : 'default'} />
                     {labels[tab]}
                   </button>
                 </li>
@@ -754,20 +775,20 @@ function SystemInfoPanel({
         <div className="flex-1 min-w-0">
           {systemTab === 'overview' && (
             <div>
-              <h3 className="font-semibold text-lg">{appName}</h3>
-              <p className="text-sm text-gray-500">Version {appVersion}</p>
-              <p className="text-sm text-gray-500 mt-1">Lokale Chat- und Assistenzplattform</p>
+              <h3 className="text-lg font-semibold text-text dark:text-white">{appName}</h3>
+              <p className="text-sm text-text-muted">Version {appVersion}</p>
+              <p className="mt-1 text-sm text-text-muted">Lokale Chat- und Assistenzplattform</p>
 
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                  <div className="font-medium flex items-center gap-2">
-                    <Server className="w-4 h-4" />
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="rounded-lg border border-border-soft p-4 dark:border-white/10">
+                  <div className="flex items-center gap-2 font-medium text-text dark:text-white">
+                    <Server className="h-4 w-4" />
                     Dienste
                   </div>
-                  <ul className="mt-2 space-y-1 text-sm">
+                  <ul className="mt-2 space-y-1 text-sm text-text-soft dark:text-gray-300">
                     <li className="flex justify-between">
                       <span>Backend</span>
-                      <span className={online ? 'text-emerald-600' : online === false ? 'text-red-500' : 'text-gray-500'}>
+                      <span className={online ? 'text-success' : online === false ? 'text-danger' : 'text-text-muted'}>
                         {online ? 'Online' : online === false ? 'Nicht erreichbar' : 'Unbekannt'}
                       </span>
                     </li>
@@ -786,12 +807,12 @@ function SystemInfoPanel({
                   </ul>
                 </div>
 
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                  <div className="font-medium flex items-center gap-2">
-                    <Layers className="w-4 h-4" />
+                <div className="rounded-lg border border-border-soft p-4 dark:border-white/10">
+                  <div className="flex items-center gap-2 font-medium text-text dark:text-white">
+                    <Layers className="h-4 w-4" />
                     Konfiguration
                   </div>
-                  <div className="mt-2 text-sm">
+                  <div className="mt-2 text-sm text-text-soft dark:text-gray-300">
                     <div className="flex justify-between">
                       <span>Status</span>
                       <span>{bootstrap?.config_revision ? 'Aktuell' : 'Unbekannt'}</span>
@@ -802,7 +823,7 @@ function SystemInfoPanel({
                     </div>
                   </div>
                   <button
-                    className="mt-3 text-xs px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                    className="mt-3 rounded-full bg-surface-muted px-3 py-1 text-xs text-text-muted transition-colors hover:bg-surface-hover dark:bg-slate-700 dark:hover:bg-slate-600"
                     onClick={() => setSystemTab('versions')}
                   >
                     Details anzeigen
@@ -812,22 +833,22 @@ function SystemInfoPanel({
 
               <div className="mt-4 flex flex-wrap gap-3">
                 <button
-                  className="flex items-center gap-2 text-sm px-4 py-2 rounded-lg bg-sky-600 text-white hover:bg-sky-700 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white shadow-glow transition hover:bg-primary-hover hover:shadow-primary-glow focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
                   onClick={refreshStatus}
                   disabled={isRefreshing}
                 >
-                  <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                   {isRefreshing ? 'Aktualisiere...' : 'Status neu prüfen'}
                 </button>
                 <button
-                  className={`flex items-center gap-1 text-sm px-4 py-2 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 ${
+                  className={`flex items-center gap-1 rounded-lg border px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
                     autoRefresh
-                      ? 'border-sky-300 bg-sky-50 text-sky-700 dark:bg-sky-900/20 dark:text-sky-300'
-                      : 'border-gray-300 bg-white text-gray-700 dark:border-gray-600 dark:bg-slate-800 dark:text-gray-300'
+                      ? 'border-primary-soft bg-primary-soft text-primary dark:border-primary/30 dark:bg-primary/20 dark:text-primary'
+                      : 'border-border-soft bg-white text-text-soft hover:bg-surface-hover dark:border-white/10 dark:bg-slate-800 dark:text-gray-300 dark:hover:bg-slate-700'
                   }`}
                   onClick={() => setAutoRefresh((v) => !v)}
                 >
-                  <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin-slow' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 ${autoRefresh ? 'animate-spin-slow' : ''}`} />
                   {autoRefresh ? 'Auto-Refresh ein' : 'Auto-Refresh aus'}
                 </button>
               </div>
@@ -836,36 +857,36 @@ function SystemInfoPanel({
 
           {systemTab === 'functions' && (
             <div>
-              <h3 className="font-semibold text-lg">Funktionen</h3>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <h3 className="text-lg font-semibold text-text dark:text-white">Funktionen</h3>
+              <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {friendlyCaps.map((c) => {
                   const count =
                     c.title === 'KI-Modelle' ? modelsCount : c.title === 'Werkzeuge' ? toolsCount : null;
                   return (
                     <div
                       key={c.title}
-                      className="flex items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-3"
+                      className="flex items-center justify-between rounded-lg border border-border-soft p-3 dark:border-white/10"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="text-gray-500">{c.icon}</div>
+                        <div className="text-text-muted">{c.icon}</div>
                         <div>
-                          <div className="font-medium">
+                          <div className="font-medium text-text dark:text-white">
                             {c.title}
                             {count !== null && (
-                              <span className="ml-2 text-xs text-gray-400">({count})</span>
+                              <span className="ml-2 text-xs text-text-muted">({count})</span>
                             )}
                           </div>
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-text-muted">
                             {c.ok === true ? 'Verfügbar' : c.ok === false ? 'Nicht aktiviert' : 'Unbekannt'}
                           </div>
                         </div>
                       </div>
                       {c.ok === true ? (
-                        <CheckCircle className="w-5 h-5 text-emerald-500" />
+                        <CheckCircle className="h-5 w-5 text-success" />
                       ) : c.ok === false ? (
-                        <XCircle className="w-5 h-5 text-gray-300" />
+                        <XCircle className="h-5 w-5 text-text-muted" />
                       ) : (
-                        <AlertCircle className="w-5 h-5 text-gray-400" />
+                        <AlertCircle className="h-5 w-5 text-text-muted" />
                       )}
                     </div>
                   );
@@ -876,52 +897,54 @@ function SystemInfoPanel({
 
           {systemTab === 'versions' && (
             <div>
-              <h3 className="font-semibold text-lg">Schnittstellen & Versionen</h3>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex justify-between">
-                  <span className="text-gray-500">API</span>
-                  <span className="font-mono">{bootstrap?.versions?.api ?? apiVersion}</span>
+              <h3 className="text-lg font-semibold text-text dark:text-white">Schnittstellen & Versionen</h3>
+              <div className="mt-4 grid grid-cols-1 gap-3 text-sm sm:grid-cols-2">
+                <div className="flex justify-between rounded-lg border border-border-soft p-3 dark:border-white/10">
+                  <span className="text-text-muted">API</span>
+                  <span className="font-mono text-text dark:text-white">{bootstrap?.versions?.api ?? apiVersion}</span>
                 </div>
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex justify-between">
-                  <span className="text-gray-500">Schema</span>
-                  <span className="font-mono">{bootstrap?.schema_version ?? schemaVersion}</span>
+                <div className="flex justify-between rounded-lg border border-border-soft p-3 dark:border-white/10">
+                  <span className="text-text-muted">Schema</span>
+                  <span className="font-mono text-text dark:text-white">{bootstrap?.schema_version ?? schemaVersion}</span>
                 </div>
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex justify-between">
-                  <span className="text-gray-500">UI Schema</span>
-                  <span className="font-mono">{bootstrap?.ui_schema ?? 'n/a'}</span>
+                <div className="flex justify-between rounded-lg border border-border-soft p-3 dark:border-white/10">
+                  <span className="text-text-muted">UI Schema</span>
+                  <span className="font-mono text-text dark:text-white">{bootstrap?.ui_schema ?? 'n/a'}</span>
                 </div>
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 flex justify-between">
-                  <span className="text-gray-500">Bootstrap Schema</span>
-                  <span className="font-mono">{bootstrap?.bootstrap_schema ?? 'n/a'}</span>
+                <div className="flex justify-between rounded-lg border border-border-soft p-3 dark:border-white/10">
+                  <span className="text-text-muted">Bootstrap Schema</span>
+                  <span className="font-mono text-text dark:text-white">{bootstrap?.bootstrap_schema ?? 'n/a'}</span>
                 </div>
               </div>
             </div>
           )}
 
-              {systemTab === 'technical' && (
+          {systemTab === 'technical' && (
             <div>
-              <h3 className="font-semibold text-lg">Technische Details</h3>
+              <h3 className="text-lg font-semibold text-text dark:text-white">Technische Details</h3>
               <div className="mt-2 text-xs">
-                <div className="flex flex-wrap gap-4 text-gray-500 mb-3">
+                <div className="mb-3 flex flex-wrap gap-4 text-text-muted dark:text-gray-400">
                   <span>Request ID: {requestId ?? '—'}</span>
                   <span>Letzte Prüfung: {lastChecked ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'short', timeStyle: 'short' }).format(lastChecked) : '—'}</span>
-                  {error && <span className="text-red-500">Fehler: {error}</span>}
-                      <button
-                        className="text-xs px-2 py-1 rounded bg-gray-100"
-                        onClick={() => setChatHistoryOpen?.(true)}
-                      >Chat-Historie</button>
+                  {error && <span className="text-danger">Fehler: {error}</span>}
+                  <button
+                    className="rounded bg-surface-muted px-2 py-1 text-xs text-text-muted transition-colors hover:bg-surface-hover dark:bg-slate-700 dark:hover:bg-slate-600"
+                    onClick={() => setChatHistoryOpen?.(true)}
+                  >
+                    Chat-Historie
+                  </button>
                 </div>
-                <div className="rounded-lg border border-gray-200 dark:border-gray-700 p-3 max-h-64 overflow-auto bg-gray-50 dark:bg-slate-900/50">
-                  <pre className="whitespace-pre-wrap break-all">
+                <div className="max-h-64 overflow-auto rounded-lg border border-border-soft bg-surface-muted p-3 dark:border-white/10 dark:bg-slate-900/50">
+                  <pre className="whitespace-pre-wrap break-all text-text-soft dark:text-gray-300">
                     {JSON.stringify(bootstrap ?? { online, error, versions: (bootstrap as any | null)?.versions }, null, 2)}
                   </pre>
                 </div>
               </div>
             </div>
           )}
-              {chatHistoryOpen ? (
-                <ChatHistoryPanel onClose={() => setChatHistoryOpen?.(false)} />
-              ) : null}
+          {chatHistoryOpen && (
+            <ChatHistoryPanel onClose={() => setChatHistoryOpen?.(false)} />
+          )}
         </div>
       </div>
     </>

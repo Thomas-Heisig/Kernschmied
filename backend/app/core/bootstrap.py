@@ -652,6 +652,7 @@ async def bootstrap_application(
         model_service = ModelService(
             provider_registry=provider_registry,
             lifecycle=lifecycle,
+            model_registry=model_registry,
             allowed_manifest_directories=[
                 str(
                     MODEL_MANIFEST_DIRECTORY,
@@ -794,6 +795,7 @@ async def bootstrap_application(
 
             chat_service = ChatService(
                 model_service=model_service,
+                config_service=config_service,
                 default_model_id=DEFAULT_MODEL_ID,
                 repository=chat_repo_adapter,
                 history_provider=chat_history_provider,
@@ -817,6 +819,7 @@ async def bootstrap_application(
                         },
                     )()
                 ),
+                hierarchy_service=hierarchy_service,
             )
 
         await _run_bootstrap_step(

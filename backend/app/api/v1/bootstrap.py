@@ -982,7 +982,8 @@ def _resolve_features(
     capabilities: BootstrapCapabilities,
 ) -> BootstrapFeatures:
     # Determine registration and development-login features based on settings
-    app_env = str(getattr(settings, "app_environment", "development")).lower()
+    raw_app_env = getattr(settings, "app_environment", "development")
+    app_env = str(getattr(raw_app_env, "value", raw_app_env)).lower()
     development_admin_login = app_env == "development" and bool(
         getattr(settings, "development_admin_login_enabled", False)
     )
@@ -994,7 +995,7 @@ def _resolve_features(
     else:
         self_registration = bool(getattr(settings, "self_registration_enabled", False))
 
-    registration_requires_invitation = bool(
+    registration_requires_invitation = app_env != "development" and bool(
         getattr(settings, "registration_requires_invitation", False)
     )
 
@@ -1143,7 +1144,8 @@ def _enhanced_security_profile() -> dict[str, object]:
     )
 
     # Development identity active only in development when explicitly enabled
-    app_env = str(getattr(settings, "app_environment", "development")).lower()
+    raw_app_env = getattr(settings, "app_environment", "development")
+    app_env = str(getattr(raw_app_env, "value", raw_app_env)).lower()
     result["development_identity_active"] = app_env == "development" and bool(
         getattr(settings, "development_admin_login_enabled", False)
     )
@@ -1195,7 +1197,7 @@ def _enhanced_security_profile() -> dict[str, object]:
     result["development_self_registration"] = bool(
         getattr(settings, "development_self_registration_enabled", False)
     )
-    result["registration_requires_invitation"] = bool(
+    result["registration_requires_invitation"] = app_env != "development" and bool(
         getattr(settings, "registration_requires_invitation", False)
     )
 

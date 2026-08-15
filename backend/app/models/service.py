@@ -1701,6 +1701,37 @@ class ModelService:
             request_id=request_id,
         )
 
+        # Emit non-sensitive handoff diagnostics including system_prompt SHA-256
+        try:
+            # Recalculate system message hash/length from actual request.messages
+            try:
+                sys_msgs = [m for m in request.messages if getattr(m.role, "value", str(m.role)).lower() == "system"]
+                if sys_msgs:
+                    sys_msg = sys_msgs[0]
+                    import hashlib as _hashlib
+
+                    sys_sha = _hashlib.sha256((getattr(sys_msg, "content", "") or "").encode("utf-8")).hexdigest()
+                    sys_len = len(getattr(sys_msg, "content", "") or "")
+                else:
+                    sys_sha = None
+                    sys_len = 0
+            except Exception:
+                sys_sha = None
+                sys_len = 0
+
+            _log_info(
+                "model_service_generation_handoff",
+                model_step="generation-handoff",
+                model_id=record.model_id,
+                provider_type=record.provider_type,
+                request_id=request_id,
+                request_model=request.model,
+                system_message_sha256=sys_sha,
+                system_message_length=sys_len,
+            )
+        except Exception:
+            pass
+
         try:
             result = await self._lifecycle.generate(
                 record.model_id,
@@ -1812,6 +1843,36 @@ class ModelService:
             request_id=request_id,
             request_model=request.model,
         )
+
+        # Emit non-sensitive handoff diagnostics for streaming
+        try:
+            try:
+                sys_msgs = [m for m in request.messages if getattr(m.role, "value", str(m.role)).lower() == "system"]
+                if sys_msgs:
+                    sys_msg = sys_msgs[0]
+                    import hashlib as _hashlib2
+
+                    sys_sha2 = _hashlib2.sha256((getattr(sys_msg, "content", "") or "").encode("utf-8")).hexdigest()
+                    sys_len2 = len(getattr(sys_msg, "content", "") or "")
+                else:
+                    sys_sha2 = None
+                    sys_len2 = 0
+            except Exception:
+                sys_sha2 = None
+                sys_len2 = 0
+
+            _log_info(
+                "model_service_generation_handoff",
+                model_step="stream-handoff",
+                model_id=record.model_id,
+                provider_type=record.provider_type,
+                request_id=request_id,
+                request_model=request.model,
+                system_message_sha256=sys_sha2,
+                system_message_length=sys_len2,
+            )
+        except Exception:
+            pass
 
         try:
             async for event in self._lifecycle.stream(

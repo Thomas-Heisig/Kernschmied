@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from typing import Literal, cast
+from typing import Literal, cast, Any
 
 from app.hierarchy.models import HierarchyActor
 from app.hierarchy.permissions import READ_ACTION, HierarchyPermissionService
@@ -9,6 +9,8 @@ from app.hierarchy.repository import HierarchyRepository
 from app.prompts.errors import UnsupportedPromptModeError
 from app.prompts.models import PROMPT_SCHEMA_VERSION, PromptFragment, ResolvedPrompt
 import logging
+import hashlib
+from app.core.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -77,7 +79,25 @@ class PromptResolver:
             if not enabled:
                 continue
 
+            # Primary source: explicit `system_prompt` column
             content = getattr(node, "system_prompt", None)
+
+            # Fallback for legacy or UI-stored prompts: some clients store
+            # the prompt inside the node metadata under the key 'prompt'. Use
+            # it when `system_prompt` is missing or empty.
+            if content is None or (isinstance(content, str) and not str(content).strip()):
+                try:
+                    meta = getattr(node, "node_metadata", None) or getattr(node, "metadata", None)
+                    if isinstance(meta, dict):
+                        # narrow to a dict[str, Any] for the type-checker
+                        meta_dict = cast(dict[str, Any], meta)
+                        maybe = meta_dict.get("prompt")
+                        if isinstance(maybe, str) and maybe.strip():
+                            content = maybe
+                except Exception:
+                    # ignore metadata access errors and continue
+                    pass
+
             if content is None:
                 continue
 
@@ -166,12 +186,17 @@ class PromptResolver:
 
         chain = await repository.get_ancestor_chain(node_id)
 
+        # Ensure we have a concrete list so it can be inspected for logging
+        chain_list = list(chain)
+
         # perform resolution from the collected chain
         resolved = self.resolve_from_chain(
-            chain=chain, settings_system_prompt=settings_system_prompt
+            chain=chain_list, settings_system_prompt=settings_system_prompt
         )
 
         # Emit concise, non-sensitive diagnostic about prompt resolution.
+        # Ensure diagnostic variables are defined for static analysis.
+        system_prompt_sha256 = None
         try:
             chain_ids = [str(getattr(n, "id", None)) for n in chain]
             fragment_sources = [f.source_id for f in resolved.fragments]
@@ -186,6 +211,17 @@ class PromptResolver:
                         global_prompt_length = len(getattr(f, "prompt", "") or "")
                         break
 
+            # Compute non-sensitive SHA-256 of the effective system prompt
+            try:
+                prompt_bytes = (resolved.system_prompt or "").encode("utf-8")
+                system_prompt_sha256 = (
+                    hashlib.sha256(prompt_bytes).hexdigest()
+                    if prompt_bytes
+                    else None
+                )
+            except Exception:
+                system_prompt_sha256 = None
+
             logger.info(
                 "prompt_resolution_completed",
                 extra={
@@ -197,9 +233,62 @@ class PromptResolver:
                     "global_prompt_length": global_prompt_length,
                     "hierarchy_prompt_count": hierarchy_prompt_count,
                     "effective_prompt_length": effective_len,
+                    "system_prompt_sha256": system_prompt_sha256,
                 },
             )
         except Exception:
             logger.debug("prompt_resolution: logging failed", exc_info=True)
+
+        # Development-mode: emit a human-readable prompt chain and effective preview
+        try:
+            is_dev = str(getattr(settings, "app_environment", "")).lower() == "development"
+
+            if is_dev:
+                # Log the PROMPT_CHAIN with per-node diagnostics
+                try:
+                    logger.info("PROMPT_CHAIN target_node_id=%s", node_id)
+                    idx = 0
+                    for n in chain_list:
+                        idx += 1
+                        nid = getattr(n, "id", None)
+                        ntype = getattr(n, "type", None)
+                        nname = getattr(n, "name", None)
+                        local = getattr(n, "system_prompt", None)
+                        present = bool(local and str(local).strip())
+                        length = len(str(local)) if present else 0
+                        sha = None
+                        try:
+                            if present:
+                                sha = hashlib.sha256(str(local).encode("utf-8")).hexdigest()
+                        except Exception:
+                            sha = None
+
+                        logger.info(
+                            "CHAIN_ENTRY %s id=%s type=%s name=%s local_prompt_present=%s local_prompt_length=%s sha256=%s",
+                            idx,
+                            nid,
+                            ntype,
+                            nname,
+                            present,
+                            length,
+                            sha,
+                        )
+                except Exception:
+                    pass
+
+                # EFFECTIVE_PROMPT: preview and stats
+                try:
+                    eff_preview = (resolved.system_prompt[:200]) if resolved.system_prompt else ""
+                    logger.info(
+                        "EFFECTIVE_PROMPT source_count=%s length=%s sha256=%s preview=%s",
+                        len(resolved.fragments),
+                        len(resolved.system_prompt or ""),
+                        system_prompt_sha256,
+                        eff_preview,
+                    )
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
         return resolved

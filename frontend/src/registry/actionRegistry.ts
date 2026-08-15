@@ -154,6 +154,12 @@ const actionDefinitions = [
     enabled: true,
   },
   {
+    kind: 'edit_config',
+    label: 'Knoten konfigurieren…',
+    icon: 'SlidersHorizontal',
+    enabled: true,
+  },
+  {
     kind: 'navigate',
     label: 'Öffnen',
     icon: 'ArrowRight',

@@ -391,6 +391,11 @@ class GenerationRequest:
     top_p: float | None = None
     stop: list[str] | None = None
 
+    top_k: int | None = None
+    repeat_penalty: float | None = None
+    request_timeout_seconds: int | None = None
+    max_retries: int | None = None
+
     tools: list[ToolDefinition] = field(
         default_factory=_empty_tool_definitions,
     )
@@ -425,6 +430,26 @@ class GenerationRequest:
         if self.top_p is not None and not 0.0 < self.top_p <= 1.0:
             raise ValueError(
                 "top_p muss größer als 0.0 und höchstens 1.0 sein.",
+            )
+
+        if self.top_k is not None and self.top_k < 0:
+            raise ValueError(
+                "top_k muss größer oder gleich 0 sein.",
+            )
+
+        if self.repeat_penalty is not None and self.repeat_penalty < 0:
+            raise ValueError(
+                "repeat_penalty muss größer oder gleich 0 sein.",
+            )
+
+        if self.request_timeout_seconds is not None and self.request_timeout_seconds <= 0:
+            raise ValueError(
+                "request_timeout_seconds muss größer als 0 sein.",
+            )
+
+        if self.max_retries is not None and self.max_retries < 0:
+            raise ValueError(
+                "max_retries darf nicht negativ sein.",
             )
 
         if self.stop is not None:
@@ -465,6 +490,10 @@ class GenerationRequest:
         temperature: float = 0.2,
         max_tokens: int | None = None,
         top_p: float | None = None,
+        top_k: int | None = None,
+        repeat_penalty: float | None = None,
+        request_timeout_seconds: int | None = None,
+        max_retries: int | None = None,
         stop: Sequence[str] | None = None,
         tools: Sequence[ToolDefinition] | None = None,
         tool_choice: str | None = None,
@@ -478,6 +507,10 @@ class GenerationRequest:
             temperature=temperature,
             max_tokens=max_tokens,
             top_p=top_p,
+            top_k=top_k,
+            repeat_penalty=repeat_penalty,
+            request_timeout_seconds=request_timeout_seconds,
+            max_retries=max_retries,
             stop=(list(stop) if stop is not None else None),
             tools=(list(tools) if tools is not None else []),
             tool_choice=tool_choice,

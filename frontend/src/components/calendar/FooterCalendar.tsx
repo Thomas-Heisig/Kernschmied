@@ -1,4 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+// F:\Kernschmied\frontend\src\components\calendar\FooterCalendar.tsx
+
+import React, { useEffect, useState } from 'react';
+import { ChevronLeft, ChevronRight, X, Trash2, Save } from 'lucide-react';
+import IconBadge from '../common/IconBadge';
 import type { components } from '../../api/openapi-types';
 import {
   listCalendars,
@@ -154,11 +158,15 @@ export default function FooterCalendar({
   }
 
   return (
-    <div>
-      <div className="mb-2">
-        <label className="block text-xs mb-1">Ziel-Kalender</label>
+    <div className="text-sm text-text-soft dark:text-gray-300">
+      {/* Kalenderauswahl */}
+      <div className="mb-3">
+        <label htmlFor="calendar-select" className="block text-xs font-medium text-text-muted dark:text-gray-400">
+          Ziel-Kalender
+        </label>
         <select
-          className="w-full rounded border px-2 py-1 text-sm"
+          id="calendar-select"
+          className="mt-1 w-full rounded-lg border border-border-soft bg-white/70 px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:focus:ring-primary/20"
           value={targetCalendarId ?? ''}
           onChange={(e) => setTargetCalendarId(e.target.value || null)}
         >
@@ -171,121 +179,175 @@ export default function FooterCalendar({
         </select>
       </div>
 
-      <div className="text-sm">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <strong>
-              {selectedDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' })}
-            </strong>
-          </div>
-          <div>
-            <button className="text-xs text-gray-500" onClick={onCancel}>
-              Abbrechen
-            </button>
-          </div>
+      {/* Kalenderkopf */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-hover hover:text-text dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-white"
+            onClick={() => {
+              const newDate = new Date(selectedDate);
+              newDate.setMonth(newDate.getMonth() - 1);
+              setSelectedDate(newDate);
+            }}
+            aria-label="Vorheriger Monat"
+          >
+            <IconBadge icon={<ChevronLeft />} size="sm" variant="default" />
+          </button>
+          <strong className="text-base text-text dark:text-white">
+            {selectedDate.toLocaleString('de-DE', { month: 'long', year: 'numeric' })}
+          </strong>
+          <button
+            type="button"
+            className="rounded-lg p-1.5 text-text-muted transition hover:bg-surface-hover hover:text-text dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-white"
+            onClick={() => {
+              const newDate = new Date(selectedDate);
+              newDate.setMonth(newDate.getMonth() + 1);
+              setSelectedDate(newDate);
+            }}
+            aria-label="Nächster Monat"
+          >
+            <IconBadge icon={<ChevronRight />} size="sm" variant="default" />
+          </button>
         </div>
+        <button
+          type="button"
+          className="rounded-lg px-3 py-1.5 text-sm text-text-muted transition hover:bg-surface-hover hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-gray-400 dark:hover:bg-slate-700 dark:hover:text-white"
+          onClick={onCancel}
+        >
+          Abbrechen
+        </button>
+      </div>
 
-        <div className="mt-2 grid grid-cols-7 gap-1 text-center text-xs">
-          {['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'].map((w) => (
-            <div key={w} className="font-medium">
-              {w}
+      {/* Kalendertage */}
+      <div className="mt-3 grid grid-cols-7 gap-1 text-center text-xs">
+        {['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'].map((w) => (
+          <div key={w} className="font-medium text-text-muted dark:text-gray-400">
+            {w}
+          </div>
+        ))}
+        {Array.from({ length: 31 }).map((_, i) => {
+          const d = i + 1;
+          const isSelected = day === d;
+          return (
+            <div key={d} className="py-1">
+              <button
+                type="button"
+                onClick={() => pick(d)}
+                className={[
+                  'h-8 w-full rounded-full text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary',
+                  isSelected
+                    ? 'bg-primary text-white hover:bg-primary-hover'
+                    : 'hover:bg-surface-hover dark:hover:bg-slate-700',
+                ].join(' ')}
+                aria-label={`Tag ${d} auswählen`}
+              >
+                {d}
+              </button>
             </div>
-          ))}
+          );
+        })}
+      </div>
 
-          {Array.from({ length: 31 }).map((_, i) => {
-            const d = i + 1;
-            return (
-              <div key={d} className={`py-1 ${d ? 'cursor-pointer rounded' : ''}`}>
-                <button
-                  onClick={() => pick(d)}
-                  className={`w-full ${day === d ? 'bg-sky-600 text-white rounded' : 'hover:bg-gray-100 dark:hover:bg-slate-700 rounded'} focus:outline-none focus:ring-2 focus:ring-sky-500`}
-                >
-                  {d}
-                </button>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-2">
-          <div className="text-xs font-semibold">Ereignisse</div>
-          <div className="mt-1 max-h-40 overflow-auto text-xs">
-            {loadingEvents ? (
-              <div className="text-slate-500">Lade Ereignisse …</div>
-            ) : error ? (
-              <div className="text-red-600">{error}</div>
-            ) : events.length === 0 ? (
-              <div className="text-slate-500">Keine Ereignisse</div>
-            ) : (
-              <ul>
-                {events.map((e) => (
-                  <li key={e.id} className="py-1 border-b last:border-b-0">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <button
-                          className="font-medium text-left"
-                          onClick={() => openEventDetail(e.id)}
-                        >
-                          {e.title}
-                        </button>
-                        <div className="text-slate-500 text-xs">
-                          {new Date(e.start).toLocaleTimeString('de-DE')}
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          className="text-xs text-red-600"
-                          onClick={() => void removeEvent(e.id)}
-                        >
-                          Löschen
-                        </button>
+      {/* Ereignisliste */}
+      <div className="mt-3">
+        <div className="text-xs font-semibold text-text-muted dark:text-gray-400">Ereignisse</div>
+        <div className="mt-1 max-h-40 overflow-auto text-xs">
+          {loadingEvents ? (
+            <div className="flex items-center gap-2 text-text-muted">
+              <span className="h-2 w-2 animate-pulse rounded-full bg-primary/60" />
+              Lade Ereignisse …
+            </div>
+          ) : error ? (
+            <div className="text-danger">{error}</div>
+          ) : events.length === 0 ? (
+            <div className="text-text-muted">Keine Ereignisse</div>
+          ) : (
+            <ul className="space-y-1.5">
+              {events.map((e) => (
+                <li key={e.id} className="rounded-lg border border-border-soft p-2 dark:border-white/10">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <button
+                        type="button"
+                        className="truncate font-medium text-text hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:text-white dark:hover:text-primary"
+                        onClick={() => openEventDetail(e.id)}
+                      >
+                        {e.title}
+                      </button>
+                      <div className="text-text-muted dark:text-gray-500">
+                        {new Date(e.start).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+                    <button
+                      type="button"
+                      className="rounded p-1 text-text-muted transition hover:bg-danger-soft hover:text-danger dark:text-gray-400 dark:hover:bg-danger/10 dark:hover:text-danger"
+                      onClick={() => void removeEvent(e.id)}
+                      aria-label={`Ereignis "${e.title}" löschen`}
+                    >
+                      <IconBadge icon={<Trash2 />} size="sm" variant="default" />
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
-      {editingEventId && editingEvent ? (
-        <div className="mt-2 border-t pt-2">
-          <h4 className="text-sm font-semibold">Ereignis bearbeiten</h4>
-          <input
-            className="w-full rounded border px-2 py-1 text-sm mt-2"
-            value={editingEvent.title}
-              onChange={(e) =>
-                setEditingEvent((prev) => (prev ? { ...prev, title: e.target.value } : prev))
-              }
-          />
-          <textarea
-            className="w-full rounded border px-2 py-1 text-sm mt-2"
-            rows={3}
-            value={editingEvent.description ?? ''}
-            onChange={(e) =>
-              setEditingEvent((prev) => (prev ? { ...prev, description: e.target.value } : prev))
-            }
-          />
-          <div className="mt-2 flex gap-2 justify-end">
-            <button
-              className="rounded px-3 py-1 text-sm"
-              onClick={() => {
-                setEditingEventId(null);
-                setEditingEvent(null);
-              }}
-            >
-              Abbrechen
-            </button>
-            <button
-              className="rounded bg-sky-600 px-3 py-1 text-sm text-white"
-              onClick={() => void saveEventEdits()}
-            >
-              Speichern
-            </button>
+
+      {/* Ereignis‑Editor (eingeklappt) */}
+      {editingEventId && editingEvent && (
+        <div className="mt-4 border-t border-border-soft pt-4 dark:border-white/10">
+          <h4 className="text-sm font-semibold text-text dark:text-white">Ereignis bearbeiten</h4>
+          <div className="mt-3 space-y-3">
+            <div>
+              <label htmlFor="edit-event-title" className="sr-only">Titel</label>
+              <input
+                id="edit-event-title"
+                className="w-full rounded-lg border border-border-soft bg-white/70 px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:focus:ring-primary/20"
+                value={editingEvent.title}
+                onChange={(e) =>
+                  setEditingEvent((prev) => (prev ? { ...prev, title: e.target.value } : prev))
+                }
+                placeholder="Titel"
+              />
+            </div>
+            <div>
+              <label htmlFor="edit-event-description" className="sr-only">Beschreibung</label>
+              <textarea
+                id="edit-event-description"
+                rows={3}
+                className="w-full rounded-lg border border-border-soft bg-white/70 px-3 py-2 text-sm text-text outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-white/10 dark:bg-slate-800/50 dark:text-white dark:focus:ring-primary/20"
+                value={editingEvent.description ?? ''}
+                onChange={(e) =>
+                  setEditingEvent((prev) => (prev ? { ...prev, description: e.target.value } : prev))
+                }
+                placeholder="Beschreibung"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-lg border border-border-soft px-3 py-1.5 text-sm font-medium text-text-soft transition hover:bg-surface-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/10 dark:text-gray-300 dark:hover:bg-slate-800"
+                onClick={() => {
+                  setEditingEventId(null);
+                  setEditingEvent(null);
+                }}
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-sm font-medium text-white shadow-glow transition hover:bg-primary-hover hover:shadow-primary-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:bg-primary/80 dark:hover:bg-primary"
+                onClick={() => void saveEventEdits()}
+              >
+                <IconBadge icon={<Save />} size="sm" variant="default" />
+                Speichern
+              </button>
+            </div>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }

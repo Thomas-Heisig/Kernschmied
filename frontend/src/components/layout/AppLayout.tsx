@@ -1,3 +1,5 @@
+// F:\Kernschmied\frontend\src\components\layout\AppLayout.tsx
+
 import type { ReactNode } from 'react';
 
 import { AppFooter } from './AppFooter';
@@ -11,6 +13,9 @@ interface AppLayoutProps {
   schemaVersion?: string;
   applicationVersion?: string;
   environment?: string;
+  apiVersion?: string;
+  configRevision?: number;
+  backendOnline?: boolean;
   userName?: string;
   onToggleTheme: () => void;
   onOpenSettings: () => void;
@@ -28,6 +33,9 @@ export function AppLayout({
   schemaVersion,
   applicationVersion,
   environment,
+  apiVersion = 'v1',
+  configRevision = 1,
+  backendOnline = true,
   userName,
   onToggleTheme,
   onOpenSettings,
@@ -37,7 +45,7 @@ export function AppLayout({
   onCreateInternWorkspace,
 }: AppLayoutProps) {
   return (
-    <div className="flex h-full min-h-0 w-full flex-col overflow-hidden bg-surface-muted text-text dark:bg-slate-950 dark:text-white">
+    <div className="flex min-h-screen h-screen w-full flex-col overflow-hidden bg-surface-muted text-text dark:bg-slate-950 dark:text-white">
       <AppHeader
         theme={theme}
         schemaVersion={schemaVersion}
@@ -51,17 +59,28 @@ export function AppLayout({
         onCreatePublicWorkspace={onCreatePublicWorkspace}
         onCreateInternWorkspace={onCreateInternWorkspace}
       />
+
       <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden">
         {hierarchySidebar}
+
         <main
-          className="flex min-h-0 min-w-0 flex-1 overflow-hidden"
+          className="flex min-h-0 min-w-0 flex-1 overflow-auto bg-white dark:bg-slate-950"
           aria-label="Anwendungsbereich"
         >
           {children}
         </main>
+
         {contextSidebar}
       </div>
-      <AppFooter schemaVersion={schemaVersion} />
+
+      <AppFooter
+        schemaVersion={schemaVersion}
+        environment={environment}
+        apiVersion={apiVersion}
+        applicationVersion={applicationVersion}
+        configRevision={configRevision}
+        backendOnline={backendOnline}
+      />
     </div>
   );
 }

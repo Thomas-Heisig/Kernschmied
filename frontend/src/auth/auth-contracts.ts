@@ -47,6 +47,7 @@ export interface UserPreferences {
   compactMode: boolean;
   defaultView: string | null;
   notificationsEnabled: boolean;
+  aiResponseOnMentions: boolean;
   revision: number;
   updatedAt: string | null;
   schemaVersion: string;
@@ -59,6 +60,7 @@ export interface UpdateUserPreferencesInput {
   compactMode?: boolean;
   defaultView?: string | null;
   notificationsEnabled?: boolean;
+  aiResponseOnMentions?: boolean;
   revision?: number;
 }
 
