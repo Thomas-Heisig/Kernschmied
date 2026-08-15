@@ -46,6 +46,7 @@ const guestUser = {
 describe('SelectedNodeWorkspace user area', () => {
   beforeEach(() => {
     vi.resetAllMocks();
+    window.localStorage.clear();
     vi.mocked(useAuth).mockReturnValue({ user: guestUser } as ReturnType<typeof useAuth>);
     vi.mocked(useUserPanels).mockReturnValue({
       activePanel: null,
@@ -63,6 +64,7 @@ describe('SelectedNodeWorkspace user area', () => {
   it('renders the own user area without technical schema or prompt details', async () => {
     const onNavigateToNode = vi.fn();
     const onAction = vi.fn();
+    window.localStorage.setItem('kernschmied.sidebar.recent', JSON.stringify(['chat-planung']));
 
     render(
       <SelectedNodeWorkspace
@@ -71,14 +73,30 @@ describe('SelectedNodeWorkspace user area', () => {
           type: 'user',
           name: 'Thomas',
           metadata: { entity_type: 'user', entity_id: 'guest-user' },
-          actions: ['read', 'create_child'],
+          actions: ['read', 'create_child', 'edit_prompt'],
           children: [
             {
               id: 'workspace-thomas',
               type: 'workspace',
               name: 'Mein Arbeitsbereich',
               actions: ['read'],
-              children: [],
+              children: [
+                {
+                  id: 'project-website',
+                  type: 'project',
+                  name: 'Website Relaunch',
+                  actions: ['read'],
+                  children: [
+                    {
+                      id: 'chat-planung',
+                      type: 'chat',
+                      name: 'Planungsrunde',
+                      actions: ['read'],
+                      children: [],
+                    },
+                  ],
+                },
+              ],
             },
           ],
         }}
@@ -106,10 +124,21 @@ describe('SelectedNodeWorkspace user area', () => {
     expect(await screen.findByText('0/1')).toBeInTheDocument();
     expect(screen.getByText('0/2')).toBeInTheDocument();
     expect(screen.getByText('0/5')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Verfügbare Projekte' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Website Relaunch öffnen' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Letzte Chats' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Planungsrunde öffnen' })).toBeInTheDocument();
+    expect(screen.getByText('Widgets & Anbindungen')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Bereich erstellen' }));
     expect(onAction).toHaveBeenCalledWith(
       'create_child',
+      expect.objectContaining({ id: 'user-guest-user' }),
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Prompt bearbeiten' }));
+    expect(onAction).toHaveBeenCalledWith(
+      'edit_prompt',
       expect.objectContaining({ id: 'user-guest-user' }),
     );
 
@@ -118,6 +147,12 @@ describe('SelectedNodeWorkspace user area', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Mein Arbeitsbereich/ }));
     expect(onNavigateToNode).toHaveBeenCalledWith('workspace-thomas');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Website Relaunch öffnen' }));
+    expect(onNavigateToNode).toHaveBeenCalledWith('project-website');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Planungsrunde öffnen' }));
+    expect(onNavigateToNode).toHaveBeenCalledWith('chat-planung');
   });
 
   it('does not expose the signed-in administrators profile in another user area', () => {
@@ -169,6 +204,11 @@ describe('SelectedNodeWorkspace user area', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Projekt erstellen' }));
     fireEvent.click(screen.getByRole('button', { name: 'Chat erstellen' }));
+    expect(
+      screen
+        .getByText('Gemeinsamer Rahmen für Projekte, direkte Chats, Zugriffsregeln und Bereichsfunktionen.')
+        .closest('section'),
+    ).toHaveAttribute('aria-label', 'Bereich: Bereich 1');
     expect(onAction).toHaveBeenNthCalledWith(
       1,
       'create_child',
@@ -194,9 +234,35 @@ describe('SelectedNodeWorkspace user area', () => {
     );
 
     fireEvent.click(screen.getByRole('button', { name: 'Chat erstellen' }));
+    expect(
+      screen
+        .getByText('Arbeitskontext für Chats, Projektprompt, Metadaten und angebundene Werkzeuge.')
+        .closest('section'),
+    ).toHaveAttribute('aria-label', 'Projekt: Projekt 1');
+    expect(screen.getByRole('button', { name: 'Projektprompt' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Projektwidgets' })).toBeInTheDocument();
     expect(onAction).toHaveBeenLastCalledWith(
       'create_child',
       expect.objectContaining({ id: 'project-1' }),
     );
+  });
+
+  it('uses the shared node overview for the system root', () => {
+    render(
+      <SelectedNodeWorkspace
+        node={{
+          id: 'system-root',
+          type: 'system',
+          name: 'System Root',
+          children: [],
+        }}
+      />,
+    );
+
+    expect(
+      screen
+        .getByText('Zentrale Betriebsübersicht, Konfiguration, Prompt und registrierte Systemfunktionen.')
+        .closest('section'),
+    ).toHaveAttribute('aria-label', 'Systemknoten: System Root');
   });
 });

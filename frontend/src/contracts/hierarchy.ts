@@ -11,6 +11,8 @@ export const HIERARCHY_SCHEMA_VERSION = '1.0' as const;
  * (z.B. das Anlegen globaler Benutzerknoten durch Admins).
  */
 export const SYSTEM_ROOT_NODE_ID = 'system-root' as const;
+export const USERS_ROOT_NODE_ID = 'users-root' as const;
+export const WORKSPACES_ROOT_NODE_ID = 'workspaces-root' as const;
 
 export type HierarchyNodeId = string;
 export type HierarchyNodeType = string;

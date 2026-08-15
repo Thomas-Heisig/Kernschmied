@@ -205,7 +205,10 @@ class InMemoryHierarchyRepository:
                                     "selectable": True,
                                     "disabled": False,
                                     "status": None,
-                                    "metadata": {},
+                                    "metadata": {
+                                        "entity_type": "conversation",
+                                        "entity_id": "conversation-chat-1",
+                                    },
                                     "revision": 1,
                                     "actions": [],
                                     "children": [],

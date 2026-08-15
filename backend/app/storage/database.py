@@ -167,6 +167,7 @@ class DatabaseManager:
         engine_kwargs: dict[str, object] = dict(echo=echo, pool_pre_ping=True)
         if self._database_url.startswith("sqlite"):
             engine_kwargs["poolclass"] = NullPool
+            engine_kwargs["connect_args"] = {"timeout": 30}
 
         self._engine = create_async_engine(
             self._database_url,
@@ -187,6 +188,7 @@ class DatabaseManager:
 
                     with suppress(Exception):
                         dbapi_connection.execute("PRAGMA foreign_keys = ON")
+                        dbapi_connection.execute("PRAGMA busy_timeout = 30000")
 
                 event.listen(self._engine.sync_engine, "connect", _enable_sqlite_fk)
         except Exception:
@@ -256,8 +258,6 @@ _database_manager = DatabaseManager(settings.effective_database_url)
 
 # Ensure we attempt synchronous cleanup at process exit to release any
 # lingering SQLite file handles (helps Windows tempfile cleanup).
-from contextlib import suppress
-
 with suppress(Exception):
     import atexit
 

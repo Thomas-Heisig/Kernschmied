@@ -53,7 +53,9 @@ def test_guest_can_update_own_profile(monkeypatch):
         last_login_at=None,
     )
     update_profile = AsyncMock(return_value=updated_profile)
+    ensure_mailbox = AsyncMock()
     monkeypatch.setattr(users_api, "update_current_profile", update_profile)
+    monkeypatch.setattr(users_api, "ensure_user_mailbox", ensure_mailbox)
     app.dependency_overrides[get_current_user] = get_guest_user
     app.dependency_overrides[get_session] = get_test_session
 
@@ -70,5 +72,11 @@ def test_guest_can_update_own_profile(monkeypatch):
         "guest-user",
         display_name="Updated Guest",
         email=None,
+    )
+    ensure_mailbox.assert_awaited_once_with(
+        session,
+        "guest-user",
+        external_email=None,
+        sync_external_email=True,
     )
     session.commit.assert_awaited_once()

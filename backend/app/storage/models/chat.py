@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import uuid4
 
-from pydantic import JsonValue
 from sqlalchemy import (
     JSON,
     DateTime,
@@ -21,9 +21,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.storage.models.base import Base, utc_now
 
-# Keine eigene rekursive JsonValue-Definition – importiert aus pydantic
-JsonScalar = str | int | float | bool | None
-JsonObject = dict[str, JsonValue]
+JsonObject = dict[str, Any]
 
 
 def _create_empty_json_object() -> JsonObject:

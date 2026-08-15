@@ -149,6 +149,7 @@ class ChatRepositoryAdapter:
             )
 
             await chat_repo.add_message(message)
+            await chat_repo.mark_message_complete(message.id)
             raw_mentions = metadata.get("mentions", [])
             mailbox_message_ids: list[str] = []
             if user_id and isinstance(raw_mentions, list):
@@ -216,6 +217,7 @@ class ChatRepositoryAdapter:
             )
 
             await chat_repo.add_message(message)
+            await chat_repo.mark_message_complete(message.id)
             await session.commit()
             # best-effort: do not call projection here; projection should be triggered by API layer after commit
 

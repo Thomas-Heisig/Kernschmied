@@ -17,8 +17,6 @@ import {
   hasActionHandler,
   filterSupportedActionKinds,
   executeRegisteredAction,
-  listActionDefinitions,
-  isActionEnabled,
 } from '../../registry/actionRegistry';
 import IconBadge from '../common/IconBadge';
 import { DynamicIcon } from '../../registry/iconRegistry';
@@ -230,13 +228,11 @@ function TreeNode(props: any) {
   const iconName = typeof nodeDef?.icon === 'string' ? nodeDef.icon : undefined;
 
   // Aktionen
-  const supported = useMemo(() => filterSupportedActionKinds(getNodeActions(node)), [node]);
-  const effective =
-    supported.length > 0
-      ? supported
-      : listActionDefinitions()
-          .map((d) => d.kind)
-          .filter(isActionEnabled);
+  const supported = useMemo(
+    () => filterSupportedActionKinds(getNodeActions(node).filter((action) => action !== 'read')),
+    [node],
+  );
+  const effective = supported;
   const visible = effective.slice(0, maxVisibleActions);
   const overflow = effective.slice(maxVisibleActions);
 
@@ -412,7 +408,7 @@ function TreeNode(props: any) {
         </button>
 
         {/* "Mehr"‑Button + Dropdown */}
-        <div className="relative ml-auto" ref={menuRef}>
+        {effective.length > 0 ? <div className="relative ml-auto" ref={menuRef}>
           <button
             type="button"
             draggable={false}
@@ -553,7 +549,7 @@ function TreeNode(props: any) {
                 })}
             </div>
           )}
-        </div>
+        </div> : null}
       </div>
 
       {/* Kinder (rekursiv) */}

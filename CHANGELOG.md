@@ -13,6 +13,20 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Hinzugefügt
 
+- System, Benutzer, Bereich, Projekt und Chat verwenden einen gemeinsamen,
+  kontrastreichen Knoten-Kopf mit ruhiger Neutral-/Salbeipalette, einheitlichen
+  Kennzahlen, Aktionen und Abschnittsmustern.
+- Der eigene Benutzerknoten bietet ein persönliches Dashboard mit Profil- und
+  Sicherheitsaktionen, Kennzahlen, verfügbaren Bereichen und Projekten, zuletzt
+  verwendeten Chats, Kontingenten sowie passenden Widgets und Anbindungen.
+- Chatantworten unterstützen sicher gerendertes CommonMark/GFM mit Überschriften,
+  Listen, Tabellen, Zitaten, Code, Links sowie vorbereiteter Bild-, Audio- und
+  Videoausgabe; Entwürfe weisen außerhalb des Prompts auf Prüfbedarf und
+  erkennbare Platzhalter hin.
+- Benutzer können am eigenen Hierarchieknoten einen persönlichen Prompt pflegen;
+  KI-Ausgaben lassen sich kopieren, als Markdown herunterladen oder beantworten.
+- Unterchats verwenden den persistierten Kontext ihrer Elternchats als
+  abgegrenzte Datenlage für neue KI-Antworten.
 - Benutzergebundene Postfächer versenden Willkommens-, Mention- und Testmails über eine fehlertolerante SMTP-Outbox; Mailpit steht als lokaler Testprovider bereit.
 - `@Administrator` erzeugt eine direkte, als Administrator attribuierte KI-Auto-Antwort statt einer gewöhnlichen Benutzeranfrage.
 - Nur das geschützte Administrator-Systemkonto löst diese Auto-Antwort aus; namentlich erwähnte menschliche Administratoren erhalten normale Mention- und Postfachbenachrichtigungen.
@@ -27,6 +41,12 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Geändert
 
+- Der persönliche Arbeitsbereich verzichtet auf den dunklen blau-grauen Hero
+  und mehrfarbige Knotenkarten; Bereiche, Projekte, Chats und Funktionen folgen
+  durchgängig einer zurückhaltenden Pastellgestaltung.
+- Gesendete Nachrichten verwenden im Lightmode eine kontrastreiche dunkle
+  Oberfläche mit weißer Schrift; Live-Chat und Chat-Historie nutzen denselben
+  Rich-Content-Renderer.
 - KI-Ausgaben werden ausdrücklich attribuiert und durch einen serverseitigen Wahrheits- und Datenschutzrahmen geschützt; freigegebene Profildaten gelten niemals als Anweisungen.
 - Pylance-Typfehler bei Mention-Defaults, Assistant-Metadaten und Session-Presence wurden beseitigt.
 - Admin- und Selbstregistrierung melden ungültige Passwörter als konkrete Eingabefehler statt HTTP 500; die Browserformulare validieren die Passwortregeln vor dem Versand.
@@ -36,6 +56,23 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Behoben
 
+- Hierarchie-Konfigurationen überschreiben Runtime-Defaults wieder mit der
+  vorgesehenen Priorität; Einzelknoten liefern dieselbe öffentliche JSON-Form
+  wie der Hierarchiebaum, und Profil-/Widget-/Node-Type-Vertragstests bilden
+  ihre produktiven Abhängigkeiten korrekt ab.
+- Das Dateien-Widget übergibt den erforderlichen Hierarchieknoten an die API;
+  nicht angebundene Chat-Widgets werden im Benutzerbereich nicht mehr als
+  funktionierende Integration angeboten.
+- Sidebar-Menüs folgen ausschließlich den effektiven Backend-Berechtigungen und
+  zeigen keine globalen Fallback-Aktionen oder reine Lesefähigkeiten mehr.
+- Prompt-, Konfigurations- und Werkzeugaktionen sind für berechtigte Eigentümer
+  von Chats und Unterchats wieder im Hierarchiemenü erreichbar.
+- Kanonische Benutzer- und Workspace-Container werden mit den richtigen
+  Knotentypen angelegt; Frontend-Erstellen-Aktionen verwenden diese Container.
+- Persistierte Chatnachrichten erhalten nach erfolgreichem Speichern einen
+  dauerhaften Abschlussstatus.
+- Isolierte Fresh-Database-Tests und SQLite-Busy-Timeouts stabilisieren parallele
+  Persistenztests.
 - Persönliche JSON-Präferenzen einschließlich zusätzlicher KI-Antworten werden zuverlässig persistiert; Windows-Zeitzonen werden über `tzdata` aufgelöst.
 - Chat-History-, Repository- und Nulladapterverträge sind für Elternnachrichten und Benutzerkontext synchronisiert.
 

@@ -1,9 +1,11 @@
 // F:\Kernschmied\frontend\src\components\chat\ChatHistoryPanel.tsx
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { RefreshCw, Copy, X } from 'lucide-react';
-import { useChatHistory, type ChatMessage } from '../../hooks/useChatHistory';
+import { useChatHistory } from '../../hooks/useChatHistory';
 import IconBadge from '../common/IconBadge';
+
+const ChatMessageContent = lazy(() => import('./ChatMessageContent'));
 
 export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
   const [conversationId, setConversationId] = useState('');
@@ -38,52 +40,6 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
     } catch {
       /* ignore */
     }
-  }
-
-  // Nachrichteninhalt mit Code‑Blöcken rendern
-  function renderContent(msg: ChatMessage) {
-    const content = msg.content ?? msg.text ?? '';
-    const parts: Array<{ type: 'text' | 'code'; text: string; lang?: string }> = [];
-    const re = /```(.*?)\n([\s\S]*?)```/gm;
-    let lastIndex = 0;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(content)) !== null) {
-      if (m.index > lastIndex) {
-        parts.push({ type: 'text', text: content.substring(lastIndex, m.index) });
-      }
-      parts.push({ type: 'code', lang: m[1]?.trim() || undefined, text: m[2] });
-      lastIndex = re.lastIndex;
-    }
-    if (lastIndex < content.length) {
-      parts.push({ type: 'text', text: content.substring(lastIndex) });
-    }
-
-    return (
-      <div className="space-y-2">
-        {parts.map((p, i) =>
-          p.type === 'text' ? (
-            <div key={i} className="whitespace-pre-wrap text-sm leading-6">
-              {p.text}
-            </div>
-          ) : (
-            <div
-              key={i}
-              className="relative rounded-md bg-slate-900 p-2 font-mono text-xs text-slate-100 dark:bg-slate-950 dark:text-slate-300"
-            >
-              <pre className="whitespace-pre-wrap overflow-auto">{p.text}</pre>
-              <button
-                className="absolute right-1 top-1 rounded bg-white/10 p-1 text-slate-400 hover:bg-white/20 hover:text-slate-200 transition"
-                onClick={() => copyText(`${msg.id}-${i}`, p.text)}
-                aria-label="Code kopieren"
-                type="button"
-              >
-                <IconBadge icon={<Copy />} size="sm" variant="default" />
-              </button>
-            </div>
-          )
-        )}
-      </div>
-    );
   }
 
   return (
@@ -164,7 +120,7 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
                   <div
                     className={`max-w-[86%] rounded-2xl px-4 py-3 shadow-sm ${
                       isUser
-                        ? 'bg-primary text-white dark:bg-primary-dark'
+                        ? 'bg-slate-800 text-white ring-1 ring-slate-950/10 dark:bg-primary-dark dark:ring-white/10'
                         : 'border border-border-soft bg-white/90 dark:border-white/10 dark:bg-slate-800/80'
                     }`}
                   >
@@ -201,7 +157,11 @@ export default function ChatHistoryPanel({ onClose }: { onClose: () => void }) {
                     </div>
 
                     {/* Inhalt */}
-                    {renderContent(m)}
+                    <div className={isUser ? '[&_.chat-message-content]:text-white [&_.chat-message-content_a]:text-cyan-200' : 'text-slate-900 dark:text-gray-100'}>
+                      <Suspense fallback={<p className="whitespace-pre-wrap text-sm leading-6">{m.content ?? m.text ?? ''}</p>}>
+                        <ChatMessageContent content={m.content ?? m.text ?? ''} isAssistant={!isUser} />
+                      </Suspense>
+                    </div>
                   </div>
                 </div>
               );

@@ -12,9 +12,34 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
   Quellcode-Markern in `documentation/todo.md` zusammengeführt; ersetzte
   TODO-Dateien entfernt und Roadmap sowie Status auf die zentrale Liste
   ausgerichtet.
+- Konsolidierungsanforderungen für Settings-Klassifizierung, zentrale
+  Runtime-Auflösung, Self-Knowledge, Live-Kontext, Presence, Mentions,
+  Tool-Settings, Provider-Adapter, Registry-Bereinigung und Repo-Hygiene in die
+  zentrale TODO-Liste übernommen und mit dem aktuellen 153-Key-Bestand
+  abgeglichen.
 
 ### Hinzugefügt
 
+- Wiederverwendbarer `NodeWorkspaceOverview` für die vollständige Hierarchiekette
+  `System → Benutzer → Bereich → Projekt → Chat` mit gemeinsamen Metriken,
+  Aktionsbuttons und responsiver Neutral-/Salbeigestaltung. Bereich und Projekt
+  binden ihre effektiven Widgets nun im selben Abschnittsmuster ein.
+- Benutzerbezogenes Knoten-Dashboard mit kontrastreichem Identitätsbereich,
+  Konto-Schnellaktionen, sichtbaren Bereichen und verschachtelten Projekten,
+  zuletzt verwendeten Chats, Nutzungskennzahlen und Registry-Widgets. Alle
+  Inhalte werden ausschließlich aus dem berechtigungsprojizierten Benutzerbaum
+  abgeleitet.
+- Sicherer, lazy geladener CommonMark-/GFM-Renderer für Live-Chat und Historie
+  mit typografischen Überschriften, Listen, Tabellen, Zitaten, Code, Links,
+  Bildern und nativen Audio-/Video-Controls; Roh-HTML bleibt deaktiviert.
+- Sichtbarer KI-Entwurfshinweis und gesonderte Warnung für erkennbare
+  Platzhalter, ohne Modellprompts zu verändern.
+- Eigene Benutzerknoten unterstützen einen vererbbaren persönlichen Prompt;
+  fertige KI-Ausgaben bieten Kopieren, Markdown-Download und Antworten direkt
+  in einer kompakten Aktionsleiste.
+- Unterchats erhalten die persistierten Gesprächsergebnisse ihrer
+  übergeordneten Chats in Hierarchiereihenfolge als begrenzten,
+  nicht-instruktiven Modellkontext.
 - Persistente, von Chatnachrichten getrennte `@Benutzer`-Anfragen mit eigenem Statuslebenszyklus, atomarer Speicherung und serverseitig auf den aktiven Hierarchiepfad begrenzter Empfängerauswahl.
 - Mention-Autocomplete im Chat, persönlicher Anfrageeingang mit Statusaktionen, Ungelesen-Badge im Header sowie eine Online-Liste im Kontextbereich auf Basis aktiver Sitzungen.
 - Persönliche Einstellung für zusätzliche KI-Antworten bei Benutzeranfragen; für Administratoren ist sie standardmäßig aktiv, für andere Rollen optional und standardmäßig deaktiviert.
@@ -47,6 +72,12 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Geändert
 
+- Der bisher dunkle blau-graue Benutzer-Hero und cyan/violett/emerald gemischte
+  Knotenkarten wurden durch eine einzelne ruhige Pastellakzentfamilie ersetzt;
+  Chatnachrichten behalten mit tiefem Grün und weißer Schrift starken Kontrast.
+- Eigene gesendete Nachrichten verwenden im Lightmode eine kontrastreiche
+  `slate-800`-Fläche mit weißer Typografie; der bestehende Darkmode bleibt
+  erhalten. Medienhöhen verwenden kanonische Tailwind-Klassen.
 - Strikte Pylance-Typgrenzen für Mention-Defaults, Assistant-Metadaten und asynchronen Sitzungszugriff bereinigt; das Session-Testdouble bildet den synchronen `AsyncSession.add()`-Vertrag nun korrekt ab.
 - KI-Anfragen erhalten einen unveränderlichen Wahrheits-, Datenschutz- und Attributionsrahmen; freigegebene Profildaten werden ausschließlich als nicht-instruktive Daten übergeben.
 - Admin-Benutzeranlage und Selbstregistrierung behandeln Passwort-Policyverletzungen als verständliche HTTP-422-Eingabefehler statt als internen Serverfehler; beide Browserformulare prüfen Mindestlänge und Benutzername vor dem Request und besitzen korrekt zugeordnete Feldlabels.
@@ -65,6 +96,28 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Behoben
 
+- Hierarchische `models.max_output_tokens`-Overrides werden auch ohne
+  injizierten `HierarchyService` über die kanonische Vererbung aufgelöst.
+  `GET /hierarchy/{node_id}` verwendet dieselbe öffentliche JSON-Knotenform wie
+  der Baum-Endpunkt; Profil-, Registry-, Fallback- und Benutzerkalender-Fixtures
+  sind an die aktuellen Verträge angepasst.
+- Die Dateien-Anbindung sendet `node_id` gemäß Backendvertrag; der Benutzerbereich
+  filtert Widget-Badges und Renderer auf dort funktionierende Kalender- und
+  Dateien-Komponenten, während letzte Chats über die Hierarchienavigation laufen.
+- Die Sidebar zeigt ausschließlich ausführbare, vom Backend freigegebene
+  Knotenaktionen; reine Lesefähigkeiten und globale Fallback-Aktionen erscheinen
+  nicht mehr als Menübefehle.
+- Eigentümer eigener Bereiche, Projekte, Chats und Unterchats erhalten wieder
+  die berechtigungsabhängigen Aktionen für Prompt, Konfiguration, Werkzeuge,
+  Verschieben und bei Chats Export; fremde Knoten bleiben geschützt.
+- Die DEV-Systemcontainer verwenden ihre dedizierten Knotentypen; Benutzer- und
+  Workspace-Erstellung werden über `users-root` beziehungsweise
+  `workspaces-root` geroutet und bestehen die serverseitige Kindtypvalidierung.
+- Erfolgreich persistierte Benutzer- und Assistant-Nachrichten wechseln auf
+  `complete`, sodass Versand- und Antwortstatus auch nach einem Reload korrekt
+  dargestellt werden.
+- Fresh-Database-Tests erzeugen eine isolierte aktuelle SQLite-Datenbank und
+  SQLite-Verbindungen warten bei kurzen parallelen Schreibtransaktionen.
 - Persönliche JSON-Präferenzen werden durch Neuzuweisung statt unerkannter In-place-Mutation dauerhaft gespeichert; `Europe/Berlin` funktioniert unter Windows durch das gebündelte `tzdata`.
 - Chat-Repository-Protokoll und Nulladapter verwenden wieder dieselbe Signatur für Benutzer-, Hierarchie- und Elternnachrichtenbezug.
 - Die Sitzungsverwaltung normalisiert SQLite-Zeitstempel nach UTC, sortiert die aktuelle Sitzung zuerst und kennzeichnet anhand der tatsächlichen Session-ID genau eine Sitzung als aktuell; der Sitzungsdialog zeigt Überschrift und Schließen-Aktion nur einmal.

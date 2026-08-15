@@ -27,7 +27,7 @@ import {
   selectSelectedNodeId,
 } from '../store';
 import type { HierarchyNode, HierarchyTree, HierarchyActionKind } from '../contracts/hierarchy';
-import { SYSTEM_ROOT_NODE_ID } from '../contracts/hierarchy';
+import { USERS_ROOT_NODE_ID, WORKSPACES_ROOT_NODE_ID } from '../contracts/hierarchy';
 import { useTheme } from '../theme';
 import { AppWorkspace } from './AppWorkspace';
 import { useAppBootstrap } from './useAppBootstrap';
@@ -302,7 +302,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       await createHierarchyNode?.({
         type: 'workspace',
         name,
-        parent_id: root.id ?? null,
+        parent_id: WORKSPACES_ROOT_NODE_ID,
         metadata: { visibility: 'public', owner_user_id: auth.user?.id },
       } as any);
       push('success', `Public-Bereich '${name}' erstellt.`);
@@ -320,7 +320,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       await createHierarchyNode?.({
         type: 'workspace',
         name,
-        parent_id: root.id ?? null,
+        parent_id: WORKSPACES_ROOT_NODE_ID,
         metadata: { visibility: 'internal', owner_user_id: auth.user?.id },
       } as any);
       push('success', `Interner Bereich '${name}' erstellt.`);
@@ -338,7 +338,7 @@ function AppShellContent({ bootstrapHook }: { bootstrapHook: ReturnType<typeof u
       await createHierarchyNode?.({
         type: 'user',
         name: name.trim() || 'Neuer Benutzer',
-        parent_id: SYSTEM_ROOT_NODE_ID,
+        parent_id: USERS_ROOT_NODE_ID,
         metadata: {},
       } as any);
       push('success', `Benutzer '${name}' erstellt.`);

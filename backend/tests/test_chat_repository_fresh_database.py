@@ -1,7 +1,7 @@
 # pyright: reportPrivateUsage=false
 import asyncio
 import os
-from pathlib import Path
+from collections.abc import AsyncIterator
 from typing import Any, cast
 
 import pytest
@@ -14,22 +14,13 @@ from app.storage.repositories.chat import ChatRepository, InvalidMessageStatusTr
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "sqlite+aiosqlite:///F:/Kernschmied/backend/data/chat.clean-fresh-test.db",
-)
-
 
 @pytest.fixture(scope="module")
-async def session_factory() -> async_sessionmaker[AsyncSession]:
-    # Prevent init_database from attempting to run Alembic here — we created
-    # the fresh test DB via a separate alembic run. Disable automatic upgrades
-    # for the test run so metadata.create_all does not override migration state.
+async def session_factory(
+    tmp_path_factory: pytest.TempPathFactory,
+) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
     os.environ["DATABASE_MIGRATION_MODE"] = "disabled"
-    # Point the test process at the fresh test DB and reload settings so the
-    # DatabaseManager will use the correct resolved URL.
-    backend_dir = Path(__file__).resolve().parents[1]
-    test_db = backend_dir / "data" / "chat.clean-fresh-test.db"
+    test_db = tmp_path_factory.mktemp("chat-repository") / "fresh.db"
     os.environ["DATABASE_URL"] = f"sqlite+aiosqlite:///{test_db.as_posix()}"
 
     new_settings = reload_settings()
@@ -40,8 +31,9 @@ async def session_factory() -> async_sessionmaker[AsyncSession]:
         new_settings.effective_database_url
     )
 
-    sf = await init_database(create_schema=False, echo=False)
-    return sf
+    session_factory = await init_database(create_schema=True, echo=False)
+    yield session_factory
+    await _database_module.get_database_manager().dispose()
 
 
 @pytest.mark.asyncio

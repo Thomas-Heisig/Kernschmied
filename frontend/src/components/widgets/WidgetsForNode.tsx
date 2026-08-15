@@ -58,7 +58,7 @@ export default function WidgetsForNode({ nodeId, variant = 'workspace', showEmpt
     return (
       <div className="space-y-4">
         <div>
-          <WidgetBadges nodeId={nodeId} />
+          <WidgetBadges nodeId={nodeId} allowedComponentTypePrefixes={allowedComponentTypePrefixes} />
         </div>
 
         <div className="flex flex-col gap-4">
@@ -110,7 +110,7 @@ export default function WidgetsForNode({ nodeId, variant = 'workspace', showEmpt
   return (
     <div className="space-y-3">
       <div>
-        <WidgetBadges nodeId={nodeId} />
+        <WidgetBadges nodeId={nodeId} allowedComponentTypePrefixes={allowedComponentTypePrefixes} />
       </div>
 
       <div className="flex flex-col gap-2">

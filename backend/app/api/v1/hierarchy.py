@@ -39,7 +39,6 @@ from app.hierarchy.service import (
 from app.services.hierarchy_service import create_hierarchy_service
 from app.prompts.resolver import PromptResolver
 from app.hierarchy.permissions import HierarchyPermissionService
-from pydantic import BaseModel
 
 
 class PromptSource(BaseModel):
@@ -803,14 +802,14 @@ async def get_own_hierarchy_quotas(request: Request) -> dict[str, object]:
 
 @router.get(
     "/{node_id}",
-    response_model=HierarchyNode,
+    response_model=JsonObject,
     response_model_exclude_none=True,
     summary="Einzelnen Hierarchieknoten laden",
 )
 async def get_hierarchy_node(
     request: Request,
     node_id: str,
-) -> HierarchyNode:
+) -> JsonObject:
     """Liefert einen einzelnen, serialisierten Hierarchieknoten.
 
     Verwendet denselben Service und dieselben Berechtigungsprüfungen wie
@@ -823,7 +822,7 @@ async def get_hierarchy_node(
 
     try:
         node_any: Any = await service.get_node(node_id, actor=actor)
-        return cast(HierarchyNode, node_any)
+        return normalize_hierarchy(_publicize_node(node_any))
     except LookupError as exc:
         raise structured_http_error(
             request=request,

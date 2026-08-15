@@ -11,6 +11,7 @@ from app.services.chat_service import (
 from app.storage.adapters.chat_repository_adapter import ChatRepositoryAdapter
 from app.storage.models.base import Base as StorageBase
 from app.storage.models.chat import Chat as ChatModel
+from app.storage.models.chat import Message as MessageModel
 from sqlalchemy import event, select
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -106,6 +107,35 @@ def test_chat_adapter_hierarchy_behaviour() -> None:
                 )
                 res2 = (await session.execute(q2)).scalars().all()
                 assert len(res2) == 0
+
+            await adapter.append_user_message(
+                conversation_id="conv-ok",
+                message_id="message-user",
+                parent_message_id=None,
+                content="Hallo",
+                metadata={},
+                hierarchy_node_id="node-1",
+            )
+            await adapter.append_assistant_message(
+                conversation_id="conv-ok",
+                message_id="message-assistant",
+                parent_message_id="message-user",
+                model_id="m",
+                content="Antwort",
+                finish_reason="stop",
+                usage=None,
+                metadata={},
+            )
+
+            async with session_factory() as session:
+                messages = (
+                    await session.scalars(
+                        select(MessageModel).where(
+                            MessageModel.conversation_id == "conv-ok"
+                        )
+                    )
+                ).all()
+                assert {message.status for message in messages} == {"complete"}
 
         finally:
             if engine is not None:

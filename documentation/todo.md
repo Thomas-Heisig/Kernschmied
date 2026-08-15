@@ -10,16 +10,31 @@ Freigabekriterien. Sie enthalten keine parallelen Aufgabenlisten.
 
 ## P0 - Laufzeit und Datenintegrität
 
-- [ ] Alembic-Zustand mit `alembic heads` und `alembic current` dynamisch
+- [x] Alembic-Zustand mit `alembic heads` und `alembic current` dynamisch
       verifizieren; abweichende Entwicklungsdatenbanken sichern und sauber auf den
       Repository-Head migrieren oder neu erzeugen.
-- [ ] Den minimalen Seed aus kanonischen Systemcontainern und Administrator
+- [x] Den minimalen Seed aus kanonischen Systemcontainern und Administrator
       idempotent verifizieren; fachliche Workspaces, Projekte und Chats nur über
       reguläre Anwendungsflüsse erzeugen.
-- [ ] Conversation- und Message-Persistenz an reale Hierarchieknoten anbinden;
+- [x] Conversation- und Message-Persistenz an reale Hierarchieknoten anbinden;
       Create, Read und History einschließlich FK-Fehlerfällen testen.
+- [x] Persistierte Gesprächsergebnisse übergeordneter Chats als begrenzten,
+      nicht-instruktiven Kontext an Unterchat-Generierungen übergeben.
 - [ ] Chat-History beim Öffnen zusätzlich im Browser-E2E absichern; Laden,
       Deduplizierung und persistente Elternbezüge sind durch Backendtests abgedeckt.
+      Ein manueller Browser-Roundtrip einschließlich Knotenwechsel und Reload ist
+      verifiziert; die repository-eigene E2E-Automatisierung fehlt noch.
+- [ ] Eine kanonische Runtime-Konfigurationsauflösung außerhalb des `ChatService`
+      einführen und mit Vertragstests für die Priorität
+      `Request > Node > geerbte Hierarchie > globale Settings > Manifest > Bootstrap-Fallback`
+      absichern; Fachservices und Provider konsumieren ausschließlich das
+      unveränderliche effektive Ergebnis.
+- [ ] Redundante Defaults zwischen Config-Definitionen, Hierarchie-Overrides,
+      Manifesten, Bootstrap und Service-Konstruktoren entfernen. Insbesondere
+      `models.max_output_tokens` darf pro Wert nur eine Source of Truth besitzen.
+- [ ] Historische Widget-Registry-Duplikate einmalig, transaktional und
+      verlustfrei konsolidieren; anschließend Eindeutigkeit in Datenbank und
+      Registry erzwingen, statt Mehrdeutigkeiten nur im Resolver abzufedern.
 
 ## P1 - Verträge, Konfiguration und Sicherheit
 
@@ -43,23 +58,53 @@ Freigabekriterien. Sie enthalten keine parallelen Aufgabenlisten.
       die Trennung zwischen System-Autoresponder und menschlichen Administratoren
       als Regressionstest erhalten sowie Ersteller, Empfänger, Hierarchieknoten,
       vorherigen und neuen Status nachvollziehbar erfassen.
+- [ ] Benutzerstatus als zentralen Backend-Vertrag für `available`, `away`,
+      `busy`, `dnd` und `offline` einschließlich Statusquelle, Zeitstempel,
+      Persistenz- beziehungsweise Ablaufregeln und Berechtigungen modellieren;
+      Sitzungs-Presence und UI verwenden ausschließlich diesen Vertrag.
+- [ ] Die serverseitige Mention-Pipeline für `@Name` als verbindlichen Vertrag
+      vervollständigen und testen: Benutzerauflösung, Hierarchiesichtbarkeit,
+      Berechtigung und Erzeugung von Nachricht, Aufgabe oder Frage erfolgen vor
+      dem Modellaufruf; das Modell darf Mentions nicht simulieren.
 - [ ] Die umgesetzte SMTP-Outbox um Microsoft Graph, Retry und Dead-Letter
       erweitern; Credentials ausschließlich über einen Secret Store referenzieren
       und Zustellversuche sowie Provider-IDs revisionssicher auditieren.
 - [ ] Config-v2 abschließen: präzise Schemas, Defaults, UI-Metadaten und
       Berechtigungen für die Platzhaltergruppen `knowledge`, `models`, `planning`,
       `tools`, `security` und `learning` definieren.
-- [ ] Die einheitliche Verwendung von `models.default_model` in Registry,
-      Providern und Bootstrap verifizieren; `models.default_model_id` vollständig
-      entfernen.
-- [ ] Den Settings-Katalog-Checker als CI-Prüfung integrieren und im Frontend
-      unbekannte Keys vor `PUT /api/v1/config` ablehnen.
+- [ ] Alle aktuellen Config-Definitionen fachlich mit genau einem Zustand
+      `ACTIVE`, `PREPARED`, `RESTART_REQUIRED`, `UNSUPPORTED` oder `DEPRECATED`
+      klassifizieren. Dabei die Abweichung zwischen der ursprünglichen
+      147-Key-Inventur und derzeit 153 Definitionen auflösen; nur `ACTIVE` darf
+      ohne Neustart editierbar sein und benötigt einen nachgewiesenen
+      Runtime-Consumer.
+- [ ] Config-Definitionen, Settings-Katalog, Frontend-Schema und
+      Runtime-Consumer auf eine kanonische Definitionsquelle reduzieren. Der
+      daraus generierte Katalog muss jeden Key genau einmal enthalten und darf
+      keine nicht definierten Keys veröffentlichen.
+- [ ] Den Settings-Katalog-Checker als CI-Prüfung integrieren, Zustands- und
+      Consumer-Abdeckung erzwingen und im Frontend unbekannte, nicht aktive oder
+      nicht editierbare Keys vor `PUT /api/v1/config` ablehnen.
+- [ ] Die einheitliche Verwendung von `models.default_model` in ConfigService,
+      Registry, Manifesten, Providern und Bootstrap verifizieren;
+      `models.default_model_id` vollständig entfernen und ausschließlich
+      kanonische Registry-IDs übergeben.
 - [ ] Provider-/Modellabhängigkeiten im Settings-Frontend aus den
       Config-Metadaten ableiten und `model_select` vollständig anbinden.
+- [ ] Ollama, OpenAI, Anthropic, Gemini und weitere Provider konsequent als
+      Adapter ausführen: Sie übersetzen den bereits aufgelösten Request, ohne
+      konfigurierte Werte durch eigene fachliche Defaults zu überschreiben.
+- [ ] Sämtliche `tools.*`-Definitionen bis zur Tool-Ausführung verdrahten,
+      insbesondere Timeout, Retry, Confirmation und Result-Processing; nicht
+      konsumierte Werte bis zur Umsetzung als `PREPARED` oder `UNSUPPORTED`
+      kennzeichnen und nicht editierbar ausliefern.
 - [ ] Administrative Systemwidgets serverseitig nach Rollen und Berechtigungen
       filtern (ADR-0034).
 - [ ] Autorisierung, Auditierung und Betriebsprofile vervollständigen;
       Berechtigungsänderungen und irreversible Aktionen müssen auditierbar sein.
+      Eigentümeraktionen für Prompt, Konfiguration, Werkzeuge, Verschieben und
+      Chat-Export sind serverseitig geprüft und im Hierarchiemenü angebunden;
+      Benutzerprompts und Sidebar-Befehle folgen der effektiven Berechtigung.
 
 ## P2 - Hierarchie, Suche und Dateien
 
@@ -85,9 +130,34 @@ Freigabekriterien. Sie enthalten keine parallelen Aufgabenlisten.
       unter Beachtung der Hierarchieberechtigungen testen.
 - [ ] Einen serverseitigen Context Resolver für Tenant, Benutzer,
       Hierarchiepfad und effektive Revisionen bereitstellen.
+- [ ] Einen `SelfKnowledgeService` für relativ stabile, berechtigungssicher
+      freigegebene Benutzerinformationen bereitstellen, darunter Benutzername,
+      Rollen, Sprache, Präferenzen und aktueller Hierarchiepfad; Herkunft und
+      Revision jedes Fragments müssen nachvollziehbar sein.
+- [ ] Einen `LiveContextService` für flüchtige, pro Chat-Anfrage neu ermittelte
+      Daten bereitstellen, darunter Datum, Uhrzeit, Zeitzone, Präsenzstatus,
+      Standort, Wetter und Kalenderstatus; fehlende oder nicht freigegebene
+      Quellen werden explizit ausgelassen statt erfunden.
+- [ ] `SelfKnowledgeService` und `LiveContextService` in den bestehenden
+      `PromptResolver` integrieren, ohne zweite Prompt-Pipeline. Die deterministische
+      Fragmentfolge lautet
+      `settings → system_root → user → area → project → chat → subchat → self_knowledge → live_context`
+      und wird mit Herkunfts-, Berechtigungs- und Reihenfolgetests abgesichert.
 
 ## P3 - Plattform-Backlog
 
+- [x] Knotenoberflächen von System Root über Benutzer, Bereich und Projekt bis
+      Chat auf einen gemeinsamen responsiven `NodeWorkspaceOverview` mit
+      kontrastreicher Neutral-/Salbeipalette, einheitlichen Aktionen,
+      Kennzahlen und Widget-Abschnitten konsolidieren.
+- [x] Eigenen Benutzerknoten als persönliches Dashboard mit Profil- und
+      Sicherheitsaktionen, sichtbaren Bereichen/Projekten, letzten Chats,
+      Kontingenten und kompatiblen Registry-Widgets ausbauen; Dateien-Widget an
+      den verpflichtenden `node_id`-Vertrag anbinden.
+- [x] Live-Chat und Chat-Historie auf einen sicheren CommonMark-/GFM-Renderer
+      vereinheitlichen, Lightmode-Kontrast gesendeter Nachrichten erhöhen,
+      Roh-HTML sperren und Bild-, Audio- sowie Videoausgabe mit fokussierten
+      Frontendtests vorbereiten.
 - [ ] `SchemaRenderer` um Formularbindung, Aktionen und Sichtbarkeitsregeln
       vervollständigen.
 - [ ] Widget-Pool und persistente Layoutverwaltung vervollständigen.
@@ -101,6 +171,10 @@ Freigabekriterien. Sie enthalten keine parallelen Aufgabenlisten.
 - [ ] Integrationen über Webhooks und Connector-Manifeste definieren.
 - [ ] PostgreSQL-Betrieb, Multi-Worker-Invalidierung und Rate-Limiting für die
       Skalierung vorbereiten.
+- [ ] Temporäre `tmp_*`-, Diagnose- und Analyse-Skripte nach Abschluss der
+      Config-/Runtime-Konsolidierung inventarisieren, benötigte Werkzeuge nach
+      `tools/` überführen und rein temporäre Dateien samt sensiblen Ausgaben
+      sicher entfernen.
 
 ## Pflege
 

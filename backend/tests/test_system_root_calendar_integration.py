@@ -1,6 +1,4 @@
-import asyncio
 import os
-import json
 import pytest
 
 from types import SimpleNamespace
@@ -10,12 +8,12 @@ from app.storage.database import init_database, get_session_factory
 
 
 @pytest.mark.asyncio
-async def test_system_root_effective_widgets_contains_calendar_component_type():
+async def test_admin_user_effective_widgets_contains_calendar_component_type():
     """Integration-style check against the runtime SQLite DB where available.
 
     This test initializes the application's database layer (without creating
     schema changes) and asks the WidgetResolverService to compute the
-    effective widgets for `system-root`. It asserts that a calendar entry
+    effective widgets for `bootstrap-admin`. It asserts that a calendar entry
     is present and that `component_type` == "calendar_widget".
     """
     # Prevent automatic Alembic migrations during the test run
@@ -30,7 +28,7 @@ async def test_system_root_effective_widgets_contains_calendar_component_type():
 
     async with sf() as session:
         svc = WidgetResolverService(session)
-        items = await svc.resolve_effective_widgets("system-root", actor)
+        items = await svc.resolve_effective_widgets("bootstrap-admin", actor)
 
         # Find calendar entry
         cal = None
@@ -39,5 +37,5 @@ async def test_system_root_effective_widgets_contains_calendar_component_type():
                 cal = it
                 break
 
-        assert cal is not None, "calendar widget not found in system-root effective items"
+        assert cal is not None, "calendar widget not found in admin effective items"
         assert cal.get("component_type") == "calendar_widget", f"unexpected component_type: {cal.get('component_type')}"

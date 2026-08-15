@@ -5,9 +5,15 @@ from pathlib import Path
 from typing import Any, cast
 
 import pytest
-from app.contracts.model_backend import GenerationRequest, StreamEvent, StreamEventType
+from app.contracts.model_backend import (
+    GenerationRequest,
+    MessageRole,
+    StreamEvent,
+    StreamEventType,
+)
 from app.core.settings import reload_settings
 from app.database.models.hierarchy_node import HierarchyNodeModel
+from app.hierarchy.models import HierarchyActor
 from app.models.service import ModelAccessContext, ModelService
 from app.services.chat_service import ChatRequest, ChatService, ChatServiceContext
 from app.storage import database as _database_module
@@ -138,3 +144,78 @@ async def test_second_request_contains_previous_conversation_history(
     assert ("user", "Mein Name ist Thomas Heisig.") in seq
     assert ("assistant", model_service.first_response) in seq
     assert ("user", "Wer bin ich?") in seq
+
+
+@pytest.mark.asyncio
+async def test_child_chat_receives_parent_chat_history_as_system_context(
+    session_factory: async_sessionmaker[AsyncSession],
+) -> None:
+    repo_adapter = ChatRepositoryAdapter(session_factory)
+    history_provider = ChatHistoryProviderAdapter(session_factory)
+    model_service = RecordingModelService()
+    service = ChatService(
+        model_service=cast(ModelService, model_service),
+        default_model_id="m",
+        repository=repo_adapter,
+        history_provider=history_provider,
+        hierarchy_session_factory=session_factory,
+    )
+    actor = HierarchyActor(permissions=frozenset({"hierarchy.read"}))
+
+    async with session_factory() as session:
+        parent_node = HierarchyNodeModel(
+            id="parent-chat-node",
+            parent_id=None,
+            type="chat",
+            name="Elternchat",
+        )
+        child_node = HierarchyNodeModel(
+            id="child-chat-node",
+            parent_id=parent_node.id,
+            type="chat",
+            name="Unterchat",
+        )
+        session.add_all((parent_node, child_node))
+        await session.commit()
+
+    parent_events = await collect_stream(
+        service.stream(
+            ChatRequest(
+                message="Der bestätigte Auftragswert beträgt 12.500 Euro.",
+                hierarchy_node_id="parent-chat-node",
+            ),
+            context=ChatServiceContext(
+                request_id="parent-r1",
+                access=ModelAccessContext(),
+                hierarchy_actor=actor,
+            ),
+        )
+    )
+    assert parent_events
+
+    await collect_stream(
+        service.stream(
+            ChatRequest(
+                message="Erstelle daraus die Detailplanung.",
+                hierarchy_node_id="child-chat-node",
+            ),
+            context=ChatServiceContext(
+                request_id="child-r1",
+                access=ModelAccessContext(),
+                hierarchy_actor=actor,
+            ),
+        )
+    )
+
+    child_request = model_service.requests[-1]
+    system_messages = [
+        message.content
+        for message in child_request.messages
+        if message.role is MessageRole.SYSTEM
+    ]
+    assert len(system_messages) == 1
+    assert "Kontext aus übergeordneten Chats" in system_messages[0]
+    assert "Übergeordneter Chat: Elternchat" in system_messages[0]
+    assert "Der bestätigte Auftragswert beträgt 12.500 Euro." in system_messages[0]
+    assert "Antwort vom Modell" in system_messages[0]
+    assert child_request.messages[-1].content == "Erstelle daraus die Detailplanung."

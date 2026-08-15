@@ -4,7 +4,17 @@ from unittest.mock import AsyncMock
 import pytest
 from app.contracts.hierarchy import HierarchyNodeCreate
 from app.hierarchy.models import HierarchyActor
-from app.hierarchy.permissions import CREATE_CHILD_ACTION, HierarchyPermissionService
+from app.hierarchy.permissions import (
+    CREATE_CHILD_ACTION,
+    DELETE_ACTION,
+    EDIT_CONFIG_ACTION,
+    EDIT_PROMPT_ACTION,
+    EXPORT_ACTION,
+    MOVE_ACTION,
+    RENAME_ACTION,
+    TOGGLE_TOOLS_ACTION,
+    HierarchyPermissionService,
+)
 from app.hierarchy.quotas import (
     HierarchyQuotaExceededError,
     HierarchyQuotaService,
@@ -98,7 +108,7 @@ async def test_guest_cannot_create_below_an_assigned_foreign_workspace():
         )
 
 
-def test_guest_only_receives_create_permission_for_owned_containers():
+def test_guest_receives_prompt_permission_only_for_own_user_node():
     actor = HierarchyActor(user_id="alice", roles=frozenset({"guest"}))
     permissions = HierarchyPermissionService()
     own_root = model("user-alice", "user", parent_id="users-root")
@@ -109,10 +119,47 @@ def test_guest_only_receives_create_permission_for_owned_containers():
         owner_user_id="alice",
     )
     foreign_workspace = model("foreign", "workspace", parent_id="workspaces-root")
+    foreign_user = model("user-bob", "user", parent_id="users-root")
 
     assert permissions.can(actor, CREATE_CHILD_ACTION, own_root)
+    assert permissions.can(actor, EDIT_PROMPT_ACTION, own_root)
     assert permissions.can(actor, CREATE_CHILD_ACTION, own_workspace)
     assert not permissions.can(actor, CREATE_CHILD_ACTION, foreign_workspace)
+    assert not permissions.can(actor, EDIT_PROMPT_ACTION, foreign_user)
+
+
+def test_owner_receives_edit_actions_for_own_chat_and_not_foreign_chat():
+    actor = HierarchyActor(user_id="alice", roles=frozenset({"guest"}))
+    permissions = HierarchyPermissionService()
+    own_chat = model(
+        "own-chat",
+        "chat",
+        parent_id="own-project",
+        owner_user_id="alice",
+    )
+    foreign_chat = model(
+        "foreign-chat",
+        "chat",
+        parent_id="foreign-project",
+        owner_user_id="bob",
+    )
+
+    expected_actions = {
+        CREATE_CHILD_ACTION,
+        RENAME_ACTION,
+        DELETE_ACTION,
+        MOVE_ACTION,
+        EDIT_PROMPT_ACTION,
+        EDIT_CONFIG_ACTION,
+        TOGGLE_TOOLS_ACTION,
+        EXPORT_ACTION,
+    }
+    assert expected_actions.issubset(
+        set(permissions.available_actions(actor, own_chat))
+    )
+    assert expected_actions.isdisjoint(
+        permissions.available_actions(actor, foreign_chat)
+    )
 
 
 @pytest.mark.asyncio

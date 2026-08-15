@@ -5,6 +5,12 @@ import { ChevronLeft, ChevronRight, ChevronsUp, Clock3, Focus, LoaderCircle, Sea
 import { DynamicIcon } from '../../registry/iconRegistry';
 import IconBadge from '../common/IconBadge';
 import { getNodeTypeConfig } from '../../config/nodeTypeConfig';
+import {
+  FAVORITE_NODE_STORAGE_KEY,
+  MAX_QUICK_ACCESS_ITEMS,
+  readStoredNodeIds,
+  RECENT_NODE_STORAGE_KEY,
+} from '../hierarchy/quickAccessStorage';
 
 import type { ComponentProps, ReactNode } from 'react';
 import type { HierarchyNode } from '../../contracts/hierarchy';
@@ -14,25 +20,12 @@ import { GenericTree } from '../schema/GenericTreeClean';
 type GenericTreeProps = ComponentProps<typeof GenericTree>;
 type NodeTypeFilter = 'all' | 'chat' | 'project' | 'workspace';
 
-const RECENT_STORAGE_KEY = 'kernschmied.sidebar.recent';
-const FAVORITES_STORAGE_KEY = 'kernschmied.sidebar.favorites';
-const MAX_QUICK_ACCESS_ITEMS = 5;
-
 const TYPE_FILTERS: Array<{ value: NodeTypeFilter; label: string; types: string[] }> = [
   { value: 'all', label: 'Alle', types: [] },
   { value: 'chat', label: 'Chats', types: ['chat', 'conversation'] },
   { value: 'project', label: 'Projekte', types: ['project', 'projekt'] },
   { value: 'workspace', label: 'Bereiche', types: ['workspace', 'bereich'] },
 ];
-
-function readStoredIds(key: string): string[] {
-  try {
-    const value = JSON.parse(window.localStorage.getItem(key) ?? '[]');
-    return Array.isArray(value) ? value.filter((id): id is string => typeof id === 'string') : [];
-  } catch {
-    return [];
-  }
-}
 
 function flattenTree(root: HierarchyNode): HierarchyNode[] {
   return [root, ...root.children.flatMap(flattenTree)];
@@ -79,9 +72,9 @@ export function AppHierarchySidebar({
   const [showArchived, setShowArchived] = useState(false);
   const [open, setOpen] = useState<boolean>(Boolean(defaultOpen));
   const [typeFilter, setTypeFilter] = useState<NodeTypeFilter>('all');
-  const [recentNodeIds, setRecentNodeIds] = useState<string[]>(() => readStoredIds(RECENT_STORAGE_KEY));
+  const [recentNodeIds, setRecentNodeIds] = useState<string[]>(() => readStoredNodeIds(RECENT_NODE_STORAGE_KEY));
   const [favoriteNodeIds, setFavoriteNodeIds] = useState<Set<string>>(
-    () => new Set(readStoredIds(FAVORITES_STORAGE_KEY)),
+    () => new Set(readStoredNodeIds(FAVORITE_NODE_STORAGE_KEY)),
   );
   const [focusMode, setFocusMode] = useState(false);
 
@@ -100,11 +93,11 @@ export function AppHierarchySidebar({
   );
 
   useEffect(() => {
-    window.localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(recentNodeIds));
+    window.localStorage.setItem(RECENT_NODE_STORAGE_KEY, JSON.stringify(recentNodeIds));
   }, [recentNodeIds]);
 
   useEffect(() => {
-    window.localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify([...favoriteNodeIds]));
+    window.localStorage.setItem(FAVORITE_NODE_STORAGE_KEY, JSON.stringify([...favoriteNodeIds]));
   }, [favoriteNodeIds]);
 
   function handleSelect(node: HierarchyNode): void {

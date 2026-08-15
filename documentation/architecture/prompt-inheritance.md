@@ -119,7 +119,9 @@ Model Backend
 
 ```
 
-Application services never assemble prompts manually.
+Declarative prompt fragments are assembled only by the Prompt Resolver. The
+Chat Service may append authorized conversation context as a separate,
+non-instructional data section after prompt resolution.
 
 ---
 
@@ -138,6 +140,12 @@ Prompts may originate from multiple scopes.
 | Request      | Temporary instructions      |
 
 Each scope contributes only the information relevant to its responsibility.
+
+For a nested chat, completed conversation content from ancestor chat nodes is
+added from the root-most chat to the direct parent. It is labelled as data, not
+as instructions, excludes persisted system messages, and is bounded before it
+is appended to the effective system context. The nested chat keeps its own
+history and current request separate.
 
 ---
 

@@ -13,6 +13,19 @@ EDIT_CONFIG_ACTION = "edit_config"
 TOGGLE_TOOLS_ACTION = "toggle_tools"
 EXPORT_ACTION = "export"
 
+OWNER_ACTIONS = frozenset(
+    {
+        CREATE_CHILD_ACTION,
+        RENAME_ACTION,
+        DELETE_ACTION,
+        MOVE_ACTION,
+        EDIT_PROMPT_ACTION,
+        EDIT_CONFIG_ACTION,
+        TOGGLE_TOOLS_ACTION,
+        EXPORT_ACTION,
+    }
+)
+
 
 class HierarchyPermissionService:
     def can(
@@ -33,15 +46,17 @@ class HierarchyPermissionService:
                 )
             )
         if (
-            action in {CREATE_CHILD_ACTION, RENAME_ACTION, DELETE_ACTION}
+            action in OWNER_ACTIONS
             and actor.user_id is not None
             and normalized_roles.intersection({"guest", "user", "internal", "intern"})
             and node is not None
         ):
             if node.id == f"user-{actor.user_id}":
-                return action == CREATE_CHILD_ACTION
+                return action in {CREATE_CHILD_ACTION, EDIT_PROMPT_ACTION}
             metadata = dict(node.node_metadata or {})
-            return metadata.get("owner_user_id") == actor.user_id
+            if metadata.get("owner_user_id") != actor.user_id:
+                return False
+            return action != EXPORT_ACTION or node.type == "chat"
         return False
 
     def require(

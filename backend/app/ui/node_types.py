@@ -26,6 +26,7 @@ def create_default_node_types() -> dict[str, NodeTypeDefinition]:
             allowed_actions=(
                 "rename",
                 "create_child",
+                "edit_prompt",
             ),
         ),
         "workspace": NodeTypeDefinition(
@@ -64,6 +65,8 @@ def create_default_node_types() -> dict[str, NodeTypeDefinition]:
                 "export",
                 "create_child",
                 "move",
+                "edit_prompt",
+                "toggle_tools",
             ),
             selectable=True,
             draggable=True,

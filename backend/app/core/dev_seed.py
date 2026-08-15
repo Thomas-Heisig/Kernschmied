@@ -209,7 +209,7 @@ async def seed_development_hierarchy(
                         await repo.create_node(
                             HierarchyNodeCreate(
                                 node_id="users-root",
-                                type="folder",
+                                type="users-root",
                                 name="Users",
                                 parent_id="system-root",
                                 system_prompt=None,
@@ -218,13 +218,16 @@ async def seed_development_hierarchy(
                                 metadata={"system_managed": True},
                             )
                         )
+                    elif users_root.type != "users-root":
+                        users_root.type = "users-root"
+                        await repo._session.flush()  # type: ignore[attr-defined]
 
                     workspaces_root = await repo.get_node("workspaces-root")
                     if workspaces_root is None:
                         await repo.create_node(
                             HierarchyNodeCreate(
                                 node_id="workspaces-root",
-                                type="folder",
+                                type="workspaces-root",
                                 name="Workspaces",
                                 parent_id="system-root",
                                 system_prompt=None,
@@ -233,13 +236,16 @@ async def seed_development_hierarchy(
                                 metadata={"system_managed": True},
                             )
                         )
+                    elif workspaces_root.type != "workspaces-root":
+                        workspaces_root.type = "workspaces-root"
+                        await repo._session.flush()  # type: ignore[attr-defined]
 
                     chats_root = await repo.get_node("chats-root")
                     if chats_root is None:
                         await repo.create_node(
                             HierarchyNodeCreate(
                                 node_id="chats-root",
-                                type="folder",
+                                type="chats-root",
                                 name="Chats",
                                 parent_id="system-root",
                                 system_prompt=None,
@@ -248,6 +254,9 @@ async def seed_development_hierarchy(
                                 metadata={"system_managed": True},
                             )
                         )
+                    elif chats_root.type != "chats-root":
+                        chats_root.type = "chats-root"
+                        await repo._session.flush()  # type: ignore[attr-defined]
 
                     # Ensure admin has a dedicated user node under users-root
                     admin_node_id = f"user-{admin.id}"
@@ -568,7 +577,7 @@ async def seed_development_hierarchy(
                             ],
                         },
                         "workspaces-root": {
-                            "type": "folder",
+                            "type": "workspaces-root",
                             "parent": "system-root",
                             "widgets": [
                                 {"name": "files", "inherit": False, "position": 10},

@@ -7,7 +7,8 @@ Ziel: In klaren, testbaren Schritten von einem lokalen MVP zu einer produktionsn
 Priorisierte Meilensteine (kurz):
 
 - Meilenstein 1 – Konsolidierung (Kurzfristig, höchste Priorität)
-  - Settings: Vollständige Migration auf Config‑v2 (Frontend & Backend)
+  - Settings: Vollständige Migration auf Config‑v2 mit fachlichem Status je Key,
+    kanonischer Runtime-Auflösung und einer gemeinsamen Definitionsquelle
   - Hierarchie: Frontend‑Bearbeitung (Create/Rename/Move/Delete + lokal konsistente Aktualisierung)
   - Repo‑Hygiene: entfernbare Root‑Artefakte verschieben/archivieren
   - Router/Services: modularisieren (configs.py in Services splitten)
@@ -46,6 +47,19 @@ Priorisierte Meilensteine (kurz):
   - Pylance-strikte Typisierung für Mention-Defaults, Assistant-JSON-Metadaten und Session-Presence-Persistenz (abgeschlossen 2026-08-15)
   - Kollaborationsausbau mit persistenter Nebenchat-Antwortstruktur, Avatar-/KI-Attribution, Versandstatus, optionalem Ton, mehrfarbiger Glocke und verwaltbarem Postfach (abgeschlossen 2026-08-15)
   - Serverseitiger KI-Wahrheits- und Datenschutzrahmen mit minimalem autorisiertem Benutzerkontext sowie persistenter Windows-Zeitzonen-/Präferenzunterstützung (abgeschlossen 2026-08-15)
+  - Alembic-Head, idempotenter Seed mit kanonischen Systemcontainern und hierarchiegebundene Chat-History einschließlich Browser-Roundtrip verifiziert (abgeschlossen 2026-08-15)
+  - Berechtigungsabhängige Prompt-, Konfigurations- und Werkzeugmenüs für eigene Chats und Unterchats wiederhergestellt (abgeschlossen 2026-08-15)
+  - Persistierte Elternchat-Verläufe als begrenzter, nicht-instruktiver Kontext für Unterchats angebunden (abgeschlossen 2026-08-15)
+  - Persönliche Benutzerprompts, strikt berechtigungsprojizierte Sidebar-Menüs und Ausgabeaktionen für Kopieren/Markdown-Download umgesetzt (abgeschlossen 2026-08-15)
+  - Sicherer GFM-Chatrenderer mit kontrastreicher Lightmode-Ausgabe, einheitlicher
+    Live-/Historienansicht und vorbereiteten Bild-, Audio- und Videokomponenten
+    umgesetzt (abgeschlossen 2026-08-15)
+  - Persönlicher Benutzer-Knoten als Dashboard mit sichtbaren Projekten,
+    Recent-Chats, Kontoaktionen, Kontingenten und funktionierenden
+    Kalender-/Datei-Widgets ausgebaut (abgeschlossen 2026-08-15)
+  - Gemeinsames kontrastreiches Neutral-/Pastelldesign über System, Benutzer,
+    Bereich, Projekt und Chat einschließlich einheitlicher Aktionen, Kennzahlen
+    und Widget-Abschnitte abgeschlossen (abgeschlossen 2026-08-15)
 
 Leitprinzipien (Kurz):
 

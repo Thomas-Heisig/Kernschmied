@@ -74,6 +74,14 @@ async def test_development_seed_is_idempotent(session_factory):
         repo = HierarchyRepository(session)
         node = await repo.get_node(f"user-{settings.development_admin_user_id}")
         assert node is not None
+        for node_id, expected_type in (
+            ("users-root", "users-root"),
+            ("workspaces-root", "workspaces-root"),
+            ("chats-root", "chats-root"),
+        ):
+            container = await repo.get_node(node_id)
+            assert container is not None
+            assert container.type == expected_type
 
 
 @pytest.mark.asyncio

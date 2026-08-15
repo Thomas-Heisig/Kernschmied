@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Modal from '../ui/Modal';
 import { resolveTemplate } from '../../utils/templateResolver';
-import { Activity, FileText, Globe2, LayoutGrid, Plus, SlidersHorizontal } from 'lucide-react';
+import { Activity, Building2, FilePenLine, FileText, FolderKanban, Globe2, LayoutGrid, MessageSquare, Plus, Settings2, SlidersHorizontal, Trash2, Wrench } from 'lucide-react';
 import { DynamicIcon } from '../../registry/iconRegistry';
 import IconBadge from '../common/IconBadge';
 import { getNodeTypeConfig } from '../../config/nodeTypeConfig';
@@ -18,6 +18,7 @@ import WidgetsForNode from '../widgets/WidgetsForNode';
 import CollapsibleWidgetPanel from '../widgets/CollapsibleWidgetPanel';
 import SystemOverview from '../system/SystemOverview';
 import UserNodeWorkspace from './UserNodeWorkspace';
+import NodeWorkspaceOverview, { NodeWorkspaceAction } from './NodeWorkspaceOverview';
 
 /* ============================================================
  * TYPEN UND KONSTANTEN
@@ -101,6 +102,7 @@ export function SelectedNodeWorkspace({
    * ---------------------------------------------------------- */
   if (SYSTEM_ROOT_NODE_TYPES.has(normalizedType)) {
     const cfg = getNodeTypeConfig('system');
+    const children = Array.isArray((node as any).children) ? (node as any).children : [];
 
     return (
       <WorkspaceLayout
@@ -109,7 +111,18 @@ export function SelectedNodeWorkspace({
         widgetBadges={<WidgetBadges nodeId={node.id} size="sm" />}
         background="white"
       >
-        <div className="grid w-full grid-cols-1 gap-3">
+        <div className="grid w-full grid-cols-1 gap-4">
+          <NodeWorkspaceOverview
+            eyebrow="Systemknoten"
+            title={node.name}
+            description="Zentrale Betriebsübersicht, Konfiguration, Prompt und registrierte Systemfunktionen."
+            icon={<Activity />}
+            metrics={[
+              { label: 'Knotentyp', value: 'System' },
+              { label: 'Unterknoten', value: children.length },
+              { label: 'Status', value: String((node as any).status ?? 'Aktiv') },
+            ]}
+          />
           <CollapsibleWidgetPanel title="Systemübersicht" icon={<Activity size={19} />}>
             <SystemOverview />
           </CollapsibleWidgetPanel>
@@ -191,6 +204,8 @@ export function SelectedNodeWorkspace({
   if (normalizedType === 'project' || normalizedType === 'projekt') {
     const cfg = getNodeTypeConfig('project');
     const actions = (node as any).actions ?? cfg.allowedActions ?? [];
+    const children = Array.isArray((node as any).children) ? (node as any).children : [];
+    const chatCount = children.filter((child: any) => CHAT_NODE_TYPES.has(normalizeNodeType(child?.type) ?? '')).length;
 
     return (
       <WorkspaceLayout
@@ -199,51 +214,40 @@ export function SelectedNodeWorkspace({
         widgetBadges={<WidgetBadges nodeId={node.id} size="sm" />}
         background="white"
       >
-        <div className="w-full space-y-6">
-          {/* Aktionsleiste */}
-          <div className="flex flex-wrap items-center gap-2 border-b border-border-soft pb-4 dark:border-white/10">
-            {actions.includes('rename') && (
-              <button type="button" onClick={() => onAction?.('rename', node)} className="rounded-lg border border-border-soft px-3 py-1.5 text-sm text-text-soft transition hover:bg-surface-hover dark:border-white/10 dark:text-gray-300 dark:hover:bg-slate-800">
-                Umbenennen
-              </button>
-            )}
-            {actions.includes('create_child') && (
-              <button type="button" onClick={() => onAction?.('create_child', node)} className="rounded-lg border border-border-soft px-3 py-1.5 text-sm text-text-soft transition hover:bg-surface-hover dark:border-white/10 dark:text-gray-300 dark:hover:bg-slate-800">
-                Chat erstellen
-              </button>
-            )}
-            {actions.includes('edit_prompt') && (
-              <button className="rounded-lg border border-border-soft px-3 py-1.5 text-sm text-text-soft transition hover:bg-surface-hover dark:border-white/10 dark:text-gray-300 dark:hover:bg-slate-800">
-                Prompt bearbeiten
-              </button>
-            )}
-            {actions.includes('toggle_tools') && (
-              <button className="rounded-lg border border-border-soft px-3 py-1.5 text-sm text-text-soft transition hover:bg-surface-hover dark:border-white/10 dark:text-gray-300 dark:hover:bg-slate-800">
-                Tools umschalten
-              </button>
-            )}
-            {actions.includes('delete') && (
-              <button type="button" onClick={() => onAction?.('delete', node)} className="rounded-lg border border-danger/20 bg-danger-soft px-3 py-1.5 text-sm text-danger transition hover:bg-danger/10 dark:border-danger/30 dark:bg-danger/10 dark:hover:bg-danger/20">
-                Löschen
-              </button>
-            )}
-          </div>
-
-          {/* Hauptinhalt: Prompt & Metadaten */}
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-border-soft bg-white/70 p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/40">
-              <h3 className="text-sm font-semibold text-text-soft dark:text-gray-300">Prompt</h3>
+        <div className="w-full space-y-4">
+          <NodeWorkspaceOverview
+            eyebrow="Projekt"
+            title={node.name}
+            description="Arbeitskontext für Chats, Projektprompt, Metadaten und angebundene Werkzeuge."
+            icon={<FolderKanban />}
+            actions={<>
+              {actions.includes('rename') ? <NodeWorkspaceAction icon={<FilePenLine size={16} />} onClick={() => onAction?.('rename', node)}>Umbenennen</NodeWorkspaceAction> : null}
+              {actions.includes('create_child') ? <NodeWorkspaceAction icon={<Plus size={16} />} onClick={() => onAction?.('create_child', node)}>Chat erstellen</NodeWorkspaceAction> : null}
+              {actions.includes('edit_prompt') ? <NodeWorkspaceAction icon={<FileText size={16} />} onClick={() => onAction?.('edit_prompt', node)}>Prompt bearbeiten</NodeWorkspaceAction> : null}
+              {actions.includes('toggle_tools') ? <NodeWorkspaceAction icon={<Wrench size={16} />} onClick={() => onAction?.('toggle_tools', node)}>Tools umschalten</NodeWorkspaceAction> : null}
+              {actions.includes('delete') ? <NodeWorkspaceAction danger icon={<Trash2 size={16} />} onClick={() => onAction?.('delete', node)}>Löschen</NodeWorkspaceAction> : null}
+            </>}
+            metrics={[
+              { label: 'Chats', value: chatCount, icon: <MessageSquare size={16} /> },
+              { label: 'Zugriff', value: String((node as any).metadata?.access ?? 'Vererbt') },
+              { label: 'Status', value: String((node as any).status ?? 'Aktiv') },
+            ]}
+          />
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <CollapsibleWidgetPanel title="Projektprompt" icon={<FileText size={19} />}>
               <PromptEditor
                 node={node}
                 resolvedPrompt={(node as any)?.system_prompt ?? (node as any)?.metadata?.prompt}
                 onUpdateHierarchyNode={onUpdateHierarchyNode}
               />
-            </div>
-            <div className="rounded-xl border border-border-soft bg-white/70 p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/40">
-              <h3 className="text-sm font-semibold text-text-soft dark:text-gray-300">Metadaten</h3>
+            </CollapsibleWidgetPanel>
+            <CollapsibleWidgetPanel title="Projektdaten" icon={<Settings2 size={19} />}>
               <WorkspaceSettingsPanel node={node} onUpdateHierarchyNode={onUpdateHierarchyNode} />
-            </div>
+            </CollapsibleWidgetPanel>
           </div>
+          <CollapsibleWidgetPanel title="Projektwidgets" icon={<LayoutGrid size={19} />}>
+            <WidgetsForNode nodeId={node.id} variant="workspace" showEmptyState={false} />
+          </CollapsibleWidgetPanel>
         </div>
       </WorkspaceLayout>
     );
@@ -260,6 +264,9 @@ export function SelectedNodeWorkspace({
       (NODE_TYPE_ALIASES[normalizedType] && (schema?.node_types?.[NODE_TYPE_ALIASES[normalizedType]]?.icon as string)) ??
       cfg.icon ??
       'Building2';
+    const children = Array.isArray((node as any).children) ? (node as any).children : [];
+    const projectCount = children.filter((child: any) => ['project', 'projekt'].includes(normalizeNodeType(child?.type) ?? '')).length;
+    const chatCount = children.filter((child: any) => CHAT_NODE_TYPES.has(normalizeNodeType(child?.type) ?? '')).length;
 
     return (
       <WorkspaceLayout
@@ -268,26 +275,35 @@ export function SelectedNodeWorkspace({
         widgetBadges={<WidgetBadges nodeId={node.id} size="sm" />}
         background="white"
       >
-        <div className="w-full space-y-6">
-          {actions.includes('create_child') ? (
-            <div className="flex flex-wrap gap-2 border-b border-border-soft pb-4 dark:border-white/10">
-              <button type="button" onClick={() => onAction?.('create_child', node)} className="inline-flex items-center gap-2 rounded-md border border-border-soft px-3 py-2 text-sm font-medium text-text-soft transition hover:bg-surface-hover dark:border-white/10 dark:text-gray-200 dark:hover:bg-slate-800">
-                <Plus size={16} /> Projekt erstellen
-              </button>
-              <button type="button" onClick={() => onAction?.('create_chat', node)} className="inline-flex items-center gap-2 rounded-md border border-border-soft px-3 py-2 text-sm font-medium text-text-soft transition hover:bg-surface-hover dark:border-white/10 dark:text-gray-200 dark:hover:bg-slate-800">
-                <Plus size={16} /> Chat erstellen
-              </button>
-            </div>
-          ) : null}
-          <WorkspaceSettingsPanel node={node} onUpdateHierarchyNode={onUpdateHierarchyNode} />
-          <div className="rounded-xl border border-border-soft bg-white/70 p-4 shadow-sm dark:border-white/10 dark:bg-slate-900/40">
-            <h3 className="text-sm font-semibold text-text-soft dark:text-gray-300">Prompt</h3>
+        <div className="w-full space-y-4">
+          <NodeWorkspaceOverview
+            eyebrow="Bereich"
+            title={node.name}
+            description="Gemeinsamer Rahmen für Projekte, direkte Chats, Zugriffsregeln und Bereichsfunktionen."
+            icon={<Building2 />}
+            actions={actions.includes('create_child') ? <>
+              <NodeWorkspaceAction icon={<Plus size={16} />} onClick={() => onAction?.('create_child', node)}>Projekt erstellen</NodeWorkspaceAction>
+              <NodeWorkspaceAction icon={<MessageSquare size={16} />} onClick={() => onAction?.('create_chat', node)}>Chat erstellen</NodeWorkspaceAction>
+            </> : null}
+            metrics={[
+              { label: 'Projekte', value: projectCount, icon: <FolderKanban size={16} /> },
+              { label: 'Direkte Chats', value: chatCount, icon: <MessageSquare size={16} /> },
+              { label: 'Zugriff', value: String((node as any).metadata?.access ?? 'Privat') },
+            ]}
+          />
+          <CollapsibleWidgetPanel title="Bereichsdaten" icon={<Settings2 size={19} />}>
+            <WorkspaceSettingsPanel node={node} onUpdateHierarchyNode={onUpdateHierarchyNode} />
+          </CollapsibleWidgetPanel>
+          <CollapsibleWidgetPanel title="Bereichsprompt" icon={<FileText size={19} />}>
             <PromptEditor
               node={node}
               resolvedPrompt={(node as any)?.system_prompt ?? (node as any)?.metadata?.prompt}
               onUpdateHierarchyNode={onUpdateHierarchyNode}
             />
-          </div>
+          </CollapsibleWidgetPanel>
+          <CollapsibleWidgetPanel title="Bereichswidgets" icon={<LayoutGrid size={19} />}>
+            <WidgetsForNode nodeId={node.id} variant="workspace" showEmptyState={false} />
+          </CollapsibleWidgetPanel>
         </div>
       </WorkspaceLayout>
     );

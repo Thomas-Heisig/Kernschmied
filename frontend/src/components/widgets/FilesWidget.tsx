@@ -34,7 +34,9 @@ export default function FilesWidget({ widget, nodeId }: FilesWidgetProps) {
     setError(null);
 
     try {
-      const res = await fetch('/api/v1/files');
+      if (!nodeId) throw new Error('Kein Dateikontext ausgewählt.');
+      const params = new URLSearchParams({ node_id: nodeId });
+      const res = await fetch(`/api/v1/files?${params.toString()}`, { credentials: 'include' });
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}: ${res.statusText}`);
       }
@@ -64,7 +66,7 @@ export default function FilesWidget({ widget, nodeId }: FilesWidgetProps) {
   useEffect(() => {
     setLoading(true);
     void loadFiles(false);
-  }, []);
+  }, [nodeId]);
 
   const formatDate = (date?: string) => {
     if (!date) return '—';

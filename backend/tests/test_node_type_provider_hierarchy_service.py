@@ -81,6 +81,7 @@ async def test_create_blocked_by_registry():
     # Registry forbids workspace -> user
     node_types = {
         "workspace": _make_node_type("workspace", ("project",)),
+        "project": _make_node_type("project", ()),
         "user": _make_node_type("user", ()),
     }
 

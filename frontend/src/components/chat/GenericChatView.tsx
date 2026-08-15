@@ -1,8 +1,8 @@
 // F:\Kernschmied\frontend\src\components\chat\GenericChatView.tsx
 
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useAppStoreState, selectSelectedNode } from '../../store';
-import { CornerUpLeft, MessageCircle, Send, Square, X } from 'lucide-react';
+import { Check, Copy, CornerUpLeft, Download, MessageCircle, Send, Square, X } from 'lucide-react';
 import IconBadge from '../common/IconBadge';
 import WorkspaceLayout from '../layout/WorkspaceLayout';
 import useEffectiveWidgets from '../../hooks/useEffectiveWidgets';
@@ -18,6 +18,7 @@ import { useChatHistory } from '../../hooks/useChatHistory';
 import { loadUserPreferences } from '../../auth/auth-api';
 import { loadMentionCandidates } from '../../api/mentions';
 import type { MentionCandidate } from '../../api/mentions';
+import NodeWorkspaceOverview from '../workspace/NodeWorkspaceOverview';
 
 import type { ApiStreamHandle } from '../../api/client';
 
@@ -26,6 +27,7 @@ const CHAT_STREAM_PATH = '/chat/stream';
 const CHAT_STREAM_SCHEMA_VERSION = '1.0' as const;
 const MAX_MESSAGE_LENGTH = 50_000;
 const MAX_INPUT_HEIGHT = 192;
+const ChatMessageContent = lazy(() => import('./ChatMessageContent'));
 
 /* ============================================================
  * TYPEN
@@ -328,6 +330,7 @@ function parseChatStreamEvent(rawEvent: RawSseEvent): ParsedChatStreamEvent {
 export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: GenericChatViewProps) {
   // State
   const [input, setInput] = useState('');
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [requestStatus, setRequestStatus] = useState<ChatRequestStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -943,6 +946,44 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
     }
   }
 
+  async function copyMessage(message: ChatMessage): Promise<void> {
+    if (!message.content) return;
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(message.content);
+      copied = true;
+    } catch {
+      const textarea = document.createElement('textarea');
+      textarea.value = message.content;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        copied = document.execCommand('copy');
+      } finally {
+        textarea.remove();
+      }
+    }
+    if (!copied) return;
+    setCopiedMessageId(message.id);
+    window.setTimeout(() => {
+      setCopiedMessageId((current) => (current === message.id ? null : current));
+    }, 1500);
+  }
+
+  function downloadMessage(message: ChatMessage): void {
+    if (!message.content) return;
+    const safeTitle = title.replace(/[^a-z0-9äöüß_-]+/gi, '-').replace(/^-|-$/g, '');
+    const blob = new Blob([message.content], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = `${safeTitle || 'chat'}-antwort.md`;
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+
   // --- RENDER ---
   const activeAssistantMessage = [...messages]
     .reverse()
@@ -958,6 +999,20 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
       background="slate"
     >
       <div className="flex h-full flex-col">
+        <div className="shrink-0 pb-4">
+          <NodeWorkspaceOverview
+            compact
+            eyebrow="Chat"
+            title={title}
+            description="Gespräch, Kontext, Antworten und angebundene Chatfunktionen in einem gemeinsamen Arbeitsraum."
+            icon={<MessageCircle />}
+            metrics={[
+              { label: 'Nachrichten', value: messages.filter((message) => message.role !== 'system').length },
+              { label: 'Kontext', value: hierarchyNodeType === 'conversation' ? 'Unterhaltung' : 'Chat' },
+              { label: 'Status', value: loading ? 'Antwort wird erstellt' : 'Bereit' },
+            ]}
+          />
+        </div>
         <p className="sr-only" aria-live="polite">
           {accessibleStatus}
         </p>
@@ -996,7 +1051,7 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
                   return (
                     <article
                       key={message.id}
-                      className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} ${message.parentMessageId ? 'ml-8 w-[calc(100%-2rem)] border-l-4 border-cyan-500/70 pl-3' : 'w-full'}`}
+                      className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} ${message.parentMessageId ? 'ml-8 w-[calc(100%-2rem)] border-l-4 border-emerald-400/80 pl-3' : 'w-full'}`}
                       data-message-id={message.id}
                       data-message-status={message.status}
                     >
@@ -1010,7 +1065,7 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
                       <div
                         className={`min-w-0 rounded-2xl px-4 py-3 shadow-sm ${
                           isUser
-                            ? 'max-w-[85%] bg-primary text-white dark:bg-primary-dark'
+                            ? 'max-w-[85%] bg-emerald-900 text-white ring-1 ring-emerald-950/10 dark:bg-emerald-950 dark:ring-white/10'
                             : 'w-full max-w-6xl border border-border-soft bg-white/90 backdrop-blur-sm dark:border-white/10 dark:bg-slate-800/80'
                         }`}
                       >
@@ -1026,27 +1081,52 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
                           </time>
                         </div>
                         {message.parentMessageId ? (
-                          <div className={`mt-2 rounded border-l-2 px-2 py-1 text-xs ${isUser ? 'border-white/50 bg-white/10 text-white/80' : 'border-cyan-500 bg-cyan-50 text-cyan-900 dark:bg-cyan-950/30 dark:text-cyan-200'}`}>
+                          <div className={`mt-2 rounded border-l-2 px-2 py-1 text-xs ${isUser ? 'border-white/50 bg-white/10 text-white/80' : 'border-emerald-400 bg-emerald-50 text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-200'}`}>
                             Nebenchat als Antwort auf: {parentMessage?.content.slice(0, 90) ?? 'vorherige Nachricht'}
                           </div>
                         ) : null}
-                        <p
-                          className={`mt-1 whitespace-pre-wrap wrap-break-words text-sm leading-6 ${
-                            isUser ? 'text-white' : 'text-text dark:text-gray-100'
-                          }`}
-                        >
-                          {message.content}
-                        </p>
+                        <div className={`mt-1 ${isUser ? '[&_.chat-message-content]:text-white [&_.chat-message-content_a]:text-emerald-100' : 'text-slate-900 dark:text-gray-100'}`}>
+                          <Suspense fallback={<p className="whitespace-pre-wrap text-sm leading-6">{message.content}</p>}>
+                            <ChatMessageContent content={message.content} isAssistant={!isUser} />
+                          </Suspense>
+                        </div>
                         <div className={`mt-2 flex items-center justify-between gap-3 text-[11px] ${isUser ? 'text-white/70' : 'text-text-muted'}`}>
                           {deliveryReceiptsEnabled ? <span>{getDeliveryStatus(message)}</span> : <span />}
-                          <button
-                            type="button"
-                            onClick={() => setReplyTo(message)}
-                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-black/10"
-                            aria-label="Auf diese Nachricht antworten"
-                          >
-                            <CornerUpLeft className="h-3.5 w-3.5" /> Antworten
-                          </button>
+                          <div className="flex items-center gap-1">
+                            {!isUser ? (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => void copyMessage(message)}
+                                  disabled={!message.content || message.status === 'pending' || message.status === 'streaming'}
+                                  className="rounded p-1.5 hover:bg-black/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                  aria-label="KI-Antwort kopieren"
+                                  title="Antwort kopieren"
+                                >
+                                  {copiedMessageId === message.id ? <Check className="h-3.5 w-3.5" /> : <Copy className="h-3.5 w-3.5" />}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => downloadMessage(message)}
+                                  disabled={!message.content || message.status === 'pending' || message.status === 'streaming'}
+                                  className="rounded p-1.5 hover:bg-black/10 disabled:cursor-not-allowed disabled:opacity-40"
+                                  aria-label="KI-Antwort als Markdown herunterladen"
+                                  title="Als Markdown herunterladen"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </button>
+                              </>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => setReplyTo(message)}
+                              className="rounded p-1.5 hover:bg-black/10"
+                              aria-label="Auf diese Nachricht antworten"
+                              title="Antworten"
+                            >
+                              <CornerUpLeft className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </article>
@@ -1096,10 +1176,10 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
         >
           <div className="mx-auto max-w-4xl">
             {replyTo ? (
-              <div className="mb-2 flex items-center gap-2 border-l-4 border-cyan-500 bg-cyan-50 px-3 py-2 text-xs text-cyan-950 dark:bg-cyan-950/30 dark:text-cyan-100">
+              <div className="mb-2 flex items-center gap-2 border-l-4 border-emerald-400 bg-emerald-50 px-3 py-2 text-xs text-emerald-950 dark:bg-emerald-950/30 dark:text-emerald-100">
                 <CornerUpLeft className="h-4 w-4 shrink-0" />
                 <span className="min-w-0 flex-1 truncate">Nebenchat zu: {replyTo.content}</span>
-                <button type="button" onClick={() => setReplyTo(null)} className="rounded p-1 hover:bg-cyan-100 dark:hover:bg-cyan-900" aria-label="Antwortbezug entfernen">
+                <button type="button" onClick={() => setReplyTo(null)} className="rounded p-1 hover:bg-emerald-100 dark:hover:bg-emerald-900" aria-label="Antwortbezug entfernen">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -1165,7 +1245,7 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
               ) : (
                 <button
                   type="submit"
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-white shadow-glow transition hover:bg-primary-hover hover:shadow-primary-glow focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-primary-dark dark:hover:bg-primary-dark-hover dark:focus-visible:ring-offset-slate-900"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-emerald-700 text-white shadow-sm transition hover:bg-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-emerald-700 dark:hover:bg-emerald-600 dark:focus-visible:ring-offset-slate-900"
                   disabled={!input.trim() || !hierarchyNodeId || !String(hierarchyNodeId).trim()}
                   aria-label="Nachricht senden"
                   title="Nachricht senden"

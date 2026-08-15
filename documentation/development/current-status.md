@@ -4,14 +4,28 @@ Stand: 2026-08-15
 
 - FastAPI Backend: startet lokal
 - Frontend (Vite): startet lokal
-- Alembic: Migrationen bis `0008` vorhanden für frische DBs; Entwicklungs-DB zeigt abweichende Revisionen und muss geprüft werden
-- Persistente Hierarchie: Backend-CRUD vorhanden; Laufzeitintegration (Seeding + Chat-FK) teilweise blockiert
-- Chat-Persistenz: Modelle und Repository vorhanden; Laufzeitpfad durch fehlenden persistenten Hierarchieknoten teilweise gestört
+- Alembic: Repository und Entwicklungsdatenbank stehen auf `0023_add_message_parent`
+- Persistente Hierarchie: Backend-CRUD und kanonische Systemcontainer sind aktiv; reguläre Workspace-, Projekt- und Chat-Erstellung ist im Browser verifiziert
+- Chat-Persistenz: Create, Read, History, Elternbezüge, FK-Fehlerfälle und dauerhafte Abschlussstatus sind durch Backendtests und einen Browser-Roundtrip verifiziert
+- Unterchat-Kontext: Persistierte Benutzer- und Modellergebnisse übergeordneter Chats werden begrenzt und als nicht-instruktive Daten an die Generierung übergeben
+- Benutzer-/Ausgabeaktionen: Eigene Benutzerprompts sowie berechtigungsbasierte Sidebar-Menüs sind aktiv; fertige KI-Ausgaben können kopiert, als Markdown gespeichert oder beantwortet werden
+- Chatausgabe: Live-Chat und Historie rendern CommonMark/GFM sicher und
+	einheitlich; gesendete Nachrichten sind im Lightmode kontrastreich, Roh-HTML
+	bleibt gesperrt und Bild-/Audio-/Videoelemente besitzen explizite Renderer
+- Benutzerknoten: Persönliches Dashboard mit Kontoaktionen, Kennzahlen,
+	sichtbaren Bereichen und Projekten, letzten Chats, Kontingenten sowie
+	funktionierenden Kalender-/Datei-Anbindungen ist aktiv
+- Knoten-Design: System, Benutzer, Bereich, Projekt und Chat verwenden denselben
+	responsiven Überblicksbaustein, eine kontrastreiche Neutral-/Salbeipalette und
+	einheitliche Aktions-, Kennzahlen- und Widgetmuster
+- Frontend-Verifikation: 40 Vitest-Tests und Produktionsbuild erfolgreich; der
+	laufende Vite-Server antwortet mit HTTP 200
+- Backend-Verifikation: 143 Pytest-Tests erfolgreich; bekannte Warnungen
+	beschränken sich auf AsyncMock- und Windows-Tempfile-Cleanup in Tests
 
 Zu verifizierende Laufzeitrisiken:
 
-- Entwicklungsdatenbank mit Revision `0009_merge_branches` (nicht im Repo-Head)
-- FK-Fehler beim Conversation-Insert wegen fehlendem Hierarchieknoten
+- Der verifizierte Chat-History-Browser-Roundtrip muss noch als repository-eigener E2E-Test automatisiert werden.
 
 Die zugehörigen Arbeiten werden ausschließlich in der
 [zentralen TODO-Liste](../todo.md) gepflegt.
