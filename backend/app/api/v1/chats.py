@@ -94,6 +94,7 @@ async def list_chat_messages(
                 conversation_id=m.conversation_id,
                 hierarchy_node_id=conversation.node_id,
                 user_id=m.user_id,
+                parent_message_id=m.parent_message_id,
                 role=cast(Literal["user", "assistant", "system", "tool"], m.role),
                 content=m.content,
                 message_type=cast(

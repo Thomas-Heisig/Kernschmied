@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Archive, ExternalLink, Mail, RefreshCw, Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Archive, ExternalLink, Mail, RefreshCw, Trash2, Users } from 'lucide-react';
 import {
   loadOnlineUsers,
 } from '../../api/mentions';
@@ -7,6 +7,7 @@ import type { MentionCandidate } from '../../api/mentions';
 import {
   loadMailboxMessages,
   loadMyMailbox,
+  deleteMailboxMessage,
   updateMailboxMessage,
 } from '../../api/mailbox';
 import type { MailboxMessage, UserMailbox } from '../../api/mailbox';
@@ -24,7 +25,19 @@ export default function CollaborationContextPanel({
   const [onlineUsers, setOnlineUsers] = useState<MentionCandidate[]>([]);
   const [mailbox, setMailbox] = useState<UserMailbox | null>(null);
   const [messages, setMessages] = useState<MailboxMessage[]>([]);
+  const [messageFilter, setMessageFilter] = useState<'all' | 'unread' | 'read' | 'archived'>('all');
+  const [sortDirection, setSortDirection] = useState<'newest' | 'oldest'>('newest');
   const [loading, setLoading] = useState(false);
+
+  const visibleMessages = useMemo(
+    () => messages
+      .filter((message) => messageFilter === 'all' || message.status === messageFilter)
+      .sort((left, right) => {
+        const delta = Date.parse(right.createdAt) - Date.parse(left.createdAt);
+        return sortDirection === 'newest' ? delta : -delta;
+      }),
+    [messageFilter, messages, sortDirection],
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -36,7 +49,7 @@ export default function CollaborationContextPanel({
       ]);
       setOnlineUsers(nextOnlineUsers);
       setMailbox(nextMailbox);
-      setMessages(nextMessages.filter((message) => message.status !== 'archived'));
+      setMessages(nextMessages);
     } catch {
       // Collaboration context is supplementary and must not block node context.
     } finally {
@@ -62,6 +75,11 @@ export default function CollaborationContextPanel({
 
   async function archiveMessage(message: MailboxMessage): Promise<void> {
     await updateMailboxMessage(message.id, 'archived');
+    setMessages((current) => current.filter((item) => item.id !== message.id));
+  }
+
+  async function deleteMessage(message: MailboxMessage): Promise<void> {
+    await deleteMailboxMessage(message.id);
     setMessages((current) => current.filter((item) => item.id !== message.id));
   }
 
@@ -116,11 +134,29 @@ export default function CollaborationContextPanel({
             <div>{mailbox.emailReady ? `E-Mail aktiv · ${mailbox.externalEmail}` : 'E-Mail vorbereitet, noch nicht aktiviert'}</div>
           </div>
         ) : null}
-        {messages.length === 0 ? (
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <label className="text-xs text-text-muted">
+            Ansicht
+            <select className="mt-1 w-full rounded border border-border-soft bg-surface px-2 py-1" value={messageFilter} onChange={(event) => setMessageFilter(event.target.value as typeof messageFilter)}>
+              <option value="all">Alle</option>
+              <option value="unread">Ungelesen</option>
+              <option value="read">Gelesen</option>
+              <option value="archived">Archiv</option>
+            </select>
+          </label>
+          <label className="text-xs text-text-muted">
+            Sortierung
+            <select className="mt-1 w-full rounded border border-border-soft bg-surface px-2 py-1" value={sortDirection} onChange={(event) => setSortDirection(event.target.value as typeof sortDirection)}>
+              <option value="newest">Neueste zuerst</option>
+              <option value="oldest">Älteste zuerst</option>
+            </select>
+          </label>
+        </div>
+        {visibleMessages.length === 0 ? (
           <p className="mt-2 text-xs text-text-muted">Keine neuen Nachrichten.</p>
         ) : (
-          <ul className="mt-2 space-y-3">
-            {messages.map((message) => (
+          <ul className="mt-2 max-h-80 space-y-3 overflow-y-auto pr-1">
+            {visibleMessages.map((message) => (
               <li
                 key={message.id}
                 className={`rounded-md border p-2 ${
@@ -145,6 +181,13 @@ export default function CollaborationContextPanel({
                     className="inline-flex items-center gap-1 rounded border border-border-soft px-2 py-1 text-xs hover:bg-surface-hover"
                   >
                     <Archive className="h-3.5 w-3.5" /> Archivieren
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void deleteMessage(message)}
+                    className="inline-flex items-center gap-1 rounded border border-danger/30 px-2 py-1 text-xs text-danger hover:bg-danger-soft"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" /> Löschen
                   </button>
                 </div>
               </li>

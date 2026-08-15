@@ -18,8 +18,8 @@ Freigabekriterien. Sie enthalten keine parallelen Aufgabenlisten.
       reguläre Anwendungsflüsse erzeugen.
 - [ ] Conversation- und Message-Persistenz an reale Hierarchieknoten anbinden;
       Create, Read und History einschließlich FK-Fehlerfällen testen.
-- [ ] Chat-History beim Öffnen laden und die Deduplizierung zwischen History und
-      SSE-Ereignissen durch einen End-to-End-Test absichern.
+- [ ] Chat-History beim Öffnen zusätzlich im Browser-E2E absichern; Laden,
+      Deduplizierung und persistente Elternbezüge sind durch Backendtests abgedeckt.
 
 ## P1 - Verträge, Konfiguration und Sicherheit
 
@@ -63,12 +63,13 @@ Freigabekriterien. Sie enthalten keine parallelen Aufgabenlisten.
 
 ## P2 - Hierarchie, Suche und Dateien
 
-- [ ] Benutzeranfragen mit Antworten oder Folge-Nachrichten verknüpfen und aus
-      dem persönlichen Eingang direkt zum zugehörigen Chatkontext navigieren.
+- [ ] Aus dem persönlichen Eingang direkt zum zugehörigen Chatkontext navigieren;
+      Antworten und Folge-Nachrichten besitzen bereits persistente Elternbezüge.
 - [ ] Einen kompakten Ungelesen-Zähler-Endpunkt für Benutzeranfragen bereitstellen
       und Polling durch SSE- oder WebSocket-Aktualisierungen mit belastbarem
       Reconnect-Verhalten ersetzen.
-- [ ] Das Postfach um direkte interne Nachrichten, Suche, Pagination und einen
+- [ ] Das Postfach nach den umgesetzten Filtern, Sortier-, Archivierungs- und
+      Löschaktionen um direkte interne Nachrichten, Volltextsuche, Pagination und einen
       vollständigen Postfacharbeitsbereich ergänzen; anschließend eingehende
       E-Mail über verifizierte Adresszuordnung und sichere Provider-Webhooks
       anbinden.

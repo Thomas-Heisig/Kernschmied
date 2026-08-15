@@ -47,6 +47,8 @@ export interface UserPreferences {
   compactMode: boolean;
   defaultView: string | null;
   notificationsEnabled: boolean;
+  deliveryReceiptsEnabled: boolean;
+  notificationSoundEnabled: boolean;
   aiResponseOnMentions: boolean;
   revision: number;
   updatedAt: string | null;
@@ -60,6 +62,8 @@ export interface UpdateUserPreferencesInput {
   compactMode?: boolean;
   defaultView?: string | null;
   notificationsEnabled?: boolean;
+  deliveryReceiptsEnabled?: boolean;
+  notificationSoundEnabled?: boolean;
   aiResponseOnMentions?: boolean;
   revision?: number;
 }

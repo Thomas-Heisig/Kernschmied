@@ -18,6 +18,8 @@ export default function UserSettingsPanel() {
   const [compactMode, setCompactMode] = useState<boolean>(false);
   const [defaultView, setDefaultView] = useState<string | null>(null);
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(true);
+  const [deliveryReceiptsEnabled, setDeliveryReceiptsEnabled] = useState<boolean>(true);
+  const [notificationSoundEnabled, setNotificationSoundEnabled] = useState<boolean>(false);
   const [aiResponseOnMentions, setAiResponseOnMentions] = useState<boolean>(false);
 
   const [isSaving, setIsSaving] = useState(false);
@@ -43,6 +45,8 @@ export default function UserSettingsPanel() {
         setCompactMode(Boolean(p.compactMode ?? false));
         setDefaultView(p.defaultView ?? null);
         setNotificationsEnabled(Boolean(p.notificationsEnabled ?? true));
+        setDeliveryReceiptsEnabled(Boolean(p.deliveryReceiptsEnabled ?? true));
+        setNotificationSoundEnabled(Boolean(p.notificationSoundEnabled ?? false));
         setAiResponseOnMentions(Boolean(p.aiResponseOnMentions));
         setIsDirty(false);
         setLoadStatus('ready');
@@ -107,6 +111,8 @@ export default function UserSettingsPanel() {
         compactMode,
         defaultView,
         notificationsEnabled,
+        deliveryReceiptsEnabled,
+        notificationSoundEnabled,
         aiResponseOnMentions,
       };
 
@@ -119,6 +125,8 @@ export default function UserSettingsPanel() {
       setCompactMode(Boolean(updated.compactMode));
       setDefaultView(updated.defaultView ?? null);
       setNotificationsEnabled(Boolean(updated.notificationsEnabled));
+      setDeliveryReceiptsEnabled(Boolean(updated.deliveryReceiptsEnabled));
+      setNotificationSoundEnabled(Boolean(updated.notificationSoundEnabled));
       setAiResponseOnMentions(Boolean(updated.aiResponseOnMentions));
       setIsDirty(false);
       setSuccessMessage('Einstellungen gespeichert');
@@ -148,6 +156,8 @@ export default function UserSettingsPanel() {
     setCompactMode(Boolean(prefsOriginal.compactMode ?? false));
     setDefaultView(prefsOriginal.defaultView ?? null);
     setNotificationsEnabled(Boolean(prefsOriginal.notificationsEnabled));
+    setDeliveryReceiptsEnabled(Boolean(prefsOriginal.deliveryReceiptsEnabled));
+    setNotificationSoundEnabled(Boolean(prefsOriginal.notificationSoundEnabled));
     setAiResponseOnMentions(Boolean(prefsOriginal.aiResponseOnMentions));
     setIsDirty(false);
     setError(null);
@@ -208,6 +218,16 @@ export default function UserSettingsPanel() {
               <label htmlFor="notif" className="text-sm">Benachrichtigungen aktivieren</label>
             </div>
 
+            <div className="flex items-center gap-2">
+              <input id="delivery-receipts" type="checkbox" checked={deliveryReceiptsEnabled} onChange={(e) => { setDeliveryReceiptsEnabled(e.target.checked); markDirty(); }} />
+              <label htmlFor="delivery-receipts" className="text-sm">Versand- und Verarbeitungsstatus im Chat anzeigen</label>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input id="notification-sound" type="checkbox" checked={notificationSoundEnabled} onChange={(e) => { setNotificationSoundEnabled(e.target.checked); markDirty(); }} />
+              <label htmlFor="notification-sound" className="text-sm">Ton bei neuen Benutzeranfragen</label>
+            </div>
+
             <div className="rounded-lg border border-border-soft p-3 dark:border-white/10">
               <div className="flex items-center gap-2">
                 <input
@@ -222,6 +242,7 @@ export default function UserSettingsPanel() {
               </div>
               <p className="mt-1 pl-6 text-xs text-text-muted">
                 Ist die Option aus, wird eine Nachricht mit @Benutzer gespeichert und zugestellt, ohne automatisch das KI-Modell aufzurufen.
+                Ist sie aktiv, nutzt die KI nur freigegebene Kontextinformationen, kennzeichnet ihre Antwort als KI-Ausgabe und darf keine Geheimnisse offenlegen oder Angaben erfinden.
               </p>
             </div>
           </div>

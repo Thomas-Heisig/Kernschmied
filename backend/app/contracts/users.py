@@ -63,6 +63,8 @@ class UserPreferencesResponse(BaseContract):
     density: Literal["comfortable", "compact"]
     default_view: str | None
     notifications_enabled: bool
+    delivery_receipts_enabled: bool
+    notification_sound_enabled: bool
     ai_response_on_mentions: bool
     updated_at: datetime | None
 
@@ -74,6 +76,8 @@ class UpdateUserPreferencesRequest(BaseContract):
     density: Literal["comfortable", "compact"] | None = None
     default_view: str | None = None
     notifications_enabled: bool | None = None
+    delivery_receipts_enabled: bool | None = None
+    notification_sound_enabled: bool | None = None
     ai_response_on_mentions: bool | None = None
 
 

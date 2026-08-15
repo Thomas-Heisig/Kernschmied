@@ -191,3 +191,29 @@ async def update_mailbox_message(
         limit=100,
     )
     return next(row for row in rows if row.id == message_id)
+
+
+@router.delete("/messages/{message_id}")
+async def delete_mailbox_message(
+    message_id: str,
+    user: AuthenticatedUser,
+    session: AsyncSession = SESSION_DEP,
+) -> dict[str, bool]:
+    mailbox = await ensure_user_mailbox(session, user.id)
+    message = await session.get(MailboxMessageModel, message_id)
+    if message is None or message.mailbox_id != mailbox.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="mailbox message not found",
+        )
+
+    if message.related_mention_id:
+        mention = await session.get(UserMentionModel, message.related_mention_id)
+        if mention is not None:
+            now = datetime.now(UTC)
+            mention.status = "closed"
+            mention.read_at = mention.read_at or now
+            mention.closed_at = now
+    await session.delete(message)
+    await session.commit()
+    return {"deleted": True}

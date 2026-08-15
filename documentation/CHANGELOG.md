@@ -22,6 +22,9 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 - SMTP-Zustellung über die Postfach-Outbox mit Mailpit-Entwicklungsprofil, Willkommens- und Mention-Mails, persönlichem Testmail-Endpunkt sowie persistierten Erfolgs- und Fehlerzuständen; SMTP-Fehler rollen Benutzeranlage und interne Nachrichten nicht zurück.
 - `@Administrator` erzwingt serverseitig eine direkte KI-Auto-Antwort mit sichtbarer und persistierter Administrator-Attribution, ohne eine gewöhnliche Benutzeranfrage im Administrator-Postfach anzulegen.
 - Der Administrator-Autoresponder ist auf das geschützte Systemkonto begrenzt; namentlich erwähnte menschliche Administratoren wie `@Thomas-Heisig` erhalten bei deaktivierter Zusatz-KI eine normale Mention- und Postfachbenachrichtigung ohne Assistentenantwort.
+- Persistente Nebenchat-Antworten mit Elternbezug, farblicher Einrückung, Avatar und klarer menschlicher beziehungsweise KI-Attribution.
+- Abschaltbare Versandstatus- und akustische Benachrichtigungen sowie eine grün/blau/rote Glocke für erledigte, offene und fehlerhafte Zustände.
+- Filter-, Sortier-, Archivierungs- und Löschaktionen sowie ein begrenzter scrollbarer Bereich für das persönliche Postfach.
 - Rollenabhängige, serverseitig erzwungene Hierarchiequoten: Gäste erhalten standardmäßig einen Bereich, zwei Projekte und fünf Chats, interne Benutzer höhere administrierbare Grenzen und Administratoren unbegrenzte Nutzung.
 - Persönliche Erstellen-Aktionen und eine Nutzungsanzeige für eigene Bereiche, Projekte und Chats; neu angelegte Gastinhalte bleiben privat und dem erstellenden Benutzer zugeordnet.
 - Serverseitige Hierarchie-Sichtbarkeit für eigene, öffentliche, interne und explizit zugewiesene Knoten mit Schutz direkter Node-ID-Zugriffe.
@@ -45,6 +48,7 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 ### Geändert
 
 - Strikte Pylance-Typgrenzen für Mention-Defaults, Assistant-Metadaten und asynchronen Sitzungszugriff bereinigt; das Session-Testdouble bildet den synchronen `AsyncSession.add()`-Vertrag nun korrekt ab.
+- KI-Anfragen erhalten einen unveränderlichen Wahrheits-, Datenschutz- und Attributionsrahmen; freigegebene Profildaten werden ausschließlich als nicht-instruktive Daten übergeben.
 - Admin-Benutzeranlage und Selbstregistrierung behandeln Passwort-Policyverletzungen als verständliche HTTP-422-Eingabefehler statt als internen Serverfehler; beide Browserformulare prüfen Mindestlänge und Benutzername vor dem Request und besitzen korrekt zugeordnete Feldlabels.
 - Benutzeranfragen können ohne Modellaufruf abgeschlossen werden; der SSE-Stream bestätigt in diesem Fall ausschließlich die persistierte Anfrage und das Frontend zeigt keinen leeren Assistant-Platzhalter an.
 - Der Kontextbereich zeigt Benutzeranfragen als Postfacheinträge einschließlich interner Adresse und transparentem E-Mail-Bereitschaftsstatus; Lesen und Archivieren synchronisieren den zugrunde liegenden Mention-Status.
@@ -61,6 +65,8 @@ Das Format orientiert sich an [Keep a Changelog](https://keepachangelog.com/de/1
 
 ### Behoben
 
+- Persönliche JSON-Präferenzen werden durch Neuzuweisung statt unerkannter In-place-Mutation dauerhaft gespeichert; `Europe/Berlin` funktioniert unter Windows durch das gebündelte `tzdata`.
+- Chat-Repository-Protokoll und Nulladapter verwenden wieder dieselbe Signatur für Benutzer-, Hierarchie- und Elternnachrichtenbezug.
 - Die Sitzungsverwaltung normalisiert SQLite-Zeitstempel nach UTC, sortiert die aktuelle Sitzung zuerst und kennzeichnet anhand der tatsächlichen Session-ID genau eine Sitzung als aktuell; der Sitzungsdialog zeigt Überschrift und Schließen-Aktion nur einmal.
 - Gäste und interne Benutzer können eigene Hierarchien erstellen, ohne dadurch fremde, öffentliche, interne oder lediglich zugewiesene Inhalte verändern zu dürfen; administrative Sidebar-Aktionen erscheinen ausschließlich bei vorhandener Admin-Freigabe.
 - Gastkonten können ihre eigenen persönlichen Einstellungen und Profildaten lesen und ändern; `/users/me`-Routen erfordern nur eine aktive Anmeldung und kollidieren nicht mehr mit der administrativen `/{user_id}`-Route.

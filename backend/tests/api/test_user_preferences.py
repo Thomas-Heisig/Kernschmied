@@ -57,6 +57,8 @@ def _preferences(*, theme: str = "system") -> UserPreferencesResponse:
         density="comfortable",
         default_view=None,
         notifications_enabled=True,
+        delivery_receipts_enabled=True,
+        notification_sound_enabled=False,
         ai_response_on_mentions=False,
         updated_at=None,
     )

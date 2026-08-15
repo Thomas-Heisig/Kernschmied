@@ -68,7 +68,11 @@ def test_history_loaded_and_deduplicated(tmp_path: Any, monkeypatch: Any) -> Non
     )
 
     req = ChatRequest(
-        message="new message", conversation_id=None, history=(), system_prompt=None
+        message="new message",
+        conversation_id=None,
+        history=(),
+        system_prompt=None,
+        hierarchy_node_id="node-test",
     )
 
     # emulate service flow
@@ -82,9 +86,10 @@ def test_history_loaded_and_deduplicated(tmp_path: Any, monkeypatch: Any) -> Non
     gen_req = recording_model.last_request
     assert gen_req is not None
 
-    # messages should include system (none), persisted except m1, and current user message once
+    # Persisted history remains available and the current user message appears once.
     texts = [m.content for m in gen_req.messages]
-    assert "old message" not in texts
+    assert "old message" in texts
     assert "reply" in texts
     assert "new message" in texts
     assert texts.count("new message") == 1
+    assert any("Erfinde keine persönlichen Angaben" in text for text in texts)

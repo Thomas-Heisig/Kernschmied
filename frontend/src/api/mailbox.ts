@@ -1,4 +1,4 @@
-import { apiGet, apiPatch } from './client';
+import { apiDelete, apiGet, apiPatch } from './client';
 
 export interface UserMailbox {
   id: string;
@@ -82,4 +82,8 @@ export async function updateMailboxMessage(
     { status },
   );
   return normalizeMessage(row);
+}
+
+export async function deleteMailboxMessage(messageId: string): Promise<void> {
+  await apiDelete(`/mailbox/messages/${encodeURIComponent(messageId)}`);
 }

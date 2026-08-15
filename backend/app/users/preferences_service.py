@@ -34,6 +34,8 @@ DEFAULTS: dict[str, Any] = {
     "density": "comfortable",
     "default_view": None,
     "notifications_enabled": True,
+    "delivery_receipts_enabled": True,
+    "notification_sound_enabled": False,
     "ai_response_on_mentions": False,
 }
 
@@ -86,6 +88,12 @@ async def get_preferences(
     notifications_enabled = pref.preferences_json.get(
         "notifications_enabled", DEFAULTS["notifications_enabled"]
     )
+    delivery_receipts_enabled = pref.preferences_json.get(
+        "delivery_receipts_enabled", DEFAULTS["delivery_receipts_enabled"]
+    )
+    notification_sound_enabled = pref.preferences_json.get(
+        "notification_sound_enabled", DEFAULTS["notification_sound_enabled"]
+    )
     ai_response_on_mentions = pref.preferences_json.get("ai_response_on_mentions")
     if ai_response_on_mentions is None:
         ai_response_on_mentions = await _default_ai_response_on_mentions(
@@ -101,6 +109,8 @@ async def get_preferences(
         density=cast(Literal["comfortable", "compact"], density),
         default_view=default_view,
         notifications_enabled=bool(notifications_enabled),
+        delivery_receipts_enabled=bool(delivery_receipts_enabled),
+        notification_sound_enabled=bool(notification_sound_enabled),
         ai_response_on_mentions=bool(ai_response_on_mentions),
         updated_at=updated_at,
     )
@@ -117,6 +127,8 @@ async def update_preferences(
         and request.density is None
         and request.default_view is None
         and request.notifications_enabled is None
+        and request.delivery_receipts_enabled is None
+        and request.notification_sound_enabled is None
         and request.ai_response_on_mentions is None
     ):
         raise PreferencesInvalid()
@@ -135,6 +147,8 @@ async def update_preferences(
         pref = await repo.create_default(user_id)
 
     changes: dict[str, Any] = {}
+    preferences_json = dict(pref.preferences_json or {})
+    preferences_changed = False
 
     # language validation
     if request.language is not None:
@@ -166,21 +180,38 @@ async def update_preferences(
     if request.default_view is not None:
         if len(request.default_view) > 255:
             raise PreferencesInvalid()
-        # store under preferences_json
-        pref.preferences_json["default_view"] = request.default_view
+        preferences_json["default_view"] = request.default_view
+        preferences_changed = True
 
     # notifications
     if request.notifications_enabled is not None:
-        pref.preferences_json["notifications_enabled"] = bool(
+        preferences_json["notifications_enabled"] = bool(
             request.notifications_enabled
         )
+        preferences_changed = True
+
+    if request.delivery_receipts_enabled is not None:
+        preferences_json["delivery_receipts_enabled"] = bool(
+            request.delivery_receipts_enabled
+        )
+        preferences_changed = True
+
+    if request.notification_sound_enabled is not None:
+        preferences_json["notification_sound_enabled"] = bool(
+            request.notification_sound_enabled
+        )
+        preferences_changed = True
 
     if request.ai_response_on_mentions is not None:
-        pref.preferences_json["ai_response_on_mentions"] = bool(
+        preferences_json["ai_response_on_mentions"] = bool(
             request.ai_response_on_mentions
         )
+        preferences_changed = True
 
-    if not changes and (not pref.preferences_json):
+    if preferences_changed:
+        changes["preferences_json"] = preferences_json
+
+    if not changes:
         # nothing to do
         return await get_preferences(session, user_id)
 

@@ -292,6 +292,12 @@ function normalizePreferences(raw: unknown): UserPreferences | null {
         ? null
         : String(r.default_view ?? r['defaultView']),
     notificationsEnabled: Boolean(r.notifications_enabled ?? r['notificationsEnabled'] ?? true),
+    deliveryReceiptsEnabled: Boolean(
+      r.delivery_receipts_enabled ?? r['deliveryReceiptsEnabled'] ?? true,
+    ),
+    notificationSoundEnabled: Boolean(
+      r.notification_sound_enabled ?? r['notificationSoundEnabled'] ?? false,
+    ),
     aiResponseOnMentions: Boolean(
       r.ai_response_on_mentions ?? r['aiResponseOnMentions'] ?? false,
     ),
@@ -323,6 +329,10 @@ export async function updateUserPreferences(
   if (input.defaultView !== undefined) body.default_view = input.defaultView;
   if (input.notificationsEnabled !== undefined)
     body.notifications_enabled = input.notificationsEnabled;
+  if (input.deliveryReceiptsEnabled !== undefined)
+    body.delivery_receipts_enabled = input.deliveryReceiptsEnabled;
+  if (input.notificationSoundEnabled !== undefined)
+    body.notification_sound_enabled = input.notificationSoundEnabled;
   if (input.aiResponseOnMentions !== undefined)
     body.ai_response_on_mentions = input.aiResponseOnMentions;
 

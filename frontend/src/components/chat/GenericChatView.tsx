@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAppStoreState, selectSelectedNode } from '../../store';
-import { MessageCircle, Send, Square } from 'lucide-react';
+import { CornerUpLeft, MessageCircle, Send, Square, X } from 'lucide-react';
 import IconBadge from '../common/IconBadge';
 import WorkspaceLayout from '../layout/WorkspaceLayout';
 import useEffectiveWidgets from '../../hooks/useEffectiveWidgets';
@@ -53,11 +53,14 @@ type ChatMessage = {
   conversationId?: string;
   serverMessageId?: string;
   authorName?: string;
+  parentMessageId?: string;
+  directedToUser?: boolean;
 };
 
 type ChatRequestPayload = {
   message: string;
   conversation_id: string | null;
+  parent_message_id: string | null;
   hierarchy_node_id: string;
   model_id: string | null;
   tool_ids: string[];
@@ -146,6 +149,15 @@ function getInitials(role: ChatRole): string {
     default:
       return 'SY';
   }
+}
+
+function getDeliveryStatus(message: ChatMessage): string {
+  if (message.status === 'pending') return message.role === 'assistant' ? 'KI wird vorbereitet' : 'Wird gesendet';
+  if (message.status === 'streaming') return 'KI verarbeitet die Anfrage';
+  if (message.status === 'failed') return 'Übertragung fehlgeschlagen';
+  if (message.status === 'cancelled') return 'Abgebrochen';
+  if (message.role === 'assistant') return 'KI-Antwort abgeschlossen';
+  return message.directedToUser ? 'An Benutzer zugestellt' : 'Vom Chatserver verarbeitet';
 }
 
 function getAccessibleRequestStatus(status: ChatRequestStatus): string {
@@ -324,6 +336,8 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
   const [selectedMentions, setSelectedMentions] = useState<MentionCandidate[]>([]);
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [aiResponseOnMentions, setAiResponseOnMentions] = useState(false);
+  const [deliveryReceiptsEnabled, setDeliveryReceiptsEnabled] = useState(true);
+  const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
 
   // Refs
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -342,7 +356,10 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
   useEffect(() => {
     void loadUserPreferences()
       .then((preferences) => {
-        if (preferences) setAiResponseOnMentions(preferences.aiResponseOnMentions);
+        if (preferences) {
+          setAiResponseOnMentions(preferences.aiResponseOnMentions);
+          setDeliveryReceiptsEnabled(preferences.deliveryReceiptsEnabled);
+        }
       })
       .catch(() => undefined);
   }, []);
@@ -404,6 +421,8 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
       status: (m.status === 'pending' ? 'pending' : 'completed') as ChatMessageStatus,
       conversationId: convId ?? undefined,
       serverMessageId: String(m.id),
+      parentMessageId: typeof m.parent_message_id === 'string' ? m.parent_message_id : undefined,
+      directedToUser: Array.isArray(m.ui_context?.mentions) && m.ui_context.mentions.length > 0,
       authorName:
         typeof m.ui_context?.assistant_display_name === 'string'
           ? m.ui_context.assistant_display_name
@@ -779,6 +798,8 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
       timestamp: submittedAt,
       status: 'completed',
       conversationId: activeConversationId ?? undefined,
+      parentMessageId: replyTo?.serverMessageId ?? replyTo?.id,
+      directedToUser: selectedMentions.length > 0,
     };
 
     const assistantMessage: ChatMessage = {
@@ -789,11 +810,13 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
       status: 'pending',
       conversationId: activeConversationId ?? undefined,
       authorName: administratorAutoAnswer ? 'Administrator' : undefined,
+      parentMessageId: replyTo?.serverMessageId ?? replyTo?.id,
     };
 
     const requestPayload: ChatRequestPayload = {
       message: prompt,
       conversation_id: activeConversationId,
+      parent_message_id: replyTo?.serverMessageId ?? replyTo?.id ?? null,
       hierarchy_node_id: hierarchyNodeId,
       model_id: null,
       tool_ids: [],
@@ -818,6 +841,7 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
     setMessages((prev) => [...prev, userMessage, assistantMessage]);
     setInput('');
     setSelectedMentions([]);
+    setReplyTo(null);
     setMentionQuery(null);
     setError(null);
     setRequestStatus('connecting');
@@ -963,13 +987,16 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
                 {messages.map((message) => {
                   const isUser = message.role === 'user';
                   const isSystem = message.role === 'system';
+                  const parentMessage = message.parentMessageId
+                    ? messages.find((candidate) => (candidate.serverMessageId ?? candidate.id) === message.parentMessageId)
+                    : undefined;
                   const isEmptyAssistant = !isUser && !message.content && (message.status === 'pending' || message.status === 'streaming');
                   if (isSystem || isEmptyAssistant) return null;
 
                   return (
                     <article
                       key={message.id}
-                      className={`flex w-full items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'}`}
+                      className={`flex items-start gap-3 ${isUser ? 'flex-row-reverse' : 'flex-row'} ${message.parentMessageId ? 'ml-8 w-[calc(100%-2rem)] border-l-4 border-cyan-500/70 pl-3' : 'w-full'}`}
                       data-message-id={message.id}
                       data-message-status={message.status}
                     >
@@ -989,7 +1016,7 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
                       >
                         <div className="flex items-center justify-between gap-4">
                           <span className={`text-xs font-semibold ${isUser ? 'text-white/80' : 'text-text-muted dark:text-gray-400'}`}>
-                            {isUser ? 'Du' : (message.authorName ?? 'Assistent')}
+                            {isUser ? 'Du' : (message.authorName ? `${message.authorName} · KI` : 'KI-Assistent')}
                           </span>
                           <time
                             dateTime={new Date(message.timestamp).toISOString()}
@@ -998,6 +1025,11 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
                             {formatTime(message.timestamp)}
                           </time>
                         </div>
+                        {message.parentMessageId ? (
+                          <div className={`mt-2 rounded border-l-2 px-2 py-1 text-xs ${isUser ? 'border-white/50 bg-white/10 text-white/80' : 'border-cyan-500 bg-cyan-50 text-cyan-900 dark:bg-cyan-950/30 dark:text-cyan-200'}`}>
+                            Nebenchat als Antwort auf: {parentMessage?.content.slice(0, 90) ?? 'vorherige Nachricht'}
+                          </div>
+                        ) : null}
                         <p
                           className={`mt-1 whitespace-pre-wrap wrap-break-words text-sm leading-6 ${
                             isUser ? 'text-white' : 'text-text dark:text-gray-100'
@@ -1005,6 +1037,17 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
                         >
                           {message.content}
                         </p>
+                        <div className={`mt-2 flex items-center justify-between gap-3 text-[11px] ${isUser ? 'text-white/70' : 'text-text-muted'}`}>
+                          {deliveryReceiptsEnabled ? <span>{getDeliveryStatus(message)}</span> : <span />}
+                          <button
+                            type="button"
+                            onClick={() => setReplyTo(message)}
+                            className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 hover:bg-black/10"
+                            aria-label="Auf diese Nachricht antworten"
+                          >
+                            <CornerUpLeft className="h-3.5 w-3.5" /> Antworten
+                          </button>
+                        </div>
                       </div>
                     </article>
                   );
@@ -1052,6 +1095,15 @@ export function GenericChatView({ title, hierarchyNodeId, hierarchyNodeType }: G
           className="shrink-0 border-t border-border bg-white/85 px-4 py-3 backdrop-blur-md dark:border-white/10 dark:bg-slate-900/75 sm:px-6 lg:px-8"
         >
           <div className="mx-auto max-w-4xl">
+            {replyTo ? (
+              <div className="mb-2 flex items-center gap-2 border-l-4 border-cyan-500 bg-cyan-50 px-3 py-2 text-xs text-cyan-950 dark:bg-cyan-950/30 dark:text-cyan-100">
+                <CornerUpLeft className="h-4 w-4 shrink-0" />
+                <span className="min-w-0 flex-1 truncate">Nebenchat zu: {replyTo.content}</span>
+                <button type="button" onClick={() => setReplyTo(null)} className="rounded p-1 hover:bg-cyan-100 dark:hover:bg-cyan-900" aria-label="Antwortbezug entfernen">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : null}
             <div className="flex w-full items-end gap-2">
               <div className="relative min-w-0 flex-1">
                 <label htmlFor="chat-message-input" className="sr-only">

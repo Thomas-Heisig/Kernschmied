@@ -17,6 +17,7 @@ import IconBadge from '../common/IconBadge';
 import UserMenu from '../../auth/UserMenu';
 import { useAuth } from '../../auth/AuthProvider';
 import { loadMyMentions } from '../../api/mentions';
+import { loadUserPreferences } from '../../auth/auth-api';
 
 type AppTheme = 'light' | 'dark';
 
@@ -49,6 +50,7 @@ export function AppHeader({
 }: AppHeaderProps) {
   const auth = useAuth();
   const [unreadMentionCount, setUnreadMentionCount] = useState(0);
+  const [notificationSoundEnabled, setNotificationSoundEnabled] = useState(false);
   const resolvedUserName = auth?.user?.displayName ?? userName;
   const userInitials = createInitials(resolvedUserName);
   const normalizedEnvironment = environment.trim().toLowerCase();
@@ -74,12 +76,25 @@ export function AppHeader({
     }
     let active = true;
     const refresh = () => {
-      void loadMyMentions()
-        .then((mentions) => {
+      void Promise.all([loadMyMentions(), loadUserPreferences()])
+        .then(([mentions, preferences]) => {
           if (active) {
-            setUnreadMentionCount(
-              mentions.filter((mention) => mention.status === 'unread').length,
-            );
+            const nextCount = mentions.filter((mention) => mention.status === 'unread').length;
+            const soundEnabled = Boolean(preferences?.notificationSoundEnabled);
+            setNotificationSoundEnabled(soundEnabled);
+            setUnreadMentionCount((currentCount) => {
+              if (soundEnabled && nextCount > currentCount && currentCount >= 0) {
+                const audioContext = new AudioContext();
+                const oscillator = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+                oscillator.frequency.value = 740;
+                gain.gain.value = 0.04;
+                oscillator.connect(gain).connect(audioContext.destination);
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.12);
+              }
+              return nextCount;
+            });
           }
         })
         .catch(() => undefined);
@@ -169,7 +184,12 @@ export function AppHeader({
             aria-label={`${unreadMentionCount} offene Anfragen`}
             title="Anfragen und Online-Benutzer anzeigen"
           >
-            <IconBadge icon={<Bell />} size="sm" variant="default" />
+            <IconBadge
+              icon={<Bell />}
+              size="sm"
+              variant="default"
+              className={unreadMentionCount >= 5 ? 'text-danger' : unreadMentionCount > 0 ? 'text-primary' : 'text-emerald-600'}
+            />
             {unreadMentionCount > 0 ? (
               <span className="absolute -right-1 -top-1 min-w-4 rounded-full bg-danger px-1 text-center text-[10px] font-bold leading-4 text-white">
                 {unreadMentionCount > 99 ? '99+' : unreadMentionCount}

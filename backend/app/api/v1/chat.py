@@ -158,6 +158,12 @@ class ChatRequest(BaseModel):
         description="Bestehende Unterhaltung, falls vorhanden.",
     )
 
+    parent_message_id: str | None = Field(
+        default=None,
+        max_length=MAX_IDENTIFIER_LENGTH,
+        description="Nachricht, auf die als Nebenchat geantwortet wird.",
+    )
+
     hierarchy_node_id: str | None = Field(
         default=None,
         max_length=MAX_IDENTIFIER_LENGTH,
@@ -275,6 +281,7 @@ class StreamContext(BaseModel):
     client_request_id: str | None = None
     requested_conversation_id: str | None = None
     user_id: str | None = None
+    user_name: str | None = None
     # Include role/permission hints from the authentication middleware so
     # downstream services can construct a typed HierarchyActor.
     roles: tuple[str, ...] = ()
@@ -434,6 +441,29 @@ def get_current_user_id(
     return normalized or None
 
 
+def get_current_user_name(request: Request) -> str | None:
+    principal: object = getattr(request.state, "user", None)
+    if principal is None:
+        return None
+    if isinstance(principal, Mapping):
+        typed_principal = cast(Mapping[object, object], principal)
+        raw_name = (
+            typed_principal.get("display_name")
+            or typed_principal.get("name")
+            or typed_principal.get("username")
+        )
+    else:
+        raw_name = (
+            getattr(principal, "display_name", None)
+            or getattr(principal, "name", None)
+            or getattr(principal, "username", None)
+        )
+    if raw_name is None:
+        return None
+    normalized = " ".join(str(raw_name).split())[:100]
+    return normalized or None
+
+
 def create_stream_context(
     request: Request,
     payload: ChatRequest,
@@ -444,6 +474,7 @@ def create_stream_context(
         client_request_id=get_client_request_id(request),
         requested_conversation_id=payload.conversation_id,
         user_id=get_current_user_id(request),
+        user_name=get_current_user_name(request),
         roles=tuple(getattr(getattr(request.state, "user", None), "roles", ()) or ()),
         permissions=tuple(
             getattr(getattr(request.state, "user", None), "permissions", ()) or ()
@@ -1072,7 +1103,7 @@ def create_service_request(
         message=payload.message,
         model_id=payload.model_id,
         conversation_id=payload.conversation_id,
-        parent_message_id=None,
+        parent_message_id=payload.parent_message_id,
         system_prompt=None,
         history=(),
         temperature=None,
@@ -1216,6 +1247,7 @@ def create_service_context(
             "stream_id": str(
                 context.stream_id,
             ),
+            "current_user_name": context.user_name,
         },
         hierarchy_actor=(context.hierarchy_actor),
         auth_roles=tuple(context.roles),

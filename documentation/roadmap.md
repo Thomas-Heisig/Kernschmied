@@ -44,6 +44,8 @@ Priorisierte Meilensteine (kurz):
   - Direkte `@Administrator`-KI-Auto-Antwort mit persistierter Administrator-Attribution ohne gewöhnliche Benutzeranfrage (abgeschlossen 2026-08-15)
   - Trennung des geschützten Administrator-Autoresponders von namentlich erwähnten menschlichen Administratoren mit normaler Mention-/Postfachzustellung (abgeschlossen 2026-08-15)
   - Pylance-strikte Typisierung für Mention-Defaults, Assistant-JSON-Metadaten und Session-Presence-Persistenz (abgeschlossen 2026-08-15)
+  - Kollaborationsausbau mit persistenter Nebenchat-Antwortstruktur, Avatar-/KI-Attribution, Versandstatus, optionalem Ton, mehrfarbiger Glocke und verwaltbarem Postfach (abgeschlossen 2026-08-15)
+  - Serverseitiger KI-Wahrheits- und Datenschutzrahmen mit minimalem autorisiertem Benutzerkontext sowie persistenter Windows-Zeitzonen-/Präferenzunterstützung (abgeschlossen 2026-08-15)
 
 Leitprinzipien (Kurz):
 
